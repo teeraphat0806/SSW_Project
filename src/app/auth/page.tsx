@@ -10,13 +10,13 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2, Shield } from 'lucide-react';
 import { useRouter } from "next/navigation";
 import { signIn } from 'next-auth/react'
+import { ToastContainer, toast } from 'react-toastify';
 export default function Auth() {
   const [isLoading, setIsLoading] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const { user, signUp } = useAuth();
-  const { toast } = useToast();
   const router = useRouter();
   if (user) {
     router.replace("/");
@@ -35,16 +35,13 @@ export default function Auth() {
       })
 
       if (result?.error) {
-        toast({
-          title: "Error",
-          description: error.message,
-          variant: "destructive",
-        });
+        toast.error("wrong email or password", {
+      position: 'bottom-right',
+    });
       } else {
-        toast({
-          title: "Success",
-          description: "Signed in successfully!",
-        });
+        toast.success("Login successful!", {
+      position: 'bottom-right',
+    });
         router.push('/profile')
       }
     } catch (error) {
@@ -62,16 +59,13 @@ export default function Auth() {
     const { error } = await signUp(email, password, fullName);
     
     if (error) {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
+      toast.error("Error: " + error.message || "Something went wrong, please try again", {
+      position: 'bottom-right',
+    });
     } else {
-      toast({
-        title: "Success",
-        description: "Account created successfully! Please check your email to confirm your account.",
-      });
+      toast.success("Sign up successful! Please sign in.", {
+      position: 'bottom-right',
+    });
     }
     
     setIsLoading(false);
@@ -137,6 +131,7 @@ export default function Auth() {
                     placeholder="Enter your full name"
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
+                    required
                   />
                 </div>
                 <div className="space-y-2">
@@ -170,6 +165,7 @@ export default function Auth() {
           </Tabs>
         </CardContent>
       </Card>
+      <ToastContainer/>
     </div>
   );
 }
