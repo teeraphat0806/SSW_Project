@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/app
 import { Button } from "@/app/components/ui/button";
 import { Badge } from "@/app/components/ui/badge";
 import { Separator } from "@/app/components/ui/separator";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/app/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/app/components/ui/tabs";
 import { 
   FileText, 
   Users, 

@@ -16,19 +16,22 @@ export interface UserProfile {
   full_name: string | null;
   role: UserRole;
 }
-
+export interface AuthError {
+  message: string;   // ข้อความอธิบาย
+  code?: string;     // รหัส error (ถ้ามี)
+}
 interface AuthContextType {
   user: UserProfile | null;
   loading: boolean;
   signIn: (
     email: string,
     password: string
-  ) => Promise<{ error: any }>;
+  ) => Promise<{ error: AuthError }>;
   signUp: (
     email: string,
     password: string,
     fullName?: string
-  ) => Promise<{ error: any }>;
+  ) => Promise<{ error: AuthError }>;
   signOut: () => Promise<void>;
   hasRole: (role: UserRole) => boolean;
   canAccess: (allowedRoles: UserRole[]) => boolean;
@@ -92,13 +95,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   };
 
-  const signUp = async (email: string, password: string, fullName?: string) => {
+  const signUp = async (email: string, password: string, name?: string) => {
     try {
       const res = await fetch("/api/auth/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ email, password, fullName }),
+        body: JSON.stringify({ email, password, name }),
       });
       const data = await res.json();
       if (!res.ok) {

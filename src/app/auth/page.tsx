@@ -9,13 +9,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Shield } from 'lucide-react';
 import { useRouter } from "next/navigation";
-
+import { signIn } from 'next-auth/react'
 export default function Auth() {
   const [isLoading, setIsLoading] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
-  const { user, signIn, signUp } = useAuth();
+  const { user, signUp } = useAuth();
   const { toast } = useToast();
   const router = useRouter();
   if (user) {
@@ -27,20 +27,30 @@ export default function Auth() {
     e.preventDefault();
     setIsLoading(true);
 
-    const { error } = await signIn(email, password);
-    
-    if (error) {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
-    } else {
-      toast({
-        title: "Success",
-        description: "Signed in successfully!",
-      });
+    try {
+      const result = await signIn('credentials', {
+        redirect: false,
+        email,
+        password,
+      })
+
+      if (result?.error) {
+        toast({
+          title: "Error",
+          description: error.message,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Success",
+          description: "Signed in successfully!",
+        });
+        router.push('/profile')
+      }
+    } catch (error) {
+      console.log('error', error)
     }
+    
     
     setIsLoading(false);
   };
