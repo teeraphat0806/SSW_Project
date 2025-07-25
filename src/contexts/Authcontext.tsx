@@ -13,7 +13,7 @@ export type UserRole =
 export interface UserProfile {
   id: string;
   email: string;
-  full_name: string | null;
+  name: string | null;
   role: UserRole;
 }
 export interface AuthError {
@@ -30,7 +30,7 @@ interface AuthContextType {
   signUp: (
     email: string,
     password: string,
-    fullName?: string
+    name?: string
   ) => Promise<{ error: AuthError }>;
   signOut: () => Promise<void>;
   hasRole: (role: UserRole) => boolean;

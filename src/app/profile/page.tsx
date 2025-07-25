@@ -8,7 +8,6 @@ export default function Profile() {
   const { data: session, status } = useSession()
 
   const router = useRouter()
-
   useEffect(() => {
     if (status === 'unauthenticated') {
       router.push('/')

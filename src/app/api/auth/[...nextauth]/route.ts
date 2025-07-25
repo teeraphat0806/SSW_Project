@@ -1,10 +1,9 @@
 import NextAuth from 'next-auth'
 import CredentialsProvider from 'next-auth/providers/credentials'
-import { PrismaClient } from '@prisma/client'
+import prisma from '@/lib/prisma'
 import bcrypt from 'bcrypt'
 import { PrismaAdapter } from '@next-auth/prisma-adapter'
 
-const prisma = new PrismaClient()
 
 export const authOptions = {
   providers: [
@@ -19,7 +18,6 @@ export const authOptions = {
         const user = await prisma.user.findUnique({
           where: { email: credentials.email },
         })
-
         if (
           user &&
           (await bcrypt.compare(credentials.password, user.password))
@@ -27,7 +25,8 @@ export const authOptions = {
           return {
             id: user.id,
             name: user.name,
-            email: user.email
+            email: user.email,
+            role: user.role
           }
         } else {
           throw new Error('Invalid email or password')
@@ -43,12 +42,14 @@ export const authOptions = {
     jwt: async ({ token, user }) => {
       if (user) {
         token.id = user.id
+        token.role = user.role
       }
       return token
     },
     session: async ({ session, token }) => {
       if (session.user) {
         session.user.id = token.id
+        session.user.role = token.role
       }
       return session
     }
