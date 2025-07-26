@@ -18,7 +18,7 @@ export default function Auth() {
   const { user, signUp } = useAuth();
   const router = useRouter();
   if (user) {
-    router.replace("/");
+    router.replace("/profile");
     return;
   }
 

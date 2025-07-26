@@ -19,7 +19,16 @@ model User {
   email     String   @unique
   password  String
   image     String?
-  role      String   @default("member") // Add a role field
+  role      Role   @default(guest) // Add a role field
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+enum Role {
+  superadmin  
+  guest
+  clerk
+  supervisor
+  cutter
+  delivery
 }
