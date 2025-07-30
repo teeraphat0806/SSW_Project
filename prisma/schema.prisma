@@ -18,6 +18,125 @@ model User {
   updatedAt DateTime @updatedAt
 }
 
+model Bill {
+  id                            Int       @id @default(autoincrement())
+  customerId                    Int
+  yourRef                       String
+  invoiceNo                     String
+  idPo                          Int
+  credit                        DateTime
+  deliveryOrderNo               String?
+  salesName                     String
+  deliveredBy                   String?
+  description                   String
+  unitPrice                     Float?
+  discount                      Float?
+  vat                           Float
+  dateReceive                   DateTime?
+  typeBill                      String?
+  Customer                      Customer  @relation(fields: [customerId], references: [id])
+  Staff_Bill_deliveredByToStaff Staff?    @relation("Bill_deliveredByToStaff", fields: [deliveredBy], references: [name])
+  OrderPO                       OrderPO   @relation(fields: [idPo], references: [id])
+  Staff_Bill_salesNameToStaff   Staff     @relation("Bill_salesNameToStaff", fields: [salesName], references: [name])
+}
+
+model Customer {
+  id            Int             @id @default(autoincrement())
+  code          String          @unique
+  name          String
+  address       String
+  tel           String          @unique
+  taxNumber     String          @unique
+  faxNumber     String          @unique
+  email         String          @unique
+  Bill          Bill[]
+  OrderPO       OrderPO[]
+  Rcptorg       Rcptorg[]
+  TemporaryBill TemporaryBill[]
+}
+
+model OrderPO {
+  id         Int       @id @default(autoincrement())
+  poNumber   String
+  customerId Int
+  total      Float
+  vat        Float
+  date       DateTime  @default(now())
+  Bill       Bill[]
+  Customer   Customer  @relation(fields: [customerId], references: [id])
+  Product    Product[]
+}
+
+model Product {
+  id               Int     @id @default(autoincrement())
+  steelType        String
+  wide             Float
+  length           Float
+  thickness        Float
+  amount           Int
+  actualWeight     Float?
+  calculatedWeight Float?
+  total            Float
+  orderPOId        Int
+  OrderPO          OrderPO @relation(fields: [orderPOId], references: [id])
+}
+
+model Rcptorg {
+  id           Int      @id @default(autoincrement())
+  date         DateTime
+  numberNo     String
+  codeCustomer String
+  totalPrice   Float
+  Customer     Customer @relation(fields: [codeCustomer], references: [code])
+}
+
+model Staff {
+  id                           Int           @id @default(autoincrement())
+  name                         String        @unique
+  position                     String        @default("พนักงานทั่วไป")
+  bankAccount                  String        @unique
+  startAt                      DateTime
+  code                         String        @unique
+  social_security              String        @unique
+  Salary                       Float
+  Bill_Bill_deliveredByToStaff Bill[]        @relation("Bill_deliveredByToStaff")
+  Bill_Bill_salesNameToStaff   Bill[]        @relation("Bill_salesNameToStaff")
+  StaffIncome                  StaffIncome[]
+}
+
+model StaffIncome {
+  id      Int    @id @default(autoincrement())
+  Price   Float
+  detail  String @default("-")
+  name    String
+  staffId Int
+  Staff   Staff  @relation(fields: [staffId], references: [id])
+}
+
+model TemporaryBill {
+  id                 Int      @id @default(autoincrement())
+  orderNo            String   @unique
+  order              String
+  term               String
+  dueDate            DateTime
+  customerId         Int
+  shippingLocation   String
+  numberNo           String
+  date               DateTime
+  no                 String
+  description        String
+  quantity           Int
+  weight             Float
+  unitPrice          Float
+  amount             Float
+  total              Float
+  totalAfterDiscount Float
+  vat                Float
+  receivedBy         String
+  deliveredBy        String
+  Customer           Customer @relation(fields: [customerId], references: [id])
+}
+
 enum Role {
   superadmin
   guest

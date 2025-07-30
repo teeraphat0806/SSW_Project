@@ -1,10 +1,12 @@
+'use client';
 import { useState } from "react";
-import { Link } from "react-router-dom";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/app/components/ui/card";
-import { Button } from "@/app/components/ui/button";
-import { Badge } from "@/app/components/ui/badge";
-import { Separator } from "@/app/components/ui/separator";
-import { Tabs, TabsList, TabsTrigger } from "@/app/components/ui/tabs";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useRouter } from "next/navigation";
+import Sidebar from "@/components/SideBar";
 import { 
   FileText, 
   Users, 
@@ -77,44 +79,44 @@ const mockJobOrders: JobOrder[] = [
 const Dashboard = () => {
   const [currentRole, setCurrentRole] = useState<UserRole>("clerk");
   const [jobOrders] = useState<JobOrder[]>(mockJobOrders);
-
+  const router = useRouter();
   const getStatusColor = (status: JobOrder['status']) => {
     switch (status) {
-      case "pending": return "bg-warning text-warning-foreground";
-      case "cutting": return "bg-primary text-primary-foreground";
-      case "weighing": return "bg-steel text-foreground";
-      case "ready": return "bg-success text-success-foreground";
-      case "shipped": return "bg-primary text-primary-foreground";
-      case "completed": return "bg-success text-success-foreground";
-      default: return "bg-muted text-muted-foreground";
+      case "pending": return "bg-yellow-300 text-black";
+      case "cutting": return "bg-blue-500 text-white";
+      case "weighing": return "bg-blue-500 text-white";
+      case "ready": return "bg-green-500 text-white";
+      case "shipped": return "bg-blue-500 text-white";
+      case "completed": return "bg-green-500 text-white";
+      default: return "bg-blue-500 text-white";
     }
   };
 
   const getStatsForRole = () => {
     const stats = {
       clerk: [
-        { label: "Pending Orders", value: jobOrders.filter(jo => jo.status === "pending").length, icon: FileText },
-        { label: "Ready for Invoice", value: jobOrders.filter(jo => jo.status === "ready").length, icon: DollarSign },
-        { label: "Total Orders", value: jobOrders.length, icon: Package },
-        { label: "Completed Today", value: jobOrders.filter(jo => jo.status === "completed").length, icon: CheckCircle }
+        { label: "รายการปัจจุบัน", value: jobOrders.filter(jo => jo.status === "pending" ).length, icon: FileText, color:"bg-blue-500" },
+        { label: "พร้อมแจ้งชำระ", value: jobOrders.filter(jo => jo.status === "ready").length, icon: DollarSign, color:"bg-red-500" },
+        { label: "รายการทั้งหมด", value: jobOrders.length, icon: Package, color:"bg-blue-500" },
+        { label: "รายการสำเร็จ", value: jobOrders.filter(jo => jo.status === "completed").length, icon: CheckCircle, color:"bg-blue-500" }
       ],
       supervisor: [
-        { label: "Orders in Queue", value: jobOrders.filter(jo => jo.status === "pending").length, icon: Clock },
-        { label: "Currently Cutting", value: jobOrders.filter(jo => jo.status === "cutting").length, icon: Scissors },
-        { label: "Active Cutters", value: 3, icon: Users },
-        { label: "Daily Target", value: 15, icon: Package }
+        { label: "รายการ ในคิว", value: jobOrders.filter(jo => jo.status === "pending").length, icon: Clock, color:"bg-blue-500" },
+        { label: "กำลังตัด", value: jobOrders.filter(jo => jo.status === "cutting").length, icon: Scissors, color:"bg-red-500" },
+        { label: "พร้อมตัด", value: 3, icon: Users, color:"bg-blue-500" },
+        { label: "รายการทั้งหมด", value: 15, icon: Package, color:"bg-blue-500" }
       ],
       cutter: [
-        { label: "My Tasks", value: jobOrders.filter(jo => jo.status === "cutting").length, icon: Scissors },
-        { label: "Completed Today", value: 5, icon: CheckCircle },
-        { label: "Pending Tasks", value: 3, icon: Clock },
-        { label: "Total Pieces Cut", value: 127, icon: Package }
+        { label: "รายการวันนี้", value: jobOrders.filter(jo => jo.status === "cutting").length, icon: Scissors, color:"bg-blue-500" },
+        { label: "รายการสำเร็จ", value: 5, icon: CheckCircle, color:"bg-blue-500" },
+        { label: "รายการ กำลังตัด", value: 3, icon: Clock, color:"bg-red-500" },
+        { label: "ตัดแล้วกี่ชิ้น", value: 127, icon: Package, color:"bg-blue-500" }
       ],
       delivery: [
-        { label: "Ready to Ship", value: jobOrders.filter(jo => jo.status === "ready").length, icon: Package },
-        { label: "Out for Delivery", value: jobOrders.filter(jo => jo.status === "shipped").length, icon: Truck },
-        { label: "Delivered Today", value: 2, icon: CheckCircle },
-        { label: "Pending Pickup", value: 1, icon: Clock }
+        { label: "พร้อมจัดส่ง", value: jobOrders.filter(jo => jo.status === "ready").length, icon: Package, color:"bg-blue-500" },
+        { label: "กำลังจัดส่ง", value: jobOrders.filter(jo => jo.status === "shipped").length, icon: Truck, color:"bg-red-500" },
+        { label: "จัดส่งวันนี้", value: 2, icon: CheckCircle, color:"bg-blue-500" },
+        { label: "สินค้ารอรับ", value: 1, icon: Clock, color:"bg-blue-500" }
       ]
     };
     return stats[currentRole];
@@ -131,28 +133,26 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background to-steel/20">
+    <div className="min-h-screen ">
       <div className="container mx-auto p-6">
         {/* Header */}
         <div className="mb-8">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
-              <h1 className="text-3xl font-bold text-foreground mb-2">
-                Steel Cutting Management System
+              <h1 className="text-3xl font-bold text-black mb-2">
+                ระบบจัดการงานตัดเหล็ก
               </h1>
               <p className="text-muted-foreground">
-                Streamlined workflow management for steel cutting operations
+                ยินดีต้อนรับสู่ระบบจัดการงานตัดเหล็กของเรา! เลือกบทบาทของคุณเพื่อดูข้อมูลที่เกี่ยวข้อง
               </p>
             </div>
             
             <div className="flex items-center gap-4">
               {/* Quick Create Button */}
-              <Link to="/new-job-order">
-                <Button variant="steel" size="lg" className="shadow-elevation">
+                <Button variant="steel" size="lg" className="shadow-elevation" onClick={() => router.push('/new-job-order')}>
                   <Plus className="mr-2 h-4 w-4" />
-                  New Job Order
+                  สร้าง รายการใหม่
                 </Button>
-              </Link>
               
               {/* Role Switcher */}
               <div className="flex items-center gap-2">
@@ -173,15 +173,15 @@ const Dashboard = () => {
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           {getStatsForRole().map((stat, index) => (
-            <Card key={index} className="shadow-steel hover:shadow-elevation transition-shadow">
+            <Card key={index} className={`shadow-steel border-none hover:shadow-elevation transition-shadow ${stat.color}`}>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
+                <CardTitle className="text-sm font-medium text-white">
                   {stat.label}
                 </CardTitle>
-                <stat.icon className="h-4 w-4 text-primary" />
+                <stat.icon className="h-4 w-4 text-white" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-foreground">{stat.value}</div>
+                <div className="text-2xl font-bold text-white">{stat.value}</div>
               </CardContent>
             </Card>
           ))}
@@ -195,11 +195,11 @@ const Dashboard = () => {
             <Card className="shadow-steel">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <FileText className="h-5 w-5 text-primary" />
+                  <FileText className="h-5 w-5 text-blue-500" />
                   Job Orders - {getRoleDisplayName(currentRole)} View
                 </CardTitle>
                 <CardDescription>
-                  Current job orders in the system
+                  รายการงานตัดเหล็กทั้งหมดที่คุณสามารถจัดการได้
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -208,8 +208,8 @@ const Dashboard = () => {
                     <div key={order.id} className="border rounded-lg p-4 bg-card hover:bg-muted/50 transition-colors">
                       <div className="flex items-start justify-between mb-3">
                         <div>
-                          <h3 className="font-semibold text-foreground">{order.poNumber}</h3>
-                          <p className="text-sm text-muted-foreground">{order.customerName}</p>
+                          <h3 className="font-semibold text-blue-500">{order.poNumber}</h3>
+                          <p className="text-sm text-black">{order.customerName}</p>
                         </div>
                         <Badge className={getStatusColor(order.status)}>
                           {order.status.toUpperCase()}
@@ -218,20 +218,20 @@ const Dashboard = () => {
                       
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
                         <div>
-                          <span className="text-muted-foreground">Steel:</span>
+                          <span className="text-muted-foreground">ชนิดเหล็ก:</span>
                           <p className="font-medium">{order.steelType}</p>
                         </div>
                         <div>
-                          <span className="text-muted-foreground">Qty:</span>
-                          <p className="font-medium">{order.quantity} pcs</p>
+                          <span className="text-muted-foreground">จำนวน:</span>
+                          <p className="font-medium">{order.quantity} ชิ้น</p>
                         </div>
                         <div>
-                          <span className="text-muted-foreground">Dimensions:</span>
+                          <span className="text-muted-foreground">ขนาด:</span>
                           <p className="font-medium">{order.width}×{order.length}×{order.thickness}mm</p>
                         </div>
                         {order.weight && (
                           <div>
-                            <span className="text-muted-foreground">Weight:</span>
+                            <span className="text-muted-foreground">น้ำหนัก:</span>
                             <p className="font-medium">{order.weight} kg</p>
                           </div>
                         )}
@@ -241,26 +241,26 @@ const Dashboard = () => {
                       
                       <div className="flex justify-between items-center">
                         <span className="text-xs text-muted-foreground">
-                          Created: {order.createdAt.toLocaleDateString()}
+                          สร้างเมื่อ: {order.createdAt.toLocaleDateString()}
                         </span>
                         <div className="flex gap-2">
                           {currentRole === "clerk" && (
                             <>
-                              <Button size="sm" variant="outline" onClick={() => navigate(`/job-order/${order.id}`)}>View Details</Button>
-                              <Button size="sm">Create Summary</Button>
+                              <Button size="sm" className="bg-blue-500 text-white border-none hover:bg-blue-600 hover:scale-110 hover:cursor-pointer transition-all" variant="outline" onClick={() => router.push(`/job-order/${order.id}`)}>รายละเอียด</Button>
+                              <Button size="sm" className="border-1 border-black hover:cursor-pointer hover:scale-110 transition-all ">สรุปรายการ</Button>
                             </>
                           )}
                           {currentRole === "supervisor" && (
                             <>
-                              <Button size="sm" onClick={() => navigate("/production")}>Production View</Button>
-                              <Button size="sm">Assign Cutter</Button>
+                              <Button size="sm" onClick={() => router.push("/production")}>รายละเอียดสินค้า</Button>
+                              <Button size="sm">ส่ง ตัด</Button>
                             </>
                           )}
                           {currentRole === "cutter" && order.status === "cutting" && (
-                            <Button size="sm">Mark Complete</Button>
+                            <Button size="sm">ดำเนินการสำเร็จ</Button>
                           )}
                           {currentRole === "delivery" && order.status === "ready" && (
-                            <Button size="sm">Prepare Delivery</Button>
+                            <Button size="sm">เตรียม จัดส่ง</Button>
                           )}
                         </div>
                       </div>
@@ -276,22 +276,22 @@ const Dashboard = () => {
             <Card className="shadow-steel">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Package className="h-5 w-5 text-primary" />
-                  Workflow Status
+                  <Package className="h-5 w-5 text-blue-500" />
+                  สถานะ รายการ
                 </CardTitle>
                 <CardDescription>
-                  Current workflow distribution
+                  ปริมาณงานในแต่ละขั้นตอนการผลิต
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
                   {[
-                    { status: "pending", label: "Pending Orders", count: jobOrders.filter(jo => jo.status === "pending").length },
-                    { status: "cutting", label: "In Cutting", count: jobOrders.filter(jo => jo.status === "cutting").length },
-                    { status: "weighing", label: "Weighing", count: jobOrders.filter(jo => jo.status === "weighing").length },
-                    { status: "ready", label: "Ready to Ship", count: jobOrders.filter(jo => jo.status === "ready").length },
-                    { status: "shipped", label: "Shipped", count: jobOrders.filter(jo => jo.status === "shipped").length },
-                    { status: "completed", label: "Completed", count: jobOrders.filter(jo => jo.status === "completed").length }
+                    { status: "pending", label: "รายการปัจจุบัน", count: jobOrders.filter(jo => jo.status === "pending").length },
+                    { status: "cutting", label: "กำลังตัด", count: jobOrders.filter(jo => jo.status === "cutting").length },
+                    { status: "weighing", label: "ชั่งน้ำหนัก", count: jobOrders.filter(jo => jo.status === "weighing").length },
+                    { status: "ready", label: "พร้อมจัดส่งสินค้า", count: jobOrders.filter(jo => jo.status === "ready").length },
+                    { status: "shipped", label: "กำลังจัดส่งสินค้า", count: jobOrders.filter(jo => jo.status === "shipped").length },
+                    { status: "completed", label: "สำเร็จ", count: jobOrders.filter(jo => jo.status === "completed").length }
                   ].map((item) => (
                     <div key={item.status} className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
                       <span className="text-sm font-medium">{item.label}</span>
@@ -305,31 +305,29 @@ const Dashboard = () => {
             {/* Quick Actions */}
             <Card className="shadow-steel mt-6">
               <CardHeader>
-                <CardTitle>Quick Actions</CardTitle>
+                <CardTitle>เมนู</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">
                   {currentRole === "clerk" && (
                     <>
-                      <Link to="/new-job-order">
-                        <Button className="w-full justify-start" variant="outline">
-                          <FileText className="mr-2 h-4 w-4" />
-                          New Job Order
+                        <Button className="w-full justify-start border-1 border-black hover:cursor-pointer hover:scale-110 transition-all"  onClick={() => router.push('/new-job-order')}>
+                          <FileText className="mr-2 h-4 w-4 " />
+                          สร้าง รายการใหม่
                         </Button>
-                      </Link>
-                      <Button className="w-full justify-start" variant="outline">
+                      <Button className="w-full justify-start border-1 border-black hover:cursor-pointer hover:scale-110 transition-all" >
                         <DollarSign className="mr-2 h-4 w-4" />
-                        Generate Invoice
+                        สร้าง ใบแจ้งหนี้
                       </Button>
                     </>
                   )}
                   {currentRole === "supervisor" && (
                     <>
-                      <Button className="w-full justify-start" variant="outline">
+                      <Button className="w-full justify-start border-1 border-black hover:cursor-pointer hover:scale-110 transition-all" >
                         <Users className="mr-2 h-4 w-4" />
                         Manage Cutters
                       </Button>
-                      <Button className="w-full justify-start" variant="outline">
+                      <Button className="w-full justify-start border-1 border-black hover:cursor-pointer hover:scale-110 transition-all" >
                         <Scissors className="mr-2 h-4 w-4" />
                         Production Report
                       </Button>
@@ -337,11 +335,11 @@ const Dashboard = () => {
                   )}
                   {currentRole === "cutter" && (
                     <>
-                      <Button className="w-full justify-start" variant="outline">
+                      <Button className="w-full justify-start border-1 border-black hover:cursor-pointer hover:scale-110 transition-all" >
                         <Clock className="mr-2 h-4 w-4" />
                         Clock In/Out
                       </Button>
-                      <Button className="w-full justify-start" variant="outline">
+                      <Button className="w-full justify-start border-1 border-black hover:cursor-pointer hover:scale-110 transition-all">
                         <Package className="mr-2 h-4 w-4" />
                         Record Weight
                       </Button>
@@ -349,11 +347,11 @@ const Dashboard = () => {
                   )}
                   {currentRole === "delivery" && (
                     <>
-                      <Button className="w-full justify-start" variant="outline">
+                      <Button className="w-full justify-start border-1 border-black hover:cursor-pointer hover:scale-110 transition-all">
                         <Truck className="mr-2 h-4 w-4" />
                         Schedule Delivery
                       </Button>
-                      <Button className="w-full justify-start" variant="outline">
+                      <Button className="w-full justify-start border-1 border-black hover:cursor-pointer hover:scale-110 transition-all" >
                         <CheckCircle className="mr-2 h-4 w-4" />
                         Delivery Report
                       </Button>

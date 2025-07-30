@@ -32,7 +32,6 @@ export default function Auth() {
         email,
         password,
       })
-
       if (result?.error) {
         toast.error("wrong email or password", {
       position: 'bottom-right',

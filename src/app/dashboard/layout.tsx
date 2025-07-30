@@ -1,7 +1,6 @@
 // src/app/layout.tsx
 import "../globals.css";
-
-
+import Layout from "@/components/Layout";
 export const metadata = {
   title: "My App",
   description: "My App Description",
@@ -13,12 +12,8 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
-      <body>
-      
+    <Layout>
           {children}
-        
-      </body>
-    </html>
+    </Layout>
   );
 }
