@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useRouter } from "next/navigation";
-import Sidebar from "@/components/SideBar";
+import { useEffect } from "react";
 import { 
   FileText, 
   Users, 
@@ -76,8 +76,8 @@ const mockJobOrders: JobOrder[] = [
   }
 ];
 
-const Dashboard = () => {
-  const [currentRole, setCurrentRole] = useState<UserRole>("clerk");
+const Dashboard = ({role}) => {
+  const [currentRole, setCurrentRole] = useState<UserRole>(role=='superadmin'?'Supervisor':role || "clerk");
   const [jobOrders] = useState<JobOrder[]>(mockJobOrders);
   const router = useRouter();
   const getStatusColor = (status: JobOrder['status']) => {
@@ -131,7 +131,14 @@ const Dashboard = () => {
     };
     return names[role];
   };
-
+  useEffect(()=> {
+    if (role === 'superadmin') {
+      setCurrentRole('supervisor');
+    }
+    else if (role == ''){
+      setCurrentRole('clerk');
+    }
+  }, [role,]);
   return (
     <div className="min-h-screen ">
       <div className="container mx-auto p-6">
@@ -140,7 +147,7 @@ const Dashboard = () => {
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
               <h1 className="text-3xl font-bold text-black mb-2">
-                ระบบจัดการงานตัดเหล็ก
+                ระบบจัดการงานตัดเหล็ก by {role} 
               </h1>
               <p className="text-muted-foreground">
                 ยินดีต้อนรับสู่ระบบจัดการงานตัดเหล็กของเรา! เลือกบทบาทของคุณเพื่อดูข้อมูลที่เกี่ยวข้อง
@@ -154,18 +161,17 @@ const Dashboard = () => {
                   สร้าง รายการใหม่
                 </Button>
               
-              {/* Role Switcher */}
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-muted-foreground">Role:</span>
-                <Tabs value={currentRole} onValueChange={(value) => setCurrentRole(value as UserRole)}>
-                  <TabsList className="bg-card shadow-steel">
-                    <TabsTrigger value="clerk">Clerk</TabsTrigger>
-                    <TabsTrigger value="supervisor">Supervisor</TabsTrigger>
-                    <TabsTrigger value="cutter">Cutter</TabsTrigger>
-                    <TabsTrigger value="delivery">Delivery</TabsTrigger>
-                  </TabsList>
-                </Tabs>
-              </div>
+              {/* <div className="flex items-center gap-2"> */}
+                {/* <span className="text-sm text-muted-foreground">Role:</span> */}
+                {/* <Tabs value={currentRole} onValueChange={(value) => setCurrentRole(value as UserRole)}> */}
+                  {/* <TabsList className="bg-card shadow-steel"> */}
+                    {/* <TabsTrigger value="clerk">Clerk</TabsTrigger> */}
+                    {/* <TabsTrigger value="supervisor">Supervisor</TabsTrigger> */}
+                    {/* <TabsTrigger value="cutter">Cutter</TabsTrigger> */}
+                    {/* <TabsTrigger value="delivery">Delivery</TabsTrigger> */}
+                  {/* </TabsList> */}
+                {/* </Tabs> */}
+              {/* </div> */}
             </div>
           </div>
         </div>

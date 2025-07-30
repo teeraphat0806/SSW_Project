@@ -61,11 +61,12 @@ export default function NavbarWithSidebar() {
         <div className="mt-auto p-4 border-t">
           <div className="flex items-center gap-3 mb-2">
             <Avatar.Root className="w-10 h-10 rounded-full bg-gray-200 overflow-hidden">
-              <Avatar.Image
+              {session.user.image ? <Avatar.Image
                 src={session.user.image || ''}
                 className="w-full h-full object-cover"
                 alt={session.user.name ?? ''}
-              />
+              />:
+              <Avatar.Image src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRA1YK7AzLFlNa7rz_sxokNpo7RO-PHrJpvJQ&s" className="w-full h-full object-cover" />}
             </Avatar.Root>
             <div className="text-sm">
               <p className="font-semibold">{session.user.name}</p>
