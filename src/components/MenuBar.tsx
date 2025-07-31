@@ -6,17 +6,20 @@ import Link from 'next/link'
 import { signOut, useSession } from 'next-auth/react'
 import * as Avatar from '@radix-ui/react-avatar'
 import Logo from '@/components/Logo'
+import ThemeToggle from '@/components/ThemeToggle'
+//import MenuBar from '@/components/MenuBar'
+
 
 export default function NavbarWithSidebar() {
   const [open, setOpen] = useState(false)
   const { data: session, status } = useSession()
-
+ 
   if (status !== 'authenticated' || !session?.user) return null
 
   return (
     <>
       {/* Top Navbar */}
-      <nav className="fixed top-0 left-0 right-0 h-16 bg-white shadow-md z-50 flex items-center justify-between px-4">
+      <nav className="fixed top-0 left-0 right-0 h-16 bg-box shadow-md z-50 flex items-center justify-between px-4">
         <div className="flex items-center gap-4">
           <Logo />
           <h1 className="font-bold text-lg">SSW Steel Center</h1>
@@ -55,6 +58,8 @@ export default function NavbarWithSidebar() {
           <SidebarItem icon={<Home size={20} />} label="Dashboard" href="/dashboard" />
           <SidebarItem icon={<ClipboardList size={20} />} label="Orders" href="/orders" />
           <SidebarItem icon={<Users size={20} />} label="Staffs" href="/staff" />
+          <ThemeToggle/>
+
         </nav>
 
         {/* Bottom Avatar */}

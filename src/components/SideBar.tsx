@@ -10,6 +10,7 @@ import { useSession, signOut } from 'next-auth/react'
 import * as Avatar from '@radix-ui/react-avatar'
 import Link from 'next/link'
 import Logo from '@/components/Logo'
+import ThemeToggle from '@/components/ThemeToggle'
 
 export default function Sidebar() {
   const { data: session, status } = useSession()
@@ -33,6 +34,8 @@ export default function Sidebar() {
         <SidebarItem icon={<Home size={30} />} label="Dashboard" href="/dashboard" />
         <SidebarItem icon={<ClipboardList size={30} />} label="Orders" href="/orders" />
         <SidebarItem icon={<Users size={30} />} label="Staffs" href="/staff" />
+
+        <ThemeToggle/>
       </nav>
 
       {/* Bottom - Avatar & Logout */}
