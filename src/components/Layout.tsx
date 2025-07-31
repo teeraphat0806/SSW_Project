@@ -14,6 +14,7 @@ export default function Layout({ children }) {
     <>
       {isMobile?<MenuBar />:<Sidebar />}
       <main>{children}</main>
+      
     </>
   )
 }
