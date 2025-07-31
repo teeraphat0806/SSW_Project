@@ -19,7 +19,7 @@ export default function NavbarWithSidebar() {
   return (
     <>
       {/* Top Navbar */}
-      <nav className="fixed top-0 left-0 right-0 h-16 bg-box shadow-md z-50 flex items-center justify-between px-4">
+      <nav className="fixed top-0 left-0 right-0 h-16 bg-background shadow-md z-50 flex items-center justify-between px-4">
         <div className="flex items-center gap-4">
           <Logo />
           <h1 className="font-bold text-lg">SSW Steel Center</h1>
@@ -42,12 +42,12 @@ export default function NavbarWithSidebar() {
 
       {/* Slide-in Sidebar */}
       <aside
-        className={`fixed top-0 left-0 h-full w-64 bg-white shadow-lg z-50 transform transition-transform duration-300 ${
+        className={`fixed top-0 left-0 h-full w-64 bg-background shadow-lg z-50 transform transition-transform duration-300 ${
           open ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
         <div className="flex items-center justify-between p-4 border-b">
-          <h2 className="text-lg font-bold">Menu</h2>
+          <h2 className="text-lg font-bold text-foreground">Menu</h2>
           <button onClick={() => setOpen(false)}>
             <X size={20} />
           </button>
@@ -65,7 +65,7 @@ export default function NavbarWithSidebar() {
         {/* Bottom Avatar */}
         <div className="mt-auto p-4 border-t">
           <div className="flex items-center gap-3 mb-2">
-            <Avatar.Root className="w-10 h-10 rounded-full bg-gray-200 overflow-hidden">
+            <Avatar.Root className="w-10 h-10 rounded-full bg-background overflow-hidden">
               {session.user.image ? <Avatar.Image
                 src={session.user.image || ''}
                 className="w-full h-full object-cover"
@@ -103,7 +103,7 @@ function SidebarItem({
   return (
     <Link
       href={href}
-      className="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-gray-100 text-sm text-gray-700 transition"
+      className="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-gray-100 text-sm text-foreground transition"
     >
       {icon}
       {label}

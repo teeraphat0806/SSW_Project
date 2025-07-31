@@ -1,6 +1,6 @@
 // src/app/layout.tsx
 import "../globals.css";
-
+import Layout from "@/components/Layout";
 export const metadata = {
   title: "My App",
   description: "My App Description",
@@ -11,7 +11,9 @@ export default function SuperadminDashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return (
-    <main>{children}</main>
-  );
+   return (
+      <Layout>
+            {children}
+      </Layout>
+    );
 }

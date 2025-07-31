@@ -67,15 +67,15 @@ export const SalaryAdjustmentForm = ({ employees, onAdjustmentSubmit }: SalaryAd
                 value={selectedEmployeeId}
                 onValueChange={setSelectedEmployeeId}
             >
-                <SelectTrigger className="bg-white text-black border border-gray-300 shadow-sm">
+                <SelectTrigger className="bg-background text-muted-foreground border border-gray-300 shadow-sm">
                     <SelectValue placeholder="เลือกพนักงาน" />
                 </SelectTrigger>
-                <SelectContent className="bg-white text-black border border-gray-200 shadow-lg">
+                <SelectContent className="bg-background text-muted-foreground border border-gray-200 shadow-lg">
                     {employees.map((employee) => (
                         <SelectItem
                             key={employee.id}
                             value={employee.id}
-                            className="bg-white text-black hover:bg-blue-50 cursor-pointer"
+                            className="bg-background text-muted-foreground hover:bg-blue-50 cursor-pointer"
                         >
                             <div className="flex flex-col">
                                 <span className="font-medium">{employee.name} ({employee.employeeCode})</span>
@@ -106,9 +106,9 @@ export const SalaryAdjustmentForm = ({ employees, onAdjustmentSubmit }: SalaryAd
               id="amount"
               type="number"
               step="0.01"
-              placeholder="Enter amount (positive to increase, negative to decrease)"
+              placeholder="ใส่จำนวนเป็นบวกเพื่อเพิ่มเงินเดือน และใส่จำนวนติดลบเพื่อลดเงินเดือน"
               value={amount}
-              className='bg-white border-1 border-black '
+              className='bg-background border-1 border-black '
               onChange={(e) => setAmount(e.target.value)}
             />
             <p className="text-xs text-muted-foreground">
@@ -120,11 +120,11 @@ export const SalaryAdjustmentForm = ({ employees, onAdjustmentSubmit }: SalaryAd
             <Label htmlFor="reason">รายละเอียด</Label>
             <Textarea
               id="reason"
-              placeholder="Enter the reason for this salary adjustment"
+              placeholder="ใส่เหตุผลการปรับเงินเดือน เช่น การประเมินผลงาน, การเลื่อนตำแหน่ง ฯลฯ"
               value={reason}
               onChange={(e) => setReason(e.target.value)}
               rows={3}
-              className='bg-white border-1 border-black '
+              className='bg-background border-1 border-black '
             />
           </div>
 

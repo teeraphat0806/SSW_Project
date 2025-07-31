@@ -147,7 +147,7 @@ const Dashboard = ({role}) => {
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
               <h1 className="text-3xl font-bold text-black mb-2">
-                ระบบจัดการงานตัดเหล็ก by {role} 
+                ระบบจัดการงานตัดเหล็ก
               </h1>
               <p className="text-muted-foreground">
                 ยินดีต้อนรับสู่ระบบจัดการงานตัดเหล็กของเรา! เลือกบทบาทของคุณเพื่อดูข้อมูลที่เกี่ยวข้อง

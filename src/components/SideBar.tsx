@@ -19,7 +19,7 @@ export default function Sidebar() {
 
   return (
     <aside
-      className="group fixed top-0 left-0 h-full w-24 hover:w-64 bg-white shadow-md transition-all duration-300 z-50 overflow-hidden flex flex-col justify-between"
+      className="group fixed top-0 left-0 h-full w-24 hover:w-64 bg-background shadow-md transition-all duration-300 z-50 overflow-hidden flex flex-col justify-between"
     >
       {/* Top - Logo */}
       <div className="flex items-center justify-center h-24 ">
@@ -31,10 +31,9 @@ export default function Sidebar() {
 
       {/* Menu */}
       <nav className="flex flex-col space-y-1 px-2">
-        <SidebarItem icon={<Home size={30} />} label="Dashboard" href="/dashboard" />
-        <SidebarItem icon={<ClipboardList size={30} />} label="Orders" href="/orders" />
-        <SidebarItem icon={<Users size={30} />} label="Staffs" href="/staff" />
-
+        <SidebarItem icon={<Home size={30} className='text-foreground'/>} label="Dashboard" href="/dashboard" />
+        <SidebarItem icon={<ClipboardList size={30} className='text-foreground'/>} label="Orders" href="/orders" />
+        <SidebarItem icon={<Users size={30} className='text-foreground'/>} label="Staffs" href="/staff" />
         <ThemeToggle/>
       </nav>
 
@@ -58,16 +57,16 @@ export default function Sidebar() {
           </Avatar.Root>
           <span className="hidden group-hover:inline text-sm font-medium truncate">
             <div className="px-2 py-1 border-b">
-              <p className="text-sm font-semibold">{session.user.name}</p>
-              <p className="text-xs text-gray-500">{session.user.email}</p>
-              <p className="text-xs text-gray-400">Role: {session.user.role}</p>
+              <p className="text-sm font-semibold text-foreground">{session.user.name}</p>
+              <p className="text-xs text-foreground">{session.user.email}</p>
+              <p className="text-xs text-foreground">Role: {session.user.role}</p>
           </div>
           </span>
         </div>
 
         <button
           onClick={() => signOut({ callbackUrl: '/' })}
-          className="mt-3 flex items-center gap-2 text-red-600 hover:bg-red-50 rounded px-2 py-1 w-full group-hover:justify-start"
+          className="mt-3 flex items-center gap-2 text-red-600 hover:bg-red-50 hover:cursor-pointer rounded px-2 py-1 w-full group-hover:justify-start"
         >
           <LogOut size={18} />
           <span className="hidden group-hover:inline text-sm">Logout</span>
@@ -89,7 +88,7 @@ function SidebarItem({
   return (
     <Link
       href={href}
-      className="flex items-center gap-3 px-3 py-2 rounded-md text-gray-700 hover:bg-gray-100 transition-colors duration-200"
+      className="flex items-center gap-3 px-3 py-2 rounded-md text-foreground hover:bg-gray-400 transition-colors duration-200"
     >
       {icon}
       <span className="hidden group-hover:inline text-sm">{label}</span>

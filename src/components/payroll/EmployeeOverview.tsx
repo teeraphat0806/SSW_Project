@@ -22,7 +22,7 @@ export const EmployeeOverview = ({ employees, onGeneratePayslip }: EmployeeOverv
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
             <Card>
               <CardContent className="pt-6">
-                <div className="text-2xl font-bold text-black">
+                <div className="text-2xl font-bold text-foreground">
                   ฿{totalMonthlySalary.toLocaleString()}
                 </div>
                 <p className="text-sm text-muted-foreground">ยอดเงินเดือนรวมทั้งบริษัทประจำเดือน</p>
