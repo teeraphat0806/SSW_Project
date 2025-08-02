@@ -178,7 +178,7 @@ const NewJobOrder = () => {
   };
 
   return (
-    <div className="min-h-screen pl-24 ">
+    <div className="min-h-screen md:pl-24 ">
       <div className="container mx-auto p-6">
         {/* Header */}
         <div className="mb-8">
