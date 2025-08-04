@@ -51,7 +51,7 @@ export default function Payroll (){
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <div className="container mx-auto p-6 space-y-6 md:ml-24">
       <div className="text-center space-y-2">
         <h1 className="text-3xl font-bold">ระบบ บริหารเงินเดือนพนักงาน</h1>
         <p className="text-muted-foreground">
