@@ -16,6 +16,8 @@ model User {
   role      Role     @default(guest)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  Staff     Staff?   @relation(fields: [staffId], references: [id],onDelete: SetNull)
+  staffId   Int?     @unique
 }
 
 model Bill {
@@ -101,6 +103,7 @@ model Staff {
   Salary                       Float
   Bill_Bill_deliveredByToStaff Bill[]        @relation("Bill_deliveredByToStaff")
   Bill_Bill_salesNameToStaff   Bill[]        @relation("Bill_salesNameToStaff")
+  User                         User? 
   StaffIncome                  StaffIncome[]
 }
 

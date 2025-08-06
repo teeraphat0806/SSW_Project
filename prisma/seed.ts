@@ -31,9 +31,9 @@ async function main() {
   await prisma.$executeRawUnsafe(`ALTER SEQUENCE "TemporaryBill_id_seq" RESTART WITH 1`)
 
   // 3. ใส่ข้อมูล
+  await prisma.staff.createMany({ data: staffData })
   await prisma.user.createMany({ data: userData })
   await prisma.customer.createMany({ data: customerData })
-  await prisma.staff.createMany({ data: staffData })
   await prisma.orderPO.createMany({ data: orderPoData })
   await prisma.bill.createMany({ data: billData })
   await prisma.rcptorg.createMany({ data: rcptorgData })

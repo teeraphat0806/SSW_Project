@@ -15,7 +15,7 @@ export async function GET(req: NextRequest) {
 
         return NextResponse.json(result, { status: 200 });
     } catch (error) {
-        return NextResponse.json({ error: "Failed to fetch payrolls" }, { status: 500 });
+        return NextResponse.json({ error: "Failed to fetch payrolls"+error }, { status: 500 });
     }
 }
 export async function POST(req: NextRequest){

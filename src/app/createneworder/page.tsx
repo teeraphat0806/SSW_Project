@@ -4,21 +4,11 @@ import { useRouter } from "next/navigation";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { ToastContainer, toast } from "react-toastify";
@@ -30,10 +20,6 @@ import "../globals.css";
 import {
   ArrowLeft,
   FileText,
-  Package,
-  Ruler,
-  Weight,
-  Plus,
   Save,
   X,
 } from "lucide-react";
@@ -141,10 +127,8 @@ const NewJobOrder = () => {
       if (item.length <= 0) return "Length must be greater than 0";
       if (item.thickness <= 0) return "Thickness must be greater than 0";
     }
-
     return null;
   };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -153,12 +137,9 @@ const NewJobOrder = () => {
       toast.error(`ขออภัย มีข้อผิดพลาด: ${validationError}`, {
         position: "bottom-right",
       });
-
       return;
     }
-
     setIsSubmitting(true);
-
     try {
       // Simulate API call
       await new Promise((resolve) => setTimeout(resolve, 1500));
@@ -171,12 +152,10 @@ const NewJobOrder = () => {
         createdAt: new Date(),
         totalItems: steelItems.reduce((sum, item) => sum + item.quantity, 0),
       };
-
       console.log("New Job Order:", jobOrder);
       toast.success("สร้างออเดอร์สำเร็จ", {
         position: "bottom-right",
       });
-
       // Navigate back to dashboard
       router.push("/dashboard");
     } catch (error) {
@@ -202,7 +181,6 @@ const NewJobOrder = () => {
         return "bg-muted text-muted-foreground";
     }
   };
-
   return (
     <div className="min-h-screen md:pl-24 ">
       <div className="container mx-auto p-6">
@@ -287,33 +265,6 @@ const NewJobOrder = () => {
               </div>
             ))}
           </div>
-          {/* <div className="mt-2 space-y-1">
-            {UploadFile.map((file, index) => (
-              <div
-                key={index}
-                className="text-sm text-gray-700 flex items-center gap-2"
-              >
-                <span>{file.name}</span>
-                {file.type.startsWith("image/") && (
-                  <img
-                    src={URL.createObjectURL(file)}
-                    alt="preview"
-                    className="h-10 w-10 object-cover border rounded"
-                  />
-                )}
-                {file.type === "application/pdf" && (
-                  <a
-                    href={URL.createObjectURL(file)}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-blue-600 underline"
-                  >
-                    ดูไฟล์
-                  </a>
-                )}
-              </div>
-            ))}
-          </div> */}
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-8">

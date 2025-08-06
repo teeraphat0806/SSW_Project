@@ -10,6 +10,7 @@ import { Loader2, Shield } from 'lucide-react';
 import { useRouter } from "next/navigation";
 import { signIn } from 'next-auth/react'
 import { ToastContainer, toast } from 'react-toastify';
+import "../globals.css";
 export default function Auth() {
   const [isLoading, setIsLoading] = useState(false);
   const [email, setEmail] = useState('');
@@ -21,6 +22,8 @@ export default function Auth() {
     router.replace("/profile");
     return;
   }
+
+
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -71,8 +74,8 @@ export default function Auth() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-muted p-4">
-      <Card className="w-full max-w-md dark:bg-black dark:text-white">
+       <div className="min-h-screen flex items-center justify-center bg-background text-foreground p-4">
+      <Card className="w-full max-w-md bg-background text-foreground">
         <CardHeader className="text-center">
           <div className="mx-auto w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mb-2">
             <Shield className="h-6 w-6 text-primary text-blue-500" />

@@ -44,4 +44,13 @@ export const staffData = [
     social_security: 'SS123456005',
     Salary: 30000.0,
   },
+  {
+    name: 'หัวหน้าช่าง 2',
+    position: 'หัวหน้าช่าง',
+    bankAccount: '1234567890126',
+    startAt: new Date('2023-05-21'),
+    code: 'STF1006',
+    social_security: 'SS123456006',
+    Salary: 30000.0,
+  },
 ]
