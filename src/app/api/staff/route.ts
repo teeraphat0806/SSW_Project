@@ -2,7 +2,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "../auth/[...nextauth]/route";
 import { NextResponse , NextRequest } from "next/server";
 import prisma from "@/lib/prisma";
-
+import { StaffSchema } from "@/lib/schemas/staff.schema";
 export async function GET(req: NextRequest) {
     const session = await getServerSession({ req, ...authOptions });
     // Fix: Only allow if role is superadmin OR supervisor
@@ -23,15 +23,21 @@ export async function POST(req: NextRequest){
     if (!session || !["superadmin", "supervisor"].includes(session.user?.role)) {
         return NextResponse.json({ error: "Permission Denied!!" }, { status: 400 });
     }
+
+    const body = await req.json(); // ✅ อ่าน JSON แค่ครั้งเดียว
+    const parsed = StaffSchema.safeParse(body); // ✅ ตรวจสอบ schema
+
+    if (!parsed.success) {
+        return NextResponse.json({ error: "Invalid data format", details: parsed.error.flatten() }, { status: 400 });
+    }
+    const staffData = { ...parsed.data, startAt: new Date() }; // 
     try {
-        if(!req.body) {
-            return NextResponse.json({ error: "No data provided" }, { status: 400 });
-        }
         const result = await prisma.staff.create({
-            data: await req.json(),
-        })
+            data: staffData, // ✅ ใช้ข้อมูลที่ผ่านการตรวจสอบแล้ว
+        });
         return NextResponse.json(result, { status: 201 });
     } catch (error) {
-        return NextResponse.json({ error: "Failed to create staff income" }, { status: 500 });
+        console.error("Database error:", error);
+        return NextResponse.json({ error: "Failed to create staff" }, { status: 500 });
     }
-} 
+}
