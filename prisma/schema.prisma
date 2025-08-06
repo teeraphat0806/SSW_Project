@@ -85,9 +85,9 @@ model Rcptorg {
   id           Int      @id @default(autoincrement())
   date         DateTime
   numberNo     String
-  codeCustomer String?
+  customerId   Int?
   totalPrice   Float
-  Customer     Customer? @relation(fields: [codeCustomer], references: [code], onDelete: SetNull)
+  Customer     Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
 }
 
 model Staff {
