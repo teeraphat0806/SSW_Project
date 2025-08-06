@@ -20,10 +20,10 @@ model User {
 
 model Bill {
   id                            Int       @id @default(autoincrement())
-  customerId                    Int
+  customerId                    Int?
   yourRef                       String
   invoiceNo                     String
-  idPo                          Int
+  idPo                          Int?
   credit                        DateTime
   deliveryOrderNo               String?
   salesName                     String
@@ -34,9 +34,9 @@ model Bill {
   vat                           Float
   dateReceive                   DateTime?
   typeBill                      String?
-  Customer                      Customer  @relation(fields: [customerId], references: [id])
+  Customer                      Customer?  @relation(fields: [customerId], references: [id], onDelete: SetNull)
   Staff_Bill_deliveredByToStaff Staff?    @relation("Bill_deliveredByToStaff", fields: [deliveredBy], references: [name])
-  OrderPO                       OrderPO   @relation(fields: [idPo], references: [id])
+  OrderPO                       OrderPO?   @relation(fields: [idPo], references: [id], onDelete: SetNull)
   Staff_Bill_salesNameToStaff   Staff     @relation("Bill_salesNameToStaff", fields: [salesName], references: [name])
 }
 
@@ -58,12 +58,12 @@ model Customer {
 model OrderPO {
   id         Int       @id @default(autoincrement())
   poNumber   String
-  customerId Int
+  customerId Int?
   total      Float
   vat        Float
   date       DateTime  @default(now())
   Bill       Bill[]
-  Customer   Customer  @relation(fields: [customerId], references: [id])
+  Customer   Customer?  @relation(fields: [customerId], references: [id], onDelete: SetNull)
   Product    Product[]
 }
 
@@ -77,17 +77,17 @@ model Product {
   actualWeight     Float?
   calculatedWeight Float?
   total            Float
-  orderPOId        Int
-  OrderPO          OrderPO @relation(fields: [orderPOId], references: [id])
+  orderPOId        Int?
+  OrderPO          OrderPO? @relation(fields: [orderPOId], references: [id], onDelete: SetNull)
 }
 
 model Rcptorg {
   id           Int      @id @default(autoincrement())
   date         DateTime
   numberNo     String
-  codeCustomer String
+  codeCustomer String?
   totalPrice   Float
-  Customer     Customer @relation(fields: [codeCustomer], references: [code])
+  Customer     Customer? @relation(fields: [codeCustomer], references: [code], onDelete: SetNull)
 }
 
 model Staff {
@@ -119,7 +119,7 @@ model TemporaryBill {
   order              String
   term               String
   dueDate            DateTime
-  customerId         Int
+  customerId         Int?
   shippingLocation   String
   numberNo           String
   date               DateTime
@@ -134,7 +134,7 @@ model TemporaryBill {
   vat                Float
   receivedBy         String
   deliveredBy        String
-  Customer           Customer @relation(fields: [customerId], references: [id])
+  Customer           Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
 }
 
 enum Role {
