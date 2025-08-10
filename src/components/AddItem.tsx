@@ -16,11 +16,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Separator } from "@/components/ui/separator";
 
 import "../app/globals.css";
 
-import { Package, Ruler, Weight, Plus, X } from "lucide-react";
+import { Package, Plus, X } from "lucide-react";
 
 export default function AddItem({
   steelItems,
