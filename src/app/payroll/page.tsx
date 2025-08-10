@@ -150,18 +150,12 @@ export default function PayrollPage() {
   const [manageOpen, setManageOpen] = useState(false);
 
   useEffect(() => {
-    const employeeData =fetch('/api/staff')
+    fetch('/api/staff')
       .then(res => res.json())
-      .catch(err => {
-        console.error('Error fetching employees:', err);
-      });
-    const employeeSalary = fetch('/api/staffIncome')
-    .then(res => res.json)
-    .catch(err => {
-        console.error('Error fetching employeesIncome:',err)
-    })  
-    console.log(employeeData)
-    
+      .then((data: Employee[]) => {
+        setEmployees(data);
+      })
+      .catch(err => console.error('Error fetching employees:', err));
   }, []);
 
   /* Derived – Dashboard */

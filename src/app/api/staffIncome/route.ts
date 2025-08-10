@@ -15,7 +15,7 @@ export async function GET(req: NextRequest) {
         const result = await prisma.staffIncome.findMany({
             include: {
                 Staff: {
-                    select: { name: true , position: true , bankAccount: true, startAt: true, code: true,social_security: true,Salary: true}
+                    select: { name: true , position: true , bankAccount: true, startDate: true, code: true,social_security: true,Salary: true}
                 }
             }
         });

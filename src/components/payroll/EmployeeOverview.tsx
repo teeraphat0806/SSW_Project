@@ -52,7 +52,7 @@ export const EmployeeOverview = ({ employees, onGeneratePayslip }: EmployeeOverv
               <TableBody>
                 {employees.map((employee) => (
                   <TableRow key={employee.id}>
-                    <TableCell className="font-medium">{employee.employeeCode}</TableCell>
+                    <TableCell className="font-medium">{employee.code}</TableCell>
                     <TableCell>{employee.name}</TableCell>
                     <TableCell>{employee.position}</TableCell>
                     <TableCell>฿{employee.currentSalary.toLocaleString()}</TableCell>

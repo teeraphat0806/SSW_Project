@@ -228,7 +228,7 @@ export const PayslipGenerator = ({ employee, onClose }: PayslipGeneratorProps) =
             <div className="grid grid-cols-2 gap-4 border p-4 rounded mb-4">
                 <div className="space-y-1">
                     <p><span className="font-medium">วันที่เริ่มงาน:</span> {format(new Date(employee.startDate), 'dd/MM/yy')}</p>
-                    <p><span className="font-medium">รหัสพนักงาน:</span> {employee.employeeCode}</p>
+                    <p><span className="font-medium">รหัสพนักงาน:</span> {employee.code}</p>
                 </div>
                 <div className="space-y-1">
                     <p><span className="font-medium">ชื่อพนักงาน:</span> {employee.name}</p>
