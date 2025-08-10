@@ -58,7 +58,7 @@ export default function AddItem({
           <div key={item.id} className="border rounded-lg p-4 bg-muted/30">
             <div className="flex items-center justify-between mb-4">
               <h4 className="font-semibold text-foreground">
-                Item #{index + 1}
+                ประเภทที่ {index + 1}
               </h4>
               {steelItems.length > 1 && (
                 <Button
@@ -75,7 +75,7 @@ export default function AddItem({
 
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
               <div>
-                <Label>Steel Type *</Label>
+                <Label>ประเภทเหล็ก</Label>
                 <Select
                   value={item.steelType}
                   onValueChange={(value) =>
@@ -101,7 +101,7 @@ export default function AddItem({
               </div>
 
               <div>
-                <Label>Quantity (pieces) *</Label>
+                <Label>จำนวน (ชิ้น)</Label>
                 <Input
                   type="number"
                   min="1"
@@ -118,7 +118,7 @@ export default function AddItem({
               </div>
 
               <div>
-                <Label>Width (mm) *</Label>
+                <Label>กว้าง (ซม.)</Label>
                 <Input
                   type="number"
                   min="0.1"
@@ -136,7 +136,7 @@ export default function AddItem({
               </div>
 
               <div>
-                <Label>Length (mm) *</Label>
+                <Label>ยาว (ซม.)</Label>
                 <Input
                   type="number"
                   min="0.1"
@@ -154,7 +154,7 @@ export default function AddItem({
               </div>
 
               <div>
-                <Label>Thickness (mm) *</Label>
+                <Label>หนา (ซม.)</Label>
                 <Input
                   type="number"
                   min="0.1"
@@ -173,7 +173,7 @@ export default function AddItem({
             </div>
 
             <div className="mt-4">
-              <Label>Item Notes</Label>
+              <Label>รายละเอียดเพิ่มเติม</Label>
               <Textarea
                 value={item.notes || ""}
                 onChange={(e) =>

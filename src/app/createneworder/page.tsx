@@ -5,30 +5,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { v4 as uuidv4 } from "uuid";
 import { Separator } from "@/components/ui/separator";
-import { Badge } from "@/components/ui/badge";
 import { ToastContainer, toast } from "react-toastify";
 import CustomerForm from "@/components/CustomerForm";
 import CustomerInfoBox from "@/components/CustomerInfoBox";
 import AddItem from "@/components/AddItem";
-import {
-  Popover,
-  PopoverTrigger,
-  PopoverContent,
-} from "@/components/ui/popover";
-import {
-  Command,
-  CommandInput,
-  CommandList,
-  CommandItem,
-  CommandEmpty,
-  CommandGroup,
-} from "@/components/ui/command";
-import { Check } from "lucide-react";
-import { cn } from "@/lib/utils";
-
 import "../globals.css";
 
 import { ArrowLeft, FileText, Save, X } from "lucide-react";
+import SelectCustomer from "@/components/SelectCustomer";
 
 interface SteelItem {
   id: string;
@@ -61,7 +45,6 @@ const NewJobOrder = () => {
   const [selectedCustomer, setSelectedCustomer] = useState("");
   const customers = [
     "บริษัท กรุงเทพการค้า จำกัด",
-    "บริษัท กรุงเทพการค้า จำกัด",
     "บริษัท เอเชีย เมทัล โปรดักส์",
     "บริษัท สยามเหล็ก จำกัด",
     "หจก. เชียงใหม่อินดัสตรี",
@@ -80,14 +63,14 @@ const NewJobOrder = () => {
 
   // Form state
   const [formData, setFormData] = useState({
-    poNumber: "",
+    code: "",
     customerName: "",
     customerEmail: "",
     customerPhone: "",
     deliveryAddress: "",
-    priority: "normal" as "low" | "normal" | "high" | "urgent",
     deliveryDate: "",
-    specialInstructions: "",
+    taxNumber: "",
+    faxNumber: "",
   });
 
   const [steelItems, setSteelItems] = useState<SteelItem[]>([
@@ -222,52 +205,14 @@ const NewJobOrder = () => {
           </p>
         </div>
         <div className="mb-3 flex items-center gap-3">
-          <Popover open={open} onOpenChange={setOpen} >
-            <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                role="combobox"
-                aria-expanded={open}
-                className=" w-[200px] justify-between "
-              >
-                {selectedCustomer || "เลือกบริษัทลูกค้า"}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-[200px] p-0">
-              <Command className="bg-background text-foreground hover:bg-accent hover:text-accent-foreground">
-                <CommandInput placeholder="ค้นหาบริษัท..." />
-                <CommandList>
-                  <CommandEmpty>ไม่พบลูกค้า</CommandEmpty>
-                  <CommandGroup>
-                    {customers.map((customer) => (
-                      <CommandItem
-                        key={customer}
-                        className="bg-background text-foreground hover:bg-accent hover:text-accent-foreground"
-                        onSelect={() => {
-                          setSelectedCustomer(customer);
-                          setOpen(false);
-                        }}
-                      >
-                        {customer}
-                        <Check
-                          className={cn(
-                            "ml-auto h-4 w-4",
-                            selectedCustomer === customer ? "opacity-100" : "opacity-0"
-                          )}
-                        />
-                      </CommandItem>
-                    ))}
-                  </CommandGroup>
-                </CommandList>
-              </Command>
-            </PopoverContent>
-          </Popover>
-
-          {/* <select className="rounded-md border border-gray-300 px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
-            <option>สยาม</option>
-            <option>สยามเหล็ก</option>
-            <option>สยามเหล็กกล้า</option>
-          </select>  */}
+          {showForm ? <></>: <SelectCustomer
+            open={open}
+            setOpen={setOpen}
+            selectedCustomer={selectedCustomer}
+            setSelectedCustomer={setSelectedCustomer}
+            customers={customers}/>}
+          
+          
           <button
             onClick={toggleForm}
             className="rounded-md bg-blue-500 px-4 py-1.5 text-sm text-white transition hover:bg-blue-600"
@@ -379,11 +324,11 @@ const NewJobOrder = () => {
                           <span className="text-muted-foreground">
                             Priority:
                           </span>
-                          <Badge
+                          {/* <Badge
                             className={getPriorityColor(formData.priority)}
                           >
                             {formData.priority.toUpperCase()}
-                          </Badge>
+                          </Badge> */}
                         </div>
                       </div>
                       <div className="flex justify-between text-sm">

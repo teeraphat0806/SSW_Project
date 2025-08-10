@@ -6,10 +6,11 @@ export default function CustomerInfoCard() {
     <div className="border rounded-2xl p-4 shadow-sm w-full bg-aa text-foreground">
       <div className="flex items-start gap-3 mb-2">
         <Building2 className="text-primary  w-10 h-10 mt-1" />
-        <div>
-          <h2 className="font-bold text-lg text-foreground">สยามจำกัด</h2>
+        <h1 className="mt-3 font-bold text-lg text-foreground">สยามจำกัด</h1>
+        {/* <div>
+          
           <p className="text-sm text-small-detail">PO : 2024-001</p>
-        </div>
+        </div> */}
       </div>
       
       <div className="flex items-center gap-3 mb-2 flex-wrap">
@@ -18,7 +19,6 @@ export default function CustomerInfoCard() {
         
         <Mail className="text-primary w-5 h-5" />
         <span className="text-foreground break-words">arm1532arm@gmail.com</span>
-        
       </div>
 
       <div className="flex items-start gap-3 mb-2">
