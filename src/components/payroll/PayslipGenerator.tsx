@@ -3,8 +3,10 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Employee, Payslip, PayslipItem } from '@/types/payroll';
 import { format } from 'date-fns';
-import { Printer, Download } from 'lucide-react';
+import { useRef } from "react";
+import { Printer, Download, ArrowLeft } from "lucide-react";
 import Logo  from '@/components/Logo'; 
+
 interface PayslipGeneratorProps {
   employee: Employee;
   onClose: () => void;
@@ -15,6 +17,7 @@ export const PayslipGenerator = ({ employee, onClose }: PayslipGeneratorProps) =
   const currentMonth = format(currentDate, 'MMMM');
   const currentYear = format(currentDate, 'yyyy');
   const dueDate = format(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0), 'dd/MM/yyyy');
+  const slipRef = useRef<HTMLDivElement>(null);
 
   // Generate mock payslip data
   const generatePayslipData = (): Payslip => {
@@ -60,31 +63,148 @@ export const PayslipGenerator = ({ employee, onClose }: PayslipGeneratorProps) =
 
   const payslip = generatePayslipData();
 
+  // Print-only (open a new window containing only the slip)
   const handlePrint = () => {
-    window.print();
+    if (!slipRef.current) return;
+
+    // 1) ดึง HTML ของสลิป
+    const slipHTML = slipRef.current.outerHTML;
+
+    // 2) รวมสไตล์จากหน้าเดิม (tailwind, shadcn, inline <style>)
+    //    และแก้ href ให้เป็น absolute ด้วย baseHref
+    const baseHref = location.origin;
+    const styleTags = Array.from(document.querySelectorAll<HTMLLinkElement | HTMLStyleElement>('link[rel="stylesheet"], style'))
+      .map((el) => {
+        if (el.tagName.toLowerCase() === 'link') {
+          const link = el as HTMLLinkElement;
+          const href = link.getAttribute('href') || '';
+          // ทำให้เป็น absolute เผื่อ href เป็น relative
+          const abs = href.startsWith('http') ? href : new URL(href, baseHref).href;
+          return `<link rel="stylesheet" href="${abs}" />`;
+        }
+        return el.outerHTML;
+      })
+      .join('\n');
+
+    // 3) สร้าง HTML เต็มสำหรับพิมพ์ (กำหนด A4 landscape)
+    const printHTML = `
+      <!doctype html>
+      <html lang="th">
+      <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <base href="${baseHref}">
+        <title>Payslip</title>
+        ${styleTags}
+        <style>
+          @page { size: A4 landscape; margin: 12mm; }
+          html, body { background: white; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+          .avoid-break-inside { break-inside: avoid; page-break-inside: avoid; }
+          @media print {
+            .print:shadow-none, .print\\:shadow-none, .shadow, .shadow-sm, .shadow-md { box-shadow: none !important; }
+            .print:border-none { border: none !important; }
+          }
+          img { max-width: 100%; height: auto; }
+          /* เผื่ออยากล็อคขนาด container เป็น A4 แนวนอนจริง */
+          .a4-landscape { width: 297mm; min-height: 210mm; margin: 0 auto; }
+        </style>
+      </head>
+      <body>
+        ${slipHTML}
+        <script>
+          (function() {
+            function go() {
+              if (document.fonts && document.fonts.ready) {
+                document.fonts.ready.then(function () {
+                  setTimeout(function(){ window.focus(); window.print(); }, 50);
+                  setTimeout(function(){ window.close && window.close(); }, 300);
+                });
+              } else {
+                setTimeout(function(){ window.focus(); window.print(); }, 50);
+                setTimeout(function(){ window.close && window.close(); }, 300);
+              }
+            }
+            if (document.readyState === 'complete') go();
+            else window.addEventListener('load', go);
+          })();
+        </script>
+      </body>
+      </html>`.trim();
+
+    // 4) สร้าง iframe ซ่อน แล้วเขียน HTML เข้าไป
+    const iframe = document.createElement('iframe');
+    iframe.style.position = 'fixed';
+    iframe.style.right = '0';
+    iframe.style.bottom = '0';
+    iframe.style.width = '0';
+    iframe.style.height = '0';
+    iframe.style.border = '0';
+    iframe.setAttribute('aria-hidden', 'true');
+    document.body.appendChild(iframe);
+
+    const doc = iframe.contentWindow?.document;
+    if (!doc) return;
+
+    doc.open();
+    doc.write(printHTML);
+    doc.close();
+
+    // 5) บาง browser ต้องสั่ง print ผ่าน iframe window
+    iframe.onload = () => {
+      const w = iframe.contentWindow;
+      if (!w) return;
+      // กันบางเครื่องพิมพ์ก่อนโหลดสไตล์/ฟอนต์
+      if ((w as any).document?.fonts?.ready) {
+        (w as any).document.fonts.ready.then(() => {
+          w.focus();
+          w.print();
+          setTimeout(() => document.body.removeChild(iframe), 500);
+        });
+      } else {
+        setTimeout(() => {
+          w.focus();
+          w.print();
+          setTimeout(() => document.body.removeChild(iframe), 500);
+        }, 100);
+      }
+    };
   };
 
+
   return (
-    <div className="max-w-4xl mx-auto">
-      <div className="flex justify-between items-center mb-4 print:hidden">
-        <Button onClick={onClose} className="bg-gray-200 hover:bg-gray-300 hover:cursor-pointer hover:scale-110 transition-all">
-          Back to Overview
-        </Button>
-        <div className="flex gap-2">
-          <Button onClick={handlePrint} className="bg-gray-200 hover:bg-gray-300 hover:cursor-pointer hover:scale-110 transition-all">
-            <Printer className="h-4 w-4 mr-2" />
-            Print
+    <div className="max-w-4xl mx-auto ">
+      {/* Toolbar (not printed) */}
+      <div className="print-toolbar sticky top-0 z-20 mb-4 flex items-center justify-between rounded-xl border bg-card/80 backdrop-blur supports-[backdrop-filter]:bg-card/60 px-3 py-2">
+        <div className="flex items-center gap-2">
+          <Button variant="ghost" onClick={onClose} className="gap-2 hover:cursor-pointer hover:scale-110 transition-all">
+            <ArrowLeft className="h-4 w-4" />
+            กลับหน้ารายชื่อ
           </Button>
-          <Button className="bg-gray-200 hover:bg-gray-300 hover:cursor-pointer hover:scale-110 transition-all">
-            <Download className="h-4 w-4 mr-2" />
-            Download PDF
+        </div>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={handlePrint} className="gap-2 hover:cursor-pointer hover:scale-110 transition-all">
+            <Printer className="h-4 w-4" />
+            พิมพ์
+          </Button>
+          <Button onClick={handlePrint} className="gap-2 text-white hover:cursor-pointer hover:scale-110 transition-all">
+            <Download className="h-4 w-4 text-white" />
+            ดาวน์โหลด PDF
           </Button>
         </div>
       </div>
 
-      <div className="overflow-x-auto md:overflow-x-visible">
-        <Card className="print:shadow-none print:border-none w-max md:scale-150 md:mt-50">
-        <CardContent className="p-8 text-sm font-thai">
+      {/* ---- ONLY THE SLIP BELOW WILL BE PRINTED IN THE POPUP ---- */}
+      <div ref={slipRef} className="overflow-x-auto md:overflow-x-visible">
+        <Card
+          className="
+            print:shadow-none print:border-none 
+            w-[297mm] min-h-[210mm]  /* A4 landscape */
+            bg-card border mx-auto
+            print:w-[297mm] print:min-h-[210mm]
+            scale-89
+          "
+        >
+          <CardContent className="p-8 text-sm font-thai">
             <div className="flex justify-between items-start mb-4">
                 <div className='flex items-center gap-4'>
                     <div>
@@ -108,7 +228,7 @@ export const PayslipGenerator = ({ employee, onClose }: PayslipGeneratorProps) =
             <div className="grid grid-cols-2 gap-4 border p-4 rounded mb-4">
                 <div className="space-y-1">
                     <p><span className="font-medium">วันที่เริ่มงาน:</span> {format(new Date(employee.startDate), 'dd/MM/yy')}</p>
-                    <p><span className="font-medium">รหัสพนักงาน:</span> {employee.employeeCode}</p>
+                    <p><span className="font-medium">รหัสพนักงาน:</span> {employee.code}</p>
                 </div>
                 <div className="space-y-1">
                     <p><span className="font-medium">ชื่อพนักงาน:</span> {employee.name}</p>
@@ -193,8 +313,8 @@ export const PayslipGenerator = ({ employee, onClose }: PayslipGeneratorProps) =
                     <p className="font-bold">-</p>
                 </div>
             </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

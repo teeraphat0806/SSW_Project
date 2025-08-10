@@ -97,15 +97,33 @@ model Staff {
   name                         String        @unique
   position                     String        @default("พนักงานทั่วไป")
   bankAccount                  String        @unique
-  startAt                      DateTime
+  bankName                     String        
+  startDate                    DateTime
   code                         String        @unique
   social_security              String        @unique
-  Salary                       Float
+  currentSalary                Float
   Bill_Bill_deliveredByToStaff Bill[]        @relation("Bill_deliveredByToStaff")
   Bill_Bill_salesNameToStaff   Bill[]        @relation("Bill_salesNameToStaff")
   User                         User? 
   StaffIncome                  StaffIncome[]
+  SalaryHistory                StaffSalary[] 
 }
+
+model StaffSalary {
+  id            Int       @id @default(autoincrement())
+  staffId       Int
+  amount        Float                
+  effectiveDate DateTime           
+  detail        String?              
+  createdBy     Int?                
+  createdAt     DateTime @default(now())
+
+  Staff  Staff @relation(fields: [staffId], references: [id])
+
+  @@index([staffId, effectiveDate(sort: Desc)])
+  @@unique([staffId, effectiveDate]) 
+}
+
 
 model StaffIncome {
   id      Int    @id @default(autoincrement())
@@ -113,6 +131,7 @@ model StaffIncome {
   detail  String @default("-")
   name    String
   staffId Int
+  date    DateTime  @default(now())
   Staff   Staff  @relation(fields: [staffId], references: [id])
 }
 

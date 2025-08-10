@@ -7,18 +7,21 @@ import { billData } from '@/data/billData'
 import { rcptorgData } from '@/data/rcptorgData'
 import { staffIncomeData } from '@/data/staffIncomeData'
 import { temporaryBillData } from '@/data/temporaryBillData'
+import { staffSalaryData } from '@/data/staffSalaryData'
 
 const prisma = new PrismaClient()
 async function main() {
   // 1. ลบข้อมูล
-  await prisma.temporaryBill.deleteMany()
+  await prisma.staffSalary.deleteMany()
   await prisma.staffIncome.deleteMany()
   await prisma.bill.deleteMany()
+  await prisma.product.deleteMany()
   await prisma.orderPO.deleteMany()
   await prisma.rcptorg.deleteMany()
-  await prisma.staff.deleteMany()
+  await prisma.temporaryBill.deleteMany()
   await prisma.customer.deleteMany()
   await prisma.user.deleteMany()
+  await prisma.staff.deleteMany()
 
   // 2. รีเซต sequence
   await prisma.$executeRawUnsafe(`ALTER SEQUENCE "User_id_seq" RESTART WITH 1`)
@@ -29,6 +32,7 @@ async function main() {
   await prisma.$executeRawUnsafe(`ALTER SEQUENCE "Rcptorg_id_seq" RESTART WITH 1`)
   await prisma.$executeRawUnsafe(`ALTER SEQUENCE "StaffIncome_id_seq" RESTART WITH 1`)
   await prisma.$executeRawUnsafe(`ALTER SEQUENCE "TemporaryBill_id_seq" RESTART WITH 1`)
+  await prisma.$executeRawUnsafe(`ALTER SEQUENCE "StaffSalary_id_seq" RESTART WITH 1`)
 
   // 3. ใส่ข้อมูล
   await prisma.staff.createMany({ data: staffData })
@@ -39,7 +43,7 @@ async function main() {
   await prisma.rcptorg.createMany({ data: rcptorgData })
   await prisma.staffIncome.createMany({ data: staffIncomeData })
   await prisma.temporaryBill.createMany({ data: temporaryBillData })
-
+  await prisma.staffSalary.createMany({data: staffSalaryData})
   console.log('✅ All seed data inserted successfully.')
 }
 

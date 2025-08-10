@@ -1,15 +1,13 @@
 export interface Employee {
-  id: string;
+  id: number;
   name: string;
-  nameEn: string;
   position: string;
-  positionEn: string;
-  employeeCode: string;
+  code: string;
   startDate: string;
   bankAccount: string;
   bankName: string;
-  baseSalary: number;
   currentSalary: number;
+  social_security: string;  
 }
 
 export interface SalaryAdjustment {

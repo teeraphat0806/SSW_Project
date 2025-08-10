@@ -30,7 +30,7 @@ export async function POST(req: NextRequest){
     if (!parsed.success) {
         return NextResponse.json({ error: "Invalid data format", details: parsed.error.flatten() }, { status: 400 });
     }
-    const staffData = { ...parsed.data, startAt: new Date() }; // 
+    const staffData = { ...parsed.data, startDate: new Date() }; // 
     try {
         const result = await prisma.staff.create({
             data: staffData, // ✅ ใช้ข้อมูลที่ผ่านการตรวจสอบแล้ว

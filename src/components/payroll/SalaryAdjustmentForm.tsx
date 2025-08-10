@@ -78,7 +78,7 @@ export const SalaryAdjustmentForm = ({ employees, onAdjustmentSubmit }: SalaryAd
                             className="bg-background text-muted-foreground hover:bg-blue-50 cursor-pointer"
                         >
                             <div className="flex flex-col">
-                                <span className="font-medium">{employee.name} ({employee.employeeCode})</span>
+                                <span className="font-medium">{employee.name} ({employee.code})</span>
                                 <span className="text-xs text-gray-500">
                                     เงินเดือนปัจจุบัน: ฿{employee.currentSalary.toLocaleString()}
                                 </span>
