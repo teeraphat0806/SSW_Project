@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Tabs,
   TabsContent,
@@ -148,6 +148,21 @@ export default function PayrollPage() {
       { id: "late", name: "มาสาย" },
     ]);
   const [manageOpen, setManageOpen] = useState(false);
+
+  useEffect(() => {
+    const employeeData =fetch('/api/staff')
+      .then(res => res.json())
+      .catch(err => {
+        console.error('Error fetching employees:', err);
+      });
+    const employeeSalary = fetch('/api/staffIncome')
+    .then(res => res.json)
+    .catch(err => {
+        console.error('Error fetching employeesIncome:',err)
+    })  
+    console.log(employeeData)
+    
+  }, []);
 
   /* Derived – Dashboard */
   const dashboardSlice = useMemo(() => {
@@ -337,6 +352,7 @@ export default function PayrollPage() {
     );
   }
 
+  
   /* =========================
      UI
   ========================= */
@@ -380,7 +396,7 @@ export default function PayrollPage() {
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center gap-2">
                 <BarChart3 className="h-5 w-5" />
-                ภาพรวมการปรับ (Dashboard)
+                ภาพรวมรายได้พนักงาน (Dashboard)
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-5">

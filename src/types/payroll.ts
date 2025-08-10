@@ -10,6 +10,10 @@ export interface Employee {
   bankName: string;
   baseSalary: number;
   currentSalary: number;
+  code: string;
+  social_security: string;
+  Salary: number;
+  
 }
 
 export interface SalaryAdjustment {

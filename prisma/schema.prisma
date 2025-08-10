@@ -105,7 +105,24 @@ model Staff {
   Bill_Bill_salesNameToStaff   Bill[]        @relation("Bill_salesNameToStaff")
   User                         User? 
   StaffIncome                  StaffIncome[]
+  SalaryHistory                StaffSalary[] 
 }
+
+model StaffSalary {
+  id            Int       @id @default(autoincrement())
+  staffId       Int
+  amount        Float                
+  effectiveDate DateTime           
+  detail        String?              
+  createdBy     Int?                
+  createdAt     DateTime @default(now())
+
+  Staff  Staff @relation(fields: [staffId], references: [id])
+
+  @@index([staffId, effectiveDate(sort: Desc)])
+  @@unique([staffId, effectiveDate]) 
+}
+
 
 model StaffIncome {
   id      Int    @id @default(autoincrement())
@@ -113,6 +130,7 @@ model StaffIncome {
   detail  String @default("-")
   name    String
   staffId Int
+  date    DateTime  @default(now())
   Staff   Staff  @relation(fields: [staffId], references: [id])
 }
 
