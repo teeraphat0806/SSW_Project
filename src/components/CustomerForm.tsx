@@ -24,7 +24,7 @@ export default function CustomerForm({ formData, updateFormData }) {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="grid grid-cols- md:grid-cols-4 gap-2">
+        <div className="grid grid-cols- md:grid-cols-3 gap-2">
           <div>
             <Label htmlFor="customerName">ชื่อบริษัท *</Label>
             <Input
@@ -67,7 +67,7 @@ export default function CustomerForm({ formData, updateFormData }) {
             />
           </div>
        
-          <div>
+          {/* <div>
             <Label htmlFor="deliveryDate">วันที่ต้องจัดส่ง</Label>
             <Input
               id="deliveryDate"
@@ -76,7 +76,7 @@ export default function CustomerForm({ formData, updateFormData }) {
               onChange={(e) => updateFormData("deliveryDate", e.target.value)}
               className="mt-1"
             />
-          </div>
+          </div> */}
 
           <div>
             <Label htmlFor="customerPhone">Tax</Label>

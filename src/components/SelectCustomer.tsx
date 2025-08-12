@@ -18,10 +18,14 @@ import { cn } from "@/lib/utils";
 export default function SelectCustomer({
     open,
     setOpen,
-    selectedCustomer,
+    selectedCustomerId,
     setSelectedCustomer,
     customers,
+    search,
+    setSearch,
+    loading
 }) {
+  const selectedCustomer = customers.find(c => c.id === selectedCustomerId);
     return (
         <Popover open={open} onOpenChange={setOpen} >
             <PopoverTrigger asChild>
@@ -31,26 +35,31 @@ export default function SelectCustomer({
                 aria-expanded={open}
                 className=" w-[200px] justify-between "
               >
-                {selectedCustomer || "เลือกบริษัทลูกค้า"}
+                {selectedCustomer ? selectedCustomer.name : "เลือกบริษัทลูกค้า"}
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-[200px] p-0">
               <Command className="bg-background text-foreground hover:bg-accent hover:text-accent-foreground max-h-[200px]">
-                <CommandInput placeholder="ค้นหาบริษัท..." />
+                <CommandInput 
+                placeholder="ค้นหาบริษัท..." 
+                value = {search}
+                onValueChange = {(value) => setSearch(value)}
+                />
                 <CommandList>
+                  {loading && <div className="p-2 text-sm text-muted-foreground">กำลังโหลด...</div>}
                   <CommandEmpty>ไม่พบลูกค้า</CommandEmpty>
                   <CommandGroup>
-                    {customers.filter((customer) => customer !== selectedCustomer)
+                    {customers.filter((customer) => customer.id !== selectedCustomerId)
                     .map((customer) => (
                       <CommandItem
-                        key={customer}
+                        key={customer.id}
                         className="bg-background text-foreground hover:bg-accent hover:text-accent-foreground"
                         onSelect={() => {
-                          setSelectedCustomer(customer);
+                          setSelectedCustomer(customer.id,customer.name);
                           setOpen(false);
                         }}
                       >
-                        {customer}
+                        {customer.name}
                         <Check
                           className={cn(
                             "ml-auto h-4 w-4",

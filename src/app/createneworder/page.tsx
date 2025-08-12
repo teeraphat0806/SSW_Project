@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -43,12 +43,42 @@ const NewJobOrder = () => {
   const toggleForm = () => setShowForm(!showForm);
   const [open, setOpen] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState("");
-  const customers = [
-    "บริษัท กรุงเทพการค้า จำกัด",
-    "บริษัท เอเชีย เมทัล โปรดักส์",
-    "บริษัท สยามเหล็ก จำกัด",
-    "หจก. เชียงใหม่อินดัสตรี",
-  ];
+  const [customers, setCustomers] = useState<{id:string,name:string}[]>([]);
+  const [search, setSearch] = useState(""); // เก็บค่าที่ค้นหา
+  const [loading, setLoading] = useState(false);
+  const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(null);
+
+  useEffect(() =>{
+    let ignore = false;
+    const fetchCustomers = async () =>{
+      setLoading(true);
+      try{
+        const url = search.trim() === "" ? "http://localhost:3000/api/customer"
+        : `http://localhost:3000/api/customer/name/${encodeURIComponent(search)}`;
+        const res = await fetch(url);
+        if(!res.ok) throw new Error("Error fetching customers");
+
+        const data = await res.json();
+        if(!ignore){
+         setCustomers(data.map((customers:{id:string,name:string}) => 
+          ({ id: customers.id, name: customers.name })));
+        }
+      }
+    catch (err) {
+        console.error(err);
+        if (!ignore) setCustomers([]);
+      } finally {
+        if (!ignore) setLoading(false);
+      }
+      
+  };
+  
+  fetchCustomers();
+    return () => {
+      ignore = true;
+    };
+  }, [search]);
+  
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files) {
@@ -68,10 +98,58 @@ const NewJobOrder = () => {
     customerEmail: "",
     customerPhone: "",
     deliveryAddress: "",
-    deliveryDate: "",
     taxNumber: "",
     faxNumber: "",
   });
+
+   const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    const validationError = validateForm();
+    if (validationError) {
+      toast.error(`ขออภัย มีข้อผิดพลาด: ${validationError}`, {
+        position: "bottom-right",
+      });
+      return;
+    }
+    setIsSubmitting(true);
+    const payload = {
+      code: formData.code,
+      name: formData.customerName,
+      address: formData.deliveryAddress,
+      tel: formData.customerPhone,
+      taxNumber: formData.taxNumber,
+      faxNumber: formData.faxNumber,
+      email: formData.customerEmail,
+    };
+
+    try{
+      const res = await fetch("http://localhost:3000/api/customer", {
+        method: "POST",
+        headers:{"Content-Type": "application/json"},
+        body: JSON.stringify(payload)
+    });
+
+      if (!res.ok){
+        throw new Error("เกิดข้อผิดพลาดในการบันทึกข้อมูล");
+      }
+      const data = await res.json();
+      
+      console.log("เพิ่มลูกค้าสำเร็จ:", data)
+      toast.success("เพิ่มข้อมูลลูกค้าสำเร็จ", {
+        position: "bottom-right",
+      });
+      router.push("/dashboard");
+    } catch (error){
+      console.error("Error saving customer:",error);
+      
+       toast.error(`เพิ่มลูกค้าไม่สำเร็จ: ${error.message}`, {
+        position: "bottom-right",
+       });
+    } finally {
+    setIsSubmitting(false);
+  }
+  }
 
   const [steelItems, setSteelItems] = useState<SteelItem[]>([
     {
@@ -85,11 +163,11 @@ const NewJobOrder = () => {
     },
   ]);
 
-  const updateFormData = (field: string, value: any) => {
+  const updateFormData = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const updateSteelItem = (id: string, field: string, value: any) => {
+  const updateSteelItem = (id: string, field: string, value: string) => {
     setSteelItems((prev) =>
       prev.map((item) => (item.id === id ? { ...item, [field]: value } : item))
     );
@@ -116,10 +194,9 @@ const NewJobOrder = () => {
   };
 
   const validateForm = () => {
-    if (!formData.poNumber.trim()) return "Purchase Order Number is required";
     if (!formData.customerName.trim()) return "Customer Name is required";
 
-    for (let item of steelItems) {
+    for (const item of steelItems) {
       if (!item.steelType) return "Steel Type is required for all items";
       if (item.quantity <= 0) return "Quantity must be greater than 0";
       if (item.width <= 0) return "Width must be greater than 0";
@@ -128,58 +205,78 @@ const NewJobOrder = () => {
     }
     return null;
   };
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
 
-    const validationError = validateForm();
-    if (validationError) {
-      toast.error(`ขออภัย มีข้อผิดพลาด: ${validationError}`, {
-        position: "bottom-right",
-      });
-      return;
-    }
-    setIsSubmitting(true);
-    try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+  // SubmitForm function
+  // const handleSubmit = async (e: React.FormEvent) => {
+  //   e.preventDefault();
 
-      const jobOrder = {
-        id: `JO-${Date.now()}`,
-        ...formData,
-        steelItems,
-        status: "pending",
-        createdAt: new Date(),
-        totalItems: steelItems.reduce((sum, item) => sum + item.quantity, 0),
-      };
-      console.log("New Job Order:", jobOrder);
-      toast.success("สร้างออเดอร์สำเร็จ", {
-        position: "bottom-right",
-      });
-      // Navigate back to dashboard
-      router.push("/dashboard");
-    } catch (error) {
-      toast.error(`ขออภัย มีข้อผิดพลาด: ${validationError}`, {
-        position: "bottom-right",
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+  //   const validationError = validateForm();
+  //   if (validationError) {
+  //     toast.error(`ขออภัย มีข้อผิดพลาด: ${validationError}`, {
+  //       position: "bottom-right",
+  //     });
+  //     return;
+  //   }
+  //   setIsSubmitting(true);
+  //   try {
+  //     // สร้างข้อมูลลูกค้าตามโครงสร้างที่ API ต้องการ
+  //     const customerData = {
+  //       code: formData.code,
+  //       name: formData.customerName,
+  //       address: formData.deliveryAddress,
+  //       tel: formData.customerPhone,
+  //       taxNumber: formData.taxNumber,
+  //       faxNumber: formData.faxNumber,
+  //       email: formData.customerEmail,
+  //     };
 
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case "urgent":
-        return "bg-destructive text-destructive-foreground";
-      case "high":
-        return "bg-warning text-warning-foreground";
-      case "normal":
-        return "bg-primary text-primary-foreground";
-      case "low":
-        return "bg-muted text-muted-foreground";
-      default:
-        return "bg-muted text-muted-foreground";
-    }
-  };
+  //     // ส่งข้อมูลไปที่ backend API
+  //     const res = await fetch("http://localhost:3000/api/customer", {
+  //       method: "POST",
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //       },
+  //       body: JSON.stringify(customerData),
+  //     });
+
+  //     if (!res.ok) {
+  //       throw new Error("การส่งข้อมูลไป API ล้มเหลว");
+  //     }
+
+  //     const result = await res.json();
+  //     console.log("Customer saved:", result);
+
+  //     toast.success("เพิ่มข้อมูลลูกค้าสำเร็จ", {
+  //       position: "bottom-right",
+  //     });
+
+  //     router.push("/dashboard");
+  //   } catch (error) {
+  //     console.error("Error saving customer:", error);
+  //     toast.error(`ขออภัย ไม่สามารถบันทึกข้อมูลได้: ${error.message}`, {
+  //       position: "bottom-right",
+  //     });
+  //   } finally {
+  //     setIsSubmitting(false);
+  //   }
+  // };
+
+ //-------------------------------------------------------------------
+  // const getPriorityColor = (priority: string) => {
+  //   switch (priority) {
+  //     case "urgent":
+  //       return "bg-destructive text-destructive-foreground";
+  //     case "high":
+  //       return "bg-warning text-warning-foreground";
+  //     case "normal":
+  //       return "bg-primary text-primary-foreground";
+  //     case "low":
+  //       return "bg-muted text-muted-foreground";
+  //     default:
+  //       return "bg-muted text-muted-foreground";
+  //   }
+  // };
+  
   return (
     <div className="min-h-screen md:pl-24 ">
       <div className="container mx-auto p-6">
@@ -205,14 +302,23 @@ const NewJobOrder = () => {
           </p>
         </div>
         <div className="mb-3 flex items-center gap-3">
-          {showForm ? <></>: <SelectCustomer
-            open={open}
-            setOpen={setOpen}
-            selectedCustomer={selectedCustomer}
-            setSelectedCustomer={setSelectedCustomer}
-            customers={customers}/>}
-          
-          
+          {showForm ? (
+            <></>
+          ) : (
+            <SelectCustomer
+              open={open}
+              setOpen={setOpen}
+              selectedCustomer={selectedCustomer}
+              setSelectedCustomer={setSelectedCustomer}
+              customers={customers}
+              search = {search}
+              setSearch={setSearch}
+              loading={loading}
+              selectedCustomerId={selectedCustomerId}
+              setSelectedCustomerId={setSelectedCustomerId}
+            />
+          )}
+
           <button
             onClick={toggleForm}
             className="rounded-md bg-blue-500 px-4 py-1.5 text-sm text-white transition hover:bg-blue-600"
@@ -281,7 +387,9 @@ const NewJobOrder = () => {
                       updateFormData={updateFormData}
                     />
                   ) : (
-                    <CustomerInfoBox />
+                    <CustomerInfoBox
+                    customerId={selectedCustomer}
+                    />
                   )}
                 </div>
 
@@ -319,7 +427,6 @@ const NewJobOrder = () => {
                             }
                           </span>
                         </div>
-
                         <div className="flex justify-between text-sm">
                           <span className="text-muted-foreground">
                             Priority:
@@ -333,7 +440,7 @@ const NewJobOrder = () => {
                       </div>
                       <div className="flex justify-between text-sm">
                         <span className="text-muted-foreground">Deadline:</span>
-                        <span className="font-medium">
+                        {/* <span className="font-medium">
                           {formData.deliveryDate
                             ? new Date(
                                 formData.deliveryDate
@@ -343,7 +450,7 @@ const NewJobOrder = () => {
                                 day: "numeric",
                               })
                             : "ไม่ระบุ"}
-                        </span>
+                        </span> */}
                       </div>
                       <Separator />
                       <div>

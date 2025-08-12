@@ -27,11 +27,12 @@ model Bill {
   invoiceNo                     String
   idPo                          Int?
   credit                        DateTime
+  deliveryDate                  DateTime
   deliveryOrderNo               String?
   salesName                     String
   deliveredBy                   String?
-  description                   String
-  unitPrice                     Float?
+  description                   String  
+  unitPrice                     Float? 
   discount                      Float?
   vat                           Float
   dateReceive                   DateTime?
@@ -63,6 +64,7 @@ model OrderPO {
   customerId Int?
   total      Float
   vat        Float
+  urlPo      String[] @default([])
   date       DateTime  @default(now())
   Bill       Bill[]
   Customer   Customer?  @relation(fields: [customerId], references: [id], onDelete: SetNull)

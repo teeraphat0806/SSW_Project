@@ -3,6 +3,8 @@ import { authOptions } from "../auth/[...nextauth]/route";
 import { NextResponse , NextRequest } from "next/server";
 import prisma from "@/lib/prisma";
 import { CustomerSchema } from "@/lib/schemas/customer.schema";
+
+
 export async function GET(req: NextRequest) {
     const session = await getServerSession({ req, ...authOptions });
     // Fix: Only allow if role is superadmin OR supervisor
