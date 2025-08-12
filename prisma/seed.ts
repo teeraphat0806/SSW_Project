@@ -38,8 +38,20 @@ async function main() {
   await prisma.staff.createMany({ data: staffData })
   await prisma.user.createMany({ data: userData })
   await prisma.customer.createMany({ data: customerData })
-  await prisma.orderPO.createMany({ data: orderPoData })
-  await prisma.bill.createMany({ data: billData })
+  // await prisma.orderPO.createMany({ data: orderPoData })
+  for (const bill of billData) {
+  await prisma.bill.create({
+    data: bill,
+    include: {
+      OrderPO: {
+        include: {
+          Product: true
+        }
+      }
+    }
+  });
+}
+  // await prisma.bill.createMany({ data: billData })
   await prisma.rcptorg.createMany({ data: rcptorgData })
   await prisma.staffIncome.createMany({ data: staffIncomeData })
   await prisma.temporaryBill.createMany({ data: temporaryBillData })
