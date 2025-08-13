@@ -12,9 +12,9 @@ export interface Employee {
 
 export interface SalaryAdjustment {
   id: string;
-  employeeId: string;
+  staffId: string;
   amount: number;
-  reason: string;
+  detail: string;
   date: string;
   type: 'increase' | 'decrease';
 }

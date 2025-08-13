@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -14,14 +14,16 @@ interface SalaryAdjustmentFormProps {
 }
 
 export const SalaryAdjustmentForm = ({ employees, onAdjustmentSubmit }: SalaryAdjustmentFormProps) => {
-  const [selectedEmployeeId, setSelectedEmployeeId] = useState<string>('');
+  const [selectedstaffId, setSelectedstaffId] = useState<string>('');
   const [amount, setAmount] = useState<string>('');
-  const [reason, setReason] = useState<string>('');
-
+  const [detail, setdetail] = useState<string>('');
+  useEffect(()=>{
+    console.log("employee: ",employees)
+  },[])
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!selectedEmployeeId || !amount || !reason) {
+    if (!selectedstaffId || !amount || !detail) {
       toast.error('Please fill in all fields', {
         position: 'bottom-right',
         });
@@ -37,23 +39,23 @@ export const SalaryAdjustmentForm = ({ employees, onAdjustmentSubmit }: SalaryAd
     }
 
     onAdjustmentSubmit({
-      employeeId: selectedEmployeeId,
+      staffId: selectedstaffId,
       amount: adjustmentAmount,
-      reason,
+      detail,
     });
 
     // Reset form
-    setSelectedEmployeeId('');
+    setSelectedstaffId('');
     setAmount('');
-    setReason('');
+    setdetail('');
     
     toast.success(`Salary ${adjustmentAmount >= 0 ? 'increased' : 'decreased'} successfully`, {
         position: 'bottom-right',
         });
   };
-
-  const selectedEmployee = employees.find(emp => emp.id === selectedEmployeeId);
-
+  const selectedEmployee = employees.find(emp => Number(emp.id) === Number(selectedstaffId));
+  // useEffect(()=>{console.log("selectEmployee: ",selectedEmployee)},[selectedEmployee])
+  
   return (
     <Card>
       <CardHeader>
@@ -63,9 +65,10 @@ export const SalaryAdjustmentForm = ({ employees, onAdjustmentSubmit }: SalaryAd
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="employee">เลือกพนักงาน</Label>
+            
             <Select
-                value={selectedEmployeeId}
-                onValueChange={setSelectedEmployeeId}
+                value={selectedstaffId}
+                onValueChange={setSelectedstaffId}
             >
                 <SelectTrigger className="bg-background text-muted-foreground border border-gray-300 shadow-sm">
                     <SelectValue placeholder="เลือกพนักงาน" />
@@ -117,12 +120,12 @@ export const SalaryAdjustmentForm = ({ employees, onAdjustmentSubmit }: SalaryAd
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="reason">รายละเอียด</Label>
+            <Label htmlFor="detail">รายละเอียด</Label>
             <Textarea
-              id="reason"
+              id="detail"
               placeholder="ใส่เหตุผลการปรับเงินเดือน เช่น การประเมินผลงาน, การเลื่อนตำแหน่ง ฯลฯ"
-              value={reason}
-              onChange={(e) => setReason(e.target.value)}
+              value={detail}
+              onChange={(e) => setdetail(e.target.value)}
               rows={3}
               className='bg-background border-1 border-black '
             />

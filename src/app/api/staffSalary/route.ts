@@ -15,7 +15,7 @@ export async function GET(req: NextRequest) {
         const result = await prisma.staffSalary.findMany({
             include: {
                 Staff: {
-                    select: { name: true , position: true , bankAccount: true, startDate: true, code: true,social_security: true,Salary: true}
+                    select: { name: true , position: true , bankAccount: true, startDate: true, code: true,social_security: true,currentSalary: true}
                 }
             }
         });
@@ -25,25 +25,51 @@ export async function GET(req: NextRequest) {
         return NextResponse.json({ error: "Failed to fetch staffSalary" }, { status: 500 });
     }
 }
-export async function POST(req: NextRequest){
-    const session = await getServerSession({ req, ...authOptions });
-    if (!session || !["superadmin", "supervisor"].includes(session.user?.role)) {
-        return NextResponse.json({ error: "Permission Denied!!" }, { status: 400 });
+export async function POST(req: NextRequest) {
+  const session = await getServerSession({ req, ...authOptions });
+  if (!session || !["superadmin", "supervisor"].includes(session.user?.role)) {
+    return NextResponse.json({ error: "Permission Denied!!" }, { status: 400 });
+  }
+
+  // เรียก API /user/filter/?name={session.user.name}
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"; // ตั้งค่าใน .env
+  const res = await fetch(
+    `${baseUrl}/api/user/filter?name=${encodeURIComponent(session.user.name!)}`,
+    {
+      method: "GET",
+      headers: { "Content-Type": "application/json" },
+      // credentials: "include" // ไม่จำเป็นใน server fetch เพราะส่งจากฝั่ง server อยู่แล้ว
     }
-    const body = await req.json();
-    const dateNow = new Date()
-    const requestBody = {...body,effectiveDate: dateNow}
-    const parsed = StaffSalarySchema.partial().safeParse(requestBody);
-    
-    if(!parsed.success){
-        return NextResponse.json({error: "Invalid data format"})
+  );
+
+  if (!res.ok) {
+    return NextResponse.json({ error: "Failed to fetch user data" }, { status: 500 });
+  }
+
+  const users = await res.json();
+  console.log("users:", users);
+
+  // สมมติว่าคุณต้องการเอา user แรกมาใช้เป็น createdBy
+  const creatorId = users[0]?.id;
+  const body = await req.json();
+  const dateNow = new Date();
+  const requestBody = { ...body, effectiveDate: dateNow, createdBy: creatorId };
+
+  const parsed = StaffSalarySchema.partial().safeParse(requestBody);
+    if (!parsed.success) {
+    return NextResponse.json({ error: "Invalid data format" });
     }
+
     try {
-        const result = await prisma.staffSalary.create({
-            data:  parsed.data,
-        })
-        return NextResponse.json(result, { status: 201 });
+    const result = await prisma.staffSalary.create({
+        data: {
+        ...parsed.data,
+        createdBy: creatorId // ✅ เพิ่มตรงนี้แทน
+        },
+    });
+    return NextResponse.json(result, { status: 201 });
     } catch (error) {
-        return NextResponse.json({ error: "Failed to create staffSalary" }, { status: 500 });
+    return NextResponse.json({ error: "Failed to create staffSalary" }, { status: 500 });
     }
-} 
+
+}

@@ -34,7 +34,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     }
     try{
         const result = await prisma.staff.update({
-            where: { id: Number(params.id) },
+            where: { id: Number((await params).id) },
             data: parsed.data,
         });
 

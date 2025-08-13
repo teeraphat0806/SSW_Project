@@ -25,12 +25,12 @@ model Bill {
   customerId                    Int?
   yourRef                       String
   invoiceNo                     String
-  idPo                          Int?
   credit                        DateTime
+  deliveryDate                  DateTime
   deliveryOrderNo               String?
-  salesName                     String
+  salesName                     String?
   deliveredBy                   String?
-  description                   String
+  description                   String?
   unitPrice                     Float?
   discount                      Float?
   vat                           Float
@@ -38,8 +38,8 @@ model Bill {
   typeBill                      String?
   Customer                      Customer?  @relation(fields: [customerId], references: [id], onDelete: SetNull)
   Staff_Bill_deliveredByToStaff Staff?    @relation("Bill_deliveredByToStaff", fields: [deliveredBy], references: [name])
-  OrderPO                       OrderPO?   @relation(fields: [idPo], references: [id], onDelete: SetNull)
-  Staff_Bill_salesNameToStaff   Staff     @relation("Bill_salesNameToStaff", fields: [salesName], references: [name])
+  OrderPO                       OrderPO[]
+  Staff_Bill_salesNameToStaff   Staff?     @relation("Bill_salesNameToStaff", fields: [salesName], references: [name])
 }
 
 model Customer {
@@ -64,7 +64,9 @@ model OrderPO {
   total      Float
   vat        Float
   date       DateTime  @default(now())
-  Bill       Bill[]
+  urlPo      String[]
+  billId     Int?
+  bill       Bill?     @relation(fields: [billId], references: [id], onDelete: SetNull)
   Customer   Customer?  @relation(fields: [customerId], references: [id], onDelete: SetNull)
   Product    Product[]
 }
@@ -127,12 +129,26 @@ model StaffSalary {
 
 model StaffIncome {
   id      Int    @id @default(autoincrement())
-  Price   Float
+  amount   Float
   detail  String @default("-")
   name    String
   staffId Int
   date    DateTime  @default(now())
   Staff   Staff  @relation(fields: [staffId], references: [id])
+
+  typeId   Int? 
+  type     TypeStaffIncome? @relation(fields: [typeId], references: [id], onDelete: SetNull)
+
+  @@index([staffId])
+  @@index([typeId])
+}
+
+model TypeStaffIncome {
+  id        Int    @id @default(autoincrement())
+  amount    Float
+  name      String
+  types     String
+  incomes  StaffIncome[]
 }
 
 model TemporaryBill {
