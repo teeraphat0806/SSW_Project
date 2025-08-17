@@ -55,7 +55,7 @@ export default function SelectCustomer({
                         key={customer.id}
                         className="bg-background text-foreground hover:bg-accent hover:text-accent-foreground"
                         onSelect={() => {
-                          setSelectedCustomer(customer.id,customer.name);
+                          setSelectedCustomer(customer.id);
                           setOpen(false);
                         }}
                       >

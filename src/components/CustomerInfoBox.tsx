@@ -12,19 +12,21 @@ interface Customer{
   faxNumber: string;
 }
 
-export default function CustomerInfoCard({customerId}: {customerId:string}) {
+export default function CustomerInfoCard({customerId}: {customerId:string | null}) {
   const [customer,setcustomer] = useState<Customer| null>(null);
   const [loading, setLoading] = useState(false);
 
   useEffect(()=>{
-    if(!customerId) return;
+    if(!customerId || customerId.trim() === "") return;
     const fetchCustomer = async () =>{
       setLoading(true);
 
       try{
+        console.log("Fetching customer with ID:", customerId);
         const response = await fetch(`http://localhost:3000/api/customer/${customerId}`);
         if(!response.ok) throw new Error("Failed to fetch Customer data");
         const data = await response.json();
+        console.log("Customer data received:", data);
         setcustomer(data);
         
 

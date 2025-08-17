@@ -38,119 +38,23 @@ const steelTypes = [
 const NewJobOrder = () => {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [UploadFile, setUploadFile] = useState<File[]>([]);
-  const [showForm, setShowForm] = useState(false);
-  const toggleForm = () => setShowForm(!showForm);
-  const [open, setOpen] = useState(false);
-  const [selectedCustomer, setSelectedCustomer] = useState("");
-  const [customers, setCustomers] = useState<{id:string,name:string}[]>([]);
+  const [UploadFile, setUploadFile] = useState<File[]>([]); //ดึงไฟล์อัปโหลด
+  const [showForm, setShowForm] = useState(false); //แสดงหรือซ่อนข้อมุลลูกค้า
+  const toggleForm = () => setShowForm(!showForm); //ฟังก์ชั่นแสดงฟอร์มลูกค้า
+  const [open, setOpen] = useState(false); //เปิดหรือปิด SelectCustomer
+  const [customers, setCustomers] = useState<{ id: string; name: string }[]>(
+    []
+  ); //เก็บข้อมุลลูกค้า
   const [search, setSearch] = useState(""); // เก็บค่าที่ค้นหา
-  const [loading, setLoading] = useState(false);
-  const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(null);
-
-  useEffect(() =>{
-    let ignore = false;
-    const fetchCustomers = async () =>{
-      setLoading(true);
-      try{
-        const url = search.trim() === "" ? "http://localhost:3000/api/customer"
-        : `http://localhost:3000/api/customer/name/${encodeURIComponent(search)}`;
-        const res = await fetch(url);
-        if(!res.ok) throw new Error("Error fetching customers");
-
-        const data = await res.json();
-        if(!ignore){
-         setCustomers(data.map((customers:{id:string,name:string}) => 
-          ({ id: customers.id, name: customers.name })));
-        }
-      }
-    catch (err) {
-        console.error(err);
-        if (!ignore) setCustomers([]);
-      } finally {
-        if (!ignore) setLoading(false);
-      }
-      
-  };
-  
-  fetchCustomers();
-    return () => {
-      ignore = true;
-    };
-  }, [search]);
-  
-
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (event.target.files) {
-      const filelist = Array.from(event.target.files);
-      setUploadFile((prev) => [...prev, ...filelist]);
-    }
-  };
-
-  const handRemoveFile = (index: number) => {
-    setUploadFile((prev) => prev.filter((_, i) => i !== index));
-  };
-
-  // Form state
-  const [formData, setFormData] = useState({
-    code: "",
-    customerName: "",
-    customerEmail: "",
-    customerPhone: "",
-    deliveryAddress: "",
-    taxNumber: "",
-    faxNumber: "",
+  const [loading, setLoading] = useState(false); //สถานะโหลดข้อมุล
+  const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(
+    null
+  ); // เก็บ ID ลูกค้าที่เลือกจาก SelectCustomer
+  const [po, setpo] = useState({
+    //เก็บข้อมูล PO
+    poNumber: "",
+    deliveryDate: "",
   });
-
-   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    const validationError = validateForm();
-    if (validationError) {
-      toast.error(`ขออภัย มีข้อผิดพลาด: ${validationError}`, {
-        position: "bottom-right",
-      });
-      return;
-    }
-    setIsSubmitting(true);
-    const payload = {
-      code: formData.code,
-      name: formData.customerName,
-      address: formData.deliveryAddress,
-      tel: formData.customerPhone,
-      taxNumber: formData.taxNumber,
-      faxNumber: formData.faxNumber,
-      email: formData.customerEmail,
-    };
-
-    try{
-      const res = await fetch("http://localhost:3000/api/customer", {
-        method: "POST",
-        headers:{"Content-Type": "application/json"},
-        body: JSON.stringify(payload)
-    });
-
-      if (!res.ok){
-        throw new Error("เกิดข้อผิดพลาดในการบันทึกข้อมูล");
-      }
-      const data = await res.json();
-      
-      console.log("เพิ่มลูกค้าสำเร็จ:", data)
-      toast.success("เพิ่มข้อมูลลูกค้าสำเร็จ", {
-        position: "bottom-right",
-      });
-      router.push("/dashboard");
-    } catch (error){
-      console.error("Error saving customer:",error);
-      
-       toast.error(`เพิ่มลูกค้าไม่สำเร็จ: ${error.message}`, {
-        position: "bottom-right",
-       });
-    } finally {
-    setIsSubmitting(false);
-  }
-  }
-
   const [steelItems, setSteelItems] = useState<SteelItem[]>([
     {
       id: "1",
@@ -163,10 +67,168 @@ const NewJobOrder = () => {
     },
   ]);
 
+  useEffect(() => {
+    let ignore = false;
+    const fetchCustomers = async () => {
+      setLoading(true);
+      try {
+        const url =
+          search.trim() === ""
+            ? "http://localhost:3000/api/customer"
+            : `http://localhost:3000/api/customer/name/${encodeURIComponent(
+                search
+              )}`;
+        const res = await fetch(url);
+        if (!res.ok) throw new Error("Error fetching customers");
+
+        const data = await res.json();
+        if (!ignore) {
+          setCustomers(
+            data.map((customers: { id: number; name: string }) => ({
+              id: customers.id.toString(),
+              name: customers.name,
+            }))
+          );
+        }
+      } catch (err) {
+        console.error(err);
+        if (!ignore) setCustomers([]);
+      } finally {
+        if (!ignore) setLoading(false);
+      }
+    };
+
+    fetchCustomers();
+    return () => {
+      ignore = true;
+    };
+  }, [search]);
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files) {
+      const filelist = Array.from(event.target.files);
+      setUploadFile((prev) => [...prev, ...filelist]);
+    }
+  };
+
+  const handRemoveFile = (index: number) => {
+    setUploadFile((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  // Form data customer
+  const [formData, setFormData] = useState({
+    code: "",
+    customerName: "",
+    customerEmail: "",
+    customerPhone: "",
+    deliveryAddress: "",
+    taxNumber: "",
+    faxNumber: "",
+  });
+
+  //Handle form submisstion
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    let customerId = selectedCustomerId;
+    const validationError = validateForm();
+    if (validationError) {
+      toast.error(`ขออภัย มีข้อผิดพลาด: ${validationError}`, {
+        position: "bottom-right",
+      });
+      return;
+    }
+    setIsSubmitting(true);
+
+    const payloadNewcustomer = {
+      code: formData.code,
+      name: formData.customerName,
+      address: formData.deliveryAddress,
+      tel: formData.customerPhone,
+      taxNumber: formData.taxNumber,
+      faxNumber: formData.faxNumber,
+      email: formData.customerEmail,
+    };
+
+    
+
+    try {
+      
+      if (showForm) {
+        const customerRes = await fetch("http://localhost:3000/api/customer", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payloadNewcustomer),
+        });
+        if (!customerRes.ok) {
+          throw new Error("เกิดข้อผิดพลาดในการบันทึกข้อมูลลูกค้า");
+        }
+        const customerData = await customerRes.json();
+        customerId = customerData.id;
+
+        console.log("เพิ่มลูกค้าสำเร็จ:", customerId);
+        toast.success("เพิ่มข้อมูลลูกค้าสำเร็จ", {
+          position: "bottom-right",
+        });
+      }
+
+      const payloadBill ={
+      customerId: Number(customerId),
+      yourRef: "REF108",
+      invoiceNo: "INV108",
+      deliveryDate: po.deliveryDate,
+      deliveryOrderNo: "DO108",
+      vat: 7.0,
+      orderPOs:[
+        {
+          poNumber: po.poNumber,
+          total: steelItems.reduce((sum,item ) => {return sum + item.quantity},0),
+          vat:7.0,
+          urlPo:["po7.pdf"],
+          products: steelItems.map((item) => {
+            return{
+              steelType: item.steelType,
+              wide: item.width,
+              length: item.length,
+              amount: item.quantity,
+              thickness: item.thickness,
+              total:200
+            }
+          })
+        }
+      ]
+    }
+
+      const billRes = await fetch("http://localhost:3000/api/createNewOrder",{
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify(payloadBill),
+      })
+      if(!billRes.ok){
+        throw new Error("เกิดข้อผิดพลาดในการสร้างออเดอร์ใหม่");
+      }
+      const billData = await billRes.json();
+      console.log("สร้างออเดอร์ใหม่สำเร็จ:",billData);
+      toast.success("สร้างออเดอร์ใหม่สำเร็จ", {
+        position: "bottom-right",
+      });
+
+      router.push("/dashboard");
+    } catch (error) {
+      console.error("Error create New Order", error);
+
+      toast.error(`สร้างออเดอรืใหม่ไม่สำเร็จ: ${error.message}`, {
+        position: "bottom-right",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Update form data
   const updateFormData = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
-
+  // Update steel item
   const updateSteelItem = (id: string, field: string, value: string) => {
     setSteelItems((prev) =>
       prev.map((item) => (item.id === id ? { ...item, [field]: value } : item))
@@ -193,9 +255,20 @@ const NewJobOrder = () => {
     }
   };
 
+  // function to validate from data
   const validateForm = () => {
-    if (!formData.customerName.trim()) return "Customer Name is required";
-
+    if(showForm){
+      if (!formData.code.trim()) return "Code is required";
+      if (!formData.customerName.trim()) return "Customer Name is required";
+      if (!formData.deliveryAddress.trim())
+        return "Delivery Address is required";
+      if (!formData.customerPhone.trim()) return "Customer Phone is required";
+      if (!formData.taxNumber.trim()) return "Tax Number is required";
+      if (!formData.faxNumber.trim()) return "Fax Number is required";
+    }
+   
+    if (!po.poNumber.trim()) return "PO Number is required";
+    if (!po.deliveryDate) return "Delivery Date is required";
     for (const item of steelItems) {
       if (!item.steelType) return "Steel Type is required for all items";
       if (item.quantity <= 0) return "Quantity must be greater than 0";
@@ -206,62 +279,7 @@ const NewJobOrder = () => {
     return null;
   };
 
-  // SubmitForm function
-  // const handleSubmit = async (e: React.FormEvent) => {
-  //   e.preventDefault();
-
-  //   const validationError = validateForm();
-  //   if (validationError) {
-  //     toast.error(`ขออภัย มีข้อผิดพลาด: ${validationError}`, {
-  //       position: "bottom-right",
-  //     });
-  //     return;
-  //   }
-  //   setIsSubmitting(true);
-  //   try {
-  //     // สร้างข้อมูลลูกค้าตามโครงสร้างที่ API ต้องการ
-  //     const customerData = {
-  //       code: formData.code,
-  //       name: formData.customerName,
-  //       address: formData.deliveryAddress,
-  //       tel: formData.customerPhone,
-  //       taxNumber: formData.taxNumber,
-  //       faxNumber: formData.faxNumber,
-  //       email: formData.customerEmail,
-  //     };
-
-  //     // ส่งข้อมูลไปที่ backend API
-  //     const res = await fetch("http://localhost:3000/api/customer", {
-  //       method: "POST",
-  //       headers: {
-  //         "Content-Type": "application/json",
-  //       },
-  //       body: JSON.stringify(customerData),
-  //     });
-
-  //     if (!res.ok) {
-  //       throw new Error("การส่งข้อมูลไป API ล้มเหลว");
-  //     }
-
-  //     const result = await res.json();
-  //     console.log("Customer saved:", result);
-
-  //     toast.success("เพิ่มข้อมูลลูกค้าสำเร็จ", {
-  //       position: "bottom-right",
-  //     });
-
-  //     router.push("/dashboard");
-  //   } catch (error) {
-  //     console.error("Error saving customer:", error);
-  //     toast.error(`ขออภัย ไม่สามารถบันทึกข้อมูลได้: ${error.message}`, {
-  //       position: "bottom-right",
-  //     });
-  //   } finally {
-  //     setIsSubmitting(false);
-  //   }
-  // };
-
- //-------------------------------------------------------------------
+  //-------------------------------------------------------------------
   // const getPriorityColor = (priority: string) => {
   //   switch (priority) {
   //     case "urgent":
@@ -276,7 +294,7 @@ const NewJobOrder = () => {
   //       return "bg-muted text-muted-foreground";
   //   }
   // };
-  
+
   return (
     <div className="min-h-screen md:pl-24 ">
       <div className="container mx-auto p-6">
@@ -308,14 +326,12 @@ const NewJobOrder = () => {
             <SelectCustomer
               open={open}
               setOpen={setOpen}
-              selectedCustomer={selectedCustomer}
-              setSelectedCustomer={setSelectedCustomer}
+              selectedCustomerId={selectedCustomerId}
+              setSelectedCustomer={setSelectedCustomerId}
               customers={customers}
-              search = {search}
+              search={search}
               setSearch={setSearch}
               loading={loading}
-              selectedCustomerId={selectedCustomerId}
-              setSelectedCustomerId={setSelectedCustomerId}
             />
           )}
 
@@ -386,10 +402,10 @@ const NewJobOrder = () => {
                       formData={formData}
                       updateFormData={updateFormData}
                     />
+                  ) : selectedCustomerId ? (
+                    <CustomerInfoBox customerId={selectedCustomerId} />
                   ) : (
-                    <CustomerInfoBox
-                    customerId={selectedCustomer}
-                    />
+                    <div className="p-4 text-sm text-muted-foreground">กรุณาเลือกลูกค้า</div>
                   )}
                 </div>
 
@@ -499,6 +515,8 @@ const NewJobOrder = () => {
                 addSteelItem={addSteelItem}
                 removeSteelItem={removeSteelItem}
                 steelTypes={steelTypes}
+                po={po}
+                setpo={setpo}
               />
             </div>
           </div>

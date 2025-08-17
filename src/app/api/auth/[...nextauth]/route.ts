@@ -23,7 +23,7 @@ export const authOptions = {
           (await bcrypt.compare(credentials.password, user.password))
         ) {
           return {
-            id: user.id,
+            id: user.id.toString(), // Convert to string
             name: user.name,
             email: user.email,
             role: user.role
@@ -37,24 +37,32 @@ export const authOptions = {
   adapter: PrismaAdapter(prisma),
   session: {
     strategy: 'jwt',
+    maxAge: 30 * 24 * 60 * 60, // 30 days
   },
   callbacks: {
     jwt: async ({ token, user }) => {
+      console.log("JWT Callback - User:", user)
+      console.log("JWT Callback - Token before:", token)
       if (user) {
         token.id = user.id
         token.role = user.role
       }
-      console.log(token)
+      console.log("JWT Callback - Token after:", token)
       return token
     },
     session: async ({ session, token }) => {
+      console.log("Session Callback - Token:", token)
+      console.log("Session Callback - Session before:", session)
       if (session.user) {
         session.user.id = token.id
         session.user.role = token.role
       }
-      console.log(session)
+      console.log("Session Callback - Session after:", session)
       return session
     }
+  },
+  pages: {
+    signIn: '/auth',
   },
 }
 
