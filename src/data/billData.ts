@@ -1,180 +1,250 @@
 import { create } from "domain";
 
 export const billData = [
-{
-      Customer: { connect: { id: 1} },
-      yourRef: 'REF100',
-      invoiceNo: 'INV100',
-      credit: new Date('2025-08-31'),
-      deliveryDate: new Date('2025-10-28'),
-      deliveryOrderNo: 'DO100',
-      salesName: 'สมชาย ใจดี',
-      deliveredBy: 'กานต์พิชชา ส่งไว',
-      Staff_Bill_salesNameToStaff: { connect: { id: 1 } },
-      Staff_Bill_deliveredByToStaff: { connect: { id: 5} },
-      description: 'กรดไหลย้อนคำสั่งวิ่งพนมมือกล่าวคลานผู้ร้าย ',
-      unitPrice: 315.06,
-      discount: 7.74,
-      vat: 7.0,
-      dateReceive: new Date('2025-08-01'),
-      typeBill: 'บิลเงินสด',
+  {
+    Customer: { connect: { id: 1 } },
+    yourRef: "REF100",
+    invoiceNo: "INV100",
+    credit: new Date("2025-08-31"),
+    deliveryDate: new Date("2025-10-28"),
+    deliveryOrderNo: "DO100",
+    salesName: "สมชาย ใจดี",
+    deliveredBy: "กานต์พิชชา ส่งไว",
+    Staff_Bill_salesNameToStaff: { connect: { id: 1 } },
+    Staff_Bill_deliveredByToStaff: { connect: { id: 5 } },
+    description: "กรดไหลย้อนคำสั่งวิ่งพนมมือกล่าวคลานผู้ร้าย ",
+    unitPrice: 315.06,
+    discount: 7.74,
+    vat: 7.0,
+    dateReceive: new Date("2025-08-01"),
+    typeBill: "บิลเงินสด",
 
-      OrderPO:{
-        create: [
-          {
-          poNumber: 'PO-001',
+    OrderPO: {
+      create: [
+        {
+          poNumber: "PO-001",
           total: 1000,
           vat: 7,
-          urlPo: ['po1.pdf'],
+          urlPo: ["po1.pdf"],
           date: new Date(),
           Product: {
             create: [
-              { steelType: 'Carbon Steel', wide: 10, length: 20, thickness: 1, amount: 5, total: 200 },
-              { steelType: 'Stainless Steel', wide: 15, length: 25, thickness: 2, amount: 10, total: 800 }
-            ]
-          }
-        },        
-        ]
-      }
+              {
+                steelType: "Carbon Steel",
+                wide: 10,
+                length: 20,
+                thickness: 1,
+                amount: 5,
+                total: 200,
+              },
+              {
+                steelType: "Stainless Steel",
+                wide: 15,
+                length: 25,
+                thickness: 2,
+                amount: 10,
+                total: 800,
+              },
+            ],
+          },
+        },
+      ],
     },
-    {
-      Customer: { connect: { id: 2} },
-      yourRef: 'REF101',
-      invoiceNo: 'INV101',
-      credit: new Date('2025-08-31'),
-      deliveryDate: new Date('2025-10-28'),
-      deliveryOrderNo: 'DO101',
-      salesName: 'สมชาย ใจดี',
-      deliveredBy: 'กานต์พิชชา ส่งไว',
-      Staff_Bill_salesNameToStaff: { connect: { id: 1 } },
-      Staff_Bill_deliveredByToStaff: { connect: { id: 5} },
-      description: 'ระเบียงมัสยิดเคย ',
-      unitPrice: 303.01,
-      discount: 6.09,
-      vat: 7.0,
-      dateReceive: new Date('2025-08-01'),
-      typeBill: 'บิลเครดิต',
-      OrderPO:{
-        create: [
-          {
-          poNumber: 'PO-002',
+  },
+  {
+    Customer: { connect: { id: 2 } },
+    yourRef: "REF101",
+    invoiceNo: "INV101",
+    credit: new Date("2025-08-31"),
+    deliveryDate: new Date("2025-10-28"),
+    deliveryOrderNo: "DO101",
+    salesName: "สมชาย ใจดี",
+    deliveredBy: "กานต์พิชชา ส่งไว",
+    Staff_Bill_salesNameToStaff: { connect: { id: 1 } },
+    Staff_Bill_deliveredByToStaff: { connect: { id: 5 } },
+    description: "ระเบียงมัสยิดเคย ",
+    unitPrice: 303.01,
+    discount: 6.09,
+    vat: 7.0,
+    dateReceive: new Date("2025-08-01"),
+    typeBill: "บิลเครดิต",
+    OrderPO: {
+      create: [
+        {
+          poNumber: "PO-002",
           total: 2000,
           vat: 7,
-          urlPo: ['po2.pdf'],
+          urlPo: ["po2.pdf"],
           date: new Date(),
           Product: {
             create: [
-              { steelType: 'Carbon Steel', wide: 10, length: 20, thickness: 1, amount: 5, total: 200 },
-              { steelType: 'Stainless Steel', wide: 15, length: 25, thickness: 2, amount: 10, total: 800 }
-            ]
-          }
-        },        
-        ]
-      }
+              {
+                steelType: "Carbon Steel",
+                wide: 10,
+                length: 20,
+                thickness: 1,
+                amount: 5,
+                total: 200,
+              },
+              {
+                steelType: "Stainless Steel",
+                wide: 15,
+                length: 25,
+                thickness: 2,
+                amount: 10,
+                total: 800,
+              },
+            ],
+          },
+        },
+      ],
     },
-    {
-      Customer: { connect: { id: 3} },
-      yourRef: 'REF102',
-      invoiceNo: 'INV102',
-      credit: new Date('2025-08-31'),
-      deliveryDate: new Date('2025-10-28'),
-      deliveryOrderNo: 'DO102',
-      salesName: 'สมชาย ใจดี',
-      deliveredBy: 'กานต์พิชชา ส่งไว',
-      Staff_Bill_salesNameToStaff: { connect: { id: 1 } },
-      Staff_Bill_deliveredByToStaff: { connect: { id: 5} },
-      description: 'โตยตอกไหนอัศจรรย์ ',
-      unitPrice: 249.21,
-      discount: 5.75,
-      vat: 7.0,
-      dateReceive: new Date('2025-08-01'),
-      typeBill: 'บิลเครดิต',
-      OrderPO:{
-        create: [
-          {
-          poNumber: 'PO-003',
+  },
+  {
+    Customer: { connect: { id: 3 } },
+    yourRef: "REF102",
+    invoiceNo: "INV102",
+    credit: new Date("2025-08-31"),
+    deliveryDate: new Date("2025-10-28"),
+    deliveryOrderNo: "DO102",
+    salesName: "สมชาย ใจดี",
+    deliveredBy: "กานต์พิชชา ส่งไว",
+    Staff_Bill_salesNameToStaff: { connect: { id: 1 } },
+    Staff_Bill_deliveredByToStaff: { connect: { id: 5 } },
+    description: "โตยตอกไหนอัศจรรย์ ",
+    unitPrice: 249.21,
+    discount: 5.75,
+    vat: 7.0,
+    dateReceive: new Date("2025-08-01"),
+    typeBill: "บิลเครดิต",
+    OrderPO: {
+      create: [
+        {
+          poNumber: "PO-003",
           total: 3000,
           vat: 7,
-          urlPo: ['po3.pdf'],
+          urlPo: ["po3.pdf"],
           date: new Date(),
           Product: {
             create: [
-              { steelType: 'Carbon Steel', wide: 10, length: 20, thickness: 1, amount: 5, total: 200 },
-              { steelType: 'Stainless Steel', wide: 15, length: 25, thickness: 2, amount: 10, total: 800 }
-            ]
-          }
-        },        
-        ]
-      }
+              {
+                steelType: "Carbon Steel",
+                wide: 10,
+                length: 20,
+                thickness: 1,
+                amount: 5,
+                total: 200,
+              },
+              {
+                steelType: "Stainless Steel",
+                wide: 15,
+                length: 25,
+                thickness: 2,
+                amount: 10,
+                total: 800,
+              },
+            ],
+          },
+        },
+      ],
     },
-    {
-      Customer: { connect: { id: 4} },
-      yourRef: 'REF103',
-      invoiceNo: 'INV103',
-      credit: new Date('2025-08-31'),
-      deliveryDate: new Date('2025-10-28'),
-      deliveryOrderNo: 'DO103',
-      salesName: 'สมชาย ใจดี',
-      deliveredBy: 'กานต์พิชชา ส่งไว',
-      Staff_Bill_salesNameToStaff: { connect: { id: 1 } },
-      Staff_Bill_deliveredByToStaff: { connect: { id: 5} },
-      description: 'ทุกข์เกาหลีขนมชั้นพิการเนื่องจากสมาคมแตะ ',
-      unitPrice: 396.18,
-      discount: 0.05,
-      vat: 7.0,
-      dateReceive: new Date('2025-08-01'),
-      typeBill: 'บิลเงินสด',
-      OrderPO:{
-        create: [
-          {
-          poNumber: 'PO-004',
+  },
+  {
+    Customer: { connect: { id: 4 } },
+    yourRef: "REF103",
+    invoiceNo: "INV103",
+    credit: new Date("2025-08-31"),
+    deliveryDate: new Date("2025-10-28"),
+    deliveryOrderNo: "DO103",
+    salesName: "สมชาย ใจดี",
+    deliveredBy: "กานต์พิชชา ส่งไว",
+    Staff_Bill_salesNameToStaff: { connect: { id: 1 } },
+    Staff_Bill_deliveredByToStaff: { connect: { id: 5 } },
+    description: "ทุกข์เกาหลีขนมชั้นพิการเนื่องจากสมาคมแตะ ",
+    unitPrice: 396.18,
+    discount: 0.05,
+    vat: 7.0,
+    dateReceive: new Date("2025-08-01"),
+    typeBill: "บิลเงินสด",
+    OrderPO: {
+      create: [
+        {
+          poNumber: "PO-004",
           total: 4000,
           vat: 7,
-          urlPo: ['po4.pdf'],
+          urlPo: ["po4.pdf"],
           date: new Date(),
           Product: {
             create: [
-              { steelType: 'Carbon Steel', wide: 10, length: 20, thickness: 1, amount: 5, total: 200 },
-              { steelType: 'Stainless Steel', wide: 15, length: 25, thickness: 2, amount: 10, total: 800 }
-            ]
-          }
-        },        
-        ]
-      }
+              {
+                steelType: "Carbon Steel",
+                wide: 10,
+                length: 20,
+                thickness: 1,
+                amount: 5,
+                total: 200,
+              },
+              {
+                steelType: "Stainless Steel",
+                wide: 15,
+                length: 25,
+                thickness: 2,
+                amount: 10,
+                total: 800,
+              },
+            ],
+          },
+        },
+      ],
     },
-    {
-      Customer: { connect: { id: 5} },
-      yourRef: 'REF104',
-      invoiceNo: 'INV104',
-      credit: new Date('2025-08-31'),
-      deliveryDate: new Date('2025-10-28'),
-      deliveryOrderNo: 'DO104',
-      salesName: 'สมชาย ใจดี',
-      deliveredBy: 'กานต์พิชชา ส่งไว',
-      Staff_Bill_salesNameToStaff: { connect: { id: 1 } },
-      Staff_Bill_deliveredByToStaff: { connect: { id: 5} },
-      description: 'วัฒนธรรมใหม่ขันน้ำองค์คะแนนทดหอย ',
-      unitPrice: 246.02,
-      discount: 0.39,
-      vat: 7.0,
-      dateReceive: new Date('2025-08-01'),
-      typeBill: 'บิลเงินสด',
-      OrderPO:{
-        create: [
-          {
-          poNumber: 'PO-005',
+  },
+  {
+    Customer: { connect: { id: 5 } },
+    yourRef: "REF104",
+    invoiceNo: "INV104",
+    credit: new Date("2025-08-31"),
+    deliveryDate: new Date("2025-10-28"),
+    deliveryOrderNo: "DO104",
+    salesName: "สมชาย ใจดี",
+    deliveredBy: "กานต์พิชชา ส่งไว",
+    Staff_Bill_salesNameToStaff: { connect: { id: 1 } },
+    Staff_Bill_deliveredByToStaff: { connect: { id: 5 } },
+    description: "วัฒนธรรมใหม่ขันน้ำองค์คะแนนทดหอย ",
+    unitPrice: 246.02,
+    discount: 0.39,
+    vat: 7.0,
+    dateReceive: new Date("2025-08-01"),
+    typeBill: "บิลเงินสด",
+    OrderPO: {
+      create: [
+        {
+          poNumber: "PO-005",
           total: 5000,
           vat: 7,
-          urlPo: ['po5.pdf'],
+          urlPo: ["po5.pdf"],
           date: new Date(),
           Product: {
             create: [
-              { steelType: 'Carbon Steel', wide: 10, length: 20, thickness: 1, amount: 5, total: 200 },
-              { steelType: 'Stainless Steel', wide: 15, length: 25, thickness: 2, amount: 10, total: 800 }
-            ]
-          }
-        },        
-        ]
-      }
+              {
+                steelType: "Carbon Steel",
+                wide: 10,
+                length: 20,
+                thickness: 1,
+                amount: 5,
+                total: 200,
+              },
+              {
+                steelType: "Stainless Steel",
+                wide: 15,
+                length: 25,
+                thickness: 2,
+                amount: 10,
+                total: 800,
+              },
+            ],
+          },
+        },
+      ],
     },
-]
+  },
+];

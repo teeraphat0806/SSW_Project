@@ -14,7 +14,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
             where: { id: Number(params.id) },
             include: {
                 Staff: {
-                    select: { name: true , position: true , bankAccount: true, startDate: true, code: true,social_security: true,Salary: true}
+                    select: { name: true , position: true , bankAccount: true, startDate: true, code: true,social_security: true,currentSalary: true}
                 }
             }
         });

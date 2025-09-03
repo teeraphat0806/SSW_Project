@@ -1,12 +1,6 @@
 "use client";
-
 import { useEffect, useMemo, useState } from "react";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -18,12 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -58,13 +47,13 @@ import {
   LineChart,
   Line,
 } from "recharts";
-
+import DeleteConfirmButton from "../../components/DeleteButton";
 import { SalaryAdjustmentForm } from "@/components/payroll/SalaryAdjustmentForm";
 import { PayslipGenerator } from "@/components/payroll/PayslipGenerator";
 import { EmployeeOverview } from "@/components/payroll/EmployeeOverview";
 import { mockEmployees, mockAdjustments } from "@/data/mockPayrollData";
 import type { Employee, SalaryAdjustment } from "@/types/payroll";
-
+import { ToastContainer, toast } from "react-toastify";
 /* =========================
    Types & Helpers
 ========================= */
@@ -72,11 +61,13 @@ export type OtherIncomeType = {
   id: string;
   name: string;
   defaultAmount?: number;
+  types?: string;
 };
 
 function isOtherIncome(adj: SalaryAdjustment, types: OtherIncomeType[]) {
-  const set = new Set(types.map((t) => t.name));
-  return set.has(adj.reason);
+  if (!adj.detail) return false;
+  const detailLower = adj.detail.toLowerCase().trim();
+  return types.some((t) => detailLower.includes(t.name.toLowerCase().trim()));
 }
 
 type TimeframeMode = "year" | "past-5" | "past-10" | "all";
@@ -118,10 +109,10 @@ export default function PayrollPage() {
     useState<Employee | null>(null);
 
   // Overview filters
-  const [overviewEmployee, setOverviewEmployee] =
-    useState<string | "all">("all");
-  const [timeframeMode, setTimeframeMode] =
-    useState<TimeframeMode>("all");
+  const [overviewEmployee, setOverviewEmployee] = useState<string | "all">(
+    "all"
+  );
+  const [timeframeMode, setTimeframeMode] = useState<TimeframeMode>("all");
   const allYearsSortedDesc = useMemo(
     () =>
       Array.from(
@@ -132,38 +123,54 @@ export default function PayrollPage() {
   const defaultYear = allYearsSortedDesc[0] ?? new Date().getFullYear();
   const [selectedYearForChart, setSelectedYearForChart] =
     useState<number>(defaultYear);
-  const [chartMetric, setChartMetric] =
-    useState<ChartMetric>("net");
+  const [chartMetric, setChartMetric] = useState<ChartMetric>("net");
 
   // Adjustment tab
-  const [adjustmentType, setAdjustmentType] =
-    useState<"salary" | "other">("salary");
-  const [latestEmployeeOnly, setLatestEmployeeOnly] =
-    useState<"none" | string>("none");
+  const [adjustmentType, setAdjustmentType] = useState<"salary" | "other">(
+    "salary"
+  );
+  const [latestEmployeeOnly, setLatestEmployeeOnly] = useState<"none" | string>(
+    "none"
+  );
 
   // Other income catalog
-  const [otherIncomeTypes, setOtherIncomeTypes] =
-    useState<OtherIncomeType[]>([
-      { id: "ot", name: "OT" },
-      { id: "late", name: "มาสาย" },
-    ]);
+  const [otherIncomeTypes, setOtherIncomeTypes] = useState<OtherIncomeType[]>([
+    { id: "ot", name: "OT", types: "increase" },
+    { id: "late", name: "มาสาย", types: "decrease" },
+  ]);
   const [manageOpen, setManageOpen] = useState(false);
 
   useEffect(() => {
-    fetch('/api/staff')
-      .then(res => res.json())
+    fetch("/api/staff")
+      .then((res) => res.json())
       .then((data: Employee[]) => {
         setEmployees(data);
       })
-      .catch(err => console.error('Error fetching employees:', err));
+      .catch((err) => console.error("Error fetching employees:", err));
+    fetch("/api/typeStaffIncome")
+      .then((res) => {
+        if (!res.ok) throw new Error("Failed to fetch typeStaffIncome");
+        return res.json();
+      })
+      .then((data: any[]) => {
+        const mapped: OtherIncomeType[] = data.map((item) => ({
+          id: String(item.id),
+          name: item.name,
+          defaultAmount: Number(item.amount),
+          types: item.types,
+        }));
+        setOtherIncomeTypes(mapped);
+      })
+      .catch((err) => {
+        console.error("Error fetching typeStaffIncome:", err);
+      });
   }, []);
 
   /* Derived – Dashboard */
   const dashboardSlice = useMemo(() => {
     return adjustments.filter((adj) => {
       const empOk =
-        overviewEmployee === "all" ||
-        adj.employeeId === overviewEmployee;
+        overviewEmployee === "all" || adj.staffId === overviewEmployee;
       const tfOk = inTimeframeMode(
         adj.date,
         timeframeMode,
@@ -171,12 +178,7 @@ export default function PayrollPage() {
       );
       return empOk && tfOk;
     });
-  }, [
-    adjustments,
-    overviewEmployee,
-    timeframeMode,
-    selectedYearForChart,
-  ]);
+  }, [adjustments, overviewEmployee, timeframeMode, selectedYearForChart]);
 
   const dashboardMetrics = useMemo(() => {
     const base = {
@@ -196,6 +198,91 @@ export default function PayrollPage() {
       return acc;
     }, base);
   }, [dashboardSlice, otherIncomeTypes]);
+  const isDeduction = (name?: string, detail?: string) => {
+    const n = name ?? "";
+    const d = detail ?? "";
+    // เดาแบบง่ายๆ จาก prefix/code และคำสำคัญภาษาไทย
+    return (
+      /^(DEDUCT|PENALTY|FINE|WITHHOLD)/i.test(n) ||
+      /(หัก|ค่าปรับ|ปรับเงิน|ผิดระเบียบ)/.test(d)
+    );
+  };
+
+  useEffect(() => {
+    loadAdjustments();
+  }, []);
+
+  // ดูค่า adjustments ทุกครั้งที่เปลี่ยน
+  useEffect(() => {
+    console.log("adjustments:", adjustments);
+    console.log("latestList:", latestList);
+    console.log("employee: ", employees);
+  }, [adjustments]);
+
+  // ดูค่า latestList ทุกครั้งที่เปลี่ยน
+
+  const mapIncome = (r: any): SalaryAdjustment => ({
+    id: String(r.id),
+    staffId: String(r.staffId),
+    amount: Number(r.amount) ?? 0,
+    detail: r.detail ?? r.name ?? "",
+    date: new Date(r.date ?? r.createdAt ?? Date.now())
+      .toISOString()
+      .slice(0, 10),
+    type: isDeduction(r.name, r.detail) ? "deduction" : "increase",
+  });
+
+  const mapSalary = (r: any): SalaryAdjustment => ({
+    id: String(r.id),
+    staffId: String(r.staffId),
+    amount: Number(r.amount) ?? 0,
+    detail: r.detail ?? "ปรับเงินเดือน",
+    date: new Date(r.effectiveDate ?? r.createdAt ?? Date.now())
+      .toISOString()
+      .slice(0, 10),
+    type: "salary",
+  });
+
+  // โหลดตาม adjustmentType
+  const loadAdjustments = async (signal?: AbortSignal) => {
+    const isSalary = adjustmentType === "salary";
+    const url = isSalary ? "/api/staffSalary" : "/api/staffIncome";
+
+    const res = await fetch(url, {
+      method: "GET",
+      headers: { "Content-Type": "application/json" },
+      cache: "no-store",
+      signal,
+    });
+
+    if (!res.ok) {
+      const msg = await res.text().catch(() => "");
+      throw new Error(
+        `Fetch failed (${res.status}): ${msg || "Unknown error"}`
+      );
+    }
+
+    const data: any[] = await res.json();
+    const mapped = (isSalary ? data.map(mapSalary) : data.map(mapIncome)).sort(
+      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+    );
+
+    setAdjustments(mapped);
+  };
+
+  // เรียกใช้ให้รีเฟรชทุกครั้งที่ adjustmentType เปลี่ยน
+  useEffect(() => {
+    const ac = new AbortController();
+    (async () => {
+      try {
+        await loadAdjustments(ac.signal);
+      } catch (e) {
+        console.error(e);
+        setAdjustments([]);
+      }
+    })();
+    return () => ac.abort();
+  }, [adjustmentType]);
 
   const currentSalaryKpi = useMemo(() => {
     if (overviewEmployee === "all")
@@ -207,8 +294,7 @@ export default function PayrollPage() {
   const chartData = useMemo(() => {
     const slice = adjustments.filter(
       (a) =>
-        (overviewEmployee === "all" ||
-          a.employeeId === overviewEmployee) &&
+        (overviewEmployee === "all" || a.staffId === overviewEmployee) &&
         inTimeframeMode(a.date, timeframeMode, selectedYearForChart)
     );
 
@@ -263,26 +349,26 @@ export default function PayrollPage() {
     otherIncomeTypes,
   ]);
 
+  const employeeById = useMemo(() => {
+    const m = new Map<string, Employee>();
+    employees.forEach((e) => m.set(String(e.id), e));
+    return m;
+  }, [employees]);
   /* Derived – Adjustment latest panel */
   const latestList = useMemo(() => {
     return adjustments
       .filter((a) => {
         const isOther = isOtherIncome(a, otherIncomeTypes);
-        const matchType =
-          adjustmentType === "salary" ? !isOther : isOther;
+        const matchType = adjustmentType === "salary" ? !isOther : isOther;
         const matchEmp =
           latestEmployeeOnly === "none"
             ? true
-            : a.employeeId === latestEmployeeOnly;
+            : String(a.staffId) === String(latestEmployeeOnly);
         return matchType && matchEmp;
       })
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
       .slice(0, 10);
-  }, [
-    adjustments,
-    otherIncomeTypes,
-    adjustmentType,
-    latestEmployeeOnly,
-  ]);
+  }, [adjustments, otherIncomeTypes, adjustmentType, latestEmployeeOnly]);
 
   /* Handlers */
   const handleSalaryAdjustment = (
@@ -294,10 +380,92 @@ export default function PayrollPage() {
       date: new Date().toISOString(),
       type: adjustment.amount >= 0 ? "increase" : "decrease",
     };
+    if (adjustmentType === "other") {
+      fetch("/api/staffIncome", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          staffId: Number(newAdjustment?.staffId), // "1" -> 1
+          amount: Number(newAdjustment?.amount), // amount -> Price
+          detail: newAdjustment?.detail,
+          name: "OT-005",
+        }),
+      })
+        .then(async (res) => {
+          const text = await res.text();
+          if (!res.ok) throw new Error(`${res.status} ${text}`);
+          return JSON.parse(text);
+        })
+        .then(() => {
+          toast.success(`เพิ่มรายได้พนักงานสำเร็จ`, {
+            position: "bottom-right",
+          });
+        })
+        .catch((err) => {
+          toast.error(`พบข้อผิดพลาด: ${err}`, {
+            position: "bottom-right",
+          });
+        });
+    }
+    if (adjustmentType === "salary") {
+      fetch(`/api/staff/${newAdjustment.staffId}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include", // ให้ browser แนบ cookie session อัตโนมัติ
+        body: JSON.stringify({
+          currentSalary: Number(newAdjustment.amount),
+        }),
+      })
+        .then(async (res) => {
+          const text = await res.text();
+          if (!res.ok) throw new Error(`${res.status} ${text}`);
+          return JSON.parse(text);
+        })
+        .then(() => {
+          toast.success(`อัพเดตรายได้พนักงานสำเร็จ`, {
+            position: "bottom-right",
+          });
+        })
 
+        .catch((err) => {
+          toast.error(`พบข้อผิดพลาด อัพเดตรายได้พนักงานไม่สำเร็จ: ${err}`, {
+            position: "bottom-right",
+          });
+        });
+      fetch("/api/staffSalary", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include", // ให้ browser ส่ง cookie next-auth.session-token อัตโนมัติ
+        body: JSON.stringify({
+          staffId: Number(newAdjustment.staffId), // แปลง staffId → staffId
+          amount: newAdjustment.amount,
+          detail: newAdjustment.detail,
+        }),
+      })
+        .then(async (res) => {
+          const text = await res.text();
+          if (!res.ok) throw new Error(`${res.status} ${text}`);
+          return JSON.parse(text);
+        })
+        .then(() => {
+          toast.success(`อัพเดตรายได้พนักงานสำเร็จ`, {
+            position: "bottom-right",
+          });
+        })
+        .catch((err) => {
+          toast.error(`พบข้อผิดพลาด: ${err}`, {
+            position: "bottom-right",
+          });
+        });
+    }
     setEmployees((prev) =>
       prev.map((emp) =>
-        emp.id === adjustment.employeeId
+        emp.id === adjustment.staffId
           ? {
               ...emp,
               currentSalary: emp.currentSalary + adjustment.amount,
@@ -313,29 +481,114 @@ export default function PayrollPage() {
   const handleClosePayslip = () => setSelectedEmployeeForPayslip(null);
 
   // CRUD other income types
-  const addOtherIncomeType = (name: string, defaultAmount?: number) => {
-    const n = name.trim();
-    if (!n) return;
-    setOtherIncomeTypes((prev) => [
-      { id: crypto.randomUUID(), name: n, defaultAmount },
-      ...prev,
-    ]);
-  };
-  const updateOtherIncomeType = (
-    id: string,
+  const inferTypesFromAmount = (
+    amt: number | undefined
+  ): "increase" | "decrease" => ((amt ?? 0) < 0 ? "decrease" : "increase");
+
+  // API add
+  const addOtherIncomeType = async (
     name: string,
-    defaultAmount?: number
+    defaultAmount?: number,
+    types?: "increase" | "decrease"
   ) => {
-    setOtherIncomeTypes((prev) =>
-      prev.map((t) =>
-        t.id === id ? { ...t, name: name.trim(), defaultAmount } : t
-      )
-    );
-  };
-  const removeOtherIncomeType = (id: string) => {
-    setOtherIncomeTypes((prev) => prev.filter((t) => t.id !== id));
+    const body = {
+      name: name.trim(),
+      amount: Number(defaultAmount ?? 0),
+      types: types ?? inferTypesFromAmount(defaultAmount),
+    };
+
+    const res = await fetch("/api/typeStaffIncome", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include", // แนบ cookie อัตโนมัติ
+      body: JSON.stringify(body),
+    });
+    if (res.ok)
+      toast.success("เพิ่มรายได้พนักงานสำเร็จ", {
+        position: "bottom-right",
+      });
+    if (!res.ok) throw new Error(await res.text());
+    const created = await res.json();
+    return {
+      id: String(created.id),
+      name: created.name,
+      defaultAmount: Number(created.amount),
+      types: created.types,
+    } as OtherIncomeType;
   };
 
+  // API update
+  const updateOtherIncomeType = async (
+    id: string,
+    name: string,
+    defaultAmount?: number,
+    types?: "increase" | "decrease"
+  ) => {
+    const body = {
+      name: name.trim(),
+      amount: defaultAmount,
+      types: types ?? inferTypesFromAmount(defaultAmount),
+    };
+
+    const res = await fetch(`/api/typeStaffIncome/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify(body),
+    });
+    if (res.ok)
+      toast.success("อัพเดตรายได้พนักงานสำเร็จ", {
+        position: "bottom-right",
+      });
+    if (!res.ok) throw new Error(await res.text());
+    const updated = await res.json();
+    return {
+      name: updated.name,
+      defaultAmount: Number(updated.amount),
+      types: updated.types,
+    } as OtherIncomeType;
+  };
+
+  // API remove
+  const removeOtherIncomeType = async (id: string) => {
+    const res = await fetch(`/api/typeStaffIncome/${id}`, {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+    });
+    if (res.ok)
+      toast.success("ลบรายได้พนักงานสำเร็จ", {
+        position: "bottom-right",
+      });
+    if (!res.ok) {
+      toast.error("กรุณา รีโหลดหน้าใหม่", { position: "bottom-right" });
+    }
+    return true;
+  };
+  const deleteStaffIncome = async (id: string | number) => {
+    try {
+      const res = await fetch(`/api/staffIncome/${id}`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+      });
+
+      if (!res.ok) {
+        const text = await res.text().catch(() => "");
+        throw new Error(text || `HTTP ${res.status}`);
+      }
+
+      toast.success("ลบ ผู้ใช้งานสำเร็จ", {
+        position: "bottom-right",
+      });
+    } catch (error) {
+      toast.error(`ลบ ผู้ใช้งานไม่สำเร็จ: ${error}`, {
+        position: "bottom-right",
+      });
+    }
+  };
   /* Payslip overlay */
   if (selectedEmployeeForPayslip) {
     return (
@@ -346,7 +599,6 @@ export default function PayrollPage() {
     );
   }
 
-  
   /* =========================
      UI
   ========================= */
@@ -400,9 +652,7 @@ export default function PayrollPage() {
                   <Label>พนักงาน</Label>
                   <Select
                     value={String(overviewEmployee)}
-                    onValueChange={(v) =>
-                      setOverviewEmployee(v as any)
-                    }
+                    onValueChange={(v) => setOverviewEmployee(v as any)}
                   >
                     <SelectTrigger className="w-full">
                       <SelectValue placeholder="เลือกพนักงาน" />
@@ -422,21 +672,15 @@ export default function PayrollPage() {
                   <Label>ช่วงเวลา</Label>
                   <Select
                     value={timeframeMode}
-                    onValueChange={(v: TimeframeMode) =>
-                      setTimeframeMode(v)
-                    }
+                    onValueChange={(v: TimeframeMode) => setTimeframeMode(v)}
                   >
                     <SelectTrigger className="w-full">
                       <SelectValue placeholder="เลือกช่วงเวลา" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="year">รายปี</SelectItem>
-                      <SelectItem value="past-5">
-                        ย้อนหลัง 5 ปี
-                      </SelectItem>
-                      <SelectItem value="past-10">
-                        ย้อนหลัง 10 ปี
-                      </SelectItem>
+                      <SelectItem value="past-5">ย้อนหลัง 5 ปี</SelectItem>
+                      <SelectItem value="past-10">ย้อนหลัง 10 ปี</SelectItem>
                       <SelectItem value="all">ทั้งหมด</SelectItem>
                     </SelectContent>
                   </Select>
@@ -446,9 +690,7 @@ export default function PayrollPage() {
                   <Label>ปี (สำหรับโหมดรายปี)</Label>
                   <Select
                     value={String(selectedYearForChart)}
-                    onValueChange={(v) =>
-                      setSelectedYearForChart(parseInt(v))
-                    }
+                    onValueChange={(v) => setSelectedYearForChart(parseInt(v))}
                     disabled={timeframeMode !== "year"}
                   >
                     <SelectTrigger className="w-full disabled:opacity-60">
@@ -468,9 +710,7 @@ export default function PayrollPage() {
                   <Label>เมตริกกราฟ</Label>
                   <Select
                     value={chartMetric}
-                    onValueChange={(v: ChartMetric) =>
-                      setChartMetric(v)
-                    }
+                    onValueChange={(v: ChartMetric) => setChartMetric(v)}
                   >
                     <SelectTrigger className="w-full">
                       <SelectValue placeholder="เลือกเมตริก" />
@@ -605,14 +845,11 @@ export default function PayrollPage() {
                       <Label>เลือกรายการรายได้อื่น</Label>
                       <div className="flex gap-2">
                         <Select
-                          defaultValue={
-                            otherIncomeTypes[0]?.name ?? "OT"
-                          }
+                          defaultValue={otherIncomeTypes[0]?.name ?? "OT"}
                           onValueChange={(v) => {
-                            const el =
-                              document.getElementById(
-                                "other-income-select"
-                              ) as HTMLInputElement | null;
+                            const el = document.getElementById(
+                              "other-income-select"
+                            ) as HTMLInputElement | null;
                             if (el) el.value = v;
                           }}
                         >
@@ -628,10 +865,7 @@ export default function PayrollPage() {
                           </SelectContent>
                         </Select>
 
-                        <Dialog
-                          open={manageOpen}
-                          onOpenChange={setManageOpen}
-                        >
+                        <Dialog open={manageOpen} onOpenChange={setManageOpen}>
                           <DialogTrigger asChild>
                             <Button
                               variant="outline"
@@ -643,9 +877,45 @@ export default function PayrollPage() {
                           </DialogTrigger>
                           <ManageOtherIncomeModal
                             types={otherIncomeTypes}
-                            onAdd={addOtherIncomeType}
-                            onUpdate={updateOtherIncomeType}
-                            onRemove={removeOtherIncomeType}
+                            // ⬇️ ไม่เปลี่ยน signature ของ modal: ส่งแค่ (name, defaultAmount?)
+                            onAdd={async (name, amount) => {
+                              try {
+                                const created = await addOtherIncomeType(
+                                  name,
+                                  amount
+                                );
+                                setOtherIncomeTypes((prev) => [
+                                  created,
+                                  ...prev,
+                                ]);
+                              } catch (err) {
+                                console.error(err);
+                              }
+                            }}
+                            onUpdate={async (id, name, amount) => {
+                              try {
+                                const updated = await updateOtherIncomeType(
+                                  id,
+                                  name,
+                                  amount
+                                );
+                                setOtherIncomeTypes((prev) =>
+                                  prev.map((t) => (t.id === id ? updated : t))
+                                );
+                              } catch (err) {
+                                console.error(err);
+                              }
+                            }}
+                            onRemove={async (id) => {
+                              try {
+                                await removeOtherIncomeType(id);
+                                setOtherIncomeTypes((prev) =>
+                                  prev.filter((t) => t.id !== id)
+                                );
+                              } catch (err) {
+                                console.error(err);
+                              }
+                            }}
                           />
                         </Dialog>
                       </div>
@@ -664,12 +934,11 @@ export default function PayrollPage() {
                   employees={employees}
                   onAdjustmentSubmit={(payload) => {
                     if (adjustmentType === "other") {
-                      const el =
-                        document.getElementById(
-                          "other-income-select"
-                        ) as HTMLInputElement | null;
-                      const reason = el?.value || payload.reason;
-                      handleSalaryAdjustment({ ...payload, reason });
+                      const el = document.getElementById(
+                        "other-income-select"
+                      ) as HTMLInputElement | null;
+                      const detail = el?.value || payload.detail;
+                      handleSalaryAdjustment({ ...payload, detail });
                     } else {
                       handleSalaryAdjustment(payload);
                     }
@@ -683,16 +952,9 @@ export default function PayrollPage() {
             <Card>
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg">
-                    รายการล่าสุด
-                  </CardTitle>
-                  <Badge
-                    variant="outline"
-                    className="rounded-full capitalize"
-                  >
-                    {adjustmentType === "salary"
-                      ? "เงินเดือน"
-                      : "รายได้อื่น"}
+                  <CardTitle className="text-lg">รายการล่าสุด</CardTitle>
+                  <Badge variant="outline" className="rounded-full capitalize">
+                    {adjustmentType === "salary" ? "เงินเดือน" : "รายได้อื่น"}
                   </Badge>
                 </div>
               </CardHeader>
@@ -701,9 +963,7 @@ export default function PayrollPage() {
                   <Label>พนักงาน</Label>
                   <Select
                     value={latestEmployeeOnly}
-                    onValueChange={(v: any) =>
-                      setLatestEmployeeOnly(v)
-                    }
+                    onValueChange={(v: any) => setLatestEmployeeOnly(v)}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="เลือกพนักงาน" />
@@ -732,8 +992,8 @@ export default function PayrollPage() {
                   <ScrollArea className="h-96 rounded-xl border bg-card">
                     <div className="p-2 space-y-2">
                       {latestList.map((adjustment) => {
-                        const employee = employees.find(
-                          (emp) => emp.id === adjustment.employeeId
+                        const employee = employeeById.get(
+                          String(adjustment.staffId)
                         );
                         const positive = adjustment.amount >= 0;
                         return (
@@ -758,16 +1018,13 @@ export default function PayrollPage() {
                                         : "outline"
                                     }
                                   >
-                                    {isOtherIncome(
-                                      adjustment,
-                                      otherIncomeTypes
-                                    )
+                                    {isOtherIncome(adjustment, otherIncomeTypes)
                                       ? "รายได้อื่น"
                                       : "เงินเดือน"}
                                   </Badge>
                                 </div>
                                 <p className="text-xs text-muted-foreground">
-                                  {adjustment.reason}
+                                  {adjustment.detail}
                                 </p>
                               </div>
                               <div className="text-right">
@@ -786,6 +1043,16 @@ export default function PayrollPage() {
                                     adjustment.date
                                   ).toLocaleDateString()}
                                 </p>
+                                {isOtherIncome(adjustment, otherIncomeTypes) ? (
+                                  <DeleteConfirmButton
+                                    onConfirm={() =>
+                                      deleteStaffIncome(adjustment.id)
+                                    }
+                                    label="การลบนี้ไม่สามารถย้อนกลับได้"
+                                  />
+                                ) : (
+                                  ""
+                                )}
                               </div>
                             </div>
                           </div>
@@ -821,7 +1088,7 @@ function Kpi({
   formatCurrency,
   icon,
   gradient = "from-blue/60 to-blue/30",
-  colorBackground
+  colorBackground,
 }: {
   title: string;
   value: number;
@@ -838,19 +1105,16 @@ function Kpi({
 
   return (
     <div className="rounded-2xl border bg-card p-0 overflow-hidden">
-      <div
-        className={`h-2 w-full bg-gradient-to-r ${gradient}`}
-        aria-hidden
-      />
+      <div className={`h-2 w-full bg-gradient-to-r ${gradient}`} aria-hidden />
       <div className="p-4">
         <div className="flex items-center justify-between">
           <CardTitle className="text-sm text-muted-foreground">
             {title}
           </CardTitle>
-          <div className={`rounded-full shadow-2xl shadow-black p-2 ${colorBackground}`}>
-          {icon && (
-            <div className="text-muted-foreground/80">{icon}</div>
-          )}
+          <div
+            className={`rounded-full shadow-2xl shadow-black p-2 ${colorBackground}`}
+          >
+            {icon && <div className="text-muted-foreground/80">{icon}</div>}
           </div>
         </div>
         <div className="mt-2 text-2xl font-semibold text-foreground">
@@ -885,6 +1149,12 @@ function ManageOtherIncomeModal({
   const [editing, setEditing] = useState<
     Record<string, { name: string; defaultAmount?: number }>
   >({});
+  const [valueTypeStaffIncome, setValueTypeStaffIncome] = useState("");
+  const canAdd =
+    newName.trim() !== "" && // มีชื่อ
+    newAmount !== "" && // มีจำนวน
+    (valueTypeStaffIncome === "increase" ||
+      valueTypeStaffIncome === "decrease"); // เลือกประเภทแล้ว
 
   return (
     <DialogContent className="max-w-2xl">
@@ -892,7 +1162,7 @@ function ManageOtherIncomeModal({
         <DialogTitle>จัดการรายการรายได้อื่น</DialogTitle>
       </DialogHeader>
 
-      <div className="space-y-4">
+      <div className="space-y-3">
         {/* Add */}
         <div className="flex gap-2">
           <Input
@@ -906,11 +1176,29 @@ function ManageOtherIncomeModal({
             value={newAmount}
             onChange={(e) => setNewAmount(e.target.value)}
           />
+          <Select
+            value={valueTypeStaffIncome}
+            onValueChange={(v: "increase" | "decrease") =>
+              setValueTypeStaffIncome(v)
+            }
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="เลือกประเภท" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="increase">เพิ่มรายได้</SelectItem>
+              <SelectItem value="decrease">ลดรายได้</SelectItem>
+            </SelectContent>
+          </Select>
+          <div></div>
           <Button
+            disabled={!canAdd}
             onClick={() => {
-              onAdd(newName, newAmount === "" ? undefined : Number(newAmount));
+              if (!canAdd) return;
+              onAdd(newName, Number(newAmount));
               setNewName("");
               setNewAmount("");
+              setValueTypeStaffIncome("");
             }}
           >
             <Plus className="h-4 w-4 mr-1" />
@@ -924,9 +1212,7 @@ function ManageOtherIncomeModal({
         <ScrollArea className="h-80 rounded-md border">
           <div className="p-2 space-y-2">
             {types.length === 0 && (
-              <p className="text-sm text-muted-foreground">
-                ยังไม่มีรายการ
-              </p>
+              <p className="text-sm text-muted-foreground">ยังไม่มีรายการ</p>
             )}
             {types.map((t) => {
               const isEditing = !!editing[t.id];
@@ -971,7 +1257,13 @@ function ManageOtherIncomeModal({
                       <Button
                         variant="secondary"
                         onClick={() => {
-                          onUpdate(t.id, val.name, val.defaultAmount);
+                          const nameOk = val.name.trim() !== "";
+                          const amtOk =
+                            typeof val.defaultAmount === "number" &&
+                            !Number.isNaN(val.defaultAmount);
+                          if (!nameOk || !amtOk) return; // ยังกรอกไม่ครบ ก็ไม่ทำอะไร
+
+                          onUpdate(t.id, val.name.trim(), val.defaultAmount);
                           setEditing((prev) => {
                             const cp = { ...prev };
                             delete cp[t.id];
@@ -988,8 +1280,7 @@ function ManageOtherIncomeModal({
                         <div className="font-medium">{t.name}</div>
                         {t.defaultAmount !== undefined && (
                           <div className="text-xs text-muted-foreground">
-                            ค่าเริ่มต้น: ฿
-                            {t.defaultAmount.toLocaleString()}
+                            ค่าเริ่มต้น: ฿{t.defaultAmount.toLocaleString()}
                           </div>
                         )}
                       </div>
@@ -1022,6 +1313,7 @@ function ManageOtherIncomeModal({
             })}
           </div>
         </ScrollArea>
+        <ToastContainer />
       </div>
 
       <DialogFooter>

@@ -6,5 +6,5 @@ export const StaffSchema = z.object({
   bankName: z.string(),
   code: z.string(),
   social_security: z.string(),
-  Salary: z.number(),
+  currentSalary: z.number(),
 })
