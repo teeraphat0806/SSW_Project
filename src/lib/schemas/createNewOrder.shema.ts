@@ -24,7 +24,8 @@ export const CreateNewOrderSchema = z.object({
             length: z.number(),
             thickness: z.number(),
             amount: z.number(),
-            total: z.number()
+            total: z.number(),
+            detail: z.string().optional()
             })
         )
         })

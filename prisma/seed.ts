@@ -34,9 +34,42 @@ async function main() {
   await prisma.$executeRawUnsafe(`ALTER SEQUENCE "TemporaryBill_id_seq" RESTART WITH 1`)
   await prisma.$executeRawUnsafe(`ALTER SEQUENCE "StaffSalary_id_seq" RESTART WITH 1`)
 
-  // 3. ใส่ข้อมูล
-  await prisma.staff.createMany({ data: staffData })
+//   // 3. ใส่ข้อมูล
+
   await prisma.user.createMany({ data: userData })
+  // await prisma.staff.createMany({ data: staffData })
+  for (const s of staffData ?? []) {
+    const user =
+      s.userEmail
+        ? await prisma.user.findUnique({
+            where: { email: s.userEmail },
+            select: { id: true },
+          })
+        : null;
+
+    await prisma.staff.upsert({
+      where: { code: s.code }, // code เป็น @unique
+      update: {
+        position: s.position,
+        bankAccount: s.bankAccount,
+        bankName: s.bankName,
+        startDate: s.startDate,
+        social_security: s.social_security,
+        currentSalary: s.currentSalary,
+        ...(user ? { user: { connect: { id: user.id } } } : {}),
+      },
+      create: {
+        code: s.code,
+        position: s.position,
+        bankAccount: s.bankAccount,
+        bankName: s.bankName,
+        startDate: s.startDate,
+        social_security: s.social_security,
+        currentSalary: s.currentSalary,
+        ...(user ? { user: { connect: { id: user.id } } } : {}),
+      },
+    });
+  }
   await prisma.customer.createMany({ data: customerData })
   // await prisma.orderPO.createMany({ data: orderPoData })
   for (const bill of billData) {

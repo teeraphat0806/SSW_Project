@@ -4,6 +4,9 @@ import { authOptions } from "../auth/[...nextauth]/route";
 import prisma from "../../../lib/prisma";
 import { CreateNewOrderSchema } from "../../../lib/schemas/createNewOrder.shema";
 
+
+
+
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
   // Fix: Only allow if role is superadmin OR supervisor
@@ -79,6 +82,7 @@ export async function POST(req: NextRequest) {
                 thickness: p.thickness,
                 amount: p.amount,
                 total: p.total,
+                detail: p.detail,
               })),
             },
           })),

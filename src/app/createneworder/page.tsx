@@ -42,9 +42,7 @@ const NewJobOrder = () => {
   const [showForm, setShowForm] = useState(false); //แสดงหรือซ่อนข้อมุลลูกค้า
   const toggleForm = () => setShowForm(!showForm); //ฟังก์ชั่นแสดงฟอร์มลูกค้า
   const [open, setOpen] = useState(false); //เปิดหรือปิด SelectCustomer
-  const [customers, setCustomers] = useState<{ id: string; name: string }[]>(
-    []
-  ); //เก็บข้อมุลลูกค้า
+  const [customers, setCustomers] = useState<{ id: string; name: string }[]>([]); //เก็บข้อมุลลูกค้า
   const [search, setSearch] = useState(""); // เก็บค่าที่ค้นหา
   const [loading, setLoading] = useState(false); //สถานะโหลดข้อมุล
   const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(
@@ -126,6 +124,39 @@ const NewJobOrder = () => {
     faxNumber: "",
   });
 
+  async function UploadFiles({
+  files,
+  poNumber,
+  customerId,
+}: {
+  files: File[];
+  poNumber: string;
+  customerId: string | number;
+}) {
+  if (!files?.length) return [];
+
+  const form = new FormData();
+  form.append("poNumber", poNumber);
+  form.append("customerId", String(customerId)); // สำคัญ: แปลงเป็น string
+
+  files.forEach((f) => form.append("files", f));
+
+  // ใช้ relative path กัน CORS/timezone/env
+  const res = await fetch("/api/upload/po", {
+    method: "POST",
+    body: form,
+  });
+
+  // อ่าน body แค่ครั้งเดียว
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new Error((data as any)?.error || "อัปโหลดไฟล์ไม่สำเร็จ");
+  }
+
+  return (data as any).keys as string[];
+}
+
+
   //Handle form submisstion
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -139,21 +170,17 @@ const NewJobOrder = () => {
     }
     setIsSubmitting(true);
 
-    const payloadNewcustomer = {
-      code: formData.code,
-      name: formData.customerName,
-      address: formData.deliveryAddress,
-      tel: formData.customerPhone,
-      taxNumber: formData.taxNumber,
-      faxNumber: formData.faxNumber,
-      email: formData.customerEmail,
-    };
-
-    
-
     try {
-      
       if (showForm) {
+        const payloadNewcustomer = {
+          code: formData.code,
+          name: formData.customerName,
+          address: formData.deliveryAddress,
+          tel: formData.customerPhone,
+          taxNumber: formData.taxNumber,
+          faxNumber: formData.faxNumber,
+          email: formData.customerEmail,
+    };
         const customerRes = await fetch("http://localhost:3000/api/customer", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -171,11 +198,18 @@ const NewJobOrder = () => {
         });
       }
 
+      const poKeys = await UploadFiles({
+      files: UploadFile,          
+      poNumber: po.poNumber,     
+      customerId: customerId,
+    });
+
+
       const payloadBill ={
       customerId: Number(customerId),
       yourRef: "REF108",
       invoiceNo: "INV108",
-      deliveryDate: po.deliveryDate,
+      deliveryDate:  new Date(po.deliveryDate).toISOString(),
       deliveryOrderNo: "DO108",
       vat: 7.0,
       orderPOs:[
@@ -183,7 +217,7 @@ const NewJobOrder = () => {
           poNumber: po.poNumber,
           total: steelItems.reduce((sum,item ) => {return sum + item.quantity},0),
           vat:7.0,
-          urlPo:["po7.pdf"],
+          urlPo:poKeys,
           products: steelItems.map((item) => {
             return{
               steelType: item.steelType,
@@ -192,12 +226,13 @@ const NewJobOrder = () => {
               amount: item.quantity,
               thickness: item.thickness,
               total:200
+              
             }
           })
         }
       ]
     }
-
+      //สร้างออเดอร์ใหม่
       const billRes = await fetch("http://localhost:3000/api/createNewOrder",{
         method: "POST",
         headers: {"Content-Type": "application/json"},
@@ -258,23 +293,23 @@ const NewJobOrder = () => {
   // function to validate from data
   const validateForm = () => {
     if(showForm){
-      if (!formData.code.trim()) return "Code is required";
-      if (!formData.customerName.trim()) return "Customer Name is required";
+      if (!formData.code.trim()) return "กรุณากรอกรหัสลูกค้า (Code)";
+      if (!formData.customerName.trim()) return "กรุณากรอกชื่อลูกค้า";
       if (!formData.deliveryAddress.trim())
-        return "Delivery Address is required";
-      if (!formData.customerPhone.trim()) return "Customer Phone is required";
-      if (!formData.taxNumber.trim()) return "Tax Number is required";
-      if (!formData.faxNumber.trim()) return "Fax Number is required";
+        return "กรุณากรอกที่อยู่สำหรับจัดส่ง";
+      if (!formData.customerPhone.trim()) return "กรุณากรอกเบอร์ลูกค้า";
+      if (!formData.taxNumber.trim()) return "กรุณากรอกเลข Tax";
+      if (!formData.faxNumber.trim()) return "กรุณากรอกเลข Fax";
     }
-   
-    if (!po.poNumber.trim()) return "PO Number is required";
-    if (!po.deliveryDate) return "Delivery Date is required";
+    if(!UploadFile.length) return "กรุณาอัปโหลดไฟล์ใบ PO";
+    if (!po.poNumber.trim()) return "กรุณากรอกหมายเลข PO";
+    if (!po.deliveryDate) return "กรุณากรอกวันที่ต้องการสินค้า";
     for (const item of steelItems) {
-      if (!item.steelType) return "Steel Type is required for all items";
-      if (item.quantity <= 0) return "Quantity must be greater than 0";
-      if (item.width <= 0) return "Width must be greater than 0";
-      if (item.length <= 0) return "Length must be greater than 0";
-      if (item.thickness <= 0) return "Thickness must be greater than 0";
+      if (!item.steelType) return "กรุณาเลือกประเภทเหล็ก";
+      if (item.quantity <= 0) return "จำนวนชิ้นต้องมากกว่า 0";
+      if (item.width <= 0) return "ความกว้างต้องมากกว่า 0";
+      if (item.length <= 0) return "ความยาวต้องมากกว่า 0";
+      if (item.thickness <= 0) return "ความหน้าต้องมากกว่า 0";
     }
     return null;
   };
@@ -344,7 +379,7 @@ const NewJobOrder = () => {
 
           <label className="cursor-pointer rounded-md bg-gray-100 px-4 py-1.5 text-sm text-gray-700 border border-gray-300 hover:bg-gray-200 transition">
             อัปโหลดไฟล์
-            <input type="file" className="hidden" onChange={handleFileChange} />
+            <input type="file" multiple className="hidden" onChange={handleFileChange} />
           </label>
 
           <div className="flex flex-wrap gap-3">

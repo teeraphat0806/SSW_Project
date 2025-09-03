@@ -33,7 +33,7 @@ interface JobOrder {
   status: "pending" | "cutting" | "weighing" | "ready" | "shipped" | "completed";
   weight?: number;
   price?: number;
-  createdAt: Date;
+  createdAt: string;
 }
 
 const mockJobOrders: JobOrder[] = [
@@ -47,7 +47,7 @@ const mockJobOrders: JobOrder[] = [
     length: 200,
     thickness: 5,
     status: "pending",
-    createdAt: new Date("2024-01-15")
+    createdAt: "2024-01-15"
   },
   {
     id: "JO-002", 
@@ -59,7 +59,7 @@ const mockJobOrders: JobOrder[] = [
     length: 300,
     thickness: 8,
     status: "cutting",
-    createdAt: new Date("2024-01-14")
+    createdAt: "2024-01-14"
   },
   {
     id: "JO-003",
@@ -72,7 +72,7 @@ const mockJobOrders: JobOrder[] = [
     thickness: 3,
     status: "weighing",
     weight: 245.5,
-    createdAt: new Date("2024-01-13")
+    createdAt: "2024-01-13"
   }
 ];
 

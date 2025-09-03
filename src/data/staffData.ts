@@ -1,6 +1,6 @@
 export const staffData = [
   {
-    name: 'พนักงานขาย 1',
+    userEmail: 'somchai@example.com', // 👈 map ไป User
     position: 'ฝ่ายขาย',
     bankAccount: '1234567890121',
     bankName: 'KB',
@@ -10,7 +10,7 @@ export const staffData = [
     currentSalary: 25000.0,
   },
   {
-    name: 'พนักงานขาย 2',
+    userEmail: 'nattawut@example.com',
     position: 'ฝ่ายขาย',
     bankAccount: '1234567890122',
     bankName: 'KB',
@@ -20,7 +20,7 @@ export const staffData = [
     currentSalary: 24000.0,
   },
   {
-    name: 'คนส่งของ 1',
+    userEmail: 'siriporn@example.com',
     position: 'จัดส่ง',
     bankAccount: '1234567890123',
     bankName: 'KB',
@@ -30,7 +30,7 @@ export const staffData = [
     currentSalary: 18000.0,
   },
   {
-    name: 'คนส่งของ 2',
+    userEmail: 'watcharin@example.com',
     position: 'จัดส่ง',
     bankAccount: '1234567890124',
     bankName: 'KB',
@@ -40,7 +40,7 @@ export const staffData = [
     currentSalary: 18500.0,
   },
   {
-    name: 'หัวหน้าช่าง 1',
+    userEmail: 'kanpitcha@example.com',
     position: 'หัวหน้าช่าง',
     bankAccount: '1234567890125',
     bankName: 'KB',
@@ -49,14 +49,4 @@ export const staffData = [
     social_security: 'SS123456005',
     currentSalary: 30000.0,
   },
-  {
-    name: 'หัวหน้าช่าง 2',
-    position: 'หัวหน้าช่าง',
-    bankAccount: '1234567890126',
-    bankName: 'KB',
-    startDate: new Date('2023-05-21'),
-    code: 'STF1006',
-    social_security: 'SS123456006',
-    currentSalary: 30000.0,
-  },
-]
+];

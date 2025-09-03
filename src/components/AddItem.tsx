@@ -157,7 +157,7 @@ export default function AddItem({
                 updateSteelItem(
                   item.id,
                   "quantity",
-                  parseInt(e.target.value) || 0
+                  parseInt(e.target.value) 
                 )
               }
               className="mt-1"
@@ -175,7 +175,7 @@ export default function AddItem({
                 updateSteelItem(
                   item.id,
                   "width",
-                  parseFloat(e.target.value) || 0
+                  parseFloat(e.target.value) 
                 )
               }
               className="mt-1"
@@ -193,7 +193,7 @@ export default function AddItem({
                 updateSteelItem(
                   item.id,
                   "length",
-                  parseFloat(e.target.value) || 0
+                  parseFloat(e.target.value) 
                 )
               }
               className="mt-1"
@@ -211,7 +211,7 @@ export default function AddItem({
                 updateSteelItem(
                   item.id,
                   "thickness",
-                  parseFloat(e.target.value) || 0
+                  parseFloat(e.target.value) 
                 )
               }
               className="mt-1"

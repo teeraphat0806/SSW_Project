@@ -7,7 +7,6 @@ export const userData = [
     password: '$2b$10$EGRpOe2jfYzlPhtMBh29euw9dXZOekrZBQsiilVKwk9p3nci9Eln2',
     image: null,
     role: Role.superadmin,
-    staffId: 1,
   },
   {
     name: 'ณัฐวุฒิ ขยันดี',
@@ -15,7 +14,6 @@ export const userData = [
     password: '$2b$10$EGRpOe2jfYzlPhtMBh29euw9dXZOekrZBQsiilVKwk9p3nci9Eln2',
     image: null,
     role: Role.clerk,
-    staffId: 2,
   },
   {
     name: 'ศิริพร วิริยะกิจ',
@@ -23,7 +21,6 @@ export const userData = [
     password: '$2b$10$EGRpOe2jfYzlPhtMBh29euw9dXZOekrZBQsiilVKwk9p3nci9Eln2',
     image: null,
     role: Role.supervisor,
-    staffId: 3,
   },
   {
     name: 'วัชรินทร์ แก่นแท้',
@@ -31,7 +28,6 @@ export const userData = [
     password: '$2b$10$EGRpOe2jfYzlPhtMBh29euw9dXZOekrZBQsiilVKwk9p3nci9Eln2',
     image: null,
     role: Role.cutter,
-    staffId: 4,
   },
   {
     name: 'กานต์พิชชา ส่งไว',
@@ -39,6 +35,5 @@ export const userData = [
     password: '$2b$10$EGRpOe2jfYzlPhtMBh29euw9dXZOekrZBQsiilVKwk9p3nci9Eln2',
     image: null,
     role: Role.delivery,
-    staffId: 5,
   },
 ]
