@@ -12,7 +12,7 @@ export const billData = [
     deliveredBy: "กานต์พิชชา ส่งไว",
     Staff_Bill_salesNameToStaff: { connect: { id: 1 } },
     Staff_Bill_deliveredByToStaff: { connect: { id: 5 } },
-    description: "กรดไหลย้อนคำสั่งวิ่งพนมมือกล่าวคลานผู้ร้าย ",
+    description: "กรดไหลย้อนคำสั่งวิ่งพนมมือกล่าวคลานผู้ร้าย",
     unitPrice: 315.06,
     discount: 7.74,
     vat: 7.0,

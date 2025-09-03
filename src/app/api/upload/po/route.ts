@@ -25,7 +25,7 @@ export async function POST(req: NextRequest){
             const buffer = Buffer.from(await f.arrayBuffer());
             const safeName = f.name.replace(/[^a-zA-Z0-9.-]/g, '_');
             const rand = crypto.randomBytes(4).toString("hex");
-            const key = `po/${customerId}/${poNumber}/${Date.now()}_${rand}_${safeName}`;
+            const key = `po/${customerId}/${Date.now()}_${rand}_${poNumber}_${safeName}`;
 
             await minioClient.send(
                 new PutObjectCommand({

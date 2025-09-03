@@ -26,13 +26,17 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json();
-    const staff = await prisma.staff.findUnique({
-      where: { name: session.user?.name },
-    });
+    // หา staffId จาก session user name
+    // const staff = await prisma.staff.findUnique({
+    //   where: { userId: session.user?.id },
+    //   include: { user: true },
+    // });
 
-    if (!staff) {
-      throw new Error(`Staff with name ${session.user?.name} not found`);
-    }
+    // const user = staff?.user
+
+    // if (!staff) {
+    //   throw new Error(`Staff with name ${session.user?.name} not found`);
+    // }
 
     const result = CreateNewOrderSchema.safeParse(body);
 
@@ -58,8 +62,9 @@ export async function POST(req: NextRequest) {
         credit: new Date(),
         deliveryDate: new Date(validateData.deliveryDate),
         deliveryOrderNo: validateData.deliveryOrderNo,
-        Staff_Bill_salesNameToStaff: { connect: { name: session.user?.name } },
-        //Staff_Bill_deliveredByToStaff: { connect: { name: body.deliveredBy } },
+        salesName: session.user?.name,
+        Staff_Bill_salesNameToStaff: { connect: { id: Number(session.user?.id) } },
+        //Staff_Bill_deliveredByToStaff: { connect: { id: body.deliveredBy } },
         //description: body.description,
         //unitPrice: body.unitPrice,
         //discount: body.discount,

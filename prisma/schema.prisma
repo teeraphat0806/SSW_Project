@@ -148,7 +148,11 @@ model StaffIncome {
   date    DateTime @default(now())
   Staff   Staff    @relation(fields: [staffId], references: [id])
 
+  typeId   Int? 
+  type     TypeStaffIncome? @relation(fields: [typeId], references: [id], onDelete: SetNull)
+
   @@index([staffId])
+  @@index([typeId])
 }
 
 model TemporaryBill {
@@ -173,6 +177,14 @@ model TemporaryBill {
   receivedBy         String
   deliveredBy        String
   Customer           Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
+}
+
+model TypeStaffIncome {
+  id        Int    @id @default(autoincrement())
+  amount    Float
+  name      String
+  types     String
+  incomes  StaffIncome[]
 }
 
 enum Role {

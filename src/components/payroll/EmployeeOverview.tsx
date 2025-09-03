@@ -3,6 +3,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Button } from '@/components/ui/button';
 import { Employee } from '@/types/payroll';
 import { FileText } from 'lucide-react';
+import { useEffect } from 'react';
 
 interface EmployeeOverviewProps {
   employees: Employee[];
@@ -11,7 +12,9 @@ interface EmployeeOverviewProps {
 
 export const EmployeeOverview = ({ employees, onGeneratePayslip }: EmployeeOverviewProps) => {
   const totalMonthlySalary = employees.reduce((sum, emp) => sum + emp.currentSalary, 0);
-
+  useEffect(() => {
+    console.log("arm",employees);
+  },[])
   return (
     <Card>
       <CardHeader>
@@ -53,7 +56,7 @@ export const EmployeeOverview = ({ employees, onGeneratePayslip }: EmployeeOverv
                 {employees.map((employee) => (
                   <TableRow key={employee.id}>
                     <TableCell className="font-medium">{employee.code}</TableCell>
-                    <TableCell>{employee.name}</TableCell>
+                    <TableCell>{employee?.name||"arm"}</TableCell>
                     <TableCell>{employee.position}</TableCell>
                     <TableCell>฿{employee.currentSalary.toLocaleString()}</TableCell>
                     <TableCell>

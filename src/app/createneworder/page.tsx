@@ -13,6 +13,7 @@ import "../globals.css";
 
 import { ArrowLeft, FileText, Save, X } from "lucide-react";
 import SelectCustomer from "@/components/SelectCustomer";
+import de from "zod/v4/locales/de.cjs";
 
 interface SteelItem {
   id: string;
@@ -225,8 +226,8 @@ const NewJobOrder = () => {
               length: item.length,
               amount: item.quantity,
               thickness: item.thickness,
-              total:200
-              
+              total:200,
+              detail: item.notes|| '',
             }
           })
         }
