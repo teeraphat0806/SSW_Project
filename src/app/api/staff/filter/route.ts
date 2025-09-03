@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "../../auth/[...nextauth]/route";
 import prisma from "@/lib/prisma";
@@ -14,9 +14,15 @@ export async function GET(req: NextRequest) {
       where: {
         User: null,
       },
+      include: { user: { select: { name: true } } },
     });
 
-    return NextResponse.json(result, { status: 200 });
+    const payload = result.map(({ user, ...rest }) => ({
+      ...rest,
+      staffName: user?.name ?? null, // <- ชื่อพนักงาน
+    }));
+
+    return NextResponse.json(payload, { status: 200 });
   } catch (error) {
     return NextResponse.json(
       { error: "Failed to fetch payrolls" + error },
