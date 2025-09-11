@@ -261,7 +261,7 @@ export default function PayrollPage() {
         `Fetch failed (${res.status}): ${msg || "Unknown error"}`
       );
     }
-    console.log("Fetched adjustments:",isSalary, res);
+    console.log("Fetched adjustments:", isSalary, res);
 
     const data: any[] = await res.json();
     const mapped = (isSalary ? data.map(mapSalary) : data.map(mapIncome)).sort(
