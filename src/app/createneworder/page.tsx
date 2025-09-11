@@ -6,9 +6,9 @@ import { Button } from "@/components/ui/button";
 import { v4 as uuidv4 } from "uuid";
 import { Separator } from "@/components/ui/separator";
 import { ToastContainer, toast } from "react-toastify";
-import CustomerForm from "@/components/CustomerForm";
-import CustomerInfoBox from "@/components/CustomerInfoBox";
-import AddItem from "@/components/AddItem";
+import CustomerForm from "@/components/newJobOrder/CustomerForm";
+import CustomerInfoBox from "@/components/newJobOrder/CustomerInfoBox";
+import AddItem from "@/components/newJobOrder/AddItem";
 import "../globals.css";
 
 import { ArrowLeft, FileText, Save, X } from "lucide-react";
