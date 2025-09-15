@@ -1,5 +1,3 @@
-import { create } from "domain";
-
 export const billData = [
   {
     Customer: { connect: { id: 1 } },

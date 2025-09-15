@@ -13,7 +13,6 @@ import "../globals.css";
 
 import { ArrowLeft, FileText, Save, X } from "lucide-react";
 import SelectCustomer from "@/components/SelectCustomer";
-import de from "zod/v4/locales/de.cjs";
 
 interface SteelItem {
   id: string;
@@ -43,7 +42,9 @@ const NewJobOrder = () => {
   const [showForm, setShowForm] = useState(false); //แสดงหรือซ่อนข้อมุลลูกค้า
   const toggleForm = () => setShowForm(!showForm); //ฟังก์ชั่นแสดงฟอร์มลูกค้า
   const [open, setOpen] = useState(false); //เปิดหรือปิด SelectCustomer
-  const [customers, setCustomers] = useState<{ id: string; name: string }[]>([]); //เก็บข้อมุลลูกค้า
+  const [customers, setCustomers] = useState<{ id: string; name: string }[]>(
+    []
+  ); //เก็บข้อมุลลูกค้า
   const [search, setSearch] = useState(""); // เก็บค่าที่ค้นหา
   const [loading, setLoading] = useState(false); //สถานะโหลดข้อมุล
   const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(
@@ -126,37 +127,36 @@ const NewJobOrder = () => {
   });
 
   async function UploadFiles({
-  files,
-  poNumber,
-  customerId,
-}: {
-  files: File[];
-  poNumber: string;
-  customerId: string | number;
-}) {
-  if (!files?.length) return [];
+    files,
+    poNumber,
+    customerId,
+  }: {
+    files: File[];
+    poNumber: string;
+    customerId: string | number;
+  }) {
+    if (!files?.length) return [];
 
-  const form = new FormData();
-  form.append("poNumber", poNumber);
-  form.append("customerId", String(customerId)); // สำคัญ: แปลงเป็น string
+    const form = new FormData();
+    form.append("poNumber", poNumber);
+    form.append("customerId", String(customerId)); // สำคัญ: แปลงเป็น string
 
-  files.forEach((f) => form.append("files", f));
+    files.forEach((f) => form.append("files", f));
 
-  // ใช้ relative path กัน CORS/timezone/env
-  const res = await fetch("/api/upload/po", {
-    method: "POST",
-    body: form,
-  });
+    // ใช้ relative path กัน CORS/timezone/env
+    const res = await fetch("/api/upload/po", {
+      method: "POST",
+      body: form,
+    });
 
-  // อ่าน body แค่ครั้งเดียว
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) {
-    throw new Error((data as any)?.error || "อัปโหลดไฟล์ไม่สำเร็จ");
+    // อ่าน body แค่ครั้งเดียว
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      throw new Error((data as any)?.error || "อัปโหลดไฟล์ไม่สำเร็จ");
+    }
+
+    return (data as any).keys as string[];
   }
-
-  return (data as any).keys as string[];
-}
-
 
   //Handle form submisstion
   const handleSubmit = async (e: React.FormEvent) => {
@@ -181,7 +181,7 @@ const NewJobOrder = () => {
           taxNumber: formData.taxNumber,
           faxNumber: formData.faxNumber,
           email: formData.customerEmail,
-    };
+        };
         const customerRes = await fetch("http://localhost:3000/api/customer", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -200,50 +200,51 @@ const NewJobOrder = () => {
       }
 
       const poKeys = await UploadFiles({
-      files: UploadFile,          
-      poNumber: po.poNumber,     
-      customerId: customerId,
-    });
+        files: UploadFile,
+        poNumber: po.poNumber,
+        customerId: customerId,
+      });
 
-
-      const payloadBill ={
-      customerId: Number(customerId),
-      yourRef: "REF108",
-      invoiceNo: "INV108",
-      deliveryDate:  new Date(po.deliveryDate).toISOString(),
-      deliveryOrderNo: "DO108",
-      vat: 7.0,
-      orderPOs:[
-        {
-          poNumber: po.poNumber,
-          total: steelItems.reduce((sum,item ) => {return sum + item.quantity},0),
-          vat:7.0,
-          urlPo:poKeys,
-          products: steelItems.map((item) => {
-            return{
-              steelType: item.steelType,
-              wide: item.width,
-              length: item.length,
-              amount: item.quantity,
-              thickness: item.thickness,
-              total:200,
-              detail: item.notes|| '',
-            }
-          })
-        }
-      ]
-    }
+      const payloadBill = {
+        customerId: Number(customerId),
+        yourRef: "REF108",
+        invoiceNo: "INV108",
+        deliveryDate: new Date(po.deliveryDate).toISOString(),
+        deliveryOrderNo: "DO108",
+        vat: 7.0,
+        orderPOs: [
+          {
+            poNumber: po.poNumber,
+            total: steelItems.reduce((sum, item) => {
+              return sum + item.quantity;
+            }, 0),
+            vat: 7.0,
+            urlPo: poKeys,
+            products: steelItems.map((item) => {
+              return {
+                steelType: item.steelType,
+                wide: item.width,
+                length: item.length,
+                amount: item.quantity,
+                thickness: item.thickness,
+                total: 200,
+                detail: item.notes || "",
+              };
+            }),
+          },
+        ],
+      };
       //สร้างออเดอร์ใหม่
-      const billRes = await fetch("http://localhost:3000/api/createNewOrder",{
+      const billRes = await fetch("http://localhost:3000/api/createNewOrder", {
         method: "POST",
-        headers: {"Content-Type": "application/json"},
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payloadBill),
-      })
-      if(!billRes.ok){
+      });
+      if (!billRes.ok) {
         throw new Error("เกิดข้อผิดพลาดในการสร้างออเดอร์ใหม่");
       }
       const billData = await billRes.json();
-      console.log("สร้างออเดอร์ใหม่สำเร็จ:",billData);
+      console.log("สร้างออเดอร์ใหม่สำเร็จ:", billData);
       toast.success("สร้างออเดอร์ใหม่สำเร็จ", {
         position: "bottom-right",
       });
@@ -293,7 +294,7 @@ const NewJobOrder = () => {
 
   // function to validate from data
   const validateForm = () => {
-    if(showForm){
+    if (showForm) {
       if (!formData.code.trim()) return "กรุณากรอกรหัสลูกค้า (Code)";
       if (!formData.customerName.trim()) return "กรุณากรอกชื่อลูกค้า";
       if (!formData.deliveryAddress.trim())
@@ -302,7 +303,7 @@ const NewJobOrder = () => {
       if (!formData.taxNumber.trim()) return "กรุณากรอกเลข Tax";
       if (!formData.faxNumber.trim()) return "กรุณากรอกเลข Fax";
     }
-    if(!UploadFile.length) return "กรุณาอัปโหลดไฟล์ใบ PO";
+    if (!UploadFile.length) return "กรุณาอัปโหลดไฟล์ใบ PO";
     if (!po.poNumber.trim()) return "กรุณากรอกหมายเลข PO";
     if (!po.deliveryDate) return "กรุณากรอกวันที่ต้องการสินค้า";
     for (const item of steelItems) {
@@ -380,7 +381,12 @@ const NewJobOrder = () => {
 
           <label className="cursor-pointer rounded-md bg-gray-100 px-4 py-1.5 text-sm text-gray-700 border border-gray-300 hover:bg-gray-200 transition">
             อัปโหลดไฟล์
-            <input type="file" multiple className="hidden" onChange={handleFileChange} />
+            <input
+              type="file"
+              multiple
+              className="hidden"
+              onChange={handleFileChange}
+            />
           </label>
 
           <div className="flex flex-wrap gap-3">
@@ -441,7 +447,9 @@ const NewJobOrder = () => {
                   ) : selectedCustomerId ? (
                     <CustomerInfoBox customerId={selectedCustomerId} />
                   ) : (
-                    <div className="p-4 text-sm text-muted-foreground">กรุณาเลือกลูกค้า</div>
+                    <div className="p-4 text-sm text-muted-foreground">
+                      กรุณาเลือกลูกค้า
+                    </div>
                   )}
                 </div>
 

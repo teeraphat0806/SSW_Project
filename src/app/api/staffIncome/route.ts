@@ -3,8 +3,6 @@ import { authOptions } from "../auth/[...nextauth]/route";
 import { NextResponse, NextRequest } from "next/server";
 import prisma from "@/lib/prisma";
 import { StaffIncomeSchema } from "../../../lib/schemas/staffIncome.schema";
-import { User } from "lucide-react";
-import { object } from "zod";
 
 export async function GET(req: NextRequest) {
   const session = await getServerSession({ req, ...authOptions });
