@@ -1,4 +1,4 @@
-import {date, z} from 'zod'
+import {z} from 'zod'
 
 export const CreateNewOrderSchema = z.object({
     customerId: z.number().int().positive(),

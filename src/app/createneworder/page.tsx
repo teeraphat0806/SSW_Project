@@ -335,7 +335,9 @@ const NewJobOrder = () => {
     <div className="min-h-screen md:pl-24 ">
       <div className="container mx-auto p-6">
         {/* Header */}
+        
         <div className="mb-8">
+          <div className=" mb-4 border-b ">
           <Button
             variant="ghost"
             onClick={() => router.push("/dashboard")}
@@ -344,7 +346,7 @@ const NewJobOrder = () => {
             <ArrowLeft className="mr-2 h-4 w-4" />
             กลับสู่หน้าหลัก
           </Button>
-
+          </div>
           <div className="flex items-center gap-3 mb-2">
             <FileText className="h-8 w-8 text-primary" />
             <h1 className="text-3xl font-bold text-foreground">
