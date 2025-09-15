@@ -17,7 +17,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-import "../app/globals.css";
+import "../../app/globals.css";
 
 import { Package, Plus, X } from "lucide-react";
 import { set } from "zod";

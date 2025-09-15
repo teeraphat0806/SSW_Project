@@ -8,7 +8,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import "../app/globals.css";
+import "../../app/globals.css";
 import { Building2 } from "lucide-react";
 
 export default function CustomerForm({ formData, updateFormData }) {

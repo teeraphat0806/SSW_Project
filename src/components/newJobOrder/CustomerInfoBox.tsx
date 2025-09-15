@@ -1,5 +1,5 @@
 import { Building2, Phone, Mail, MapPin } from "lucide-react";
-import "../app/globals.css";
+import "../../app/globals.css";
 import { useState, useEffect } from "react";
 interface Customer{
   id: string;
