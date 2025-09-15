@@ -1,49 +1,78 @@
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
-import { Employee, Payslip, PayslipItem } from '@/types/payroll';
-import { format } from 'date-fns';
-import { useRef } from "react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
+import { Employee, Payslip, PayslipItem } from "@/types/payroll";
+import { format } from "date-fns";
+import { useRef, useEffect, useState } from "react";
 import { Printer, Download, ArrowLeft } from "lucide-react";
-import Logo  from '@/components/Logo'; 
+import Logo from "@/components/Logo";
 
 interface PayslipGeneratorProps {
   employee: Employee;
   onClose: () => void;
 }
-
-export const PayslipGenerator = ({ employee, onClose }: PayslipGeneratorProps) => {
+type PayslipItem = {
+  description: string;
+  amount: number;
+};
+export const PayslipGenerator = ({
+  employee,
+  onClose,
+}: PayslipGeneratorProps) => {
   const currentDate = new Date();
-  const currentMonth = format(currentDate, 'MMMM');
-  const currentYear = format(currentDate, 'yyyy');
-  const dueDate = format(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0), 'dd/MM/yyyy');
+  const currentMonth = format(currentDate, "MMMM");
+  const currentYear = format(currentDate, "yyyy");
+  const dueDate = format(
+    new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0),
+    "dd/MM/yyyy"
+  );
   const slipRef = useRef<HTMLDivElement>(null);
+  const [income, setIncome] = useState<PayslipItem[]>([]);
+  const [deductions, setDeductions] = useState<PayslipItem[]>([]);
+  const [name, setName] = useState<string>("");
+  const fetchName = async () => {
+    const res = await fetch(`/api/user/${employee.userId}`);
+    const data = await res.json();
+    setName(data.name);
+  };
+  const fetchIncome = async () => {
+    const res = await fetch(`/api/staffIncome/${employee.id}/staffId`);
+    const data: { detail?: string; nameIncome?: string; amount?: number }[] =
+      await res.json();
+
+    setIncome(
+      data
+        .filter((item) => item.amount && item.amount > 0)
+        .map((item) => ({
+          description: item.detail || item.nameIncome || "",
+          amount: item.amount ?? 0,
+        }))
+    );
+    setDeductions(
+      data
+        .filter((item) => item.amount && item.amount < 0)
+        .map((item) => ({
+          description: item.detail || item.nameIncome || "",
+          amount: Math.abs(item.amount ?? 0),
+        }))
+    );
+  };
+  useEffect(() => {
+    fetchIncome();
+    fetchName();
+  }, [employee.id]);
 
   // Generate mock payslip data
   const generatePayslipData = (): Payslip => {
-    const baseSalary = employee.currentSalary;
-    const overtime = Math.floor(Math.random() * 5000);
-    const bonus = Math.floor(Math.random() * 3000);
-    
-    const income: PayslipItem[] = [
-      { description: 'เงินเดือนประจำ (Base Salary)', amount: baseSalary },
-      { description: 'ค่าล่วงเวลา (Overtime)', amount: overtime },
-      { description: 'โบนัส (Bonus)', amount: bonus },
-    ];
-
     const grossIncome = income.reduce((sum, item) => sum + item.amount, 0);
-    
+
     const socialSecurity = Math.min(grossIncome * 0.05, 750); // 5% capped at 750
     const tax = grossIncome * 0.05; // Simplified tax calculation
-    const absence = Math.floor(Math.random() * 1000);
-    
-    const deductions: PayslipItem[] = [
-      { description: 'ประกันสังคม (Social Security)', amount: socialSecurity },
-      { description: 'ภาษี (Tax)', amount: tax },
-      { description: 'หักขาดงาน (Absence)', amount: absence },
-    ];
 
-    const totalDeductions = deductions.reduce((sum, item) => sum + item.amount, 0);
+    const totalDeductions = deductions.reduce(
+      (sum, item) => sum + item.amount,
+      0
+    );
     const netIncome = grossIncome - totalDeductions;
 
     return {
@@ -73,18 +102,24 @@ export const PayslipGenerator = ({ employee, onClose }: PayslipGeneratorProps) =
     // 2) รวมสไตล์จากหน้าเดิม (tailwind, shadcn, inline <style>)
     //    และแก้ href ให้เป็น absolute ด้วย baseHref
     const baseHref = location.origin;
-    const styleTags = Array.from(document.querySelectorAll<HTMLLinkElement | HTMLStyleElement>('link[rel="stylesheet"], style'))
+    const styleTags = Array.from(
+      document.querySelectorAll<HTMLLinkElement | HTMLStyleElement>(
+        'link[rel="stylesheet"], style'
+      )
+    )
       .map((el) => {
-        if (el.tagName.toLowerCase() === 'link') {
+        if (el.tagName.toLowerCase() === "link") {
           const link = el as HTMLLinkElement;
-          const href = link.getAttribute('href') || '';
+          const href = link.getAttribute("href") || "";
           // ทำให้เป็น absolute เผื่อ href เป็น relative
-          const abs = href.startsWith('http') ? href : new URL(href, baseHref).href;
+          const abs = href.startsWith("http")
+            ? href
+            : new URL(href, baseHref).href;
           return `<link rel="stylesheet" href="${abs}" />`;
         }
         return el.outerHTML;
       })
-      .join('\n');
+      .join("\n");
 
     // 3) สร้าง HTML เต็มสำหรับพิมพ์ (กำหนด A4 landscape)
     const printHTML = `
@@ -132,14 +167,14 @@ export const PayslipGenerator = ({ employee, onClose }: PayslipGeneratorProps) =
       </html>`.trim();
 
     // 4) สร้าง iframe ซ่อน แล้วเขียน HTML เข้าไป
-    const iframe = document.createElement('iframe');
-    iframe.style.position = 'fixed';
-    iframe.style.right = '0';
-    iframe.style.bottom = '0';
-    iframe.style.width = '0';
-    iframe.style.height = '0';
-    iframe.style.border = '0';
-    iframe.setAttribute('aria-hidden', 'true');
+    const iframe = document.createElement("iframe");
+    iframe.style.position = "fixed";
+    iframe.style.right = "0";
+    iframe.style.bottom = "0";
+    iframe.style.width = "0";
+    iframe.style.height = "0";
+    iframe.style.border = "0";
+    iframe.setAttribute("aria-hidden", "true");
     document.body.appendChild(iframe);
 
     const doc = iframe.contentWindow?.document;
@@ -169,24 +204,34 @@ export const PayslipGenerator = ({ employee, onClose }: PayslipGeneratorProps) =
       }
     };
   };
-
-
+  useEffect(() => {}, []);
   return (
     <div className="max-w-4xl mx-auto ">
       {/* Toolbar (not printed) */}
       <div className="print-toolbar sticky top-0 z-20 mb-4 flex items-center justify-between rounded-xl border bg-card/80 backdrop-blur supports-[backdrop-filter]:bg-card/60 px-3 py-2">
         <div className="flex items-center gap-2">
-          <Button variant="ghost" onClick={onClose} className="gap-2 hover:cursor-pointer hover:scale-110 transition-all">
+          <Button
+            variant="ghost"
+            onClick={onClose}
+            className="gap-2 hover:cursor-pointer hover:scale-110 transition-all"
+          >
             <ArrowLeft className="h-4 w-4" />
             กลับหน้ารายชื่อ
           </Button>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={handlePrint} className="gap-2 hover:cursor-pointer hover:scale-110 transition-all">
+          <Button
+            variant="outline"
+            onClick={handlePrint}
+            className="gap-2 hover:cursor-pointer hover:scale-110 transition-all"
+          >
             <Printer className="h-4 w-4" />
             พิมพ์
           </Button>
-          <Button onClick={handlePrint} className="gap-2 text-white hover:cursor-pointer hover:scale-110 transition-all">
+          <Button
+            onClick={handlePrint}
+            className="gap-2 text-white hover:cursor-pointer hover:scale-110 transition-all"
+          >
             <Download className="h-4 w-4 text-white" />
             ดาวน์โหลด PDF
           </Button>
@@ -206,112 +251,162 @@ export const PayslipGenerator = ({ employee, onClose }: PayslipGeneratorProps) =
         >
           <CardContent className="p-8 text-sm font-thai">
             <div className="flex justify-between items-start mb-4">
-                <div className='flex items-center gap-4'>
-                    <div>
-                        <Logo />
-                        <p className='text-xs'>S.S.W. STEEL CENTER CO LTD </p>
-                    </div>
-                    <div className="space-y-1">
-                        <p className="font-bold">บริษัท เอส.เอส.ดับบลิว. สตีล เซ็นเตอร์ จำกัด</p>
-                        <p>888/1-2 หมู่ 9 ซอยโรจนะการ์เด้นโฮมฯ</p>
-                        <p>อ.บางปะอิน จ.พระนครศรีอยุธยา 10540</p>
-                        <p>โทร. 02-1816708-9 แฟกซ์ 02-1816709</p>                   
-                    </div>
+              <div className="flex items-center gap-4">
+                <div>
+                  <Logo />
+                  <p className="text-xs">S.S.W. STEEL CENTER CO LTD </p>
                 </div>
-                <div className='space-y-1 text-right'>
-                    <h2 className="text-xl font-bold">ใบแจ้งเงินเดือน / PAY SLIP</h2>
-                    <p className="text-base font-bold">เดือน {payslip.month} {payslip.year}</p>
+                <div className="space-y-1">
+                  <p className="font-bold">
+                    บริษัท เอส.เอส.ดับบลิว. สตีล เซ็นเตอร์ จำกัด
+                  </p>
+                  <p>888/1-2 หมู่ 9 ซอยโรจนะการ์เด้นโฮมฯ</p>
+                  <p>อ.บางปะอิน จ.พระนครศรีอยุธยา 10540</p>
+                  <p>โทร. 02-1816708-9 แฟกซ์ 02-1816709</p>
                 </div>
+              </div>
+              <div className="space-y-1 text-right">
+                <h2 className="text-xl font-bold">
+                  ใบแจ้งเงินเดือน / PAY SLIP
+                </h2>
+                <p className="text-base font-bold">
+                  เดือน {payslip.month} {payslip.year}
+                </p>
+              </div>
             </div>
 
             {/* Employee Info */}
             <div className="grid grid-cols-2 gap-4 border p-4 rounded mb-4">
-                <div className="space-y-1">
-                    <p><span className="font-medium">วันที่เริ่มงาน:</span> {format(new Date(employee.startDate), 'dd/MM/yy')}</p>
-                    <p><span className="font-medium">รหัสพนักงาน:</span> {employee.code}</p>
-                </div>
-                <div className="space-y-1">
-                    <p><span className="font-medium">ชื่อพนักงาน:</span> {employee.name}</p>
-                    <p><span className="font-medium">ตำแหน่ง:</span> {employee.position}</p>
-                    <p><span className="font-medium">เลขที่บัญชี:</span> {employee.bankAccount}</p>
-                    <p><span className="font-medium">ธนาคาร:</span> {employee.bankName}</p>
-                    <p><span className="font-medium">วันที่จ่าย:</span> {payslip.dueDate}</p>
-                </div>
+              <div className="space-y-1">
+                <p>
+                  <span className="font-medium">วันที่เริ่มงาน:</span>{" "}
+                  {format(new Date(employee.startDate), "dd/MM/yy")}
+                </p>
+                <p>
+                  <span className="font-medium">รหัสพนักงาน:</span>{" "}
+                  {employee.code}
+                </p>
+              </div>
+              <div className="space-y-1">
+                <p>
+                  <span className="font-medium">ชื่อพนักงาน:</span> {name}
+                </p>
+                <p>
+                  <span className="font-medium">ตำแหน่ง:</span>{" "}
+                  {employee.position}
+                </p>
+                <p>
+                  <span className="font-medium">เลขที่บัญชี:</span>{" "}
+                  {employee.bankAccount}
+                </p>
+                <p>
+                  <span className="font-medium">ธนาคาร:</span>{" "}
+                  {employee.bankName}
+                </p>
+                <p>
+                  <span className="font-medium">วันที่จ่าย:</span>{" "}
+                  {payslip.dueDate}
+                </p>
+              </div>
             </div>
 
             {/* รายได้ / รายการหัก / สุทธิ */}
             <div className="grid grid-cols-3 gap-4 mb-4 text-sm">
-                {/* รายได้ */}
-                <div>
-                <h3 className="font-bold text-center bg-muted py-1">รายได้ (Income)</h3>
-                    <div className="border rounded p-2 space-y-1">
-                        {payslip.income.map((item, idx) => (
-                        <div key={idx} className="flex justify-between">
-                            <span>{item.description}</span>
-                            <span>฿{item.amount.toLocaleString()}</span>
-                        </div>
-                        ))}
-                        <Separator />
-                        <div className="flex justify-between font-bold">
-                            <span>รวมรายได้</span>
-                            <span>฿{payslip.income.reduce((sum, i) => sum + i.amount, 0).toLocaleString()}</span>
-                        </div>
+              {/* รายได้ */}
+              <div>
+                <h3 className="font-bold text-center bg-muted py-1">
+                  รายได้ (Income)
+                </h3>
+                <div className="border rounded p-2 space-y-1">
+                  {payslip.income.map((item, idx) => (
+                    <div key={idx} className="flex justify-between">
+                      <span>{item.description}</span>
+                      <span>฿{item.amount.toLocaleString()}</span>
                     </div>
+                  ))}
+                  <Separator />
+                  <div className="flex justify-between font-bold">
+                    <span>รวมรายได้</span>
+                    <span>
+                      ฿
+                      {payslip.income
+                        .reduce((sum, i) => sum + i.amount, 0)
+                        .toLocaleString()}
+                    </span>
+                  </div>
                 </div>
+              </div>
 
-                {/* รายการหัก */}
-                <div>
-                    <h3 className="font-bold text-center bg-muted py-1">รายการหัก (Deduction)</h3>
-                    <div className="border rounded p-2 space-y-1">
-                        {payslip.deductions.map((item, idx) => (
-                        <div key={idx} className="flex justify-between">
-                            <span>{item.description}</span>
-                            <span>฿{item.amount.toLocaleString()}</span>
-                        </div>
-                        ))}
-                        <Separator />
-                        <div className="flex justify-between font-bold">
-                            <span>รวมรายการหัก</span>
-                            <span>฿{payslip.deductions.reduce((sum, i) => sum + i.amount, 0).toLocaleString()}</span>
-                        </div>
+              {/* รายการหัก */}
+              <div>
+                <h3 className="font-bold text-center bg-muted py-1">
+                  รายการหัก (Deduction)
+                </h3>
+                <div className="border rounded p-2 space-y-1">
+                  {payslip.deductions.map((item, idx) => (
+                    <div key={idx} className="flex justify-between">
+                      <span>{item.description}</span>
+                      <span>฿{item.amount.toLocaleString()}</span>
                     </div>
+                  ))}
+                  <Separator />
+                  <div className="flex justify-between font-bold">
+                    <span>รวมรายการหัก</span>
+                    <span>
+                      ฿
+                      {payslip.deductions
+                        .reduce((sum, i) => sum + i.amount, 0)
+                        .toLocaleString()}
+                    </span>
+                  </div>
                 </div>
+              </div>
 
-                {/* รายได้สุทธิ */}
-                <div >
-                    <h3 className="font-bold text-center bg-muted py-1">รายได้สุทธิ (Net Income)</h3>
-                    <div className="border rounded p-2 space-y-1">
-                        <div className="flex justify-between h-17">
-                            <span className="font-medium">เงินได้สุทธิ</span>
-                            <span className="font-bold">฿{payslip.netIncome.toLocaleString()}</span>
-                        </div>    
-                        <Separator />
-                        <div className="flex justify-between font-bold">
-                            <span>รวมรายสุทธิ</span>
-                            <span>฿{payslip.netIncome.toLocaleString()}</span>
-                        </div>
-                    </div>
+              {/* รายได้สุทธิ */}
+              <div>
+                <h3 className="font-bold text-center bg-muted py-1">
+                  รายได้สุทธิ (Net Income)
+                </h3>
+                <div className="border rounded p-2 space-y-1">
+                  <div className="flex justify-between h-17">
+                    <span className="font-medium">เงินได้สุทธิ</span>
+                    <span className="font-bold">
+                      ฿{payslip.netIncome.toLocaleString()}
+                    </span>
+                  </div>
+                  <Separator />
+                  <div className="flex justify-between font-bold">
+                    <span>รวมรายสุทธิ</span>
+                    <span>฿{payslip.netIncome.toLocaleString()}</span>
+                  </div>
                 </div>
+              </div>
             </div>
 
             {/* ข้อมูลสะสม */}
             <div className="grid grid-cols-4 gap-4 mt-6">
-                <div className="text-center">
-                    <p>เงินได้สะสม</p>
-                    <p className="font-bold">฿{payslip.accumulatedSalary.toLocaleString()}</p>
-                </div>
-                <div className="text-center">
-                    <p>ภาษีสะสม</p>
-                    <p className="font-bold">฿{payslip.accumulatedTax.toLocaleString()}</p>
-                </div>
-                <div className="text-center">
-                    <p>ประกันสังคมสะสม</p>
-                    <p className="font-bold">฿{payslip.accumulatedSocialSecurity.toLocaleString()}</p>
-                </div>
-                <div className="text-center">
-                    <p>กองทุนสำรองเลี้ยงชีพ</p>
-                    <p className="font-bold">-</p>
-                </div>
+              <div className="text-center">
+                <p>เงินได้สะสม</p>
+                <p className="font-bold">
+                  ฿{payslip.accumulatedSalary.toLocaleString()}
+                </p>
+              </div>
+              <div className="text-center">
+                <p>ภาษีสะสม</p>
+                <p className="font-bold">
+                  ฿{payslip.accumulatedTax.toLocaleString()}
+                </p>
+              </div>
+              <div className="text-center">
+                <p>ประกันสังคมสะสม</p>
+                <p className="font-bold">
+                  ฿{payslip.accumulatedSocialSecurity.toLocaleString()}
+                </p>
+              </div>
+              <div className="text-center">
+                <p>กองทุนสำรองเลี้ยงชีพ</p>
+                <p className="font-bold">-</p>
+              </div>
             </div>
           </CardContent>
         </Card>
