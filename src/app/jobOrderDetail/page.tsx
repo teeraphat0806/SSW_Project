@@ -22,6 +22,7 @@ import {
   CheckCircle,
 } from "lucide-react";
 import { QuickAction } from "../../components/jobordertail/QuickAction";
+import { SteelTable } from "../../components/jobordertail/SteelTable";
 
 interface JobOrder {
   id: string;
@@ -57,7 +58,6 @@ interface JobOrder {
     thickness: number;
   };
 }
-
 
 const mockJobOrder: JobOrder = {
   id: "JO-001",
@@ -103,13 +103,6 @@ const JobOrderDetailPage = () => {
     fetchJobOrder();
   }, []);
   const router = useRouter();
-
-  const actions = [
-    { label: "Edit Order", icon: Edit },
-    { label: "Print Summary", icon: Printer },
-    { label: "Email Customer", icon: Mail },
-    { label: "Generate Invoice", icon: FileText },
-  ];
 
   const getStatusColor = (status: JobOrder["status"]) => {
     switch (status) {
@@ -213,14 +206,14 @@ const JobOrderDetailPage = () => {
         {/* Grid layout */}
         <div className="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-12">
           {/* LEFT COLUMN */}
-          <section className="xl:col-span-8 space-y-6">
+          <section className="xl:col-span-9 space-y-6">
             {/* Order Overview Card */}
             <div className="rounded-2xl border border-gray-200">
               <div className="flex flex-wrap items-start justify-between gap-3 border-b px-5 py-4">
                 <div className="flex items-center gap-3">
-                  <Package className="h-5 w-5 text-primary" />
+                  <Package className="h-8 w-8 text-primary" />
                   <div>
-                    <h2 className="text-base font-bold text-foreground">
+                    <h2 className="text-lg  font-bold text-foreground">
                       ภาพรวมออเดอร์
                     </h2>
                     <p className="text-xs text-muted-foreground">
@@ -238,37 +231,57 @@ const JobOrderDetailPage = () => {
                   </span>
                 </div>
               </div>
-
-              {/* Two column info */}
-              <div className="grid grid-cols-1 gap-4 border-t px-5 py-4 sm:grid-cols-2">
-                <div className="rounded-xl border border-gray-100 p-4">
-                  <h3 className="mb-3 text-sm font-bold text-foreground">
-                    ข้อมูลออเดอร์
-                  </h3>
-                  <dl className="grid grid-cols-2 gap-y-2 text-sm">
-                    <dt className="text-foreground">Order ID :</dt>
+              {/* Content Box*/}
+              <div className="space-y-6 p-5">
+                {/* Order Info */}
+                <h3 className="mb-3 text-base font-semibold text-foreground">
+                  ข้อมูลออเดอร์
+                </h3>
+                <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                  <dl className="grid [grid-template-columns:140px_1fr] gap-y-2 text-sm">
+                    <dt className="text-muted-foreground">Order ID :</dt>
                     <dd className="font-medium">001</dd>
-                    <dt className="text-foreground">สร้างออเดอร์เมื่อ :</dt>
-                    <dd className="font-medium">1/15/2024, 9:30:16 AM</dd>
-                    <dt className="text-foreground">วันที่ต้องจัดส่ง :</dt>
-                    <dd className="font-medium">2/24/2024</dd>
-                    <dt className="text-foreground">ผู้รับผิดชอบตัด :</dt>
+
+                    <dt className="text-muted-foreground">
+                      สร้างออเดอร์เมื่อ :
+                    </dt>
+                    <dd className="font-medium">
+                      <time dateTime="2024-01-15">1/15/2024</time>
+                    </dd>
+                  </dl>
+                  <dl className="grid [grid-template-columns:140px_1fr] gap-y-2 text-sm">
+                    <dt className="text-muted-foreground">
+                      วันที่ต้องจัดส่ง :
+                    </dt>
+                    <dd className="font-medium">
+                      <time dateTime="2024-02-24">2/24/2024</time>
+                    </dd>
+
+                    <dt className="text-muted-foreground">ผู้รับผิดชอบตัด :</dt>
                     <dd className="font-medium">สมชาย ใจดี</dd>
                   </dl>
                 </div>
 
-                <div className="rounded-xl border border-gray-100 p-4">
-                  <h3 className="mb-3 text-sm font-bold text-foreground">
-                    ข้อมูลราคา
-                  </h3>
-                  <dl className="grid grid-cols-2 gap-y-2 text-sm">
-                    <dt className="text-foreground">น้ำหนักที่คำนวนไว้ :</dt>
-                    <dd className="font-medium">240 kg</dd>
-                    <dt className="text-foreground">น้ำหนักจริงที่วัดได้:</dt>
-                    <dd className="font-medium">245.5 kg</dd>
-                    <dt className="text-foreground">ราคาที่คำนวนได้:</dt>
-                    <dd className="font-semibold text-green-700">$2450.00</dd>
-                  </dl>
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  {/* ซ้าย: ข้อมูลเหล็ก (คำนวณ) */}
+                  <SteelTable
+                    title="ข้อมูลเหล็ก (คำนวณ)"
+                    rows={[
+                      { type: "แผ่น SS400 4x8", weightKg: 120, price: 9500 },
+                      { type: "กลม 12 มม.", weightKg: 60, price: 4100 },
+                      { type: "ฉาก 40x40", weightKg: 45.5, price: 3100 },
+                    ]}
+                  />
+
+                  {/* ขวา: ข้อมูลเหล็ก (จริง) */}
+                  <SteelTable
+                    title="ข้อมูลเหล็ก (จริง)"
+                    rows={[
+                      { type: "แผ่น SS400 4x8", weightKg: 121.3, price: 9625 },
+                      { type: "กลม 12 มม.", weightKg: 61.2, price: 4185 },
+                      { type: "ฉาก 40x40", weightKg: 46.0, price: 3140 },
+                    ]}
+                  />
                 </div>
               </div>
             </div>
@@ -371,7 +384,6 @@ const JobOrderDetailPage = () => {
                             </div>
                           </div>
                         </div>
-
                         <div>
                           <h4 className="font-semibold mb-3 flex items-center gap-2">
                             <MapPin className="h-4 w-4" />
@@ -474,32 +486,11 @@ const JobOrderDetailPage = () => {
           </section>
 
           {/* RIGHT COLUMN */}
-          <aside className="xl:col-span-4 space-y-6">
+          <aside className="xl:col-span-3 space-y-6">
             {/* Quick Actions */}
-            <div className="rounded-2xl border border-gray-200 bg-background p-5 shadow-sm dark:border-gray-800">
-              <h3 className="text-base font-semibold">Quick Actions</h3>
 
-              <div className="mt-3 grid gap-2">
-                <QuickAction
-                  orderId ={jobOrder.id}
-                />
-                {/* {actions.map(({ label, icon: Icon }) => (
-                  <Button
-                    key={label}
-                    variant="outline"
-                    className="
-                    group w-full justify-start rounded-xl border
-                    transition-all
-                    hover:bg-accent hover:text-accent-foreground
-                    focus-visible:ring-2 focus-visible:ring-ring
-                    active:scale-[0.99]"
-                    aria-label={label}
-                  >
-                    <Icon className="mr-2 h-4 w-4transition-transform group-hover:translate-x-0.5" />
-                    <span className="text-sm">{label}</span>
-                  </Button>
-                ))} */}
-              </div>
+            <div className="mt-3 grid gap-2">
+              <QuickAction orderId={jobOrder.id} />
             </div>
 
             {/* Activity Timeline */}
