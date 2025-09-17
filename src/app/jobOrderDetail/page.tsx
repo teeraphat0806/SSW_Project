@@ -6,23 +6,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 
-import {
-  ArrowLeft,
-  FileText,
-  Package,
-  Building2,
-  Ruler,
-  User,
-  MapPin,
-  Phone,
-  Mail,
-  Edit,
-  Printer,
-  Scissors,
-  CheckCircle,
-} from "lucide-react";
+import { ArrowLeft, FileText, Package, Truck, Calendar } from "lucide-react";
 import { QuickAction } from "../../components/jobordertail/QuickAction";
 import { SteelTable } from "../../components/jobordertail/SteelTable";
+import { SpecificationsTab } from "../../components/jobordertail/SpecificationsTab";
+import { CustomerTab } from "../../components/jobordertail/CustomerTab";
+import { ProductionTab } from "../../components/jobordertail/ProductionTab";
+import { DeliveryTab } from "../../components/jobordertail/DeliveryTab";
 
 interface JobOrder {
   id: string;
@@ -302,182 +292,71 @@ const JobOrderDetailPage = () => {
 
                 {/* Specifications */}
                 <TabsContent value="specifications">
-                  <div className="px-5 py-4">
-                    <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-                      {/* Steel Specs */}
-                      <div className="rounded-xl border border-gray-100 p-4">
-                        <div className="mb-2 flex items-center gap-2">
-                          <Ruler className="h-4 w-4" />
-                          <h4 className="text-sm font-semibold">
-                            Steel Specifications
-                          </h4>
-                        </div>
-                        <dl className="grid grid-cols-2 gap-y-2 text-sm">
-                          <dt className="text-foreground">Steel Type:</dt>
-                          <dd className="font-medium">Carbon Steel</dd>
-                          <dt className="text-foreground">Quantity:</dt>
-                          <dd className="font-medium">50 pieces</dd>
-                          <dt className="text-foreground">Width:</dt>
-                          <dd className="font-medium">100 mm</dd>
-                          <dt className="text-foreground">Length:</dt>
-                          <dd className="font-medium">2000 mm</dd>
-                          <dt className="text-foreground">Thickness:</dt>
-                          <dd className="font-medium">5 mm</dd>
-                        </dl>
-                      </div>
+                  <SpecificationsTab
+                    steelSpec={{
+                      type: "Carbon Steel",
+                      quantity: "50 pieces",
+                      width: "100 mm",
+                      length: "2000 mm",
+                      thickness: "5 mm",
+                    }}
+                    actual={{
+                      width: "99.8 mm",
+                      length: "199.9 mm",
+                      thickness: "5 mm",
+                    }}
+                    note="Handle with care – precision cutting required for automotive parts. Ensure smooth edges."
+                  />
 
-                      {/* Actual Dimensions */}
-                      <div className="rounded-xl border border-gray-100 p-4">
-                        <div className="mb-2 flex items-center gap-2">
-                          <CheckCircle className="h-4 w-4 text-success" />
-                          <h4 className="text-sm font-semibold">
-                            Actual Dimensions
-                          </h4>
-                        </div>
-                        <dl className="grid grid-cols-2 gap-y-2 text-sm">
-                          <dt className="text-foreground">Actual Width:</dt>
-                          <dd className="font-medium">99.8 mm</dd>
-                          <dt className="text-foreground">Actual Length:</dt>
-                          <dd className="font-medium">199.9 mm</dd>
-                          <dt className="text-foreground">Actual Thickness:</dt>
-                          <dd className="font-medium">5 mm</dd>
-                        </dl>
-                      </div>
-                    </div>
-
-                    <div className="mt-6 rounded-xl border border-gray-100 p-4">
-                      <h4 className="mb-2 text-sm font-semibold">
-                        Special Instructions
-                      </h4>
-                      <p className="text-sm text-foreground">
-                        Handle with care – precision cutting required for
-                        automotive parts. Ensure smooth edges.
-                      </p>
-                    </div>
-                  </div>
+                   <SpecificationsTab
+                    steelSpec={{
+                      type: "Carbon Steel",
+                      quantity: "50 pieces",
+                      width: "100 mm",
+                      length: "2000 mm",
+                      thickness: "5 mm",
+                    }}
+                    actual={{
+                      width: "99.8 mm",
+                      length: "199.9 mm",
+                      thickness: "5 mm",
+                    }}
+                    note="Handle with care – precision cutting required for automotive parts. Ensure smooth edges."
+                  />
                 </TabsContent>
 
                 {/* Customer */}
                 <TabsContent value="customer">
-                  <div className="px-5 py-4 space-y-4">
-                    <div className="rounded-xl border border-gray-100 p-4">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                          <h4 className="font-semibold mb-3 flex items-center gap-2">
-                            <Building2 className="h-4 w-4" />
-                            รายละเอียดลูกค้า
-                          </h4>
-                          <div className="space-y-3">
-                            <div className="flex items-center gap-2">
-                              <User className="h-4 w-4 text-muted-foreground" />
-                              <span className="font-medium">บริษัท จำกัด</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <Mail className="h-4 w-4 text-muted-foreground" />
-                              <span className="text-sm">
-                                arm1532arm@gmail.com
-                              </span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <Phone className="h-4 w-4 text-muted-foreground" />
-                              <span className="text-sm">0655389857</span>
-                            </div>
-                          </div>
-                        </div>
-                        <div>
-                          <h4 className="font-semibold mb-3 flex items-center gap-2">
-                            <MapPin className="h-4 w-4" />
-                            ที่อยู่จัดส่ง
-                          </h4>
-                          <p className="text-sm text-muted-foreground bg-muted p-3 rounded-lg">
-                            ตำบล บางรัก อำเภอ เมือง จังหวัด กรุงเทพ 10500
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                  <CustomerTab
+                    customer={{
+                      name: "บริษัท จำกัด",
+                      email: "arm1532arm@gmail.com",
+                      phone: "0655389857",
+                      shippingAddress:
+                        "ตำบล บางรัก อำเภอ เมือง จังหวัด กรุงเทพ 10500",
+                    }}
+                  />
                 </TabsContent>
 
                 {/* Production */}
                 <TabsContent value="production">
-                  <div className="px-5 py-4 space-y-4">
-                    <div className="rounded-xl border border-gray-100 p-4">
-                      <div className="flex items-center justify-between mb-3">
-                        <h4 className="font-semibold flex items-center gap-2">
-                          <Scissors className="h-4 w-4" />
-                          Production Status
-                        </h4>
-
-                        <Badge className={getStatusColor(jobOrder.status)}>
-                          {jobOrder.status.toUpperCase()}
-                        </Badge>
-                      </div>
-
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <Button
-                          variant={
-                            jobOrder.status === "cutting"
-                              ? "default"
-                              : "outline"
-                          }
-                          onClick={() => handleStatusUpdate("cutting")}
-                          disabled={jobOrder.status === "completed"}
-                        >
-                          Start Cutting
-                        </Button>
-                        <Button
-                          variant={
-                            jobOrder.status === "weighing"
-                              ? "default"
-                              : "outline"
-                          }
-                          onClick={() => handleStatusUpdate("weighing")}
-                          disabled={jobOrder.status === "completed"}
-                        >
-                          Mark for Weighing
-                        </Button>
-                        <Button
-                          variant={
-                            jobOrder.status === "ready" ? "default" : "outline"
-                          }
-                          onClick={() => handleStatusUpdate("ready")}
-                          disabled={jobOrder.status === "completed"}
-                        >
-                          Mark Ready
-                        </Button>
-                      </div>
-
-                      {jobOrder.assignedCutter && (
-                        <div className="bg-muted p-4 rounded-lg">
-                          <h5 className="font-medium mb-2">Assigned Cutter</h5>
-                          <p className="text-sm text-muted-foreground">
-                            {jobOrder.assignedCutter}
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                  </div>
+                  <ProductionTab
+                    status={jobOrder.status}
+                    assignedCutter={jobOrder.assignedCutter}
+                    onUpdateStatus={handleStatusUpdate}
+                    getStatusColor={getStatusColor}
+                  />
                 </TabsContent>
 
                 {/* Delivery */}
                 <TabsContent value="delivery">
-                  <div className="px-5 py-4 space-y-4">
-                    <div className="rounded-xl border border-gray-100 p-4">
-                      <h4 className="text-sm font-semibold mb-2">
-                        Delivery Details
-                      </h4>
-                      <dl className="grid grid-cols-2 gap-y-2 text-sm">
-                        <dt className="text-gray-500">Delivery Date:</dt>
-                        <dd className="font-medium">2/24/2024</dd>
-                        <dt className="text-gray-500">Delivery Method:</dt>
-                        <dd className="font-medium">Truck</dd>
-                        <dt className="text-gray-500">Driver:</dt>
-                        <dd className="font-medium">Mr. Anan</dd>
-                        <dt className="text-gray-500">Status:</dt>
-                        <dd className="font-medium">Pending Dispatch</dd>
-                      </dl>
-                    </div>
-                  </div>
+                  <DeliveryTab
+                    status={jobOrder.status}
+                    deliveryDate={jobOrder.deliveryDate}
+                    deliveryAddress={jobOrder.deliveryAddress}
+                    onUpdateStatus={handleStatusUpdate}
+                    className=""
+                  />
                 </TabsContent>
               </Tabs>
 
@@ -494,7 +373,7 @@ const JobOrderDetailPage = () => {
             </div>
 
             {/* Activity Timeline */}
-            <div className="rounded-2xl border border-gray-200 bg-background p-5 shadow-sm">
+            {/* <div className="rounded-2xl border border-gray-200 bg-background p-5 shadow-sm">
               <h3 className="text-base font-semibold">Activity Timeline</h3>
               <ol className="mt-3 space-y-4">
                 <li className="flex items-start gap-3">
@@ -523,7 +402,7 @@ const JobOrderDetailPage = () => {
                   </div>
                 </li>
               </ol>
-            </div>
+            </div> */}
           </aside>
         </div>
       </main>
