@@ -1,8 +1,42 @@
+import { randomBytes } from "crypto";
+
+
+ function  generateCode(
+  length = 20,
+  charset = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!@#$%^&*()-_=+[]{};:,.?/\\|~"
+) {
+  if (length <= 0) return "";
+  const chars = charset;
+  const n = chars.length;
+  if (n < 2) throw new Error("charset ต้องมีอักขระอย่างน้อย 2 ตัว");
+
+  const bytes = randomBytes(length * 2); // กันเผื่อทิ้งบาง byte
+  const result: string[] = [];
+  const max = 256 - (256 % n); // ใช้เฉพาะค่า < max เพื่อลด modulo bias
+
+  let i = 0;
+  while (result.length < length) {
+    if (i >= bytes.length) {
+      // ไม่พอ ก็ขอเพิ่ม
+      const more = randomBytes(length);
+      const tmp = new Uint8Array(more);
+      for (let j = 0; j < tmp.length; j++) (bytes as any)[i + j] = tmp[j];
+    }
+    const rnd = bytes[i++]!;
+    if (rnd < max) {
+      result.push(chars[rnd % n]!);
+    }
+  }
+  return result.join("");
+}
+
+
 export const billData = [
   {
     Customer: { connect: { id: 1 } },
     yourRef: "REF100",
     invoiceNo: "INV100",
+    codeCustomer: generateCode(),
     credit: new Date("2025-08-31"),
     deliveryDate: new Date("2025-10-28"),
     deliveryOrderNo: "DO100",
@@ -54,6 +88,7 @@ export const billData = [
     Customer: { connect: { id: 2 } },
     yourRef: "REF101",
     invoiceNo: "INV101",
+    codeCustomer: generateCode(),
     credit: new Date("2025-08-31"),
     deliveryDate: new Date("2025-10-28"),
     deliveryOrderNo: "DO101",
@@ -104,6 +139,7 @@ export const billData = [
     Customer: { connect: { id: 3 } },
     yourRef: "REF102",
     invoiceNo: "INV102",
+    codeCustomer: generateCode(),
     credit: new Date("2025-08-31"),
     deliveryDate: new Date("2025-10-28"),
     deliveryOrderNo: "DO102",
@@ -154,6 +190,7 @@ export const billData = [
     Customer: { connect: { id: 4 } },
     yourRef: "REF103",
     invoiceNo: "INV103",
+    codeCustomer: generateCode(),
     credit: new Date("2025-08-31"),
     deliveryDate: new Date("2025-10-28"),
     deliveryOrderNo: "DO103",
@@ -204,6 +241,7 @@ export const billData = [
     Customer: { connect: { id: 5 } },
     yourRef: "REF104",
     invoiceNo: "INV104",
+    codeCustomer: generateCode(),
     credit: new Date("2025-08-31"),
     deliveryDate: new Date("2025-10-28"),
     deliveryOrderNo: "DO104",
