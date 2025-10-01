@@ -17,15 +17,29 @@ import { DeliveryTab } from "../../components/jobordertail/DeliveryTab";
 interface JobOrder {
   id: string;
   poNumber: string;
-  customerName: string;
+  customerId: string;
   customerEmail: string;
   customerPhone: string;
   deliveryAddress: string;
-  steelType: string;
-  quantity: number;
-  width: number;
-  length: number;
-  thickness: number;
+  steel: [{
+    steelType: string;
+    amount: number;
+    width: number;
+    length: number;
+    thickness: number;
+    price: number;
+    weight: number;
+    specialInstructions?: string;
+  }];
+  steelActual?: [{
+    steelType: string;
+    amount: number;
+    width: number;
+    length: number;
+    thickness: number;
+    price: number;
+    weight: number;
+  }];
   status:
     | "pending"
     | "cutting"
@@ -33,60 +47,41 @@ interface JobOrder {
     | "ready"
     | "shipped"
     | "completed";
-  priority: "low" | "normal" | "high" | "urgent";
-  weight?: number;
-  price?: number;
   createdAt: Date;
   deliveryDate?: string;
-  specialInstructions?: string;
   assignedCutter?: string;
   completedAt?: Date;
-  estimatedWeight?: number;
-  actualDimensions?: {
-    width: number;
-    length: number;
-    thickness: number;
-  };
 }
 
 const mockJobOrder: JobOrder = {
-  id: "JO-001",
-  poNumber: "PO-2024-001",
-  customerName: "ABC Manufacturing Ltd.",
-  customerEmail: "procurement@abc-manufacturing.com",
-  customerPhone: "+1 (555) 123-4567",
-  deliveryAddress:
-    "123 Industrial Avenue, Manufacturing District, Metro City, State 12345",
-  steelType: "Carbon Steel",
-  quantity: 50,
-  width: 100,
-  length: 200,
-  thickness: 5,
-  status: "cutting",
-  priority: "high",
-  weight: 245.5,
-  price: 2450.0,
-  createdAt: new Date("2024-01-15T09:30:00"),
-  deliveryDate: "2024-01-20",
-  specialInstructions:
-    "Handle with care - precision cutting required for automotive parts. Ensure smooth edges.",
-  assignedCutter: "John Smith",
-  estimatedWeight: 240.0,
-  actualDimensions: {
-    width: 99.8,
-    length: 199.9,
-    thickness: 5.0,
-  },
-};
+  id: '1',
+  poNumber: 'PO-2024-001',
+  customerId: 'CUST-001',
+  steel: [
+    { steelType: "แผ่น SS400 4x8", amount: 10, width: 1200, length: 2400, thickness: 6, price: 9500, weight: 120},
+    { steelType: "กลม 12 มม.", quantity: 20, width: 12, length: 6000, thickness: 12, price: 4100, weight: 60},
+    { steelType: "ฉาก 40x40", quantity: 15, width: 40, length: 6000, thickness: 4, price: 3100, weight: 45.5 },
+  ],
+  steelActual: [
+    { steelType: "แผ่น SS400 4x8", amount: 10, width: 1200, length: 2400, thickness: 6, price: 9625, weight: 121.3 },
+    { steelType: "กลม 12 มม.", quantity: 20, width: 12, length: 6000, thickness: 12, price: 4185, weight: 61.2 },
+  ],
+  status: "pending",
+  createdAt: new Date('2024-01-15T09:30:16'),
+  deliveryDate: '2024-02-24',
+  
+}
+
 
 const JobOrderDetailPage = () => {
   const [loading, setLoading] = useState(true);
   const [jobOrder, setJobOrder] = useState<JobOrder | null>(null);
   useEffect(() => {
     const fetchJobOrder = async () => {
+      setJobOrder(mockJobOrder);
       setLoading(true);
       await new Promise((resolve) => setTimeout(resolve, 800));
-      setJobOrder(mockJobOrder);
+
       setLoading(false);
     };
 
@@ -256,21 +251,13 @@ const JobOrderDetailPage = () => {
                   {/* ซ้าย: ข้อมูลเหล็ก (คำนวณ) */}
                   <SteelTable
                     title="ข้อมูลเหล็ก (คำนวณ)"
-                    rows={[
-                      { type: "แผ่น SS400 4x8", weightKg: 120, price: 9500 },
-                      { type: "กลม 12 มม.", weightKg: 60, price: 4100 },
-                      { type: "ฉาก 40x40", weightKg: 45.5, price: 3100 },
-                    ]}
+                    rows={jobOrder.steel.map(s => ({ steelType: s.steelType, weight: s.weight, price: s.price }))}
                   />
 
                   {/* ขวา: ข้อมูลเหล็ก (จริง) */}
                   <SteelTable
                     title="ข้อมูลเหล็ก (จริง)"
-                    rows={[
-                      { type: "แผ่น SS400 4x8", weightKg: 121.3, price: 9625 },
-                      { type: "กลม 12 มม.", weightKg: 61.2, price: 4185 },
-                      { type: "ฉาก 40x40", weightKg: 46.0, price: 3140 },
-                    ]}
+                    rows={jobOrder.steelActual?.map(s => ({steelType: s.steelType,weight:s.weight,price:s.price}))}
                   />
                 </div>
               </div>

@@ -1,7 +1,7 @@
-type SteelRow = { type: string; weightKg: number; price: number };
+type SteelRow = { steelType: string; weight: number; price: number };
 
 export function SteelTable({ title, rows }: { title: string; rows: SteelRow[] }) {
-  const total = rows.reduce((sum, r) => sum + r.weightKg * r.price, 0);
+  const total = rows.reduce((sum, r) => sum + r.weight * r.price, 0);
 
   return (
     <div className="rounded-2xl border border-gray-200 bg-background p-5 shadow-sm">
@@ -18,15 +18,15 @@ export function SteelTable({ title, rows }: { title: string; rows: SteelRow[] })
           <tbody>
             {rows.map((row, index) => (
               <tr
-                key={`${row.type}-${index}`}
+                key={`${row.steelType}-${index}`}
                 className="border-b last:border-0"
               >
-                <td className="px-3 py-2">{row.type}</td>
+                <td className="px-3 py-2">{row.steelType}</td>
                 <td className="px-3 py-2 text-center">
-                  {formatNumber(row.weightKg)}
+                  {formatNumber(row.weight)}
                 </td>
                 <td className="px-3 py-2 text-left">
-                    {formatCurrency(row.weightKg * row.price)}
+                    {formatCurrency(row.weight * row.price)}
                 </td>
               </tr>
             ))}
