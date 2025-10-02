@@ -7,6 +7,8 @@ import { staffIncomeData } from '@/data/staffIncomeData'
 import { staffSalaryData } from '@/data/staffSalaryData'
 import { typeStaffIncomeData } from '@/data/typeStaffIncomeData'
 import { steelTypeData } from '@/data/steelTypeData'
+import { expenseData } from '@/data/expenseData'
+import { expenseCategoryData } from '@/data/expenseCategoryData'
 
 const prisma = new PrismaClient()
 async function main() {
@@ -21,6 +23,10 @@ async function main() {
   await prisma.user.deleteMany()
   await prisma.staff.deleteMany()
   await prisma.typeStaffIncome.deleteMany()
+  await prisma.expense.deleteMany()
+  await prisma.expenseCategory.deleteMany()
+  
+ 
   
 
   // 2. รีเซต sequence
@@ -33,6 +39,8 @@ async function main() {
   await prisma.$executeRawUnsafe(`ALTER SEQUENCE "StaffSalary_id_seq" RESTART WITH 1`)
   await prisma.$executeRawUnsafe(`ALTER SEQUENCE "TypeStaffIncome_id_seq" RESTART WITH 1`)
   await prisma.$executeRawUnsafe(`ALTER SEQUENCE "TypeStaffIncome_id_seq" RESTART WITH 1`)
+  await prisma.$executeRawUnsafe(`ALTER SEQUENCE "ExpenseCategory_id_seq" RESTART WITH 1`)
+  await prisma.$executeRawUnsafe(`ALTER SEQUENCE "Expense_id_seq" RESTART WITH 1`)
 
 //   // 3. ใส่ข้อมูล
   await prisma.steelType.createMany({data: steelTypeData})
@@ -88,6 +96,8 @@ async function main() {
   await prisma.typeStaffIncome.createMany({data: typeStaffIncomeData})
   await prisma.staffIncome.createMany({ data: staffIncomeData })
   await prisma.staffSalary.createMany({data: staffSalaryData})
+  await prisma.expenseCategory.createMany({data: expenseCategoryData})
+  await prisma.expense.createMany({data: expenseData})
   
   console.log('✅ All seed data inserted successfully.')
 }

@@ -183,6 +183,25 @@ model SteelType{
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
+model Expense {
+  id           Int           @id @default(autoincrement())
+  description  String      
+  amount       Float         
+  expenseDate  DateTime      
+  categoryId   Int           
+  category     ExpenseCategory @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  receiptUrl   String?      
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+}
+
+model ExpenseCategory {
+  id          Int       @id @default(autoincrement())
+  name        String    @unique  
+  description String
+  expenses    Expense[]
+}
+
 
 enum Role {
   superadmin
