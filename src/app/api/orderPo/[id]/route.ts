@@ -25,7 +25,7 @@ export async function GET(
     return NextResponse.json(result, { status: 200 });
   } catch (error) {
     return NextResponse.json(
-      { error: "Failed to fetch orderPO" },
+      { error: "Failed to fetch orderPO: " + error },
       { status: 500 }
     );
   }
@@ -59,7 +59,7 @@ export async function PATCH(
     return NextResponse.json(result, { status: 200 });
   } catch (error) {
     return NextResponse.json(
-      { error: "Failed to update orderPO" },
+      { error: "Failed to update orderPO: " + error },
       { status: 500 }
     );
   }

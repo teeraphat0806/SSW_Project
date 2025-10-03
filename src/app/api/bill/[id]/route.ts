@@ -17,7 +17,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
         return NextResponse.json(result, { status: 200 });
     }
     catch (error) {
-        return NextResponse.json({ error: "Failed to fetch payrolls" }, { status: 500 });
+        return NextResponse.json({ error: "Failed to fetch payrolls: "+error }, { status: 500 });
     }    
 }
 
@@ -40,7 +40,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 
         return NextResponse.json(result, { status: 200 });
     }catch (error) {
-        return NextResponse.json({ error: "Failed to update staff income" }, { status: 500 });
+        return NextResponse.json({ error: "Failed to update staff income: "+error  }, { status: 500 });
     }  
 }
 
@@ -55,7 +55,7 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
             where: { id: Number(params.id) },
         });
     } catch (error) {
-        return NextResponse.json({ error: "Failed to delete payroll" }, { status: 500 });
+        return NextResponse.json({ error: "Failed to delete payroll: "+error  }, { status: 500 });
     }
     return NextResponse.json({ message: `Delete Complete` });
 }

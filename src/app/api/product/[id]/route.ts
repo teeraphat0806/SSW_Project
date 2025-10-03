@@ -23,7 +23,7 @@ export async function GET(
     return NextResponse.json(result, { status: 200 });
   } catch (error) {
     return NextResponse.json(
-      { error: "Failed to fetch Product" },
+      { error: "Failed to fetch Product: " + error },
       { status: 500 }
     );
   }
@@ -55,7 +55,7 @@ export async function PATCH(
     return NextResponse.json(result, { status: 200 });
   } catch (error) {
     return NextResponse.json(
-      { error: "Failed to update Product" },
+      { error: "Failed to update Product: " + error },
       { status: 500 }
     );
   }
