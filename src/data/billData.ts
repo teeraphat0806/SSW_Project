@@ -10,7 +10,7 @@ import { randomBytes } from "crypto";
   const n = chars.length;
   if (n < 2) throw new Error("charset ต้องมีอักขระอย่างน้อย 2 ตัว");
 
-  const bytes = randomBytes(length * 2); // กันเผื่อทิ้งบาง byte
+  const bytes: Uint8Array = randomBytes(length * 2); // กันเผื่อทิ้งบาง byte
   const result: string[] = [];
   const max = 256 - (256 % n); // ใช้เฉพาะค่า < max เพื่อลด modulo bias
 
@@ -20,7 +20,7 @@ import { randomBytes } from "crypto";
       // ไม่พอ ก็ขอเพิ่ม
       const more = randomBytes(length);
       const tmp = new Uint8Array(more);
-      for (let j = 0; j < tmp.length; j++) (bytes as any)[i + j] = tmp[j];
+      for (let j = 0; j < tmp.length; j++) bytes[i + j] = tmp[j];
     }
     const rnd = bytes[i++]!;
     if (rnd < max) {

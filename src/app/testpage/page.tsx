@@ -14,7 +14,6 @@ import {
   Building2, 
   Package, 
   Ruler, 
-  Weight,
   Clock,
   User,
   MapPin,
