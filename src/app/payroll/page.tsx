@@ -1,7 +1,12 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Button } from "@/components/ui/button";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "../../components/ui/tabs";
+import { Button } from "../../components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -9,20 +14,25 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
-import { Badge } from "@/components/ui/badge";
+} from "../../components/ui/dialog";
+import { Input } from "../../components/ui/input";
+import { Label } from "../../components/ui/label";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "../../components/ui/card";
+import { Separator } from "../../components/ui/separator";
+import { Badge } from "../../components/ui/badge";
 import {
   Select,
   SelectTrigger,
   SelectContent,
   SelectItem,
   SelectValue,
-} from "@/components/ui/select";
-import { ScrollArea } from "@/components/ui/scroll-area";
+} from "../../components/ui/select";
+import { ScrollArea } from "../../components/ui/scroll-area";
 import {
   Info,
   Pencil,
@@ -48,9 +58,9 @@ import {
   Line,
 } from "recharts";
 import DeleteConfirmButton from "../../components/DeleteButton";
-import { SalaryAdjustmentForm } from "@/components/payroll/SalaryAdjustmentForm";
-import { PayslipGenerator } from "@/components/payroll/PayslipGenerator";
-import { EmployeeOverview } from "@/components/payroll/EmployeeOverview";
+import { SalaryAdjustmentForm } from "../../components/payroll/SalaryAdjustmentForm";
+import { PayslipGenerator } from "../../components/payroll/PayslipGenerator";
+import { EmployeeOverview } from "../../components/payroll/EmployeeOverview";
 import { mockEmployees, mockAdjustments } from "@/data/mockPayrollData";
 import type { Employee, SalaryAdjustment } from "@/types/payroll";
 import { ToastContainer, toast } from "react-toastify";
