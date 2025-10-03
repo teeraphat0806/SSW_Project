@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "../../auth/[...nextauth]/route";
-import { StaffIncomeSchema } from "@/lib/schemas/staffIncome.schema";
-import prisma from "@/lib/prisma";
+import { StaffIncomeSchema } from "../../../../lib/schemas/staffIncome.schema";
+import prisma from "../../../../lib/prisma";
 // GET /api/payroll/[id]
 export async function GET(
   req: NextRequest,

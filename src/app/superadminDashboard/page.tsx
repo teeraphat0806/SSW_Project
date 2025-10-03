@@ -13,12 +13,15 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { ToastContainer, toast } from 'react-toastify';
 import {  signOut } from 'next-auth/react'
 const roleColors: Record<UserRole, string> = {
-  superadmin: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
-  guest: 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200',
-  clerk: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
-  supervisor: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
-  cutter: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
-  delivery: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200',
+  superadmin: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200",
+  guest: "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200",
+  clerk: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
+  supervisor:
+    "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
+  cutter:
+    "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200",
+  delivery:
+    "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200",
 };
 
 export default function SuperadminDashboard() {
@@ -26,16 +29,16 @@ export default function SuperadminDashboard() {
   const [loading, setLoading] = useState(true);
   const [editingUser, setEditingUser] = useState<UserProfile | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  
+
   const fetchUsers = async () => {
     try {
-      const res = await fetch('/api/auth/user',{}).then(res => res.json());
-      if (!res) throw new Error('No users found');
+      const res = await fetch("/api/auth/user", {}).then((res) => res.json());
+      if (!res) throw new Error("No users found");
       setUsers(res || []);
     } catch (error) {
       toast.error(`Error fetching users: ${error}`, {
-        position: 'bottom-right',
-        });
+        position: "bottom-right",
+      });
     } finally {
       setLoading(false);
     }
@@ -48,49 +51,49 @@ export default function SuperadminDashboard() {
   const handleRoleUpdate = async (userId: string, newRole: UserRole) => {
     try {
       const res = await fetch(`/api/auth/user/${userId}`, {
-        method: 'PUT',
+        method: "PUT",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({ role: newRole }),
-    });
+      });
       const { error } = await res.json();
       if (error) throw error;
 
       await fetchUsers();
       toast.success(`เปลี่ยนตำแหน่งเป็น ${newRole} สำเร็จ`, {
-        position: 'bottom-right',
-        });
+        position: "bottom-right",
+      });
     } catch (error) {
       toast.error(`ขออภัย มีข้อผิดพลาด: ${error}`, {
-        position: 'bottom-right',
-        });
+        position: "bottom-right",
+      });
     }
   };
 
   const handleDeleteUser = async (userId: number) => {
-    if (!confirm('คุณแน่ใจแล้วใช่ไหมที่จะลบ ผู้ใช้งาน? ไม่สามารถย้อนกลับได้')) {
+    if (!confirm("คุณแน่ใจแล้วใช่ไหมที่จะลบ ผู้ใช้งาน? ไม่สามารถย้อนกลับได้")) {
       return;
     }
-    
+
     try {
       const res = await fetch(`/api/auth/user/${userId}`, {
-        method: 'DELETE',
+        method: "DELETE",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
       });
       const { error } = await res.json();
       if (error) throw error;
 
       await fetchUsers();
-      toast.success('ลบ ผู้ใช้งานสำเร็จ', {
-        position: 'bottom-right',
-        });
+      toast.success("ลบ ผู้ใช้งานสำเร็จ", {
+        position: "bottom-right",
+      });
     } catch (error) {
       toast.error(`ขออภัย มีข้อผิดพลาด: ${error}`, {
-        position: 'bottom-right',
-        });
+        position: "bottom-right",
+      });
     }
   };
 
@@ -99,7 +102,7 @@ export default function SuperadminDashboard() {
       acc[user.role] = (acc[user.role] || 0) + 1;
       return acc;
     }, {} as Record<UserRole, number>);
-    
+
     return stats;
   };
 
@@ -119,7 +122,11 @@ export default function SuperadminDashboard() {
               <p className="text-muted-foreground">ระบบควบคุม การให้สิทธิ์</p>
             </div>
           </div>
-          <Button variant="outline" onClick={()=>signOut({callbackUrl: '/'})} className="flex items-center space-x-2 bg-red-500 text-white border-none hover:bg-red-600 hover:cursor-pointer hover:scale-110 transition-all">
+          <Button
+            variant="outline"
+            onClick={() => signOut({ callbackUrl: "/" })}
+            className="flex items-center space-x-2 bg-red-500 text-white border-none hover:bg-red-600 hover:cursor-pointer hover:scale-110 transition-all"
+          >
             <LogOut className="h-4 w-4 " />
             <span>ออกจากระบบ</span>
           </Button>
@@ -130,7 +137,9 @@ export default function SuperadminDashboard() {
           {Object.entries(roleColors).map(([role, colorClass]) => (
             <Card key={role}>
               <CardContent className="p-4 text-center">
-                <div className="text-2xl font-bold mb-1">{stats[role as UserRole] || 0}</div>
+                <div className="text-2xl font-bold mb-1">
+                  {stats[role as UserRole] || 0}
+                </div>
                 <Badge className={colorClass}>{role}</Badge>
               </CardContent>
             </Card>
@@ -164,18 +173,25 @@ export default function SuperadminDashboard() {
                 <TableBody>
                   {users.map((user) => (
                     <TableRow key={user.id}>
-                      <TableCell>{user.name || 'N/A'}</TableCell>
+                      <TableCell>{user.name || "N/A"}</TableCell>
                       <TableCell>{user.email}</TableCell>
                       <TableCell>
-                        <Badge className={roleColors[user.role]}>{user.role}</Badge>
+                        <Badge className={roleColors[user.role]}>
+                          {user.role}
+                        </Badge>
                       </TableCell>
-                      <TableCell>{new Date(user.createdAt).toLocaleDateString()}</TableCell>
+                      <TableCell>
+                        {new Date(user.createdAt).toLocaleDateString()}
+                      </TableCell>
                       <TableCell>
                         <div className="flex space-x-2">
-                          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                          <Dialog
+                            open={isDialogOpen}
+                            onOpenChange={setIsDialogOpen}
+                          >
                             <DialogTrigger asChild>
                               <Button
-                                className='bg-blue-500 text-white hover:bg-blue-600 border-none hover:cursor-pointer hover:scale-110 transition-all'
+                                className="bg-blue-500 text-white hover:bg-blue-600 border-none hover:cursor-pointer hover:scale-110 transition-all"
                                 variant="outline"
                                 size="sm"
                                 onClick={() => setEditingUser(user)}
@@ -191,7 +207,10 @@ export default function SuperadminDashboard() {
                                 <div className="space-y-4">
                                   <div>
                                     <Label>ชื่อ</Label>
-                                    <Input value={editingUser.name || ''} disabled />
+                                    <Input
+                                      value={editingUser.name || ""}
+                                      disabled
+                                    />
                                   </div>
                                   <div>
                                     <Label>อีเมล</Label>
@@ -202,7 +221,10 @@ export default function SuperadminDashboard() {
                                     <Select
                                       value={editingUser.role}
                                       onValueChange={(value) => {
-                                        handleRoleUpdate(editingUser.id, value as UserRole);
+                                        handleRoleUpdate(
+                                          editingUser.id,
+                                          value as UserRole
+                                        );
                                         setIsDialogOpen(false);
                                         setEditingUser(null);
                                       }}
@@ -226,7 +248,7 @@ export default function SuperadminDashboard() {
                           <Button
                             variant="destructive"
                             size="sm"
-                            className='hover:bg-red-600 hover:text-white hover:cursor-pointer hover:scale-110 transition-all'
+                            className="hover:bg-red-600 hover:text-white hover:cursor-pointer hover:scale-110 transition-all"
                             onClick={() => handleDeleteUser(Number(user.id))}
                           >
                             <Trash2 className="h-4 w-4" />
