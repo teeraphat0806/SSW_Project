@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Theme } from "@radix-ui/themes";
-import { getServerSession } from 'next-auth'
-import SessionProvider from '@/components/SessionProvider'
+import { getServerSession } from 'next-auth/next'
+import SessionProvider from '../components/SessionProvider'
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],

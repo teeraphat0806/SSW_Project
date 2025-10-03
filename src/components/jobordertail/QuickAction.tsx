@@ -3,8 +3,8 @@
 import * as React from "react";
 import { useRouter } from "next/navigation";
 import { Edit, Printer, Mail, FileText } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { toast } from "@/hooks/use-toast";
+import { Button } from "../../components/ui/button";
+import { toast } from "../../hooks/use-toast";
 
 type ActionKey = "edit" | "print" | "email" | "invoice";
 

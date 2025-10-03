@@ -1,11 +1,11 @@
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
-import { Employee, Payslip, PayslipItem } from '@/types/payroll';
+import { Card, CardContent } from '../../components/ui/card';
+import { Button } from '../../components/ui/button';
+import { Separator } from '../../components/ui/separator';
+import { Employee, Payslip, PayslipItem } from '../../types/payroll';
 import { format } from 'date-fns';
 import { useRef } from "react";
 import { Printer, Download, ArrowLeft } from "lucide-react";
-import Logo  from '@/components/Logo'; 
+import Logo  from '../../components/Logo'; 
 
 interface PayslipGeneratorProps {
   employee: Employee;

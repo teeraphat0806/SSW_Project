@@ -4,7 +4,7 @@
 import dynamic from 'next/dynamic'
 
 // dynamic import พร้อม ssr: false
-const MapWithGPS = dynamic(() => import('@/components/MapWithGPS'), {
+const MapWithGPS = dynamic(() => import('../../components/MapWithGPS'), {
   ssr: false,
 })
 

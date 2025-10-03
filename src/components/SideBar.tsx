@@ -9,8 +9,8 @@ import {
 import { useSession, signOut } from 'next-auth/react'
 import * as Avatar from '@radix-ui/react-avatar'
 import Link from 'next/link'
-import Logo from '@/components/Logo'
-import ThemeToggle from '@/components/ThemeToggle'
+import Logo from '../components/Logo'
+import ThemeToggle from '../components/ThemeToggle'
 
 export default function Sidebar() {
   const { data: session, status } = useSession()

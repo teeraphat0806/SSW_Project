@@ -1,7 +1,7 @@
 "use client";
 import { Scissors } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Badge } from "../../components/ui/badge";
+import { Button } from "../../components/ui/button";
 
 type ProductionStatus = "pending" |"cutting" | "weighing" | "ready" | "shipped"|"completed";
 

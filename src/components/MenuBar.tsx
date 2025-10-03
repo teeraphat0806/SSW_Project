@@ -5,9 +5,9 @@ import { Menu, Home, ClipboardList, Users, LogOut, X } from 'lucide-react'
 import Link from 'next/link'
 import { signOut, useSession } from 'next-auth/react'
 import * as Avatar from '@radix-ui/react-avatar'
-import Logo from '@/components/Logo'
-import ThemeToggle from '@/components/ThemeToggle'
-//import MenuBar from '@/components/MenuBar'
+import Logo from '../components/Logo'
+import ThemeToggle from '../components/ThemeToggle'
+//import MenuBar from '../components/MenuBar'
 
 
 export default function NavbarWithSidebar() {

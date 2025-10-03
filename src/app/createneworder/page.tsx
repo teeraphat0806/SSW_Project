@@ -10,7 +10,6 @@ import CustomerForm from "../../components/newJobOrder/CustomerForm";
 import CustomerInfoBox from "../../components/newJobOrder/CustomerInfoBox";
 import AddItem from "../../components/newJobOrder/AddItem";
 import "../globals.css";
-import { z } from "zod";
 import { ArrowLeft, FileText, Save, X } from "lucide-react";
 import SelectCustomer from "../../components/SelectCustomer";
 
@@ -148,12 +147,16 @@ const NewJobOrder = () => {
   });
 
   // อ่าน body แค่ครั้งเดียว
-  const data = await res.json().catch(() => ({}));
+  interface UploadResponse {
+    error?: string;
+    keys?: string[];
+  }
+  const data: UploadResponse = await res.json().catch(() => ({}));
   if (!res.ok) {
-    throw new Error((data as any)?.error || "อัปโหลดไฟล์ไม่สำเร็จ");
+    throw new Error(data?.error || "อัปโหลดไฟล์ไม่สำเร็จ");
   }
 
-  return (data as any).keys as string[];
+  return data.keys as string[];
 }
 
 

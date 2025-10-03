@@ -1,7 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
-import Sidebar from "@/components/SideBar"
-import MenuBar from '@/components/MenuBar'
+import Sidebar from "../components/SideBar"
+import MenuBar from '../components/MenuBar'
 export default function Layout({ children }) {
     const [isMobile, setIsMobile] = useState(false)
     useEffect(() => {
