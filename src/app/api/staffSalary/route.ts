@@ -31,7 +31,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json(result, { status: 200 });
   } catch (error) {
     return NextResponse.json(
-      { error: "Failed to fetch staffSalary" },
+      { error: "Failed to fetch staffSalary: " + error },
       { status: 500 }
     );
   }
@@ -84,7 +84,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(result, { status: 201 });
   } catch (error) {
     return NextResponse.json(
-      { error: "Failed to create staffSalary" },
+      { error: "Failed to create staffSalary: " + error },
       { status: 500 }
     );
   }

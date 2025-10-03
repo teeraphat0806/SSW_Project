@@ -50,7 +50,7 @@ export async function PATCH(
     return NextResponse.json(result, { status: 200 });
   } catch (error) {
     return NextResponse.json(
-      { error: "Failed to update User" },
+      { error: "Failed to update User: " + error },
       { status: 500 }
     );
   }
@@ -70,7 +70,7 @@ export async function DELETE(
     });
   } catch (error) {
     return NextResponse.json(
-      { error: "Failed to delete User" },
+      { error: "Failed to delete User: " + error },
       { status: 500 }
     );
   }

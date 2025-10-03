@@ -56,7 +56,7 @@ export async function PATCH(
     return NextResponse.json(result, { status: 200 });
   } catch (error) {
     return NextResponse.json(
-      { error: "Failed to update staff income" },
+      { error: "Failed to update staff income: " + error },
       { status: 500 }
     );
   }
@@ -77,7 +77,7 @@ export async function DELETE(
     });
   } catch (error) {
     return NextResponse.json(
-      { error: "Failed to delete payroll" },
+      { error: "Failed to delete payroll: " + error },
       { status: 500 }
     );
   }

@@ -1,24 +1,29 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "../../auth/[...nextauth]/route";
-import { TypeStaffIncomeSchema } from '../../../../lib/schemas/typeStaffIncome.schema';
+import { TypeStaffIncomeSchema } from "../../../../lib/schemas/typeStaffIncome.schema";
 import prisma from "../../../../lib/prisma";
 // GET /api/payroll/[id]
-export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
-    const session = await getServerSession({ req, ...authOptions });
-    if (!session || !["superadmin", "supervisor"].includes(session.user?.role)) {
-        return NextResponse.json({ error: "Permission Denied!!" }, { status: 400 });
-    }
-     try {
-        const result = await prisma.typeStaffIncome.findUnique({
-            where: { id: Number(params.id) },
-        });
+export async function GET(
+  req: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  const session = await getServerSession({ req, ...authOptions });
+  if (!session || !["superadmin", "supervisor"].includes(session.user?.role)) {
+    return NextResponse.json({ error: "Permission Denied!!" }, { status: 400 });
+  }
+  try {
+    const result = await prisma.typeStaffIncome.findUnique({
+      where: { id: Number(params.id) },
+    });
 
-        return NextResponse.json(result, { status: 200 });
-    }
-    catch (error) {
-        return NextResponse.json({ error: "Failed to fetch typeStaffIncome" }, { status: 500 });
-    }    
+    return NextResponse.json(result, { status: 200 });
+  } catch (error) {
+    return NextResponse.json(
+      { error: "Failed to fetch typeStaffIncome: " + error },
+      { status: 500 }
+    );
+  }
 }
 
 // PUT /api/payroll/[id]
@@ -92,4 +97,3 @@ export async function DELETE(
     );
   }
 }
-
