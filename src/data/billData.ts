@@ -16,7 +16,6 @@ export const billData = [
     vat: 7.0,
     dateReceive: new Date("2025-08-01"),
     typeBill: "บิลเงินสด",
-
     OrderPO: {
       create: [
         {
