@@ -1,12 +1,13 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { toast } from "@/hooks/use-toast";
-import { Badge } from "@/components/ui/badge";
+import { Button } from "../../components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../components/ui/tabs";
+// Update the import path below if your use-toast file is located elsewhere
+import { toast } from "../../hooks/use-toast";
+import { Badge } from "../../components/ui/badge";
 
-import { ArrowLeft, FileText, Package, Truck, Calendar } from "lucide-react";
+import { ArrowLeft, FileText, Package, } from "lucide-react";
 import { QuickAction } from "../../components/jobordertail/QuickAction";
 import { SteelTable } from "../../components/jobordertail/SteelTable";
 import { SpecificationsTab } from "../../components/jobordertail/SpecificationsTab";
@@ -21,7 +22,7 @@ interface JobOrder {
   customerEmail: string;
   customerPhone: string;
   deliveryAddress: string;
-  steel: [{
+  steel: Array<{
     steelType: string;
     amount: number;
     width: number;
@@ -30,16 +31,17 @@ interface JobOrder {
     price: number;
     weight: number;
     specialInstructions?: string;
-  }];
-  steelActual?: [{
+  }>;
+  steelActual?: Array<{
     steelType: string;
-    amount: number;
+    amount?: number;
+    quantity?: number;
     width: number;
     length: number;
     thickness: number;
     price: number;
     weight: number;
-  }];
+  }>;
   status:
     | "pending"
     | "cutting"
@@ -57,14 +59,17 @@ const mockJobOrder: JobOrder = {
   id: '1',
   poNumber: 'PO-2024-001',
   customerId: 'CUST-001',
+  customerEmail: 'customer@example.com',
+  customerPhone: '0123456789',
+  deliveryAddress: '123 Main St, Bangkok, Thailand',
   steel: [
     { steelType: "แผ่น SS400 4x8", amount: 10, width: 1200, length: 2400, thickness: 6, price: 9500, weight: 120},
-    { steelType: "กลม 12 มม.", quantity: 20, width: 12, length: 6000, thickness: 12, price: 4100, weight: 60},
-    { steelType: "ฉาก 40x40", quantity: 15, width: 40, length: 6000, thickness: 4, price: 3100, weight: 45.5 },
+    { steelType: "กลม 12 มม.", amount: 20, width: 12, length: 6000, thickness: 12, price: 4100, weight: 60},
+    { steelType: "ฉาก 40x40", amount: 15, width: 40, length: 6000, thickness: 4, price: 3100, weight: 45.5 },
   ],
   steelActual: [
     { steelType: "แผ่น SS400 4x8", amount: 10, width: 1200, length: 2400, thickness: 6, price: 9625, weight: 121.3 },
-    { steelType: "กลม 12 มม.", quantity: 20, width: 12, length: 6000, thickness: 12, price: 4185, weight: 61.2 },
+    { steelType: "กลม 12 มม.", amount: 20, width: 12, length: 6000, thickness: 12, price: 4185, weight: 61.2 },
   ],
   status: "pending",
   createdAt: new Date('2024-01-15T09:30:16'),

@@ -1,19 +1,18 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
+import { Button } from "../../components/ui/button";
 import { v4 as uuidv4 } from "uuid";
-import { Separator } from "@/components/ui/separator";
+import { Separator } from "../../components/ui/separator";
 import { ToastContainer, toast } from "react-toastify";
-import CustomerForm from "@/components/newJobOrder/CustomerForm";
-import CustomerInfoBox from "@/components/newJobOrder/CustomerInfoBox";
-import AddItem from "@/components/newJobOrder/AddItem";
+import CustomerForm from "../../components/newJobOrder/CustomerForm";
+import CustomerInfoBox from "../../components/newJobOrder/CustomerInfoBox";
+import AddItem from "../../components/newJobOrder/AddItem";
 import "../globals.css";
-
+import { z } from "zod";
 import { ArrowLeft, FileText, Save, X } from "lucide-react";
-import SelectCustomer from "@/components/SelectCustomer";
-import de from "zod/v4/locales/de.cjs";
+import SelectCustomer from "../../components/SelectCustomer";
 
 interface SteelItem {
   id: string;
