@@ -1,5 +1,5 @@
 'use client';
-import Dashboard from "../../components/Dashboard";
+import Dashboard from "@/components/Dashboard";
 import { useSession } from "next-auth/react";
 const Index = () => {
   const { data: session } = useSession();

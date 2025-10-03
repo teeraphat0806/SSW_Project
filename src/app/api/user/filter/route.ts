@@ -10,7 +10,7 @@ export async function GET(req: NextRequest) {
     const email = sp.get("email") ?? undefined;
     const role = sp.get("role") ?? undefined;
 
-    const where: any = {};
+    const where: Record<string, unknown> = {};
 
     if (name) {
       where.name = { contains: name, mode: "insensitive" };
