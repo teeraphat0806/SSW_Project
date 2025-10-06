@@ -1,9 +1,9 @@
 import prisma from "../../../../../lib/prisma";
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
-  const id = Number(params.id);
+  const { id } = await context.params;
   try {
     const users = await prisma.user.findMany({
       where: { id: id },
@@ -16,9 +16,9 @@ export async function GET(
 
 export async function PUT(
   request: Request,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
-  const id = Number(params.id);
+  const { id } = await context.params;
   if (!id) {
     return Response.json({ error: "User ID is required" }, { status: 400 });
   }
@@ -46,9 +46,9 @@ export async function PUT(
 
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
-  const id = Number(params.id);
+  const { id } = await context.params;
   if (!id) {
     return Response.json({ error: "User ID is required" }, { status: 400 });
   }

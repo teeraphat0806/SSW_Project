@@ -1,13 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
-import { authOptions } from "../../auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth";
+
 import prisma from "../../../../lib/prisma";
 import { OrderPOSchema } from "../../../../lib/schemas/orderPO.schema";
 // GET /api/payroll/[id]
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await context.params;
   const session = await getServerSession({ req, ...authOptions });
   if (
     !session ||
@@ -19,7 +21,7 @@ export async function GET(
   }
   try {
     const result = await prisma.orderPO.findUnique({
-      where: { id: Number(params.id) },
+      where: { id: Number(id) },
     });
 
     return NextResponse.json(result, { status: 200 });
@@ -34,8 +36,9 @@ export async function GET(
 // PUT /api/payroll/[id]
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await context.params;
   const session = await getServerSession({ req, ...authOptions });
   if (
     !session ||
@@ -52,7 +55,7 @@ export async function PATCH(
   }
   try {
     const result = await prisma.orderPO.update({
-      where: { id: Number(params.id) },
+      where: { id: Number(id) },
       data: parsed.data,
     });
 
@@ -68,9 +71,9 @@ export async function PATCH(
 // DELETE /api/payroll/[id]
 export async function DELETE(
   req: NextRequest,
-  context: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
-  const { params } = context;
+  const { id } = await context.params;
   const session = await getServerSession({ req, ...authOptions });
   if (
     !session ||
@@ -82,7 +85,7 @@ export async function DELETE(
   }
   try {
     await prisma.orderPO.delete({
-      where: { id: Number(params.id) },
+      where: { id: Number(id) },
     });
   } catch (error) {
     console.error("error: ", error);

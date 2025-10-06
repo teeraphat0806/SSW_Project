@@ -1,5 +1,5 @@
 import { getServerSession } from "next-auth";
-import { authOptions } from "../auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth";
 import { NextResponse, NextRequest } from "next/server";
 import prisma from "../../../lib/prisma";
 import { CustomerSchema } from "../../../lib/schemas/customer.schema";

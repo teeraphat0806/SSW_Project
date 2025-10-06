@@ -1,20 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
-import { authOptions } from "../../auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth";
+
 import { StaffSalarySchema } from "../../../../lib/schemas/staffSalary.schema";
 import prisma from "../../../../lib/prisma";
 // GET /api/payroll/[id]
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await context.params;
   const session = await getServerSession({ req, ...authOptions });
   if (!session || !["superadmin", "supervisor"].includes(session.user?.role)) {
     return NextResponse.json({ error: "Permission Denied!!" }, { status: 400 });
   }
   try {
     const result = await prisma.staffSalary.findUnique({
-      where: { id: Number(params.id) },
+      where: { id: Number(id) },
     });
 
     return NextResponse.json(result, { status: 200 });
@@ -29,8 +31,9 @@ export async function GET(
 // PUT /api/payroll/[id]
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await context.params;
   const session = await getServerSession({ req, ...authOptions });
   if (!session || !["superadmin", "supervisor"].includes(session.user?.role)) {
     return NextResponse.json({ error: "Permission Denied!!" }, { status: 400 });
@@ -43,7 +46,7 @@ export async function PATCH(
 
   try {
     const result = await prisma.staffSalary.update({
-      where: { id: Number(params.id) },
+      where: { id: Number(id) },
       data: parsed.data,
     });
     return NextResponse.json(result, { status: 200 });
@@ -58,15 +61,16 @@ export async function PATCH(
 // DELETE /api/payroll/[id]
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await context.params;
   const session = await getServerSession({ req, ...authOptions });
   if (!session || !["superadmin", "supervisor"].includes(session.user?.role)) {
     return NextResponse.json({ error: "Permission Denied!!" }, { status: 400 });
   }
   try {
     await prisma.staffSalary.delete({
-      where: { id: Number(params.id) },
+      where: { id: Number(id) },
     });
   } catch (error) {
     return NextResponse.json(
