@@ -6,7 +6,7 @@ export async function GET(
   const { id } = await context.params;
   try {
     const users = await prisma.user.findMany({
-      where: { id: id },
+      where: { id: Number(id) },
     });
     return Response.json(users);
   } catch (error) {
@@ -27,7 +27,7 @@ export async function PUT(
 
   try {
     const user = await prisma.user.update({
-      where: { id },
+      where: { id: Number(id) },
       data: {
         name,
         email,
@@ -54,7 +54,7 @@ export async function DELETE(
   }
   try {
     const user = await prisma.user.delete({
-      where: { id: id },
+      where: { id: Number(id) },
     });
     return Response.json({ message: "User deleted successfully", user });
   } catch (error) {

@@ -1,10 +1,10 @@
-import NextAuth from "next-auth";
+import type { AuthOptions } from "next-auth/core/types";
 import CredentialsProvider from "next-auth/providers/credentials";
 import prisma from "./prisma";
 import bcrypt from "bcrypt";
 import { PrismaAdapter } from "@next-auth/prisma-adapter";
 
-export const authOptions = {
+export const authOptions: AuthOptions = {
   providers: [
     CredentialsProvider({
       name: "Credentials",
@@ -40,24 +40,22 @@ export const authOptions = {
   },
   callbacks: {
     jwt: async ({ token, user }) => {
-      console.log("JWT Callback - User:", user);
-      console.log("JWT Callback - Token before:", token);
+      // When a user signs in, attach id and role to the token.
       if (user) {
-        token.id = user.id;
-        token.role = user.role;
+        return { ...token, id: (user as any).id, role: (user as any).role };
       }
-      console.log("JWT Callback - Token after:", token);
       return token;
     },
     session: async ({ session, token }) => {
-      console.log("Session Callback - Token:", token);
-      console.log("Session Callback - Session before:", session);
-      if (session.user) {
-        session.user.id = token.id;
-        session.user.role = token.role;
-      }
-      console.log("Session Callback - Session after:", session);
-      return session;
+      // Expose id and role on the session.user object returned to the client
+      return {
+        ...session,
+        user: {
+          ...(session.user as any),
+          id: (token as any).id,
+          role: (token as any).role,
+        },
+      };
     },
   },
   pages: {
