@@ -3,10 +3,40 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 import { CreateNewOrderSchema } from "@/lib/schemas/createNewOrder.shema";
+import { randomBytes } from "crypto";
+
+
+function  generateCode(
+  length = 20,
+  charset = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!@#$%^&*()-_=+[]{};:,.?/\\|~"
+) {
+  if (length <= 0) return "";
+  const chars = charset;
+  const n = chars.length;
+  if (n < 2) throw new Error("charset ต้องมีอักขระอย่างน้อย 2 ตัว");
+
+  const bytes: Uint8Array = randomBytes(length * 2); // กันเผื่อทิ้งบาง byte
+  const result: string[] = [];
+  const max = 256 - (256 % n); // ใช้เฉพาะค่า < max เพื่อลด modulo bias
+
+  let i = 0;
+  while (result.length < length) {
+    if (i >= bytes.length) {
+      // ไม่พอ ก็ขอเพิ่ม
+      const more = randomBytes(length);
+      const tmp = new Uint8Array(more);
+      for (let j = 0; j < tmp.length; j++) bytes[i + j] = tmp[j];
+    }
+    const rnd = bytes[i++]!;
+    if (rnd < max) {
+      result.push(chars[rnd % n]!);
+    }
+  }
+  return result.join("");
+}
 
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
-  // Fix: Only allow if role is superadmin OR supervisor
   console.log("Session:", session);
   if (
     !session ||
@@ -23,18 +53,6 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json();
-    // หา staffId จาก session user name
-    // const staff = await prisma.staff.findUnique({
-    //   where: { userId: session.user?.id },
-    //   include: { user: true },
-    // });
-
-    // const user = staff?.user
-
-    // if (!staff) {
-    //   throw new Error(`Staff with name ${session.user?.name} not found`);
-    // }
-
     const result = CreateNewOrderSchema.safeParse(body);
 
     if (!result.success) {
@@ -56,6 +74,7 @@ export async function POST(req: NextRequest) {
         Customer: { connect: { id: validateData.customerId } },
         yourRef: validateData.yourRef,
         invoiceNo: validateData.invoiceNo,
+        codeCustomer: generateCode(),
         credit: new Date(),
         deliveryDate: new Date(validateData.deliveryDate),
         deliveryOrderNo: validateData.deliveryOrderNo,

@@ -1,7 +1,7 @@
 import { randomBytes } from "crypto";
 
 
- function  generateCode(
+function  generateCode(
   length = 20,
   charset = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!@#$%^&*()-_=+[]{};:,.?/\\|~"
 ) {

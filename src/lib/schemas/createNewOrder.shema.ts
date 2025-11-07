@@ -9,6 +9,7 @@ export const CreateNewOrderSchema = z.object({
     deliveryOrderNo: z.string(),
     salesName: z.string().optional(),
     vat: z.number(),
+    codeCustomer: z.string(),
     orderPOs: z.array(
         z.object({
         poNumber: z.string(),
