@@ -33,85 +33,87 @@ export function StaffInfoCard({
 
   return (
     <div className="px-5 py-4 space-y-4">
-    <Card
-      className={cn(
-        "rounded-2xl border bg-background shadow-sm",
-        "p-5 sm:p-6",
-        className
-      )}
-      aria-label="ข้อมูลผู้รับผิดชอบงาน"
-    >
-      {/* Header */}
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h3 className="text-base font-semibold tracking-tight text-foreground">
-            ข้อมูลผู้รับผิดชอบงาน
-          </h3>
-          <p className="text-sm text-muted-foreground">
-            แสดงหัวหน้างานและช่างที่รับผิดชอบออเดอร์นี้
-          </p>
-        </div>
-        <div className="flex items-center gap-2 text-xs sm:text-sm">
-          <Badge variant="secondary" className="rounded-full">
-            หัวหน้างาน: {supervisors.length}
-          </Badge>
-          <Badge variant="secondary" className="rounded-full">
-            ช่าง: {techs.length}
-          </Badge>
-        </div>
-      </div>
-
-      <Separator className="my-2" />
-
-      {/* Content */}
-      <div className="grid grid-cols-2 gap-1">
-        {/* Supervisors */}
-        <div className="flex flex-col">
-          <SectionHeader
-            icon={<UserCog className="h-5 w-5 text-muted-foreground" />}
-            title="หัวหน้างาน"
-          />
-
-          {supervisors.length === 0 ? (
-            <EmptyState text="ยังไม่ได้ระบุหัวหน้างาน" />
-          ) : (
-            <ScrollArea className="max-h-56 pr-1">
-              <ul
-                className="mt-2 space-y-1 text-sm text-muted-foreground list-disc list-inside"
-                role="list"
-              >
-                {supervisors.map((name, idx) => (
-                  <li key={`sv-${idx}`}>{name}</li>
-                ))}
-              </ul>
-            </ScrollArea>
-          )}
+      <Card
+        className={cn(
+          "rounded-2xl border bg-background shadow-sm",
+          "p-5 sm:p-6",
+          className
+        )}
+        aria-label="ข้อมูลผู้รับผิดชอบงาน"
+      >
+        {/* Header */}
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h3 className="text-base font-semibold tracking-tight text-foreground">
+              ข้อมูลผู้รับผิดชอบงาน
+            </h3>
+            <p className="text-sm text-muted-foreground">
+              แสดงหัวหน้างานและช่างที่รับผิดชอบออเดอร์นี้
+            </p>
+          </div>
+          <div className="flex items-center gap-2 text-xs sm:text-sm">
+            <Badge variant="secondary" className="rounded-full">
+              หัวหน้างาน: {supervisors.length}
+            </Badge>
+            <Badge variant="secondary" className="rounded-full">
+              ช่าง: {techs.length}
+            </Badge>
+          </div>
         </div>
 
-        {/* Technicians */}
-        <div className="flex flex-col">
-          <SectionHeader
-            icon={<Wrench className="h-5 w-5 text-muted-foreground" />}
-            title="ช่างรับผิดชอบ"
-          />
+        <Separator className="my-2" />
 
-          {techs.length === 0 ? (
-            <EmptyState text="ยังไม่ได้ระบุช่างรับผิดชอบ" />
-          ) : (
-            <ScrollArea className="max-h-56 pr-1">
-              <ul
-                className="mt-2 space-y-1 text-sm text-muted-foreground list-disc list-inside"
-                role="list"
-              >
-                {techs.map((name, idx) => (
-                  <li key={`tech-${idx}`}>{name}</li>
-                ))}
-              </ul>
-            </ScrollArea>
-          )}
+        {/* Content */}
+        <div className="grid grid-cols-2 gap-1">
+          {/* Supervisors */}
+          <div className="flex flex-col">
+            <SectionHeader
+              icon={<UserCog className="h-5 w-5 text-muted-foreground" />}
+              title="หัวหน้างาน"
+            />
+
+            {supervisors.length === 0 ? (
+              <EmptyState text="ยังไม่ได้ระบุหัวหน้างาน" />
+            ) : (
+              <ScrollArea className="max-h-56 pr-1">
+                <ul
+                  className="mt-2 space-y-1 text-sm text-muted-foreground list-disc list-inside"
+                  role="list"
+                >
+                  {supervisors.map((name, idx) => (
+                    <li key={`sv-${idx}`}>{name}</li>
+                  ))}
+                </ul>
+              </ScrollArea>
+            )}
+          </div>
+
+          {/* Technicians */}
+          <div className="flex w-full justify-center">
+            <div className="flex flex-col ">
+              <SectionHeader
+                icon={<Wrench className="h-5 w-5 text-muted-foreground" />}
+                title="ช่างรับผิดชอบ"
+              />
+
+              {techs.length === 0 ? (
+                <EmptyState text="ยังไม่ได้ระบุช่างรับผิดชอบ" />
+              ) : (
+                <ScrollArea className="max-h-56 pr-1">
+                  <ul
+                    className="mt-2 space-y-1 text-sm text-muted-foreground list-disc list-inside"
+                    role="list"
+                  >
+                    {techs.map((name, idx) => (
+                      <li key={`tech-${idx}`}>{name}</li>
+                    ))}
+                  </ul>
+                </ScrollArea>
+              )}
+            </div>
+          </div>
         </div>
-      </div>
-    </Card>
+      </Card>
     </div>
   );
 }
@@ -147,9 +149,7 @@ function EmptyState({ text }: { text: string }) {
 // - ถ้า arr ไม่ใช่ array -> คืน []
 // - ถ้า element เป็น null/undefined/ว่าง -> ตัดทิ้ง
 // - แปลงเป็น string อย่างปลอดภัยก่อน trim
-function uniqueAndClean(
-  arr?: (string | null | undefined)[]
-): string[] {
+function uniqueAndClean(arr?: (string | null | undefined)[]): string[] {
   if (!Array.isArray(arr)) return [];
 
   return Array.from(

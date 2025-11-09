@@ -16,10 +16,10 @@ import {
   ArrowLeft,
   FileText,
   Package,
-  CalendarRange,
   CalendarDays,
   User2,
   Hash,
+  File,
 } from "lucide-react";
 import { QuickAction } from "../../components/jobordertail/QuickAction";
 import { SteelTable } from "../../components/jobordertail/SteelTable";
@@ -133,25 +133,30 @@ type InfoItemProps = {
   label: string;
   value: React.ReactNode;
   icon: React.ReactNode;
+ 
 };
 
-const InfoItem = ({ label, value, icon }: InfoItemProps) => (
-  <div className="flex items-start gap-3">
-    <div className="mt-0.5 flex h-6 w-6 items-center justify-center">
-      <span className="text-muted-foreground">
+const InfoItem = ({ label, value, icon }: InfoItemProps) => {
+
+  
+  return (
+    <div className= "flex items-start gap-3">
+      {/* icon */}
+      <div className= "mt-0.5 flex h-6 w-6 items-center justify-center text-muted-foreground">
         {icon}
-      </span>
-    </div>
-    <div className="space-y-0.5">
-      <div className="text-xs font-medium text-muted-foreground tracking-wide">
-        {label}
       </div>
-      <div className="text-sm font-semibold text-foreground">
-        {value}
+      {/* text */}
+      <div className="space-y-0.5">
+        <div className="text-xs font-medium text-muted-foreground tracking-wide">
+          {label}
+        </div>
+        <div className="text-sm font-semibold text-foreground">
+          {value}
+        </div>
       </div>
     </div>
-  </div>
-);
+  );
+};
 
 const JobOrderDetailPage = () => {
   const [loading, setLoading] = useState(true);
@@ -296,39 +301,40 @@ const JobOrderDetailPage = () => {
                   </span>
                 </div>
               </div>
+
               {/* Content Box*/}
               <div className="space-y-6 p-5">
                 {/* Order Info */}
                 <div className="flex items-center gap-2">
-        <FileText className="w-4 h-4 text-primary" />
-        <h3 className="text-sm font-semibold text-foreground">
-          ข้อมูลออเดอร์
-        </h3>
-      </div>
+                  <FileText className="w-4 h-4 text-primary" />
+                  <h3 className="text-sm font-semibold text-foreground">
+                    ข้อมูลออเดอร์
+                  </h3>
+                </div>
 
-      {/* Info Grid */}
-      <div className="grid gap-4 md:grid-cols-2">
-        <InfoItem
-          label="Order ID"
-          value="001"
-          icon={<Hash className="w-4 h-4" />}
-        />
-        <InfoItem
-          label="สร้างออเดอร์เมื่อ"
-          value={<time dateTime="2024-01-15">15/01/2024</time>}
-          icon={<CalendarRange className="w-4 h-4" />}
-        />
-        <InfoItem
-          label="วันที่ต้องจัดส่ง"
-          value={<time dateTime="2024-02-24">24/02/2024</time>}
-          icon={<CalendarDays className="w-4 h-4" />}
-        />
-        <InfoItem
-          label="ผู้รับผิดชอบตัด"
-          value="สมชาย ใจดี"
-          icon={<User2 className="w-4 h-4" />}
-        />
-      </div>
+                {/* Info Grid */}
+                <div className="grid grid-cols-2 gap-4  md:grid-cols-4">
+                  <InfoItem
+                    label="Order ID"
+                    value="001"
+                    icon={<Hash className="w-4 h-4" />}
+                  />
+                  <InfoItem
+                    label="เลขที่ใบสั่งซื้อ (PO)"
+                    value="PO-2024-001"
+                    icon={<File className="w-4 h-4" />}
+                  />
+                  <InfoItem
+                    label="วันที่ต้องจัดส่ง"
+                    value={<time dateTime="2024-02-24">24/02/2024</time>}
+                    icon={<CalendarDays className="w-4 h-4" />}
+                  />
+                  <InfoItem
+                    label="ผู้รับผิดชอบตัด"
+                    value="สมชาย ใจดี"
+                    icon={<User2 className="w-4 h-4" />}
+                  />
+                </div>
 
                 <div className="grid grid-cols-1 gap-4">
                   {/* ซ้าย: ข้อมูลเหล็ก (คำนวณ) */}
