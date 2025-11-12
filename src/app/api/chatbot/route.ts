@@ -36,7 +36,7 @@ function looksSafeSelect(sql: string) {
 }
 
 // GET /api/payroll/[id]
-export async function GET(req: NextRequest) {
+export async function POST(req: NextRequest) {
   const session = await getServerSession({ req, ...authOptions });
   if (
     !session ||
