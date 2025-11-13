@@ -1,12 +1,12 @@
 "use client";
-import React from "react";
-import { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { TextArea } from "@radix-ui/themes";
 import { Loader2, ArrowBigRight } from "lucide-react";
 import { ModeDropdown, type Mode } from "@/components/DropdownMenu";
 import { exampleQueries } from "@/data/example-query/selectData";
 import { exampleQueriesCreate } from "@/data/example-query/createData";
 import { exampleQueriesEdit } from "@/data/example-query/editData";
+
 function MessageBox({
   message,
   isUser,
@@ -14,15 +14,43 @@ function MessageBox({
   message: string;
   isUser?: boolean;
 }) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(message);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch (err) {
+      console.error("Copy failed", err);
+    }
+  };
+
   return (
     <div
-      className={`w-fit max-w-[80%] h-auto px-4 py-2 rounded-xl mt-2 break-words ${
-        isUser
-          ? "bg-blue-600 text-white self-end"
-          : "bg-neutral-200 text-neutral-900 self-start"
-      }`}
+      className={`flex w-full mt-2 ${isUser ? "justify-end" : "justify-start"}`}
     >
-      <p>{message}</p>
+      <div className="flex flex-col max-w-[85%] sm:max-w-[75%]">
+        <div
+          className={`w-fit h-auto px-4 py-2 rounded-xl break-words ${
+            isUser
+              ? "bg-blue-600 text-white self-end"
+              : "bg-neutral-200 text-neutral-900 self-start"
+          }`}
+        >
+          <p className="text-sm sm:text-base">{message}</p>
+        </div>
+        <div
+          className={`flex gap-2 mt-1 ${isUser ? "self-end" : "self-start"}`}
+        >
+          <button
+            onClick={handleCopy}
+            className="px-2 py-1 text-xs sm:text-sm rounded-lg border hover:text-gray-600 hover:cursor-pointer active:scale-95 transition"
+          >
+            {copied ? "คัดลอกแล้ว!" : "คัดลอก"}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
@@ -35,6 +63,7 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(false);
   const listRef = useRef<HTMLDivElement | null>(null);
   const [mode, setMode] = React.useState<Mode>("view");
+
   // auto scroll ไปล่างเมื่อมีข้อความใหม่
   useEffect(() => {
     listRef.current?.scrollTo({
@@ -62,17 +91,18 @@ export default function Home() {
       setUserText(rnd);
     }
   };
+
   const handleSend = async () => {
     if (!userText.trim()) return;
 
-    const currentText = userText; // กันไว้เผื่อเราเคลียร์ state ทีหลัง
-    setUserText(""); // เคลียร์ช่องพิมพ์เลย รู้สึกฟีลแชตมากกว่า
+    const currentText = userText;
+    setUserText("");
     setIsLoading(true);
 
-    if (mode === "view") {
-      // ดันข้อความ user ก่อน
-      setMessages((prev) => [...prev, { text: currentText, isUser: true }]);
+    // ดันข้อความ user ก่อน
+    setMessages((prev) => [...prev, { text: currentText, isUser: true }]);
 
+    if (mode === "view") {
       try {
         const response = await fetch("/api/chatbot/chatdeepseek", {
           method: "POST",
@@ -104,8 +134,6 @@ export default function Home() {
         setIsLoading(false);
       }
     } else if (mode === "createData") {
-      setMessages((prev) => [...prev, { text: currentText, isUser: true }]);
-
       await new Promise((r) => setTimeout(r, 1000));
       setMessages((prev) => [
         ...prev,
@@ -113,8 +141,6 @@ export default function Home() {
       ]);
       setIsLoading(false);
     } else if (mode === "editData") {
-      setMessages((prev) => [...prev, { text: currentText, isUser: true }]);
-
       await new Promise((r) => setTimeout(r, 1000));
       setMessages((prev) => [
         ...prev,
@@ -125,70 +151,75 @@ export default function Home() {
   };
 
   return (
-    <main className="flex flex-col h-screen  ">
-      {/* พื้นที่ข้อความ (scroll ได้) */}
-      <div
-        ref={listRef}
-        className="flex-1 overflow-y-auto p-4 flex flex-col space-y-2 mx-[450px]"
-      >
-        {messages.map((msg, i) => (
-          <MessageBox key={i} message={msg.text} isUser={msg.isUser} />
-        ))}
+    <main className="flex flex-col h-screen">
+      {/* พื้นที่ข้อความ */}
+      <div className="flex-1 overflow-y-auto">
+        <div
+          ref={listRef}
+          className="h-full flex flex-col space-y-2 px-4 py-4 mx-auto w-full max-w-3xl"
+        >
+          {messages.map((msg, i) => (
+            <MessageBox key={i} message={msg.text} isUser={msg.isUser} />
+          ))}
+        </div>
       </div>
 
       {/* กล่องพิมพ์อยู่ล่างสุด */}
-      <div
-        className=" border-2  flex-col items-center gap-2 mx-[450px] rounded-3xl space-y-3 mb-5 p-3 
-              shadow-[0_4px_15px_rgba(0,0,0,0.1)] 
-              dark:shadow-[0_0_25px_2px_rgba(59,130,246,0.3)] 
-              border-transparent dark:border-gray-800 
+      <div className="px-4 pb-4">
+        <div
+          className="border-2 flex flex-col gap-2 rounded-3xl space-y-3 p-3 mx-auto w-full max-w-3xl
+              shadow-[0_4px_15px_rgba(0,0,0,0.05)]
+              dark:shadow-[0_0_25px_2px_rgba(59,130,246,0.25)]
+              border-transparent dark:border-gray-800
+              
               transition-all duration-300"
-      >
-        <TextArea
-          resize="none"
-          placeholder={isLoading ? "Waiting for AI…" : "Type a message…"}
-          value={userText}
-          onChange={(e) => setUserText(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && !e.shiftKey) {
-              e.preventDefault();
-              handleSend();
-            }
-          }}
-          className="flex-1 border-0 focus:ring-0 px-3 py-2 text-sm bg-gray-100 rounded-lg"
-          rows={1}
-          disabled={isLoading}
-        />
-        <div className="flex justify-between">
-          <div className="flex gap-2">
-            <ModeDropdown value={mode} onChange={setMode} />
-            <button
-              disabled={isLoading}
-              className="px-5 rounded-full flex items-center justify-center transition bg-blue-600 hover:bg-blue-700 text-white hover:cursor-pointer"
-              onClick={handleRandom}
-            >
-              🎲 สุ่ม
-            </button>
-          </div>
-          <div className="flex gap-4 ">
-            <p className="font-medium mt-3">DeepSeek V3</p>
-            <button
-              onClick={handleSend}
-              disabled={isLoading || !userText.trim()}
-              className={`p-2 rounded-full flex items-center justify-center transition
+        >
+          <TextArea
+            resize="none"
+            placeholder={isLoading ? "Waiting for AI…" : "Type a message…"}
+            value={userText}
+            onChange={(e) => setUserText(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                handleSend();
+              }
+            }}
+            className="flex-1 border-0 focus:ring-0 px-3 py-2 text-sm sm:text-base  rounded-lg"
+            rows={1}
+            disabled={isLoading}
+          />
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex gap-2">
+              <ModeDropdown value={mode} onChange={setMode} />
+              <button
+                disabled={isLoading}
+                className="px-3 sm:px-5 rounded-xl sm:rounded-full flex items-center justify-center transition bg-blue-600 hover:bg-blue-700 text-white hover:cursor-pointer text-sm sm:text-base"
+                onClick={handleRandom}
+              >
+                🎲 สุ่ม
+              </button>
+            </div>
+            <div className="flex items-center gap-3 justify-between sm:justify-end">
+              <p className="font-medium text-sm sm:text-base">DeepSeek V3</p>
+              <button
+                onClick={handleSend}
+                disabled={isLoading || !userText.trim()}
+                className={`p-2 rounded-full flex items-center justify-center transition
                       ${
                         isLoading || !userText.trim()
                           ? "bg-blue-400 cursor-not-allowed opacity-70"
                           : "bg-blue-600 hover:bg-blue-700 text-white"
                       }`}
-              aria-label="Send message"
-            >
-              {isLoading ? (
-                <Loader2 className="w-5 h-5 animate-spin text-white" />
-              ) : (
-                <ArrowBigRight className="w-7 h-7 text-white" />
-              )}
-            </button>
+                aria-label="Send message"
+              >
+                {isLoading ? (
+                  <Loader2 className="w-5 h-5 animate-spin text-white" />
+                ) : (
+                  <ArrowBigRight className="w-7 h-7 text-white" />
+                )}
+              </button>
+            </div>
           </div>
         </div>
       </div>

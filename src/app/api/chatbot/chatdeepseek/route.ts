@@ -353,6 +353,21 @@ Examples:
   \`SELECT * FROM "Bill" WHERE "invoiceNo" ILIKE '%123%'\`
 - If the user says "หาลูกค้าอีเมล example", generate  
   \`SELECT * FROM "Customer" WHERE "email" ILIKE '%example%'\`
+- If the user says "หาพนักงานจากรหัสพนักงาน S001", generate
+  \`SELECT "User".* FROM "Staff" JOIN "User" ON "Staff"."userId" = "User"."id" WHERE "Staff"."code" = 'S001'\`
+- If the user says "หาพนักงานตำแหน่ง หัวหน้า", generate
+  \`SELECT "User".* FROM "Staff" JOIN "User" ON "Staff"."userId" = "User"."id" WHERE "Staff"."position" ILIKE '%หัวหน้า%'\`
+- If the user says "หาพนักงานจากเลขบัญชี 1234567890", generate
+  \`SELECT "User".* FROM "Staff" JOIN "User" ON "Staff"."userId" = "User"."id" WHERE "Staff"."bankAccount" = '1234567890'\`
+- If the user says "หาพนักงานธนาคาร กสิกร", generate
+  \`SELECT "User".* FROM "Staff" JOIN "User" ON "Staff"."userId" = "User"."id" WHERE "Staff"."bankName" ILIKE '%กสิกร%'\`
+- If the user says "หาพนักงานจากเลขประกันสังคม 9999999", generate
+  \`SELECT "User".* FROM "Staff" JOIN "User" ON "Staff"."userId" = "User"."id" WHERE "Staff"."social_security" = '9999999'\`
+- If the user says "หาพนักงานเงินเดือนมากกว่า 20000", generate
+  \`SELECT "User".* FROM "Staff" JOIN "User" ON "Staff"."userId" = "User"."id" WHERE "Staff"."currentSalary" >= 20000\`
+- If the user says "หาพนักงานเริ่มงานปี 2024", generate
+  \`SELECT "User".* FROM "Staff" JOIN "User" ON "Staff"."userId" = "User"."id" WHERE "Staff"."startDate" >= '2024-01-01'\`
+
 
 General behavior:
 - Always return a valid PostgreSQL SELECT or WITH ... SELECT statement.
