@@ -1,10 +1,11 @@
 // app/api/nl2sql/route.ts
-import { sq } from "date-fns/locale";
 import { NextRequest, NextResponse } from "next/server";
-
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 // ---------- 1) CONFIG ----------
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY!;
 const OPENROUTER_MODEL = "deepseek/deepseek-chat-v3-0324";
+const INTERNAL_SECRET = process.env.INTERNAL_SQL_API_SECRET!;
 
 // ตารางและคอลัมน์ที่อนุญาต (ต้องตรงกับ Prisma schema)
 const ALLOWED: Record<string, string[]> = {
@@ -369,7 +370,7 @@ export async function GETSQL(sql: string) {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Cookie: `next-auth.session-token=eyJhbGciOiJkaXIiLCJlbmMiOiJBMjU2R0NNIn0..UQalbvddJLycPCxG.To9z3NFRLZHWMNkFqkWssTbCFmwbe4e1AKbQ-OsoPMfZHDYwI3nohjsmpvZBo1atWTWz6vOy99zK8-PmNU-euw1s3PNram1Zp1RXOqKU-7kgSPyZINpX3aOFgxwsGJLp6UfHehp_CrGLOym0Vjs_uDFRljvI82gxLsd91btzOjgw_I0Rg133ClaiO444T_X3oDmWbQuZ0XEN7FK8XhrG8m_C1pKsrvMQbqCKplu0BrqGVeVHfAl5vx3bnA.fb_8c9X-Yt6x6Gt2cRQW0g`,
+        "x-internal-secret": INTERNAL_SECRET,
       },
     }
   );
@@ -427,6 +428,15 @@ async function callOpenRouter(userQuery: string): Promise<string> {
 
 // ---------- 5) HANDLER ----------
 export async function POST(req: NextRequest) {
+  const session = await getServerSession({ req, ...authOptions });
+  // Fix: Only allow if role is superadmin OR supervisor
+  console.log("Session:", session);
+  if (
+    !session ||
+    !["superadmin", "supervisor", "clerk"].includes(session.user?.role)
+  ) {
+    return NextResponse.json({ error: "Permission Denied!!" }, { status: 400 });
+  }
   try {
     const body = await req.json();
     const userQuery: string = (body?.query || "").toString().trim();

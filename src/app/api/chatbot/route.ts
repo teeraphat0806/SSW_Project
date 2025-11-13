@@ -1,7 +1,5 @@
 // app/api/payroll/route.ts
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 
 // ปรับ policy ที่นี่ได้ (เพิ่มชื่อ table/view ที่อนุญาต)
@@ -15,7 +13,7 @@ const ALLOWED_TABLES_OR_VIEWS = [
   "StaffIncome",
   // เพิ่มตามต้องการ...
 ];
-
+const INTERNAL_SECRET = process.env.INTERNAL_SQL_API_SECRET!;
 function looksSafeSelect(sql: string) {
   const s = sql.trim();
 
@@ -35,14 +33,10 @@ function looksSafeSelect(sql: string) {
   return true;
 }
 
-// GET /api/payroll/[id]
 export async function POST(req: NextRequest) {
-  const session = await getServerSession({ req, ...authOptions });
-  if (
-    !session ||
-    !["superadmin", "supervisor", "clerk"].includes(session.user?.role)
-  ) {
-    return NextResponse.json({ error: "Permission Denied!!" }, { status: 400 });
+  const secret = req.headers.get("x-internal-secret");
+   if (secret !== INTERNAL_SECRET) {
+    return new NextResponse("Unauthorized", { status: 401 });
   }
 
   const sql = req.nextUrl.searchParams.get("sql");
