@@ -4,6 +4,9 @@ import { useEffect, useRef, useState } from "react";
 import { TextArea } from "@radix-ui/themes";
 import { Loader2, ArrowBigRight } from "lucide-react";
 import { ModeDropdown, type Mode } from "@/components/DropdownMenu";
+import { exampleQueries } from "@/data/example-query/selectData";
+import { exampleQueriesCreate } from "@/data/example-query/createData";
+import { exampleQueriesEdit } from "@/data/example-query/editData";
 function MessageBox({
   message,
   isUser,
@@ -28,7 +31,7 @@ export default function Home() {
   const [messages, setMessages] = useState<{ text: string; isUser: boolean }[]>(
     [{ text: "Hello! 👋", isUser: false }]
   );
-  const [input, setInput] = useState("");
+  const [userText, setUserText] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const listRef = useRef<HTMLDivElement | null>(null);
   const [mode, setMode] = React.useState<Mode>("view");
@@ -40,20 +43,85 @@ export default function Home() {
     });
   }, [messages]);
 
+  const handleRandom = () => {
+    if (mode === "view") {
+      const rnd =
+        exampleQueries[Math.floor(Math.random() * exampleQueries.length)];
+      setUserText(rnd);
+    } else if (mode === "createData") {
+      const rnd =
+        exampleQueriesCreate[
+          Math.floor(Math.random() * exampleQueriesCreate.length)
+        ];
+      setUserText(rnd);
+    } else if (mode === "editData") {
+      const rnd =
+        exampleQueriesEdit[
+          Math.floor(Math.random() * exampleQueriesEdit.length)
+        ];
+      setUserText(rnd);
+    }
+  };
   const handleSend = async () => {
-    if (!input.trim() || isLoading) return;
-    const userText = input;
-    setMessages((prev) => [...prev, { text: userText, isUser: true }]);
-    setInput("");
+    if (!userText.trim()) return;
+
+    const currentText = userText; // กันไว้เผื่อเราเคลียร์ state ทีหลัง
+    setUserText(""); // เคลียร์ช่องพิมพ์เลย รู้สึกฟีลแชตมากกว่า
     setIsLoading(true);
 
-    // mock ตอบกลับ AI (แทนด้วย fetch จริงได้)
-    await new Promise((r) => setTimeout(r, 1000));
-    setMessages((prev) => [
-      ...prev,
-      { text: "AI reply: " + userText, isUser: false },
-    ]);
-    setIsLoading(false);
+    if (mode === "view") {
+      // ดันข้อความ user ก่อน
+      setMessages((prev) => [...prev, { text: currentText, isUser: true }]);
+
+      try {
+        const response = await fetch("/api/chatbot/chatdeepseek", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ query: currentText }),
+        });
+
+        const data = await response.json();
+
+        setMessages((prev) => [
+          ...prev,
+          {
+            text: data.result ?? "ไม่พบข้อมูลจาก API",
+            isUser: false,
+          },
+        ]);
+      } catch (err) {
+        console.error(err);
+        setMessages((prev) => [
+          ...prev,
+          {
+            text: "เกิดข้อผิดพลาดในการเชื่อมต่อ API",
+            isUser: false,
+          },
+        ]);
+      } finally {
+        setIsLoading(false);
+      }
+    } else if (mode === "createData") {
+      setMessages((prev) => [...prev, { text: currentText, isUser: true }]);
+
+      await new Promise((r) => setTimeout(r, 1000));
+      setMessages((prev) => [
+        ...prev,
+        { text: "AI reply (create): " + currentText, isUser: false },
+      ]);
+      setIsLoading(false);
+    } else if (mode === "editData") {
+      setMessages((prev) => [...prev, { text: currentText, isUser: true }]);
+
+      await new Promise((r) => setTimeout(r, 1000));
+      setMessages((prev) => [
+        ...prev,
+        { text: "AI reply (edit): " + currentText, isUser: false },
+      ]);
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -79,8 +147,8 @@ export default function Home() {
         <TextArea
           resize="none"
           placeholder={isLoading ? "Waiting for AI…" : "Type a message…"}
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
+          value={userText}
+          onChange={(e) => setUserText(e.target.value)}
           onKeyDown={(e) => {
             if (e.key === "Enter" && !e.shiftKey) {
               e.preventDefault();
@@ -92,15 +160,24 @@ export default function Home() {
           disabled={isLoading}
         />
         <div className="flex justify-between">
-          <ModeDropdown value={mode} onChange={setMode} />
+          <div className="flex gap-2">
+            <ModeDropdown value={mode} onChange={setMode} />
+            <button
+              disabled={isLoading}
+              className="px-5 rounded-full flex items-center justify-center transition bg-blue-600 hover:bg-blue-700 text-white hover:cursor-pointer"
+              onClick={handleRandom}
+            >
+              🎲 สุ่ม
+            </button>
+          </div>
           <div className="flex gap-4 ">
             <p className="font-medium mt-3">DeepSeek V3</p>
             <button
               onClick={handleSend}
-              disabled={isLoading || !input.trim()}
+              disabled={isLoading || !userText.trim()}
               className={`p-2 rounded-full flex items-center justify-center transition
                       ${
-                        isLoading || !input.trim()
+                        isLoading || !userText.trim()
                           ? "bg-blue-400 cursor-not-allowed opacity-70"
                           : "bg-blue-600 hover:bg-blue-700 text-white"
                       }`}

@@ -3,7 +3,7 @@
 import * as React from "react";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 
-export type Mode = "view" | "addCustomer" | "addOrder";
+export type Mode = "view" | "createData" | "editData";
 
 export function ModeDropdown({
   value,
@@ -17,16 +17,16 @@ export function ModeDropdown({
   const label =
     value === "view"
       ? "ดูข้อมูล"
-      : value === "addCustomer"
-      ? "เพิ่มข้อมูลลูกค้า"
-      : "เพิ่มข้อมูลออเดอร์";
+      : value === "createData"
+      ? "เพิ่มข้อมูล"
+      : "แก้ไขข้อมูล";
 
   return (
     <div className={className ?? "p-1"}>
       <DropdownMenu.Root>
         <DropdownMenu.Trigger asChild>
           <button
-            className="inline-flex items-center gap-2 rounded-3xl bg-white px-3 py-2 text-sm text-gray-900 shadow-sm ring-1 ring-gray-200 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors dark:bg-gray-800 dark:text-gray-100 dark:ring-gray-700 dark:hover:bg-gray-700"
+            className="inline-flex items-center gap-2 rounded-3xl bg-white px-3 py-2 hover:cursor-pointer text-sm text-gray-900 shadow-sm ring-1 ring-gray-200 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors dark:bg-gray-800 dark:text-gray-100 dark:ring-gray-700 dark:hover:bg-gray-700"
             aria-label="เลือกโหมด"
           >
             {label}
@@ -43,8 +43,8 @@ export function ModeDropdown({
             >
               {[
                 { v: "view", label: "ดูข้อมูล" },
-                { v: "addCustomer", label: "เพิ่มข้อมูลลูกค้า" },
-                { v: "addOrder", label: "เพิ่มข้อมูลออเดอร์" },
+                { v: "createData", label: "เพิ่มข้อมูล" },
+                { v: "editData", label: "แก้ไขข้อมูล" },
               ].map((o) => (
                 <DropdownMenu.RadioItem
                   key={o.v}
