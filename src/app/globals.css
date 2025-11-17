@@ -12,8 +12,7 @@
   --foreground: 0 0% 0%;
   --small-detail: 36 0% 50%;
   --aa: 0 0% 95%;
-
- 
+  --divborder: 213 213 213;
 
   --box: 0 0% 100%;
   --card: 0 0% 100%;
@@ -86,9 +85,9 @@
   --background: 222.2 84% 4.9%;
   --foreground: 210 40% 98%;
 
-  --small-detail: 36 0% 50%;
+  --small-detail: 36 0% 70%;
   --aa: 36 0% 12%;
-
+  --divborder: 72 72 72;
   --card: #ffff;
   --card-foreground: 210 40% 98%;
 
@@ -148,5 +147,4 @@ body {
   --font-mono: var(--font-geist-mono);
   --color-small-detail: hsl(var(--small-detail));
   --color-aa: hsl(var(--aa));
-
 }
