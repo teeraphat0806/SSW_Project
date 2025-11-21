@@ -50,7 +50,6 @@ export const billData = [
     vat: 70.0,           
     grandTotal: 1062.26, 
     dateReceive: new Date("2025-08-01"),
-    typeBill: "บิลเงินสด",
 
     OrderPO: {
       create: [
@@ -102,7 +101,6 @@ export const billData = [
     vat: 70.0,           
     grandTotal: 1062.26, 
     dateReceive: new Date("2025-08-01"),
-    typeBill: "บิลเครดิต",
     OrderPO: {
       create: [
         {
@@ -153,7 +151,6 @@ export const billData = [
     vat: 70.0,           
     grandTotal: 1062.26, 
     dateReceive: new Date("2025-08-01"),
-    typeBill: "บิลเครดิต",
     OrderPO: {
       create: [
         {
@@ -204,7 +201,6 @@ export const billData = [
     vat: 70.0,           
     grandTotal: 1062.26, 
     dateReceive: new Date("2025-08-01"),
-    typeBill: "บิลเงินสด",
     OrderPO: {
       create: [
         {
@@ -255,7 +251,6 @@ export const billData = [
     vat: 70.0,           
     grandTotal: 1062.26, 
     dateReceive: new Date("2025-08-01"),
-    typeBill: "บิลเงินสด",
     OrderPO: {
       create: [
         {

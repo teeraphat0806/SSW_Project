@@ -13,7 +13,7 @@ export default function TestpageLayout({
   children: React.ReactNode;
 }) {
   return (
-    <Layout>
+    <Layout >
           <ThemeProvider attribute="class">{children}</ThemeProvider>;
     </Layout>
   );

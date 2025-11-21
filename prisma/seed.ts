@@ -9,23 +9,37 @@ import { typeStaffIncomeData } from '@/data/typeStaffIncomeData'
 import { steelTypeData } from '@/data/steelTypeData'
 import { expenseData } from '@/data/expenseData'
 import { expenseCategoryData } from '@/data/expenseCategoryData'
+import { steelStockData } from '@/data/steelStockData'
+
 
 const prisma = new PrismaClient()
 async function main() {
   // 1. ลบข้อมูล
-  await prisma.staffSalary.deleteMany()
-  await prisma.staffIncome.deleteMany()
-  await prisma.bill.deleteMany()
-  await prisma.product.deleteMany()
-  await prisma.steelType.deleteMany()
-  await prisma.orderPO.deleteMany()
-  await prisma.customer.deleteMany()
-  await prisma.user.deleteMany()
-  await prisma.staff.deleteMany()
-  await prisma.typeStaffIncome.deleteMany()
   await prisma.expense.deleteMany()
-  await prisma.expenseCategory.deleteMany()
+await prisma.expenseCategory.deleteMany()
+
+// 2. ลบพวก income/salary ที่ผูกกับ Staff
+await prisma.staffSalary.deleteMany()
+await prisma.staffIncome.deleteMany()
+
+// 3. ลบพวกที่เกี่ยวกับรายได้ประเภทต่าง ๆ
+await prisma.typeStaffIncome.deleteMany()
+
+// 4. ลบพวกงาน/บิล/สินค้า/สต็อกเหล็ก
+await prisma.bill.deleteMany()
+await prisma.product.deleteMany()
+await prisma.steelStock.deleteMany()
+await prisma.orderPO.deleteMany()
+
+// 5. ลบ master data ที่เหลือ
+await prisma.steelType.deleteMany()
+await prisma.customer.deleteMany()
+
+// 6. ลบ Staff แล้วค่อยลบ User (เพราะ Staff มี FK ไปหา User)
+await prisma.staff.deleteMany()
+await prisma.user.deleteMany()
   
+
  
   
 
@@ -41,6 +55,7 @@ async function main() {
   await prisma.$executeRawUnsafe(`ALTER SEQUENCE "TypeStaffIncome_id_seq" RESTART WITH 1`)
   await prisma.$executeRawUnsafe(`ALTER SEQUENCE "ExpenseCategory_id_seq" RESTART WITH 1`)
   await prisma.$executeRawUnsafe(`ALTER SEQUENCE "Expense_id_seq" RESTART WITH 1`)
+  await prisma.$executeRawUnsafe(`ALTER SEQUENCE "SteelType_id_seq" RESTART WITH 1`)
 
 //   // 3. ใส่ข้อมูล
   await prisma.steelType.createMany({data: steelTypeData})
@@ -98,10 +113,11 @@ async function main() {
   await prisma.staffSalary.createMany({data: staffSalaryData})
   await prisma.expenseCategory.createMany({data: expenseCategoryData})
   await prisma.expense.createMany({data: expenseData})
+  await prisma.steelStock.createMany({ data: steelStockData })
+
   
   console.log('✅ All seed data inserted successfully.')
 }
-
 
 main()
   .then(() => prisma.$disconnect())
