@@ -124,6 +124,7 @@
   --sidebar-ring: 217.2 91.2% 59.8%;
 }
 
+
 /* Apply design tokens via pure CSS */
 body {
   background-color: hsl(var(--background));
