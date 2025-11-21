@@ -76,12 +76,12 @@ type SteelItem = {
   note?: string;
 };
 
-const steelOptions: { value: string; label: string }[] = [
-  { value: "SS400", label: "SS400" },
-  { value: "SKD11", label: "SKD11" },
-  { value: "SKD61", label: "SKD61" },
-  { value: "S45C", label: "S45C" },
-  { value: "SCM440", label: "SCM440" },
+const steelOptions: { value: string; label: string; quantity:number }[] = [
+  { value: "SS400", label: "SS400", quantity:10 },
+  { value: "SKD11", label: "SKD11", quantity:5 },
+  { value: "SKD61", label: "SKD61" , quantity:8 },
+  { value: "S45C", label: "S45C" , quantity:12 },
+  { value: "SCM440", label: "SCM440" , quantity:7 },
 ];
 
 const UpdateOrderPage = () => {
@@ -210,7 +210,7 @@ const UpdateOrderPage = () => {
           </div>
 
           <div className="mx-auto max-w-7xl space-y-6 px-4 py-6 ">
-           <section className="grid gap-4 rounded-2xl border border-[rgb(var(--divborder))] bg-background shadow-lg p-4 md:grid-cols-[260px,1fr]">
+           <section className="grid gap-4 rounded-2xl border border-divborder bg-background shadow-lg p-4 md:grid-cols-[260px,1fr]">
   {/* ซ้าย: select สถานะ (สวยขึ้น + ไอคอน) */}
   <div className="space-y-3">
     <label className="block text-base text-foreground flex items-center gap-2">
@@ -222,14 +222,14 @@ const UpdateOrderPage = () => {
       value={status}
       onValueChange={(v) => setStatus(v as OrderStatus)}
     >
-      <SelectTrigger className="w-full rounded-xl border border-[rgb(var(--divborder))] bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[hsl(var(--foreground)/0.15)]">
+      <SelectTrigger className="w-full rounded-xl border border-divborder bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[hsl(var(--foreground)/0.15)]">
         <SelectValue placeholder="เลือกสถานะงาน" />
       </SelectTrigger>
       <SelectContent className="max-h-[170px] overflow-y-auto">
         {ORDER_STATUSES.map((s) => (
           <SelectItem key={s} value={s}>
             <span className="inline-flex items-center gap-2">
-              <span className="grid h-5 w-5 place-items-center rounded-md border border-[rgb(var(--divborder))]">
+              <span className="grid h-5 w-5 place-items-center rounded-md border border-divborder">
                 {STATUS_ICONS[s]}
               </span>
               {s}
@@ -248,7 +248,7 @@ const UpdateOrderPage = () => {
   <div className="flex items-center overflow-x-auto">
     <div className="relative w-full">
       {/* เส้นพื้นหลัง */}
-      <div className="absolute left-0 right-0 top-1/2 h-1 -translate-y-1/2 rounded-full bg-[rgb(var(--divborder))]" />
+      <div className="absolute left-0 right-0 top-1/2 h-1 -translate-y-1/2 rounded-full bg-divborder" />
       {/* แถบ progress */}
       <div
         className="absolute left-0 top-1/2 h-1 -translate-y-1/2 rounded-full bg-primary transition-all"
@@ -276,8 +276,8 @@ const UpdateOrderPage = () => {
                   "grid h-12 w-12 place-items-center rounded-full border",
                   "transition-all",
                   done
-                    ? "bg-primary text-white border-[rgb(var(--divborder))]"
-                    : "bg-background text-foreground border-[rgb(var(--divborder))]",
+                    ? "bg-primary text-white border-divborder"
+                    : "bg-background text-foreground border-divborder",
                   active ? "ring-2 ring-[hsl(var(--foreground)/0.25)]" : ""
                 ].join(" ")}
               >
@@ -392,15 +392,15 @@ const UpdateOrderPage = () => {
               </div>
             </section>
 
-            <section className="rounded-2xl border border-[rgb(var(--divborder))] bg-background shadow-lg p-4">
-              <div className="mb-3 flex items-center justify-between">
+            <section className="rounded-2xl border border-divborder bg-background shadow-lg p-4">
+              <div className="mb-3 flex items-center border border-divborder justify-between">
                 <h2 className="text-foreground font-semibold flex items-center gap-2">
                   <ListChecks className="h-4 w-4" />
                   รายการเหล็ก
                 </h2>
                 <Button
                   onClick={updateSteelItem}
-                  className="inline-flex items-center gap-2"
+                  className="inline-flex items-center text-white gap-2"
                 >
                   <Plus className="h-4 w-4" /> เพิ่มรายการเหล็ก
                 </Button>
@@ -411,10 +411,10 @@ const UpdateOrderPage = () => {
                 {steelItems.map((it, idx) => (
                   <div
                     key={it.id}
-                    className="rounded-xl border border-[rgb(var(--divborder))] overflow-hidden"
+                    className="rounded-xl border border-divborder overflow-hidden"
                   >
                     {/* header: index badge + name + single delete */}
-                    <div className="flex items-center justify-between gap-3 border-b border-[rgb(var(--divborder))] px-3 py-2">
+                    <div className="flex items-center justify-between gap-3 border-b border-divborder px-3 py-2">
                       <div className="flex items-center gap-3 min-w-0">
                         <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-[hsl(var(--foreground)/0.06)] text-xs font-semibold">
                           {idx + 1}
@@ -456,13 +456,17 @@ const UpdateOrderPage = () => {
                             patchSteelItem(it.id, { name: v })
                           }
                         >
-                          <SelectTrigger className="w-full rounded-xl border border-[rgb(var(--divborder))] bg-background px-3 py-2 text-sm">
+                          <SelectTrigger className="w-full rounded-xl border border-divborder bg-background px-3 py-2 text-sm">
                             <SelectValue placeholder="เลือกชนิดเหล็ก" />
                           </SelectTrigger>
                           <SelectContent className="max-h-[200px] overflow-y-auto">
                             {steelOptions.map((opt) => (
                               <SelectItem key={opt.value} value={opt.value}>
-                                {opt.label}
+                                <div className="flex flex-row">
+                                  <span>{opt.label}</span>
+                                  <span className="ml-2 text-[hsl(var(--small-detail))]">คงเหลือ: {opt.quantity} ชิ้น</span>
+                                </div>
+                                
                               </SelectItem>
                             ))}
                           </SelectContent>
@@ -486,7 +490,7 @@ const UpdateOrderPage = () => {
                               ),
                             })
                           }
-                          className="w-full rounded-xl border border-[rgb(var(--divborder))] bg-background px-3 py-2 text-sm"
+                          className="w-full rounded-xl border border-divborder bg-background px-3 py-2 text-sm"
                         />
                       </div>
 
@@ -504,7 +508,7 @@ const UpdateOrderPage = () => {
                               width: Math.max(0, Number(e.target.value || 0)),
                             })
                           }
-                          className="w-full rounded-xl border border-[rgb(var(--divborder))] bg-background px-3 py-2 text-sm"
+                          className="w-full rounded-xl border border-divborder bg-background px-3 py-2 text-sm"
                         />
                       </div>
 
@@ -522,7 +526,7 @@ const UpdateOrderPage = () => {
                               length: Math.max(0, Number(e.target.value || 0)),
                             })
                           }
-                          className="w-full rounded-xl border border-[rgb(var(--divborder))] bg-background px-3 py-2 text-sm"
+                          className="w-full rounded-xl border border-divborder bg-background px-3 py-2 text-sm"
                         />
                       </div>
 
@@ -540,7 +544,7 @@ const UpdateOrderPage = () => {
                               height: Math.max(0, Number(e.target.value || 0)),
                             })
                           }
-                          className="w-full rounded-xl border border-[rgb(var(--divborder))] bg-background px-3 py-2 text-sm"
+                          className="w-full rounded-xl border border-divborder bg-background px-3 py-2 text-sm"
                         />
                       </div>
 
@@ -561,7 +565,7 @@ const UpdateOrderPage = () => {
                                 ),
                               })
                             }
-                            className="w-full rounded-xl border border-[rgb(var(--divborder))] bg-background px-3 py-2 text-sm"
+                            className="w-full rounded-xl border border-divborder bg-background px-3 py-2 text-sm"
                           />
                         </div>
                       )}
@@ -577,7 +581,7 @@ const UpdateOrderPage = () => {
                             patchSteelItem(it.id, { note: e.target.value })
                           }
                           placeholder="หมายเหตุ..."
-                          className="mt-1 w-full rounded-xl border border-[rgb(var(--divborder))] bg-background px-3 py-2 text-sm"
+                          className="mt-1 w-full rounded-xl border border-divborder bg-background px-3 py-2 text-sm"
                           rows={2}
                         />
                       </div>
@@ -587,16 +591,16 @@ const UpdateOrderPage = () => {
               </div>
             </section>
 
-            <section className="rounded-2xl border border-[rgb(var(--divborder))] bg-background shadow-lg p-4">
+            <section className="rounded-2xl border border-divborder bg-background shadow-lg p-4">
               <h2 className="mb-2 text-base text-foreground font-semibold flex items-center gap-2">
                 <ClipboardCheck className="h-4 w-4" /> สรุป
               </h2>
 
               {/* การ์ดสรุปหลัก */}
               <div className="grid gap-3 md:grid-cols-4">
-                <div className="rounded-2xl border border-[rgb(var(--divborder))] bg-background p-3">
+                <div className="rounded-2xl border border-divborder bg-background p-3">
                   <div className="text-sm text-foreground">
-                    จำนวนรายการ (บรรทัด)
+                    จำนวนรายการ
                   </div>
                   <div className="mt-1 text-2xl font-semibold">
                     {fmtInt(itemCount)}
@@ -606,9 +610,9 @@ const UpdateOrderPage = () => {
                   </div>
                 </div>
 
-                <div className="rounded-2xl border border-[rgb(var(--divborder))] bg-background p-3">
+                <div className="rounded-2xl border border-divborder bg-background p-3">
                   <div className="text-sm text-foreground">
-                    จำนวนประเภท (ยูนีค)
+                    จำนวนประเภท 
                   </div>
                   <div className="mt-1 text-2xl font-semibold">
                     {fmtInt(uniqueTypeCount)}
@@ -618,14 +622,14 @@ const UpdateOrderPage = () => {
                   </div>
                 </div>
 
-                <div className="rounded-2xl border border-[rgb(var(--divborder))] bg-background p-3">
+                <div className="rounded-2xl border border-divborder bg-background p-3">
                   <div className="text-sm text-foreground">จำนวนชิ้นรวม</div>
                   <div className="mt-1 text-2xl font-semibold">
                     {fmtInt(totalQty)}
                   </div>
                 </div>
 
-                <div className="rounded-2xl border border-[rgb(var(--divborder))] bg-background p-3">
+                <div className="rounded-2xl border border-divborder bg-background p-3">
                   <div className="text-sm text-foreground">
                     น้ำหนักรวม (กก.)
                   </div>
@@ -650,7 +654,7 @@ const UpdateOrderPage = () => {
                     {Object.entries(summaryByType).map(([type, v]) => (
                       <div
                         key={type}
-                        className="inline-flex items-center gap-2 rounded-xl border border-[rgb(var(--divborder))] bg-[hsl(var(--foreground)/0.04)] px-3 py-1.5 text-xs"
+                        className="inline-flex items-center gap-2 rounded-xl border border-divborder bg-[hsl(var(--foreground)/0.04)] px-3 py-1.5 text-xs"
                         title={`${type}: ${v.lines} รายการ, ${v.qty} ชิ้น${
                           weightEnabled ? `, ${fmtWeight(v.weight)} กก.` : ""
                         }`}
