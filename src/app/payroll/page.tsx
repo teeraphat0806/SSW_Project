@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../components/ui/tabs";
+import { Button } from "../../components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -9,20 +9,20 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
-import { Badge } from "@/components/ui/badge";
+} from "../../components/ui/dialog";
+import { Input } from "../../components/ui/input";
+import { Label } from "../../components/ui/label";
+import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
+import { Separator } from "../../components/ui/separator";
+import { Badge } from "../../components/ui/badge";
 import {
   Select,
   SelectTrigger,
   SelectContent,
   SelectItem,
   SelectValue,
-} from "@/components/ui/select";
-import { ScrollArea } from "@/components/ui/scroll-area";
+} from "../../components/ui/select";
+import { ScrollArea } from "../../components/ui/scroll-area";
 import {
   Info,
   Pencil,
@@ -48,11 +48,11 @@ import {
   Line,
 } from "recharts";
 import DeleteConfirmButton from "../../components/DeleteButton";
-import { SalaryAdjustmentForm } from "@/components/payroll/SalaryAdjustmentForm";
-import { PayslipGenerator } from "@/components/payroll/PayslipGenerator";
-import { EmployeeOverview } from "@/components/payroll/EmployeeOverview";
-import { mockEmployees, mockAdjustments } from "@/data/mockPayrollData";
-import type { Employee, SalaryAdjustment } from "@/types/payroll";
+import { SalaryAdjustmentForm } from "../../components/payroll/SalaryAdjustmentForm";
+import { PayslipGenerator } from "../../components/payroll/PayslipGenerator";
+import { EmployeeOverview } from "../../components/payroll/EmployeeOverview";
+import { mockEmployees, mockAdjustments } from "../../data/mockPayrollData";
+import type { Employee, SalaryAdjustment } from "../../types/payroll";
 import { ToastContainer, toast } from "react-toastify";
 /* =========================
    Types & Helpers
@@ -156,11 +156,11 @@ export default function PayrollPage() {
         if (!res.ok) throw new Error("Failed to fetch typeStaffIncome");
         return res.json();
       })
-      .then((data: any[]) => {
+      .then((data: OtherIncomeType[]) => {
         const mapped: OtherIncomeType[] = data.map((item) => ({
           id: String(item.id),
           name: item.name,
-          defaultAmount: Number(item.amount),
+          defaultAmount: Number(item.defaultAmount),
           types: item.types,
         }));
         setOtherIncomeTypes(mapped);
@@ -225,7 +225,7 @@ export default function PayrollPage() {
 
   // ดูค่า latestList ทุกครั้งที่เปลี่ยน
 
-  const mapIncome = (r: any): SalaryAdjustment => ({
+  const mapIncome = (r): SalaryAdjustment => ({
     id: String(r.id),
     staffId: String(r.staffId),
     amount: Number(r.amount) ?? 0,
@@ -233,10 +233,10 @@ export default function PayrollPage() {
     date: new Date(r.date ?? r.createdAt ?? Date.now())
       .toISOString()
       .slice(0, 10),
-    type: isDeduction(r.name, r.detail) ? "deduction" : "increase",
+    type: isDeduction(r.name, r.detail) ? "decrease" : "increase",
   });
 
-  const mapSalary = (r: any): SalaryAdjustment => ({
+  const mapSalary = (r): SalaryAdjustment => ({
     id: String(r.id),
     staffId: String(r.staffId),
     amount: Number(r.amount) ?? 0,
@@ -244,7 +244,7 @@ export default function PayrollPage() {
     date: new Date(r.effectiveDate ?? r.createdAt ?? Date.now())
       .toISOString()
       .slice(0, 10),
-    type: "salary",
+    type: "increase", //แต่ก่อนทีใช้เป็น type: "salary", แต่มันไม่มีtypeนี้ใน SalaryAdjustment นะงับ เราเลยแก้ให้แล้วกลับมาแก้ด้วยเม้นไว้เผื่อลืมบอกแล้วซักวันกลับมาเจอยังไงทีก็ตั้งสังเกตบ้างแหละว่าทำไมคอมเม้นยาวขนาดนี้
   });
 
   // โหลดตาม adjustmentType
@@ -267,7 +267,7 @@ export default function PayrollPage() {
     }
     console.log("Fetched adjustments:", isSalary, res);
 
-    const data: any[] = await res.json();
+    const data: SalaryAdjustment[] = await res.json();
     const mapped = (isSalary ? data.map(mapSalary) : data.map(mapIncome)).sort(
       (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
     );
@@ -292,7 +292,7 @@ export default function PayrollPage() {
   const currentSalaryKpi = useMemo(() => {
     if (overviewEmployee === "all")
       return employees.reduce((s, e) => s + e.currentSalary, 0);
-    const emp = employees.find((e) => e.id === overviewEmployee);
+    const emp = employees.find((e) => String(e.id) === String(overviewEmployee));
     return emp?.currentSalary ?? 0;
   }, [overviewEmployee, employees]);
 
@@ -657,7 +657,7 @@ export default function PayrollPage() {
                   <Label>พนักงาน</Label>
                   <Select
                     value={String(overviewEmployee)}
-                    onValueChange={(v) => setOverviewEmployee(v as any)}
+                    onValueChange={(v) => setOverviewEmployee(v as string | "all")}
                   >
                     <SelectTrigger className="w-full">
                       <SelectValue placeholder="เลือกพนักงาน" />
@@ -665,7 +665,7 @@ export default function PayrollPage() {
                     <SelectContent>
                       <SelectItem value="all">พนักงานทั้งหมด</SelectItem>
                       {employees.map((emp) => (
-                        <SelectItem key={emp.id} value={emp.id}>
+                        <SelectItem key={emp.id} value={String(emp.id)}>
                           {emp.name}
                         </SelectItem>
                       ))}
@@ -968,7 +968,7 @@ export default function PayrollPage() {
                   <Label>พนักงาน</Label>
                   <Select
                     value={latestEmployeeOnly}
-                    onValueChange={(v: any) => setLatestEmployeeOnly(v)}
+                    onValueChange={(v) => setLatestEmployeeOnly(v)}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="เลือกพนักงาน" />

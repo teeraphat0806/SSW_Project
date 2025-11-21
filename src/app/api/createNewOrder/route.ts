@@ -1,11 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
-import { authOptions } from "../auth/[...nextauth]/route";
-import prisma from "../../../lib/prisma";
-import { CreateNewOrderSchema } from "../../../lib/schemas/createNewOrder.shema";
-
-
-
+import { authOptions } from "@/lib/auth";
+import prisma from "@/lib/prisma";
+import { CreateNewOrderSchema } from "@/lib/schemas/createNewOrder.shema";
 
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
@@ -40,17 +37,17 @@ export async function POST(req: NextRequest) {
 
     const result = CreateNewOrderSchema.safeParse(body);
 
-    if(!result.success){
-     const formattedErrors = result.error.issues.map(err => ({
-    path: err.path.join('.'),
-    message: err.message,
-  }));
+    if (!result.success) {
+      const formattedErrors = result.error.issues.map((err) => ({
+        path: err.path.join("."),
+        message: err.message,
+      }));
 
-  return NextResponse.json(
-    { error: 'Invalid input', details: formattedErrors },
-    { status: 400 }
-  );
-}
+      return NextResponse.json(
+        { error: "Invalid input", details: formattedErrors },
+        { status: 400 }
+      );
+    }
 
     const validateData = result.data;
 
@@ -63,16 +60,12 @@ export async function POST(req: NextRequest) {
         deliveryDate: new Date(validateData.deliveryDate),
         deliveryOrderNo: validateData.deliveryOrderNo,
         salesName: session.user?.name,
-        Staff_Bill_salesNameToStaff: { connect: { id: Number(session.user?.id) } },
-        //Staff_Bill_deliveredByToStaff: { connect: { id: body.deliveredBy } },
-        //description: body.description,
-        //unitPrice: body.unitPrice,
-        //discount: body.discount,
+        Staff_Bill_salesNameToStaff: {
+          connect: { id: Number(session.user?.id) },
+        },
         vat: validateData.vat,
-        //dateReceive: new Date(body.dateReceive),
-        //typeBill: body.typeBill,
         OrderPO: {
-          create: validateData.orderPOs.map((po: any) => ({
+          create: validateData.orderPOs.map((po) => ({
             poNumber: po.poNumber,
             Customer: { connect: { id: validateData.customerId } },
             total: po.total,
@@ -80,8 +73,8 @@ export async function POST(req: NextRequest) {
             urlPo: po.urlPo,
             date: new Date(),
             Product: {
-              create: po.products.map((p: any) => ({
-                steelType: p.steelType,
+              create: po.products.map((p) => ({
+                SteelType: p.steelType,
                 wide: p.wide,
                 length: p.length,
                 thickness: p.thickness,

@@ -1,7 +1,7 @@
 import { getServerSession } from "next-auth";
-import { authOptions } from "../auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth";
 import { NextResponse, NextRequest } from "next/server";
-import prisma from "@/lib/prisma";
+import prisma from "../../../lib/prisma";
 import { StaffSalarySchema } from "../../../lib/schemas/staffSalary.schema";
 
 export async function GET(req: NextRequest) {
@@ -16,12 +16,13 @@ export async function GET(req: NextRequest) {
       include: {
         Staff: {
           select: {
+            name: true,
+            position: true,
             bankAccount: true,
             startDate: true,
             code: true,
             social_security: true,
             currentSalary: true,
-            userId: true,
           },
         },
       },
@@ -30,7 +31,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json(result, { status: 200 });
   } catch (error) {
     return NextResponse.json(
-      { error: `Failed to fetch staffSalary: ${error}` },
+      { error: "Failed to fetch staffSalary: " + error },
       { status: 500 }
     );
   }
@@ -83,7 +84,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(result, { status: 201 });
   } catch (error) {
     return NextResponse.json(
-      { error: `Failed to create staffSalary:${error}` },
+      { error: "Failed to create staffSalary: " + error },
       { status: 500 }
     );
   }

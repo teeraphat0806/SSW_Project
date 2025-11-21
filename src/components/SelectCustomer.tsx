@@ -2,7 +2,7 @@ import {
   Popover,
   PopoverTrigger,
   PopoverContent,
-} from "@/components/ui/popover";
+} from "../components/ui/popover";
 import {
   Command,
   CommandInput,
@@ -10,10 +10,10 @@ import {
   CommandItem,
   CommandEmpty,
   CommandGroup,
-} from "@/components/ui/command";
-import { Button } from "@/components/ui/button";
+} from "../components/ui/command";
+import { Button } from "../components/ui/button";
 import { Check } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn } from "../lib/utils";
 
 export default function SelectCustomer({
     open,

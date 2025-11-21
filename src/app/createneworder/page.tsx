@@ -10,7 +10,6 @@ import CustomerForm from "@/components/newJobOrder/CustomerForm";
 import CustomerInfoBox from "@/components/newJobOrder/CustomerInfoBox";
 import AddItem from "@/components/newJobOrder/AddItem";
 import "../globals.css";
-
 import { ArrowLeft, FileText, Save, X } from "lucide-react";
 import SelectCustomer from "@/components/SelectCustomer";
 
@@ -150,12 +149,16 @@ const NewJobOrder = () => {
     });
 
     // อ่าน body แค่ครั้งเดียว
-    const data = await res.json().catch(() => ({}));
+    interface UploadResponse {
+      error?: string;
+      keys?: string[];
+    }
+    const data: UploadResponse = await res.json().catch(() => ({}));
     if (!res.ok) {
-      throw new Error((data as any)?.error || "อัปโหลดไฟล์ไม่สำเร็จ");
+      throw new Error(data?.error || "อัปโหลดไฟล์ไม่สำเร็จ");
     }
 
-    return (data as any).keys as string[];
+    return data.keys as string[];
   }
 
   //Handle form submisstion
@@ -336,16 +339,18 @@ const NewJobOrder = () => {
     <div className="min-h-screen md:pl-24 ">
       <div className="container mx-auto p-6">
         {/* Header */}
-        <div className="mb-8">
-          <Button
-            variant="ghost"
-            onClick={() => router.push("/dashboard")}
-            className="mb-4"
-          >
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            กลับสู่หน้าหลัก
-          </Button>
 
+        <div className="mb-8">
+          <div className=" mb-4 border-b ">
+            <Button
+              variant="ghost"
+              onClick={() => router.push("/dashboard")}
+              className="mb-4"
+            >
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              กลับสู่หน้าหลัก
+            </Button>
+          </div>
           <div className="flex items-center gap-3 mb-2">
             <FileText className="h-8 w-8 text-primary" />
             <h1 className="text-3xl font-bold text-foreground">

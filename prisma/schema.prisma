@@ -24,23 +24,30 @@ model Bill {
   customerId                    Int?
   yourRef                       String
   invoiceNo                     String    @unique
+  codeCustomer                  String?    
   credit                        DateTime
   deliveryDate                  DateTime
   deliveryOrderNo               String?
   salesName                     String?
   deliveredBy                   String?
   description                   String?
-  unitPrice                     Float?
+  vatRate                       Float     @default(7.0)
+  subtotal                      Float?
+  grandTotal                    Float?
   discount                      Float?
   vat                           Float
   dateReceive                   DateTime?
   typeBill                      String?
   salesNameId                   Int?
   deliveredById                 Int?
+  updatedAt                     DateTime @updatedAt
   Customer                      Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
   Staff_Bill_deliveredByToStaff Staff?    @relation("Bill_deliveredByToStaff", fields: [deliveredById], references: [id], onDelete: SetNull)
   Staff_Bill_salesNameToStaff   Staff?    @relation("Bill_salesNameToStaff", fields: [salesNameId], references: [id], onDelete: SetNull)
   OrderPO                       OrderPO[]
+
+  createdAt DateTime @default(now())
+  
 
   @@index([customerId])
   @@index([salesNameId])
@@ -58,54 +65,55 @@ model Customer {
   email         String          @unique
   Bill          Bill[]
   OrderPO       OrderPO[]
-  Rcptorg       Rcptorg[]
-  TemporaryBill TemporaryBill[]
 }
 
 model OrderPO {
-  id         Int       @id @default(autoincrement())
-  poNumber   String
-  customerId Int?
-  total      Float
-  vat        Float
-  date       DateTime  @default(now())
-  urlPo      String[]
-  billId     Int?
-  bill       Bill?     @relation(fields: [billId], references: [id], onDelete: SetNull)
-  Customer   Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
-  Product    Product[]
+  id                Int       @id @default(autoincrement())
+  poNumber          String    @unique
+  customerId        Int?
+  assignedCutterId  Int?
+  billId            Int?
+  status            JobStatus @default(pending)
+  total             Float
+  date              DateTime  @default(now())
+  completedAt       DateTime?
+  urlPo             String[]
+  bill              Bill?     @relation(fields: [billId], references: [id], onDelete: SetNull)
+  Customer          Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  Staff             Staff?     @relation(fields: [assignedCutterId], references: [id], onDelete: SetNull)
+  Product           Product[]
 
+  @@index([status])
+  @@index([date])
+  @@index([customerId, status])
   @@index([billId])
   @@index([customerId])
+  @@index([assignedCutterId])
 }
 
 model Product {
   id               Int      @id @default(autoincrement())
-  steelType        String
+  orderPOId        Int
+  steelId          Int
   wide             Float
   length           Float
   thickness        Float
   amount           Int
   detail           String?
-  actualWeight     Float?
   calculatedWeight Float?
+  actualWeight     Float?
+  actualWide       Float?
+  actualLength     Float?
+  actualThickness  Float?
   total            Float
-  orderPOId        Int?
-  OrderPO          OrderPO? @relation(fields: [orderPOId], references: [id], onDelete: SetNull)
+  
+  OrderPO          OrderPO @relation(fields: [orderPOId], references: [id], onDelete: Cascade)
+  SteelType        SteelType @relation(fields: [steelId], references: [id], onDelete:Restrict)
 
   @@index([orderPOId])
+  @@index([steelId])
 }
 
-model Rcptorg {
-  id         Int       @id @default(autoincrement())
-  date       DateTime
-  numberNo   String
-  customerId Int?
-  totalPrice Float
-  Customer   Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
-
-  @@index([customerId])
-}
 
 model Staff {
   id                           Int           @id @default(autoincrement())
@@ -118,6 +126,8 @@ model Staff {
   code                         String        @unique
   social_security              String        @unique
   currentSalary                Float
+  updatedAt                    DateTime @updatedAt
+  OrderPO                      OrderPO[]
   Bill_Bill_deliveredByToStaff Bill[]        @relation("Bill_deliveredByToStaff")
   Bill_Bill_salesNameToStaff   Bill[]        @relation("Bill_salesNameToStaff")
   StaffIncome                  StaffIncome[]
@@ -155,37 +165,43 @@ model StaffIncome {
   @@index([typeId])
 }
 
-model TemporaryBill {
-  id                 Int       @id @default(autoincrement())
-  orderNo            String    @unique
-  order              String
-  term               String
-  dueDate            DateTime
-  customerId         Int?
-  shippingLocation   String
-  numberNo           String
-  date               DateTime
-  no                 String
-  description        String
-  quantity           Int
-  weight             Float
-  unitPrice          Float
-  amount             Float
-  total              Float
-  totalAfterDiscount Float
-  vat                Float
-  receivedBy         String
-  deliveredBy        String
-  Customer           Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
-}
+
 
 model TypeStaffIncome {
   id        Int    @id @default(autoincrement())
   amount    Float
   name      String
   types     String
-  incomes  StaffIncome[]
+  incomes   StaffIncome[]
 }
+model SteelType{
+  id        Int    @id @default(autoincrement())
+  codeSteel String @unique
+  detail    String?
+  price     Float
+  Product   Product[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+model Expense {
+  id           Int           @id @default(autoincrement())
+  description  String      
+  amount       Float         
+  expenseDate  DateTime      
+  categoryId   Int           
+  category     ExpenseCategory @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  receiptUrl   String?      
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+}
+
+model ExpenseCategory {
+  id          Int       @id @default(autoincrement())
+  name        String    @unique  
+  description String
+  expenses    Expense[]
+}
+
 
 enum Role {
   superadmin
@@ -195,3 +211,12 @@ enum Role {
   cutter
   delivery
 }
+
+enum JobStatus { 
+  pending 
+  cutting 
+  weighing 
+  ready 
+  shipped 
+  completed 
+  }

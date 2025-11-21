@@ -75,7 +75,7 @@ export default function CustomerInfoCard({customerId}: {customerId:string | null
         </p>
       </div>
 
-      <div className="flex justify-between text-xs text-small-detail">
+      <div className="flex justify-start gap-2 text-xs text-small-detail">
         <span>tax : {customer.taxNumber}</span>
         <span>fax : {customer.faxNumber}</span>
       </div>

@@ -1,13 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
-import { authOptions } from "../../auth/[...nextauth]/route";
-import prisma from "@/lib/prisma";
-import { CustomerSchema } from "@/lib/schemas/customer.schema";
+import { authOptions } from "@/lib/auth";
+
+import prisma from "../../../../lib/prisma";
+import { CustomerSchema } from "../../../../lib/schemas/customer.schema";
 // GET /api/payroll/[id]
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await context.params;
   const session = await getServerSession({ req, ...authOptions });
   if (
     !session ||
@@ -17,13 +19,13 @@ export async function GET(
   }
   try {
     const result = await prisma.customer.findUnique({
-      where: { id: Number(params.id) },
+      where: { id: Number(id) },
     });
 
     return NextResponse.json(result, { status: 200 });
   } catch (error) {
     return NextResponse.json(
-      { error: `Failed to fetch customer: ${error}` },
+      { error: "Failed to fetch customer: " + error },
       { status: 500 }
     );
   }
@@ -32,8 +34,9 @@ export async function GET(
 // PUT /api/payroll/[id]
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await context.params;
   const session = await getServerSession({ req, ...authOptions });
   if (
     !session ||
@@ -48,14 +51,14 @@ export async function PATCH(
   }
   try {
     const result = await prisma.customer.update({
-      where: { id: Number(params.id) },
+      where: { id: Number(id) },
       data: parsed.data,
     });
 
     return NextResponse.json(result, { status: 200 });
   } catch (error) {
     return NextResponse.json(
-      { error: `Failed to update customer: ${error}` },
+      { error: "Failed to update customer: " + error },
       { status: 500 }
     );
   }
@@ -64,9 +67,9 @@ export async function PATCH(
 // DELETE /api/payroll/[id]
 export async function DELETE(
   req: NextRequest,
-  context: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
-  const { params } = context;
+  const { id } = await context.params;
   const session = await getServerSession({ req, ...authOptions });
   if (
     !session ||
@@ -76,7 +79,7 @@ export async function DELETE(
   }
   try {
     await prisma.customer.delete({
-      where: { id: Number(params.id) },
+      where: { id: Number(id) },
     });
   } catch (error) {
     console.error("error: ", error);

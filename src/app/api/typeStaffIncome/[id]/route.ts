@@ -1,26 +1,28 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
-import { authOptions } from "../../auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth";
+
 import { TypeStaffIncomeSchema } from "../../../../lib/schemas/typeStaffIncome.schema";
-import prisma from "@/lib/prisma";
+import prisma from "../../../../lib/prisma";
 // GET /api/payroll/[id]
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await context.params;
   const session = await getServerSession({ req, ...authOptions });
   if (!session || !["superadmin", "supervisor"].includes(session.user?.role)) {
     return NextResponse.json({ error: "Permission Denied!!" }, { status: 400 });
   }
   try {
     const result = await prisma.typeStaffIncome.findUnique({
-      where: { id: Number(params.id) },
+      where: { id: Number(id) },
     });
 
     return NextResponse.json(result, { status: 200 });
   } catch (error) {
     return NextResponse.json(
-      { error: `Failed to fetch typeStaffIncome: ${error} ` },
+      { error: "Failed to fetch typeStaffIncome: " + error },
       { status: 500 }
     );
   }
@@ -63,7 +65,7 @@ export async function PATCH(
       data,
     });
     return NextResponse.json(result, { status: 200 });
-  } catch (error: any) {
+  } catch (error) {
     return NextResponse.json(
       { error: error?.message ?? "Failed to update typeStaffIncome" },
       { status: 500 }
@@ -90,7 +92,7 @@ export async function DELETE(
   try {
     await prisma.typeStaffIncome.delete({ where: { id: idNum } });
     return new NextResponse(null, { status: 204 }); // No Content
-  } catch (error: any) {
+  } catch (error) {
     return NextResponse.json(
       { error: error?.message ?? "Failed to delete typeStaffIncome" },
       { status: 500 }

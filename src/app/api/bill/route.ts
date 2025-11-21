@@ -1,5 +1,6 @@
 import { getServerSession } from "next-auth";
-import { authOptions } from "../auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth";
+
 import { NextResponse, NextRequest } from "next/server";
 import prisma from "@/lib/prisma";
 import { BillSchema } from "@/lib/schemas/bill.schema";
@@ -21,7 +22,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json(result, { status: 200 });
   } catch (error) {
     return NextResponse.json(
-      { error: `Failed to fetch bills: ${error}` },
+      { error: "Failed to fetch bills: " + error },
       { status: 500 }
     );
   }

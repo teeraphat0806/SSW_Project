@@ -1,3 +1,5 @@
+import "next-auth";
+
 declare module "next-auth" {
   interface Session {
     user: {
@@ -15,6 +17,11 @@ declare module "next-auth" {
     email: string;
     role: string;
   }
+}
+
+declare module "next-auth" {
+  export * from "next-auth/core/types";
+  export { getServerSession } from "next-auth/next";
 }
 
 declare module "next-auth/jwt" {

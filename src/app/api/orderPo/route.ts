@@ -1,8 +1,8 @@
 import { getServerSession } from "next-auth";
-import { authOptions } from "../auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth";
 import { NextResponse, NextRequest } from "next/server";
-import prisma from "@/lib/prisma";
-import { OrderPOSchema } from "@/lib/schemas/orderPO.schema";
+import prisma from "../../../lib/prisma";
+import { OrderPOSchema } from "../../../lib/schemas/orderPO.schema";
 export async function GET(req: NextRequest) {
   const session = await getServerSession({ req, ...authOptions });
   // Fix: Only allow if role is superadmin OR supervisor
@@ -21,7 +21,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json(result, { status: 200 });
   } catch (error) {
     return NextResponse.json(
-      { error: `Failed to fetch orderPO: ${error}` },
+      { error: "Failed to fetch orderPO: " + error },
       { status: 500 }
     );
   }

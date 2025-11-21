@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
-import { authOptions } from "../auth/[...nextauth]/route";
-import prisma from "@/lib/prisma";
+import { authOptions } from "@/lib/auth";
+import prisma from "../../../lib/prisma";
 
 export async function GET() {
   const session = await getServerSession(authOptions);
+
+  console.log("Session:", session);
 
   if (!session || !["superadmin", "supervisor"].includes(session.user?.role)) {
     return NextResponse.json({ error: "Permission Denied!!" }, { status: 403 });

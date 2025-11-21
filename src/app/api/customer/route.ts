@@ -1,8 +1,8 @@
 import { getServerSession } from "next-auth";
-import { authOptions } from "../auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth";
 import { NextResponse, NextRequest } from "next/server";
-import prisma from "@/lib/prisma";
-import { CustomerSchema } from "@/lib/schemas/customer.schema";
+import prisma from "../../../lib/prisma";
+import { CustomerSchema } from "../../../lib/schemas/customer.schema";
 
 export async function GET(req: NextRequest) {
   const session = await getServerSession({ req, ...authOptions });
@@ -20,7 +20,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json(result, { status: 200 });
   } catch (error) {
     return NextResponse.json(
-      { error: `Failed to fetch customers: ${error}` },
+      { error: "Failed to fetch customers: " + error },
       { status: 500 }
     );
   }

@@ -1,8 +1,8 @@
 import { getServerSession } from "next-auth";
-import { authOptions } from "../auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth";
 import { NextResponse, NextRequest } from "next/server";
-import prisma from "@/lib/prisma";
-import { RcptorgSchema } from "@/lib/schemas/rcptorg.schema";
+import prisma from "../../../lib/prisma";
+import { RcptorgSchema } from "../../../lib/schemas/rcptorg.schema";
 export async function GET(req: NextRequest) {
   const session = await getServerSession({ req, ...authOptions });
   // Fix: Only allow if role is superadmin OR supervisor
@@ -18,10 +18,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json(result, { status: 200 });
   } catch (error) {
-    return NextResponse.json(
-      { error: `Failed to fetch Rcptorg: ${error}` },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to fetch Rcptorg: " + error });
   }
 }
 export async function POST(req: NextRequest) {

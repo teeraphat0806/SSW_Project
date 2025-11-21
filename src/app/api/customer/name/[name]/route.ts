@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
-import { authOptions } from "../../../auth/[...nextauth]/route";
-import prisma from "@/lib/prisma";
+import { authOptions } from "@/lib/auth";
+import prisma from "../../../../../lib/prisma";
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { name: string } }
+  context: { params: Promise<{ name: string }> }
 ) {
+  const { name } = await context.params;
   const session = await getServerSession({ req, ...authOptions });
   if (
     !session ||
@@ -19,7 +20,7 @@ export async function GET(
     const result = await prisma.customer.findMany({
       where: {
         name: {
-          contains: params.name,
+          contains: name,
           mode: "insensitive",
         },
       },

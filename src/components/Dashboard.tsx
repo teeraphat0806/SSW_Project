@@ -359,7 +359,7 @@ const Dashboard = ({ role }) => {
 
                       <div className="flex justify-between items-center">
                         <span className="text-xs text-muted-foreground">
-                          สร้างเมื่อ: {order.createdAt.toLocaleDateString()}
+                          สร้างเมื่อ: {new Date(order.createdAt).toLocaleDateString()}
                         </span>
                         <div className="flex gap-2">
                           {currentRole === "clerk" && (
