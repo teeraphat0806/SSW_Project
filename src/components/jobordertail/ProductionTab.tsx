@@ -34,6 +34,7 @@ export function ProductionTab({
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
           <Button
             variant={status === "cutting" ? "default" : "outline"}
+            className={status === "cutting" ? "text-white" : ""}
             onClick={() => onUpdateStatus("cutting")}
             disabled={disabled}
           >
@@ -41,6 +42,7 @@ export function ProductionTab({
           </Button>
           <Button
             variant={status === "weighing" ? "default" : "outline"}
+            className={status === "weighing" ? "text-white" : ""}
             onClick={() => onUpdateStatus("weighing")}
             disabled={disabled}
           >
@@ -48,6 +50,7 @@ export function ProductionTab({
           </Button>
           <Button
             variant={status === "ready" ? "default" : "outline"}
+            className={status ==="ready"? "text-white": ""}
             onClick={() => onUpdateStatus("ready")}
             disabled={disabled}
           >

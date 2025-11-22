@@ -2,15 +2,28 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "../../components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../components/ui/tabs";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "../../components/ui/tabs";
 // Update the import path below if your use-toast file is located elsewhere
 import { toast } from "../../hooks/use-toast";
 import { Badge } from "../../components/ui/badge";
 
-import { ArrowLeft, FileText, Package, } from "lucide-react";
+import {
+  ArrowLeft,
+  FileText,
+  Package,
+  CalendarDays,
+  User2,
+  Hash,
+  File,
+} from "lucide-react";
 import { QuickAction } from "../../components/jobordertail/QuickAction";
 import { SteelTable } from "../../components/jobordertail/SteelTable";
-import { SpecificationsTab } from "../../components/jobordertail/SpecificationsTab";
+import { StaffInfoCard } from "../../components/jobordertail/StaffInfoCard";
 import { CustomerTab } from "../../components/jobordertail/CustomerTab";
 import { ProductionTab } from "../../components/jobordertail/ProductionTab";
 import { DeliveryTab } from "../../components/jobordertail/DeliveryTab";
@@ -56,27 +69,94 @@ interface JobOrder {
 }
 
 const mockJobOrder: JobOrder = {
-  id: '1',
-  poNumber: 'PO-2024-001',
-  customerId: 'CUST-001',
-  customerEmail: 'customer@example.com',
-  customerPhone: '0123456789',
-  deliveryAddress: '123 Main St, Bangkok, Thailand',
+  id: "1",
+  poNumber: "PO-2024-001",
+  customerId: "CUST-001",
+  customerEmail: "customer@example.com",
+  customerPhone: "0123456789",
+  deliveryAddress: "123 Main St, Bangkok, Thailand",
   steel: [
-    { steelType: "แผ่น SS400 4x8", amount: 10, width: 1200, length: 2400, thickness: 6, price: 9500, weight: 120},
-    { steelType: "กลม 12 มม.", amount: 20, width: 12, length: 6000, thickness: 12, price: 4100, weight: 60},
-    { steelType: "ฉาก 40x40", amount: 15, width: 40, length: 6000, thickness: 4, price: 3100, weight: 45.5 },
+    {
+      steelType: "แผ่น SS400 4x8",
+      amount: 10,
+      width: 1200,
+      length: 2400,
+      thickness: 6,
+      price: 9500,
+      weight: 120,
+    },
+    {
+      steelType: "กลม 12 มม.",
+      amount: 20,
+      width: 12,
+      length: 6000,
+      thickness: 12,
+      price: 4100,
+      weight: 60,
+    },
+    {
+      steelType: "ฉาก 40x40",
+      amount: 15,
+      width: 40,
+      length: 6000,
+      thickness: 4,
+      price: 3100,
+      weight: 45.5,
+    },
   ],
   steelActual: [
-    { steelType: "แผ่น SS400 4x8", amount: 10, width: 1200, length: 2400, thickness: 6, price: 9625, weight: 121.3 },
-    { steelType: "กลม 12 มม.", amount: 20, width: 12, length: 6000, thickness: 12, price: 4185, weight: 61.2 },
+    {
+      steelType: "แผ่น SS400 4x8",
+      amount: 10,
+      width: 1200,
+      length: 2400,
+      thickness: 6,
+      price: 9625,
+      weight: 121.3,
+    },
+    {
+      steelType: "กลม 12 มม.",
+      amount: 20,
+      width: 12,
+      length: 6000,
+      thickness: 12,
+      price: 4185,
+      weight: 61.2,
+    },
   ],
   status: "pending",
-  createdAt: new Date('2024-01-15T09:30:16'),
-  deliveryDate: '2024-02-24',
-  
-}
+  createdAt: new Date("2024-01-15T09:30:16"),
+  deliveryDate: "2024-02-24",
+};
 
+type InfoItemProps = {
+  label: string;
+  value: React.ReactNode;
+  icon: React.ReactNode;
+ 
+};
+
+const InfoItem = ({ label, value, icon }: InfoItemProps) => {
+
+  
+  return (
+    <div className= "flex items-start gap-3">
+      {/* icon */}
+      <div className= "mt-0.5 flex h-6 w-6 items-center justify-center text-muted-foreground">
+        {icon}
+      </div>
+      {/* text */}
+      <div className="space-y-0.5">
+        <div className="text-xs font-medium text-muted-foreground tracking-wide">
+          {label}
+        </div>
+        <div className="text-sm font-semibold text-foreground">
+          {value}
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const JobOrderDetailPage = () => {
   const [loading, setLoading] = useState(true);
@@ -221,48 +301,50 @@ const JobOrderDetailPage = () => {
                   </span>
                 </div>
               </div>
+
               {/* Content Box*/}
               <div className="space-y-6 p-5">
                 {/* Order Info */}
-                <h3 className="mb-3 text-base font-semibold text-foreground">
-                  ข้อมูลออเดอร์
-                </h3>
-                <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                  <dl className="grid [grid-template-columns:140px_1fr] gap-y-2 text-sm">
-                    <dt className="text-muted-foreground">Order ID :</dt>
-                    <dd className="font-medium">001</dd>
-
-                    <dt className="text-muted-foreground">
-                      สร้างออเดอร์เมื่อ :
-                    </dt>
-                    <dd className="font-medium">
-                      <time dateTime="2024-01-15">1/15/2024</time>
-                    </dd>
-                  </dl>
-                  <dl className="grid [grid-template-columns:140px_1fr] gap-y-2 text-sm">
-                    <dt className="text-muted-foreground">
-                      วันที่ต้องจัดส่ง :
-                    </dt>
-                    <dd className="font-medium">
-                      <time dateTime="2024-02-24">2/24/2024</time>
-                    </dd>
-
-                    <dt className="text-muted-foreground">ผู้รับผิดชอบตัด :</dt>
-                    <dd className="font-medium">สมชาย ใจดี</dd>
-                  </dl>
+                <div className="flex items-center gap-2">
+                  <FileText className="w-4 h-4 text-primary" />
+                  <h3 className="text-sm font-semibold text-foreground">
+                    ข้อมูลออเดอร์
+                  </h3>
                 </div>
 
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                {/* Info Grid */}
+                <div className="grid grid-cols-2 gap-4  md:grid-cols-4">
+                  <InfoItem
+                    label="Order ID"
+                    value="001"
+                    icon={<Hash className="w-4 h-4" />}
+                  />
+                  <InfoItem
+                    label="เลขที่ใบสั่งซื้อ (PO)"
+                    value="PO-2024-001"
+                    icon={<File className="w-4 h-4" />}
+                  />
+                  <InfoItem
+                    label="วันที่ต้องจัดส่ง"
+                    value={<time dateTime="2024-02-24">24/02/2024</time>}
+                    icon={<CalendarDays className="w-4 h-4" />}
+                  />
+                  <InfoItem
+                    label="ผู้รับผิดชอบตัด"
+                    value="สมชาย ใจดี"
+                    icon={<User2 className="w-4 h-4" />}
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 gap-4">
                   {/* ซ้าย: ข้อมูลเหล็ก (คำนวณ) */}
                   <SteelTable
-                    title="ข้อมูลเหล็ก (คำนวณ)"
-                    rows={jobOrder.steel.map(s => ({ steelType: s.steelType, weight: s.weight, price: s.price }))}
-                  />
-
-                  {/* ขวา: ข้อมูลเหล็ก (จริง) */}
-                  <SteelTable
-                    title="ข้อมูลเหล็ก (จริง)"
-                    rows={jobOrder.steelActual?.map(s => ({steelType: s.steelType,weight:s.weight,price:s.price}))}
+                    status={jobOrder.status}
+                    rows={jobOrder.steel.map((s) => ({
+                      steelType: s.steelType,
+                      weight: s.weight,
+                      price: s.price,
+                    }))}
                   />
                 </div>
               </div>
@@ -271,49 +353,45 @@ const JobOrderDetailPage = () => {
             {/* Tabs Card */}
             <div className="rounded-2xl border border-gray-200 bg-background shadow-sm px-2 py-2">
               {/* Tabs Header */}
-              <Tabs defaultValue="specifications" className="w-full">
+              <Tabs defaultValue="StaffInfo" className="w-full">
                 {/* mt-6 grid grid-cols-1 gap-6 xl:grid-cols-12 */}
                 <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 gap-2 mb-6">
-                  <TabsTrigger value="specifications">
-                    Specifications
+                  <TabsTrigger
+                    value="StaffInfo"
+                    className="data-[state=active]:text-white"
+                  >
+                    StaffInfo
                   </TabsTrigger>
-                  <TabsTrigger value="customer">Customer</TabsTrigger>
-                  <TabsTrigger value="production">Production</TabsTrigger>
-                  <TabsTrigger value="delivery">Delivery</TabsTrigger>
+                  <TabsTrigger
+                    value="customer"
+                    className="data-[state=active]:text-white"
+                  >
+                    Customer
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="production"
+                    className="data-[state=active]:text-white"
+                  >
+                    Production
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="delivery"
+                    className="data-[state=active]:text-white"
+                  >
+                    Delivery
+                  </TabsTrigger>
                 </TabsList>
 
                 {/* Specifications */}
-                <TabsContent value="specifications">
-                  <SpecificationsTab
-                    steelSpec={{
-                      type: "Carbon Steel",
-                      quantity: "50 pieces",
-                      width: "100 mm",
-                      length: "2000 mm",
-                      thickness: "5 mm",
-                    }}
-                    actual={{
-                      width: "99.8 mm",
-                      length: "199.9 mm",
-                      thickness: "5 mm",
-                    }}
-                    note="Handle with care – precision cutting required for automotive parts. Ensure smooth edges."
-                  />
-
-                   <SpecificationsTab
-                    steelSpec={{
-                      type: "Carbon Steel",
-                      quantity: "50 pieces",
-                      width: "100 mm",
-                      length: "2000 mm",
-                      thickness: "5 mm",
-                    }}
-                    actual={{
-                      width: "99.8 mm",
-                      length: "199.9 mm",
-                      thickness: "5 mm",
-                    }}
-                    note="Handle with care – precision cutting required for automotive parts. Ensure smooth edges."
+                <TabsContent value="StaffInfo">
+                  <StaffInfoCard
+                    supervisorName={["สมชาย รักดี", "สมศรี สวยงาม"]}
+                    technicians={[
+                      "สมหมาย ใจดี",
+                      "สมศักดิ์ แก่นทอง",
+                      "สมปอง มีสุข",
+                      "วรเมธ โพธิ์ทอง",
+                    ]}
                   />
                 </TabsContent>
 
