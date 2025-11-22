@@ -19,7 +19,7 @@ export default function Sidebar() {
 
   return (
     <aside
-      className="group fixed top-0 left-0 h-full w-24 hover:w-64 bg-background shadow-md transition-all duration-300 z-50 overflow-hidden flex flex-col justify-between"
+      className=" print:hidden group fixed top-0 left-0 h-full w-24 hover:w-64 bg-background shadow-md transition-all duration-300 z-50 overflow-hidden flex flex-col justify-between"
     >
       {/* Top - Logo */}
       <div className="flex items-center justify-center h-24 ">

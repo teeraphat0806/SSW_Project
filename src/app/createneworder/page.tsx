@@ -41,7 +41,9 @@ const NewJobOrder = () => {
   const [showForm, setShowForm] = useState(false); //แสดงหรือซ่อนข้อมุลลูกค้า
   const toggleForm = () => setShowForm(!showForm); //ฟังก์ชั่นแสดงฟอร์มลูกค้า
   const [open, setOpen] = useState(false); //เปิดหรือปิด SelectCustomer
-  const [customers, setCustomers] = useState<{ id: string; name: string }[]>([]); //เก็บข้อมุลลูกค้า
+  const [customers, setCustomers] = useState<{ id: string; name: string }[]>(
+    []
+  ); //เก็บข้อมุลลูกค้า
   const [search, setSearch] = useState(""); // เก็บค่าที่ค้นหา
   const [loading, setLoading] = useState(false); //สถานะโหลดข้อมุล
   const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(
@@ -124,41 +126,40 @@ const NewJobOrder = () => {
   });
 
   async function UploadFiles({
-  files,
-  poNumber,
-  customerId,
-}: {
-  files: File[];
-  poNumber: string;
-  customerId: string | number;
-}) {
-  if (!files?.length) return [];
+    files,
+    poNumber,
+    customerId,
+  }: {
+    files: File[];
+    poNumber: string;
+    customerId: string | number;
+  }) {
+    if (!files?.length) return [];
 
-  const form = new FormData();
-  form.append("poNumber", poNumber);
-  form.append("customerId", String(customerId)); // สำคัญ: แปลงเป็น string
+    const form = new FormData();
+    form.append("poNumber", poNumber);
+    form.append("customerId", String(customerId)); // สำคัญ: แปลงเป็น string
 
-  files.forEach((f) => form.append("files", f));
+    files.forEach((f) => form.append("files", f));
 
-  // ใช้ relative path กัน CORS/timezone/env
-  const res = await fetch("/api/upload/po", {
-    method: "POST",
-    body: form,
-  });
+    // ใช้ relative path กัน CORS/timezone/env
+    const res = await fetch("/api/upload/po", {
+      method: "POST",
+      body: form,
+    });
 
-  // อ่าน body แค่ครั้งเดียว
-  interface UploadResponse {
-    error?: string;
-    keys?: string[];
+    // อ่าน body แค่ครั้งเดียว
+    interface UploadResponse {
+      error?: string;
+      keys?: string[];
+    }
+    const data: UploadResponse = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      throw new Error(data?.error || "อัปโหลดไฟล์ไม่สำเร็จ");
+    }
+
+    return data.keys as string[];
   }
-  const data: UploadResponse = await res.json().catch(() => ({}));
-  if (!res.ok) {
-    throw new Error(data?.error || "อัปโหลดไฟล์ไม่สำเร็จ");
-  }
-
-  return data.keys as string[];
-}
-
 
   //Handle form submisstion
   const handleSubmit = async (e: React.FormEvent) => {
@@ -183,7 +184,7 @@ const NewJobOrder = () => {
           taxNumber: formData.taxNumber,
           faxNumber: formData.faxNumber,
           email: formData.customerEmail,
-    };
+        };
         const customerRes = await fetch("http://localhost:3000/api/customer", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -202,50 +203,51 @@ const NewJobOrder = () => {
       }
 
       const poKeys = await UploadFiles({
-      files: UploadFile,          
-      poNumber: po.poNumber,     
-      customerId: customerId,
-    });
+        files: UploadFile,
+        poNumber: po.poNumber,
+        customerId: customerId,
+      });
 
-
-      const payloadBill ={
-      customerId: Number(customerId),
-      yourRef: "REF108",
-      invoiceNo: "INV108",
-      deliveryDate:  new Date(po.deliveryDate).toISOString(),
-      deliveryOrderNo: "DO108",
-      vat: 7.0,
-      orderPOs:[
-        {
-          poNumber: po.poNumber,
-          total: steelItems.reduce((sum,item ) => {return sum + item.quantity},0),
-          vat:7.0,
-          urlPo:poKeys,
-          products: steelItems.map((item) => {
-            return{
-              steelType: item.steelType,
-              wide: item.width,
-              length: item.length,
-              amount: item.quantity,
-              thickness: item.thickness,
-              total:200,
-              detail: item.notes|| '',
-            }
-          })
-        }
-      ]
-    }
+      const payloadBill = {
+        customerId: Number(customerId),
+        yourRef: "REF108",
+        invoiceNo: "INV108",
+        deliveryDate: new Date(po.deliveryDate).toISOString(),
+        deliveryOrderNo: "DO108",
+        vat: 7.0,
+        orderPOs: [
+          {
+            poNumber: po.poNumber,
+            total: steelItems.reduce((sum, item) => {
+              return sum + item.quantity;
+            }, 0),
+            vat: 7.0,
+            urlPo: poKeys,
+            products: steelItems.map((item) => {
+              return {
+                steelType: item.steelType,
+                wide: item.width,
+                length: item.length,
+                amount: item.quantity,
+                thickness: item.thickness,
+                total: 200,
+                detail: item.notes || "",
+              };
+            }),
+          },
+        ],
+      };
       //สร้างออเดอร์ใหม่
-      const billRes = await fetch("http://localhost:3000/api/createNewOrder",{
+      const billRes = await fetch("http://localhost:3000/api/createNewOrder", {
         method: "POST",
-        headers: {"Content-Type": "application/json"},
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payloadBill),
-      })
-      if(!billRes.ok){
+      });
+      if (!billRes.ok) {
         throw new Error("เกิดข้อผิดพลาดในการสร้างออเดอร์ใหม่");
       }
       const billData = await billRes.json();
-      console.log("สร้างออเดอร์ใหม่สำเร็จ:",billData);
+      console.log("สร้างออเดอร์ใหม่สำเร็จ:", billData);
       toast.success("สร้างออเดอร์ใหม่สำเร็จ", {
         position: "bottom-right",
       });
@@ -295,7 +297,7 @@ const NewJobOrder = () => {
 
   // function to validate from data
   const validateForm = () => {
-    if(showForm){
+    if (showForm) {
       if (!formData.code.trim()) return "กรุณากรอกรหัสลูกค้า (Code)";
       if (!formData.customerName.trim()) return "กรุณากรอกชื่อลูกค้า";
       if (!formData.deliveryAddress.trim())
@@ -304,7 +306,7 @@ const NewJobOrder = () => {
       if (!formData.taxNumber.trim()) return "กรุณากรอกเลข Tax";
       if (!formData.faxNumber.trim()) return "กรุณากรอกเลข Fax";
     }
-    if(!UploadFile.length) return "กรุณาอัปโหลดไฟล์ใบ PO";
+    if (!UploadFile.length) return "กรุณาอัปโหลดไฟล์ใบ PO";
     if (!po.poNumber.trim()) return "กรุณากรอกหมายเลข PO";
     if (!po.deliveryDate) return "กรุณากรอกวันที่ต้องการสินค้า";
     for (const item of steelItems) {
@@ -337,17 +339,17 @@ const NewJobOrder = () => {
     <div className="min-h-screen md:pl-24 ">
       <div className="container mx-auto p-6">
         {/* Header */}
-        
+
         <div className="mb-8">
           <div className=" mb-4 border-b ">
-          <Button
-            variant="ghost"
-            onClick={() => router.push("/dashboard")}
-            className="mb-4"
-          >
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            กลับสู่หน้าหลัก
-          </Button>
+            <Button
+              variant="ghost"
+              onClick={() => router.push("/dashboard")}
+              className="mb-4"
+            >
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              กลับสู่หน้าหลัก
+            </Button>
           </div>
           <div className="flex items-center gap-3 mb-2">
             <FileText className="h-8 w-8 text-primary" />
@@ -384,7 +386,12 @@ const NewJobOrder = () => {
 
           <label className="cursor-pointer rounded-md bg-gray-100 px-4 py-1.5 text-sm text-gray-700 border border-gray-300 hover:bg-gray-200 transition">
             อัปโหลดไฟล์
-            <input type="file" multiple className="hidden" onChange={handleFileChange} />
+            <input
+              type="file"
+              multiple
+              className="hidden"
+              onChange={handleFileChange}
+            />
           </label>
 
           <div className="flex flex-wrap gap-3">
@@ -445,10 +452,22 @@ const NewJobOrder = () => {
                   ) : selectedCustomerId ? (
                     <CustomerInfoBox customerId={selectedCustomerId} />
                   ) : (
-                    <div className="p-4 text-sm text-muted-foreground">กรุณาเลือกลูกค้า</div>
+                    <div className="p-4 text-sm text-muted-foreground">
+                      กรุณาเลือกลูกค้า
+                    </div>
                   )}
                 </div>
-
+                <div className="mb-4">
+                  <AddItem
+                    steelItems={steelItems}
+                    updateSteelItem={updateSteelItem}
+                    addSteelItem={addSteelItem}
+                    removeSteelItem={removeSteelItem}
+                    steelTypes={steelTypes}
+                    po={po}
+                    setpo={setpo}
+                  />
+                </div>
                 <div>
                   <Card className="shadow-steel">
                     <CardHeader>
@@ -485,28 +504,10 @@ const NewJobOrder = () => {
                         </div>
                         <div className="flex justify-between text-sm">
                           <span className="text-muted-foreground">
-                            Priority:
+                            Deadline:
                           </span>
-                          {/* <Badge
-                            className={getPriorityColor(formData.priority)}
-                          >
-                            {formData.priority.toUpperCase()}
-                          </Badge> */}
+                          {po.deliveryDate}
                         </div>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">Deadline:</span>
-                        {/* <span className="font-medium">
-                          {formData.deliveryDate
-                            ? new Date(
-                                formData.deliveryDate
-                              ).toLocaleDateString("th-TH", {
-                                year: "numeric",
-                                month: "long",
-                                day: "numeric",
-                              })
-                            : "ไม่ระบุ"}
-                        </span> */}
                       </div>
                       <Separator />
                       <div>
@@ -547,17 +548,6 @@ const NewJobOrder = () => {
                 </div>
               </div>
               {/* Steel Items */}
-
-              <AddItem
-                steelItems={steelItems}
-                formData={formData}
-                updateSteelItem={updateSteelItem}
-                addSteelItem={addSteelItem}
-                removeSteelItem={removeSteelItem}
-                steelTypes={steelTypes}
-                po={po}
-                setpo={setpo}
-              />
             </div>
           </div>
         </form>

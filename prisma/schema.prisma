@@ -25,7 +25,7 @@ model Bill {
   yourRef                       String
   invoiceNo                     String    @unique
   codeCustomer                  String?    
-  credit                        DateTime
+  credit                        DateTime?
   deliveryDate                  DateTime
   deliveryOrderNo               String?
   salesName                     String?
@@ -37,7 +37,6 @@ model Bill {
   discount                      Float?
   vat                           Float
   dateReceive                   DateTime?
-  typeBill                      String?
   salesNameId                   Int?
   deliveredById                 Int?
   updatedAt                     DateTime @updatedAt
@@ -95,9 +94,9 @@ model Product {
   id               Int      @id @default(autoincrement())
   orderPOId        Int
   steelId          Int
-  wide             Float
-  length           Float
-  thickness        Float
+  wide             Float?
+  length           Float?
+  thickness        Float?
   amount           Int
   detail           String?
   calculatedWeight Float?
@@ -131,7 +130,8 @@ model Staff {
   Bill_Bill_deliveredByToStaff Bill[]        @relation("Bill_deliveredByToStaff")
   Bill_Bill_salesNameToStaff   Bill[]        @relation("Bill_salesNameToStaff")
   StaffIncome                  StaffIncome[]
-  SalaryHistory                StaffSalary[]
+  StaffSalary                  StaffSalary[]
+  ExpenseCategory              ExpenseCategory[]
 }
 
 model StaffSalary {
@@ -178,11 +178,27 @@ model SteelType{
   id        Int    @id @default(autoincrement())
   codeSteel String @unique
   detail    String?
+  amount    Int    @default(0)
   price     Float
   Product   Product[]
+  SteelStock SteelStock[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
+
+model SteelStock {
+  id           Int           @id @default(autoincrement())
+  width        Float
+  length       Float
+  thickness    Float
+  status       String       @default("unused")
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt()
+  
+  steeltypeId  Int
+  SteelType    SteelType   @relation(fields:[steeltypeId],references: [id], onDelete:Restrict)
+}
+
 model Expense {
   id           Int           @id @default(autoincrement())
   description  String      
@@ -200,6 +216,8 @@ model ExpenseCategory {
   name        String    @unique  
   description String
   expenses    Expense[]
+  staffId     Int
+  Staff   Staff    @relation(fields: [staffId], references: [id])
 }
 
 
@@ -208,6 +226,7 @@ enum Role {
   guest
   clerk
   supervisor
+  accountant
   cutter
   delivery
 }

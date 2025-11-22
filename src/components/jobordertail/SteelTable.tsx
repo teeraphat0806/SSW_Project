@@ -1,8 +1,12 @@
 type SteelRow = { steelType: string; weight: number; price: number };
 
-export function SteelTable({ title, rows }: { title: string; rows: SteelRow[] }) {
+export function SteelTable({ status, rows }: { status: string; rows: SteelRow[] }) {
   const total = rows.reduce((sum, r) => sum + r.weight * r.price, 0);
-
+  let title = "ข้อมูลเหล็ก (จริง)"
+  
+  if(status ==="pending" || status === "cutting" || status === "weighing"){
+    title = "ข้อมูลเหล็ก (คำนวณ)"
+  }
   return (
     <div className="rounded-2xl border border-gray-200 bg-background p-5 shadow-sm">
       <h3 className="mb-3 text-base font-semibold text-foreground">{title}</h3>
@@ -11,7 +15,7 @@ export function SteelTable({ title, rows }: { title: string; rows: SteelRow[] })
           <thead>
             <tr className="border-b text-muted-foreground">
               <th className="px-3 py-2 text-left front-medium">ประเภทเหล็ก</th>
-              <th className="px-3 py-2 text-center front-medium">น้ำหนัก (kg)</th>
+              <th className="px-3 py-2 text-left front-medium">น้ำหนัก (kg)</th>
               <th className="px-3 py-2 text-left front-medium">ราคา</th>
             </tr>
           </thead>
@@ -22,7 +26,7 @@ export function SteelTable({ title, rows }: { title: string; rows: SteelRow[] })
                 className="border-b last:border-0"
               >
                 <td className="px-3 py-2">{row.steelType}</td>
-                <td className="px-3 py-2 text-center">
+                <td className="px-3 py-2 text-left">
                   {formatNumber(row.weight)}
                 </td>
                 <td className="px-3 py-2 text-left">
