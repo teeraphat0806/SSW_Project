@@ -24,7 +24,7 @@ model Bill {
   customerId                    Int?
   yourRef                       String
   invoiceNo                     Int       @unique @default(autoincrement())
-  codeCustomer                  String?    
+  codeCustomer                  String?   @unique
   credit                        DateTime?
   deliveryDate                  DateTime
   deliveryOrderNo               String?
