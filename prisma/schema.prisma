@@ -23,7 +23,7 @@ model Bill {
   id                            Int       @id @default(autoincrement())
   customerId                    Int?
   yourRef                       String
-  invoiceNo                     String    @unique
+  invoiceNo                     Int       @unique @default(autoincrement())
   codeCustomer                  String?    
   credit                        DateTime?
   deliveryDate                  DateTime
@@ -179,8 +179,9 @@ model SteelType{
   codeSteel String @unique
   detail    String?
   amount    Int    @default(0)
+  shape     ShapeSteel
   price     Float
-  Product   Product[]
+  Product   Product[] 
   SteelStock SteelStock[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -239,3 +240,8 @@ enum JobStatus {
   shipped 
   completed 
   }
+
+enum ShapeSteel {
+  square
+  line
+}
