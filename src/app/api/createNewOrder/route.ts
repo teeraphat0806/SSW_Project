@@ -8,7 +8,7 @@ import { randomBytes } from "crypto";
 
 function  generateCode(
   length = 20,
-  charset = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!@#$%^&*()-_=+[]{};:,.?/\\|~"
+  charset = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-_"
 ) {
   if (length <= 0) return "";
   const chars = charset;

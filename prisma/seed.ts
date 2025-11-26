@@ -71,6 +71,9 @@ async function main() {
   await prisma.$executeRawUnsafe(
     `ALTER SEQUENCE "SteelType_id_seq" RESTART WITH 1`
   );
+   await prisma.$executeRawUnsafe(
+    `ALTER SEQUENCE "Bill_invoiceNo_seq" RESTART WITH 1000;`
+  );
 
   //   // 3. ใส่ข้อมูล
   await prisma.steelType.createMany({ data: steelTypeData });

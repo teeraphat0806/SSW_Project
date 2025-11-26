@@ -3,7 +3,7 @@ import { randomBytes } from "crypto";
 
 function  generateCode(
   length = 20,
-  charset = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!@#$%^&*()-_=+[]{};:,.?/\\|~"
+  charset = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-_"
 ) {
   if (length <= 0) return "";
   const chars = charset;
@@ -35,7 +35,7 @@ export const billData = [
   {
     Customer: { connect: { id: 1 } },
     yourRef: "REF100",
-    invoiceNo: "INV100",
+    //invoiceNo: "INV100",
     codeCustomer: generateCode(),
     credit: new Date("2025-08-31"),
     deliveryDate: new Date("2025-10-28"),
@@ -86,7 +86,7 @@ export const billData = [
   {
     Customer: { connect: { id: 2 } },
     yourRef: "REF101",
-    invoiceNo: "INV101",
+    //invoiceNo: "INV101",
     codeCustomer: generateCode(),
     credit: new Date("2025-08-31"),
     deliveryDate: new Date("2025-10-28"),
@@ -136,7 +136,7 @@ export const billData = [
   {
     Customer: { connect: { id: 3 } },
     yourRef: "REF102",
-    invoiceNo: "INV102",
+    //invoiceNo: "INV102",
     codeCustomer: generateCode(),
     credit: new Date("2025-08-31"),
     deliveryDate: new Date("2025-10-28"),
@@ -186,7 +186,7 @@ export const billData = [
   {
     Customer: { connect: { id: 4 } },
     yourRef: "REF103",
-    invoiceNo: "INV103",
+    //invoiceNo: "INV103",
     codeCustomer: generateCode(),
     credit: new Date("2025-08-31"),
     deliveryDate: new Date("2025-10-28"),
@@ -236,7 +236,7 @@ export const billData = [
   {
     Customer: { connect: { id: 5 } },
     yourRef: "REF104",
-    invoiceNo: "INV104",
+    // invoiceNo: "INV104",
     codeCustomer: generateCode(),
     credit: new Date("2025-08-31"),
     deliveryDate: new Date("2025-10-28"),
