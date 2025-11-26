@@ -12,7 +12,7 @@ export async function GET(
     if(!session || !["superadmin","supervisor","clerk"].includes(session.user?.role)){
         return NextResponse.json({error:"Permission Denied!!"},{status:400});
     }
-
+    
     try{
         const result = await prisma.steelType.findMany({
             where: {

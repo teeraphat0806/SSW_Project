@@ -73,9 +73,8 @@ export async function POST(req: NextRequest) {
       data: {
         Customer: { connect: { id: validateData.customerId } },
         yourRef: validateData.yourRef,
-        invoiceNo: validateData.invoiceNo,
         codeCustomer: generateCode(),
-        credit: new Date(),
+        //credit: new Date(),
         deliveryDate: new Date(validateData.deliveryDate),
         deliveryOrderNo: validateData.deliveryOrderNo,
         salesName: session.user?.name,
@@ -88,12 +87,11 @@ export async function POST(req: NextRequest) {
             poNumber: po.poNumber,
             Customer: { connect: { id: validateData.customerId } },
             total: po.total,
-            vat: po.vat,
             urlPo: po.urlPo,
             date: new Date(),
             Product: {
               create: po.products.map((p) => ({
-                SteelType: p.steelType,
+                SteelType: { connect: { codeSteel: p.steelType } },
                 wide: p.wide,
                 length: p.length,
                 thickness: p.thickness,
@@ -112,6 +110,7 @@ export async function POST(req: NextRequest) {
     });
     return NextResponse.json(newBill, { status: 201 });
   } catch (error) {
+    console.error(error);
     return NextResponse.json(
       { error: error.message || "Error creating bill" },
       { status: 500 }

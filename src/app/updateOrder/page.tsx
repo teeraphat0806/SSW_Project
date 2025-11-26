@@ -34,13 +34,13 @@ const ORDER_STATUSES = [
 type OrderStatus = (typeof ORDER_STATUSES)[number];
 
 const STATUS_ICONS: Record<OrderStatus, React.ReactNode> = {
-  รอตัด: <CircleDashed className="h-6 w-6" />,
-  กำลังตัด: <Scissors className="h-6 w-6" />,
-  ชั่งน้ำหนัก: <Scale className="h-6 w-6" />,
-  ตัดเสร็จสิ้น: <CheckCircle2 className="h-6 w-6" />,
-  ตรวจสอบ: <ClipboardCheck className="h-6 w-6" />,
-  กำลังส่ง: <Truck className="h-6 w-6" />,
-  ส่งสำเร็จ: <PackageCheck className="h-6 w-6" />,
+  รอตัด: <CircleDashed className="h-4 w-4" />,
+  กำลังตัด: <Scissors className="h-4 w-4" />,
+  ชั่งน้ำหนัก: <Scale className="h-4 w-4" />,
+  ตัดเสร็จสิ้น: <CheckCircle2 className="h-4 w-4" />,
+  ตรวจสอบ: <ClipboardCheck className="h-4 w-4" />,
+  กำลังส่ง: <Truck className="h-4 w-4" />,
+  ส่งสำเร็จ: <PackageCheck className="h-4 w-4" />,
 };
 
 export type Customer = {
@@ -172,7 +172,8 @@ const UpdateOrderPage = () => {
   };
 
   return (
-    <div className="min-h-screen md:pl-24">
+    
+    <div className="min-h-screen md:pl-10">
       <div className="min-h-screen w-full bg-background text-foreground">
         {/*Header*/}
         <header className="sticky top-0 z-40 border-b bg-background">
@@ -226,13 +227,13 @@ const UpdateOrderPage = () => {
         <SelectValue placeholder="เลือกสถานะงาน" />
       </SelectTrigger>
       <SelectContent className="max-h-[170px] overflow-y-auto">
-        {ORDER_STATUSES.map((s) => (
-          <SelectItem key={s} value={s}>
-            <span className="inline-flex items-center gap-2">
+        {ORDER_STATUSES.map((status) => (
+          <SelectItem key={status} value={status}>
+            <span className="flex items-center gap-2">
               <span className="grid h-5 w-5 place-items-center rounded-md border border-divborder">
-                {STATUS_ICONS[s]}
+                {STATUS_ICONS[status]}
               </span>
-              {s}
+              {status}
             </span>
           </SelectItem>
         ))}

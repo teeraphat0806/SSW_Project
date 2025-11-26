@@ -56,8 +56,8 @@ export const billData = [
         {
           poNumber: "PO-001",
           total: 1000,
-          
-          urlPo: ["po1.pdf"],
+          Customer: { connect: { id: 1 } },
+          urlPo: ["po/1/1764165666751_6845381f_3754_20250619154804853.pdf"],
           date: new Date(),
           Product: {
             create: [
@@ -106,8 +106,8 @@ export const billData = [
         {
           poNumber: "PO-002",
           total: 2000,
-          
-          urlPo: ["po2.pdf"],
+          Customer: { connect: { id: 2 } },
+          urlPo: ["po/2/1764165579932_a96687e4_3214654_104x104x460.pdf"],
           date: new Date(),
           Product: {
             create: [
@@ -136,7 +136,6 @@ export const billData = [
   {
     Customer: { connect: { id: 3 } },
     yourRef: "REF102",
-    //invoiceNo: "INV102",
     codeCustomer: generateCode(),
     credit: new Date("2025-08-31"),
     deliveryDate: new Date("2025-10-28"),
@@ -156,8 +155,8 @@ export const billData = [
         {
           poNumber: "PO-003",
           total: 3000,
-          
-          urlPo: ["po3.pdf"],
+          Customer: { connect: { id: 3 } },
+          urlPo: ["po/3/1764165700182_9832fd5d_375455_PVS0289.pdf"],
           date: new Date(),
           Product: {
             create: [
@@ -206,8 +205,8 @@ export const billData = [
         {
           poNumber: "PO-004",
           total: 4000,
-          
-          urlPo: ["po4.pdf"],
+          Customer: { connect: { id: 4 } },
+          urlPo: ["po/4/1764165734119_7e5effad_52467_SSW250833__2_.pdf"],
           date: new Date(),
           Product: {
             create: [
@@ -256,8 +255,8 @@ export const billData = [
         {
           poNumber: "PO-005",
           total: 5000,
-          
-          urlPo: ["po5.pdf"],
+          Customer: { connect: { id: 5 } },
+          urlPo: ["po/5/1764165758648_904c45d3_88964_SSW250833__2_.pdf"],
           date: new Date(),
           Product: {
             create: [
