@@ -1,7 +1,12 @@
 "use client";
 import React, { useEffect, useRef, useState } from "react";
 import { TextArea } from "@radix-ui/themes";
-import { Loader2, ArrowBigRight } from "lucide-react";
+import {
+  Loader2,
+  ArrowBigRight,
+  Lightbulb,
+  BotMessageSquare,
+} from "lucide-react";
 import { ModeDropdown, type Mode } from "@/components/DropdownMenu";
 import { exampleQueries } from "@/data/example-query/selectData";
 import { exampleQueriesCreate } from "@/data/example-query/createData";
@@ -57,13 +62,13 @@ function MessageBox({
 
 export default function Home() {
   const [messages, setMessages] = useState<{ text: string; isUser: boolean }[]>(
-    [{ text: "Hello! 👋", isUser: false }]
+    []
   );
   const [userText, setUserText] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const listRef = useRef<HTMLDivElement | null>(null);
   const [mode, setMode] = React.useState<Mode>("view");
-
+  const [hint, setHint] = useState("");
   // auto scroll ไปล่างเมื่อมีข้อความใหม่
   useEffect(() => {
     listRef.current?.scrollTo({
@@ -91,7 +96,26 @@ export default function Home() {
       setUserText(rnd);
     }
   };
-
+  const handleHint = () => {
+    // cSpell:ignore แนะนำ สามารถถามข้อมูลลูกค้า ข้อมูลการสั่งซื้อ ข้อมูลสต็อคสินค้า เพิ่มข้อมูลลูกค้าใหม่ ออเดอร์ แก้ไขข้อมูลลูกค้าใหม่
+    let newHint = "";
+    if (mode === "view") {
+      newHint =
+        "💡แนะนำ: สามารถถามข้อมูลลูกค้า ข้อมูลการสั่งซื้อ ข้อมูลสต็อคสินค้าได้เลย";
+    } else if (mode === "createData") {
+      newHint = "💡แนะนำ: เพิ่มข้อมูลลูกค้าใหม่ ออเดอร์ได้เลย ";
+    } else if (mode === "editData") {
+      newHint = "💡แนะนำ: แก้ไขข้อมูลลูกค้าใหม่ ออเดอร์ได้เลย";
+    }
+    setHint(newHint);
+    setMessages((prev) => [
+      ...prev,
+      {
+        text: newHint,
+        isUser: false,
+      },
+    ]);
+  };
   const handleSend = async () => {
     if (!userText.trim()) return;
 
@@ -154,14 +178,30 @@ export default function Home() {
     <main className="flex flex-col h-screen">
       {/* พื้นที่ข้อความ */}
       <div className="flex-1 overflow-y-auto">
-        <div
-          ref={listRef}
-          className="h-full flex flex-col space-y-2 px-4 py-4 mx-auto w-full max-w-3xl"
-        >
-          {messages.map((msg, i) => (
-            <MessageBox key={i} message={msg.text} isUser={msg.isUser} />
-          ))}
-        </div>
+        {messages.length && (
+          <div
+            ref={listRef}
+            className="h-full flex flex-col space-y-2 px-4 py-4 mx-auto w-full max-w-3xl"
+          >
+            {messages.map((msg, i) => (
+              <MessageBox key={i} message={msg.text} isUser={msg.isUser} />
+            ))}
+          </div>
+        )}
+        {!messages.length && (
+          <div className="flex flex-col items-center justify-center text-center h-full px-4">
+            <div className="flex items-center gap-4 ">
+              <BotMessageSquare className="w-25 h-25" />
+              <h2 className="text-2xl font-semibold mb-4">
+                สวัสดี! ยินดีต้อนรับสู่ AI
+              </h2>
+            </div>
+            <p className="text-gray-600 mb-6 ">
+              สามารถสอบถามข้อมูลต่างๆได้เลย เช่น ข้อมูลลูกค้า ข้อมูลการสั่งซื้อ
+              หรือแม้แต่เพิ่มข้อมูลลูกค้าใหม่
+            </p>
+          </div>
+        )}
       </div>
 
       {/* กล่องพิมพ์อยู่ล่างสุด */}
@@ -198,6 +238,9 @@ export default function Home() {
                 onClick={handleRandom}
               >
                 🎲 สุ่ม
+              </button>
+              <button onClick={handleHint}>
+                <Lightbulb className="opacity-70 hover:cursor-pointer hover:opacity-100 hover:scale-120 transition-all" />
               </button>
             </div>
             <div className="flex items-center gap-3 justify-between sm:justify-end">
