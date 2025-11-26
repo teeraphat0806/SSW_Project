@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { PutObjectCommand } from "@aws-sdk/client-s3";
 import crypto from "crypto";
-import { minioClient } from "../../../../lib/minio";
+import { minioClient } from "@/lib/minio";
 
 const BUCKET = process.env.MINIO_BUCKET;
 
@@ -9,6 +9,12 @@ export const runtime = "nodejs";
 
 export async function POST(req: NextRequest) {
   try {
+    if (!BUCKET) {
+      return NextResponse.json(
+        { error: "MINIO_BUCKET is not set" },
+        { status: 500 }
+      );
+    }
     const from = await req.formData();
     const poNumber = String(from.get("poNumber"));
     const customerId = String(from.get("customerId"));
