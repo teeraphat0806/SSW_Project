@@ -9,10 +9,22 @@ export async function GET(
 
   console.log("Postcode received:", codeCustomer);
   try {
-    const result = await prisma.bill.findUnique({
+    const bill = await prisma.bill.findUnique({
       where: { codeCustomer: codeCustomer },
     });
-    return NextResponse.json(result, { status: 200 });
+    const customer = await prisma.customer.findUnique({
+      where: { id: bill?.customerId },
+    });
+    const orderPO = await prisma.orderPO.findMany({
+      where: { billId: bill?.id },
+    });
+    const product = await prisma.product.findMany({
+      where: { orderPOId: { in: orderPO.map((order) => order.id) } },
+    });
+    return NextResponse.json(
+      { bill, customer, orderPO, product },
+      { status: 200 }
+    );
   } catch (e) {
     return NextResponse.json(
       { error: "Failed to fetch postcode" + e },
