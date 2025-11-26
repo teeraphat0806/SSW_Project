@@ -170,15 +170,14 @@ model TypeStaffIncome {
   types   String
   incomes StaffIncome[]
 }
-
-model SteelType {
-  id         Int          @id @default(autoincrement())
-  codeSteel  String       @unique
-  detail     String?
-  amount     Int          @default(0)
-  shape      ShapeSteel
-  price      Float
-  Product    Product[]
+model SteelType{
+  id        Int    @id @default(autoincrement())
+  codeSteel String @unique
+  detail    String?
+  amount    Int    @default(0)
+  shape     ShapeSteel
+  price     Float
+  Product   Product[] 
   SteelStock SteelStock[]
   createdAt  DateTime     @default(now())
   updatedAt  DateTime     @updatedAt
