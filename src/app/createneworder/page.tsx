@@ -12,27 +12,24 @@ import AddItem from "@/components/newJobOrder/AddItem";
 import "../globals.css";
 import { ArrowLeft, FileText, Save, X } from "lucide-react";
 import SelectCustomer from "@/components/SelectCustomer";
+//import { se } from "date-fns/locale";
 
-interface SteelItem {
+type SteelItem = {
   id: string;
   steelType: string;
+  shape: "line" | "square" | string;
   quantity: number;
   width: number;
   length: number;
   thickness: number;
-  notes?: string;
-}
+  notes: string;
+};
 
-const steelTypes = [
-  "Carbon Steel",
-  "Stainless Steel",
-  "Aluminum",
-  "Galvanized Steel",
-  "Cold Rolled Steel",
-  "Hot Rolled Steel",
-  "Mild Steel",
-  "Tool Steel",
-];
+type SteelType = {
+  id: string;
+  name: string; // ใช้แสดงใน Select
+  shape: string; // 'line' | 'square' | ...
+};
 
 const NewJobOrder = () => {
   const router = useRouter();
@@ -41,11 +38,17 @@ const NewJobOrder = () => {
   const [showForm, setShowForm] = useState(false); //แสดงหรือซ่อนข้อมุลลูกค้า
   const toggleForm = () => setShowForm(!showForm); //ฟังก์ชั่นแสดงฟอร์มลูกค้า
   const [open, setOpen] = useState(false); //เปิดหรือปิด SelectCustomer
+  // ลูกค้า
   const [customers, setCustomers] = useState<{ id: string; name: string }[]>(
     []
-  ); //เก็บข้อมุลลูกค้า
-  const [search, setSearch] = useState(""); // เก็บค่าที่ค้นหา
+  );
+  const [searchCustoer, setsearchCustoer] = useState(""); // เก็บค่าที่ค้นหาลูกค้า
+
+  // สินค้า
+  const [searchItem, setsearchItem] = useState(""); //เก็บค่าที่ค้นหาสินค้า
+  const [loadingSteel, setLoadingSteel] = useState(false);
   const [loading, setLoading] = useState(false); //สถานะโหลดข้อมุล
+
   const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(
     null
   ); // เก็บ ID ลูกค้าที่เลือกจาก SelectCustomer
@@ -54,10 +57,13 @@ const NewJobOrder = () => {
     poNumber: "",
     deliveryDate: "",
   });
+
+  const [steelTypes, setSteelTypes] = useState<SteelType[]>([]);
   const [steelItems, setSteelItems] = useState<SteelItem[]>([
     {
       id: "1",
-      steelType: "",
+      steelType: "ss400",
+      shape: "line",
       quantity: 1,
       width: 0,
       length: 0,
@@ -68,24 +74,59 @@ const NewJobOrder = () => {
 
   useEffect(() => {
     let ignore = false;
+
+    const fetchSteelTypes = async () => {
+      setLoadingSteel(true);
+      try {
+        const urlSteelType =
+          searchItem.trim() === ""
+            ? "http://localhost:3000/api/steelType"
+            : `http://localhost:3000/api/steelType/${encodeURIComponent(
+                searchItem
+              )}`;
+
+        const res = await fetch(urlSteelType);
+        if (!res.ok) throw new Error("Error fetching steel types");
+
+        const data = await res.json();
+
+        if (!ignore) {
+          // 👇 ตรงนี้เปลี่ยนเป็น setSteelTypes
+          setSteelTypes(
+            data.map((t: { id: number; codeSteel: string; shape: string }) => ({
+              id: t.id.toString(),
+              name: t.codeSteel, // ใช้เป็น value/label ใน Select
+              shape: t.shape,
+            }))
+          );
+        }
+      } catch (e) {
+        console.error(e);
+        if (!ignore) setSteelTypes([]); // ล้างเฉพาะรายการ "ประเภทเหล็ก"
+      } finally {
+        if (!ignore) setLoadingSteel(false);
+      }
+    };
+
     const fetchCustomers = async () => {
       setLoading(true);
       try {
-        const url =
-          search.trim() === ""
+        const urlCustomer =
+          searchCustoer.trim() === ""
             ? "http://localhost:3000/api/customer"
             : `http://localhost:3000/api/customer/name/${encodeURIComponent(
-                search
+                searchCustoer
               )}`;
-        const res = await fetch(url);
+        const res = await fetch(urlCustomer);
         if (!res.ok) throw new Error("Error fetching customers");
 
         const data = await res.json();
+
         if (!ignore) {
           setCustomers(
-            data.map((customers: { id: number; name: string }) => ({
-              id: customers.id.toString(),
-              name: customers.name,
+            data.map((c: { id: number; name: string }) => ({
+              id: c.id.toString(),
+              name: c.name,
             }))
           );
         }
@@ -97,11 +138,13 @@ const NewJobOrder = () => {
       }
     };
 
+    fetchSteelTypes();
     fetchCustomers();
+
     return () => {
       ignore = true;
     };
-  }, [search]);
+  }, [searchCustoer, searchItem]);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files) {
@@ -139,11 +182,10 @@ const NewJobOrder = () => {
     const form = new FormData();
     form.append("poNumber", poNumber);
     form.append("customerId", String(customerId)); // สำคัญ: แปลงเป็น string
-
     files.forEach((f) => form.append("files", f));
 
     // ใช้ relative path กัน CORS/timezone/env
-    const res = await fetch("/api/upload/po", {
+    const res = await fetch("/api/upload/po/uploadPo", {
       method: "POST",
       body: form,
     });
@@ -155,6 +197,7 @@ const NewJobOrder = () => {
     }
     const data: UploadResponse = await res.json().catch(() => ({}));
     if (!res.ok) {
+      console.error("Upload error:", data?.error);
       throw new Error(data?.error || "อัปโหลดไฟล์ไม่สำเร็จ");
     }
 
@@ -211,7 +254,6 @@ const NewJobOrder = () => {
       const payloadBill = {
         customerId: Number(customerId),
         yourRef: "REF108",
-        invoiceNo: "INV108",
         deliveryDate: new Date(po.deliveryDate).toISOString(),
         deliveryOrderNo: "DO108",
         vat: 7.0,
@@ -243,10 +285,23 @@ const NewJobOrder = () => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payloadBill),
       });
+
+      const rawText = await billRes.text(); // อ่านเป็น text ก่อน
+      console.log("createNewOrder status:", billRes.status);
+      console.log("createNewOrder raw response:", rawText);
+
+      console.log("Payload Bill:", payloadBill);
       if (!billRes.ok) {
-        throw new Error("เกิดข้อผิดพลาดในการสร้างออเดอร์ใหม่");
+        throw new Error(rawText || "เกิดข้อผิดพลาดในการสร้างออเดอร์ใหม่");
       }
-      const billData = await billRes.json();
+      let billData: any = null;
+      try {
+        billData = JSON.parse(rawText);
+      } catch {
+        // ถ้า backend ไม่ได้ส่ง JSON กลับมา ก็ปล่อยเป็น null ไป
+        billData = null;
+      }
+
       console.log("สร้างออเดอร์ใหม่สำเร็จ:", billData);
       toast.success("สร้างออเดอร์ใหม่สำเร็จ", {
         position: "bottom-right",
@@ -282,6 +337,7 @@ const NewJobOrder = () => {
       steelType: "",
       quantity: 1,
       width: 0,
+      shape: "line",
       length: 0,
       thickness: 0,
       notes: "",
@@ -312,28 +368,9 @@ const NewJobOrder = () => {
     for (const item of steelItems) {
       if (!item.steelType) return "กรุณาเลือกประเภทเหล็ก";
       if (item.quantity <= 0) return "จำนวนชิ้นต้องมากกว่า 0";
-      if (item.width <= 0) return "ความกว้างต้องมากกว่า 0";
-      if (item.length <= 0) return "ความยาวต้องมากกว่า 0";
-      if (item.thickness <= 0) return "ความหน้าต้องมากกว่า 0";
     }
     return null;
   };
-
-  //-------------------------------------------------------------------
-  // const getPriorityColor = (priority: string) => {
-  //   switch (priority) {
-  //     case "urgent":
-  //       return "bg-destructive text-destructive-foreground";
-  //     case "high":
-  //       return "bg-warning text-warning-foreground";
-  //     case "normal":
-  //       return "bg-primary text-primary-foreground";
-  //     case "low":
-  //       return "bg-muted text-muted-foreground";
-  //     default:
-  //       return "bg-muted text-muted-foreground";
-  //   }
-  // };
 
   return (
     <div className="min-h-screen md:pl-24 ">
@@ -371,8 +408,8 @@ const NewJobOrder = () => {
               selectedCustomerId={selectedCustomerId}
               setSelectedCustomer={setSelectedCustomerId}
               customers={customers}
-              search={search}
-              setSearch={setSearch}
+              search={searchCustoer}
+              setSearch={setsearchCustoer}
               loading={loading}
             />
           )}
@@ -457,6 +494,7 @@ const NewJobOrder = () => {
                     </div>
                   )}
                 </div>
+                {/* AddItem */}
                 <div className="mb-4">
                   <AddItem
                     steelItems={steelItems}
@@ -466,8 +504,12 @@ const NewJobOrder = () => {
                     steelTypes={steelTypes}
                     po={po}
                     setpo={setpo}
+                    searchItem={searchItem}
+                    setsearchItem={setsearchItem}
+                    loadingSteel={loadingSteel}
                   />
                 </div>
+
                 <div>
                   <Card className="shadow-steel">
                     <CardHeader>

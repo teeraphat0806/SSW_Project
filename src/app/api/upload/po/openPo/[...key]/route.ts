@@ -17,10 +17,11 @@ export async function GET(
       );
     }
 
-    // ⬇️ ต้อง await ก่อนใช้งาน
+ 
     const { key } = await context.params;
     console.log("key:", key);
     const objectKey = key.join("/"); // "po/2/1764....pdf"
+    const fileName = key[key.length - 1];
 
     const res = await minioClient.send(
       new GetObjectCommand({
@@ -47,7 +48,7 @@ export async function GET(
       headers: {
         "Content-Type": res.ContentType || "application/pdf",
         // ถ้าอยากให้โหลดเลย:
-        // "Content-Disposition": `inline; filename="${key.split("/").pop()}"`
+         //"Content-Disposition": `inline;filename="${encodeURIComponent(fileName)}"`
       },
     });
   } catch (e) {
