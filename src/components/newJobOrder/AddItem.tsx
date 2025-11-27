@@ -27,11 +27,12 @@ export default function AddItem({
   addSteelItem,
   removeSteelItem,
   steelTypes,
-  po,
+  headOrder,
+  setheadOrder,
   searchItem,
   setsearchItem,
   loadingSteel,
-  setpo,
+  
 }) {
   // คำนวณวันที่ปัจจุบันในรูปแบบ YYYY-MM-DD
   const today = new Date().toISOString().split("T")[0];
@@ -47,7 +48,7 @@ export default function AddItem({
       return;
     }
 
-    setpo({ ...po, deliveryDate: selectedDate });
+    setheadOrder({ ...headOrder, deliveryDate: selectedDate });
   };
 
   return (
@@ -77,31 +78,45 @@ export default function AddItem({
 
       <CardContent className="space-y-8">
         {/* กรอกเลข PO และวันที่ครั้งเดียว */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-4 border rounded-lg bg-muted/30">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 p-4 border rounded-lg bg-muted/30">
           <div>
             <Label htmlFor="poNumber">เลขที่ใบ PO</Label>
             <Input
               id="poNumber"
               type="text"
               placeholder="เช่น PO-2025001"
-              value={po.poNumber}
-              onChange={(e) => setpo({ ...po, poNumber: e.target.value })}
+              value={headOrder.poNumber}
+              onChange={(e) => setheadOrder({ ...headOrder, poNumber: e.target.value })}
               className="mt-1"
             />
           </div>
 
           <div>
+            <Label htmlFor="yourRef">yourRef</Label>
+            <Input
+              id="yourRef"
+              type="text"
+              placeholder="เช่น REF100"
+              value={headOrder.yourRef}
+              onChange={(e) => setheadOrder({ ...headOrder, yourRef: e.target.value })}
+              className="mt-1"
+            />
+          </div>
+          
+          <div>
             <Label htmlFor="deliveryDate">วันที่ต้องการส่ง</Label>
             <Input
               id="deliveryDate"
               type="date"
-              value={po.deliveryDate}
+              value={headOrder.deliveryDate}
               min={today}
               onChange={handleDateChange}
               className="mt-1"
             />
           </div>
+          
         </div>
+        
 
         {/* รายการเหล็ก */}
         {steelItems.map((item, index) => (

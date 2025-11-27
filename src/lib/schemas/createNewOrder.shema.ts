@@ -5,7 +5,6 @@ export const CreateNewOrderSchema = z.object({
     yourRef: z.string(),
     credit: z.coerce.date().optional(),
     deliveryDate: z.coerce.date(),
-    deliveryOrderNo: z.string(),
     salesName: z.string().optional(),
     vat: z.number(),
     orderPOs: z.array(

@@ -76,7 +76,7 @@ export async function POST(req: NextRequest) {
         codeCustomer: generateCode(),
         //credit: new Date(),
         deliveryDate: new Date(validateData.deliveryDate),
-        deliveryOrderNo: validateData.deliveryOrderNo,
+        
         salesName: session.user?.name,
         Staff_Bill_salesNameToStaff: {
           connect: { id: Number(session.user?.id) },

@@ -52,16 +52,17 @@ const NewJobOrder = () => {
   const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(
     null
   ); // เก็บ ID ลูกค้าที่เลือกจาก SelectCustomer
-  const [po, setpo] = useState({
+  const [headOrder, setheadOrder] = useState({
     //เก็บข้อมูล PO
     poNumber: "",
     deliveryDate: "",
+    yourRef: "",
   });
 
   const [steelTypes, setSteelTypes] = useState<SteelType[]>([]);
   const [steelItems, setSteelItems] = useState<SteelItem[]>([
     {
-      id: "1",
+      id: "",
       steelType: "ss400",
       shape: "line",
       quantity: 1,
@@ -247,19 +248,19 @@ const NewJobOrder = () => {
 
       const poKeys = await UploadFiles({
         files: UploadFile,
-        poNumber: po.poNumber,
+        poNumber: headOrder.poNumber,
+
         customerId: customerId,
       });
 
       const payloadBill = {
         customerId: Number(customerId),
         yourRef: "REF108",
-        deliveryDate: new Date(po.deliveryDate).toISOString(),
-        deliveryOrderNo: "DO108",
+        deliveryDate: new Date(headOrder.deliveryDate).toISOString(),
         vat: 7.0,
         orderPOs: [
           {
-            poNumber: po.poNumber,
+            poNumber: headOrder.poNumber,
             total: steelItems.reduce((sum, item) => {
               return sum + item.quantity;
             }, 0),
@@ -294,7 +295,7 @@ const NewJobOrder = () => {
       if (!billRes.ok) {
         throw new Error(rawText || "เกิดข้อผิดพลาดในการสร้างออเดอร์ใหม่");
       }
-      let billData: any = null;
+      let billData: undefined = null;
       try {
         billData = JSON.parse(rawText);
       } catch {
@@ -363,8 +364,8 @@ const NewJobOrder = () => {
       if (!formData.faxNumber.trim()) return "กรุณากรอกเลข Fax";
     }
     if (!UploadFile.length) return "กรุณาอัปโหลดไฟล์ใบ PO";
-    if (!po.poNumber.trim()) return "กรุณากรอกหมายเลข PO";
-    if (!po.deliveryDate) return "กรุณากรอกวันที่ต้องการสินค้า";
+    if (!headOrder.poNumber.trim()) return "กรุณากรอกหมายเลข PO";
+    if (!headOrder.deliveryDate) return "กรุณากรอกวันที่ต้องการสินค้า";
     for (const item of steelItems) {
       if (!item.steelType) return "กรุณาเลือกประเภทเหล็ก";
       if (item.quantity <= 0) return "จำนวนชิ้นต้องมากกว่า 0";
@@ -502,8 +503,8 @@ const NewJobOrder = () => {
                     addSteelItem={addSteelItem}
                     removeSteelItem={removeSteelItem}
                     steelTypes={steelTypes}
-                    po={po}
-                    setpo={setpo}
+                    headOrder={headOrder}
+                    setheadOrder={setheadOrder}
                     searchItem={searchItem}
                     setsearchItem={setsearchItem}
                     loadingSteel={loadingSteel}
@@ -548,7 +549,7 @@ const NewJobOrder = () => {
                           <span className="text-muted-foreground">
                             Deadline:
                           </span>
-                          {po.deliveryDate}
+                          {headOrder.deliveryDate}
                         </div>
                       </div>
                       <Separator />
