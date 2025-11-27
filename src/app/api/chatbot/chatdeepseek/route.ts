@@ -337,6 +337,18 @@ String search rules (very important):
 - Apply this rule to **every table** that contains textual fields (such as "name", "detail", "description", "code", "bankName", "address", "email", "tel", etc).
 - Always use ILIKE instead of = when comparing text fields that are likely partial or uncertain.
 - Only use = for exact identifiers like numeric IDs, unique codes, or foreign keys.
+- If the user inputs a Buddhist year (ปี พ.ศ.), convert it to Christian year (ปี ค.ศ.) by subtracting 543.
+- If the user says the customer name directly → use "=".
+- If the user says “มีคำว่า”, “contains”, “ประมาณว่า”, or types partial text → use ILIKE '%keyword%'.
+- For date filters:
+  - If user asks for a single day → use o."date"::date = DATE 'YYYY-MM-DD'.
+  - If user asks for a date range → use:
+      o."date" >= 'YYYY-MM-DD 00:00:00'
+      AND o."date" <  'YYYY-MM-DD+1 00:00:00'
+  - If user includes time range → merge date + time:
+      o."date" >= 'YYYY-MM-DD HH:MM:00'
+      AND o."date" <= 'YYYY-MM-DD HH:MM:59'
+- If user mentions PO number → search with ILIKE unless the user explicitly says “เท่ากับ”.
 
 Examples:
 - If the user says "หาลูกค้าชื่อ กรุงเทพ", generate  
@@ -367,13 +379,46 @@ Examples:
   \`SELECT "User".* FROM "Staff" JOIN "User" ON "Staff"."userId" = "User"."id" WHERE "Staff"."currentSalary" >= 20000\`
 - If the user says "หาพนักงานเริ่มงานปี 2024", generate
   \`SELECT "User".* FROM "Staff" JOIN "User" ON "Staff"."userId" = "User"."id" WHERE "Staff"."startDate" >= '2024-01-01'\`
-
+- If the user says "หาใบ Order PO เลข 456", generate
+  \`SELECT * FROM "OrderPO" WHERE "poNumber" ILIKE '%456%'\`
+- If the user says "หาใบ Order PO วันที่ 26 พฤศจิกายน 2026", generate
+  \`SELECT * FROM "OrderPO" WHERE "date"::date = DATE '2025-11-26'\`
+- If the user says "หาใบ Order PO ของลูกค้า กรุงเทพ", generate
+  \`SELECT 
+  o.id,
+  o."poNumber",
+  o."date",
+  o.status,
+  o.total,
+  c.id        AS "customerId",
+  c.code      AS "customerCode",
+  c.name      AS "customerName"
+FROM "OrderPO" o
+JOIN "Customer" c
+  ON c.id = o."customerId"
+WHERE c.name = 'หจก. สมบูรณ์สตีล' LIMIT 100'\`
+ - If the user says "หาใบ Order PO ของลูกค้าที่มีคำว่า บริษัท เอเชีย เมทัล โปรดักส์" และ วันที่ 26 พฤศจิกายน 2025, generate
+ \`SELECT 
+  o.id,
+  o."poNumber",
+  o."date",
+  o.status,
+  o.total,
+  c.id        AS "customerId",
+  c.code      AS "customerCode",
+  c.name      AS "customerName"
+FROM "OrderPO" o
+JOIN "Customer" c
+  ON c.id = o."customerId"
+WHERE c.name = 'บริษัท เอเชีย เมทัล โปรดักส์'
+  AND o."date"::date = DATE '2025-11-26' LIMIT 100\`
 
 General behavior:
 - Always return a valid PostgreSQL SELECT or WITH ... SELECT statement.
 - Prefer joins only when the query explicitly mentions relationships (e.g. customer name with bill total).
 - When in doubt between equality and partial match, prefer **ILIKE with wildcards**.
 - Never output explanations, Markdown fences, or extra text—only pure SQL.
+- Always convert พ.ศ. to ค.ศ. when needed.
 `;
 
 export async function GETSQL(sql: string) {
@@ -486,12 +531,53 @@ export async function POST(req: NextRequest) {
     //   // result: rows, // เปิดคอมเมนต์เมื่อรันจริง
     // });
     const response = await GETSQL(rawSql);
-    const narration = await narrateArrayWithOpenRouter(response);
+
+    if (Array.isArray(response)) {
+      const rowWithUrlPo = response.find(
+        (row) =>
+          row &&
+          Array.isArray(row.urlPo) &&
+          row.urlPo.length > 0 &&
+          typeof row.urlPo[0] === "string"
+      );
+
+      if (rowWithUrlPo) {
+        const filePath = rowWithUrlPo.urlPo[0].replace(/^\/+/, "");
+        const openPoUrl = `http://localhost:3000/api/upload/po/openPo/${filePath}`;
+
+        const openPoResp = await fetch(openPoUrl, { method: "GET" });
+
+        if (!openPoResp.ok) {
+          const errText = await openPoResp.text().catch(() => "");
+          throw new Error(`openPo error ${openPoResp.status}: ${errText}`);
+        }
+
+        // อ่านเป็น binary (PDF)
+        const pdfBuffer = await openPoResp.arrayBuffer();
+
+        return new NextResponse(pdfBuffer, {
+          status: 200,
+          headers: {
+            "Content-Type":
+              openPoResp.headers.get("content-type") || "application/pdf",
+            // ถ้าปลายทางมี Content-Disposition อยู่แล้วจะดึงมาใช้ต่อ
+            "Content-Disposition":
+              openPoResp.headers.get("content-disposition") || "inline",
+          },
+        });
+      }
+    }
+
+    // กรณีไม่มี urlPo → ค่อย narrate ตามปกติ
+    const narration = await narrateArrayWithOpenRouter(
+      Array.isArray(response) ? response : [response]
+    );
+
     return NextResponse.json({
       sql: rawSql,
-      result: narration, // ให้ผลลัพธ์จาก /api/chatbot
+      result: narration,
     });
-  } catch (e: any) {
+  } catch (e) {
     return NextResponse.json(
       { error: e?.message || "Internal error" },
       { status: 500 }
