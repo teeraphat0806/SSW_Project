@@ -3,13 +3,11 @@ import {z} from 'zod'
 export const CreateNewOrderSchema = z.object({
     customerId: z.number().int().positive(),
     yourRef: z.string(),
-    invoiceNo: z.string(),
     credit: z.coerce.date().optional(),
     deliveryDate: z.coerce.date(),
     deliveryOrderNo: z.string(),
     salesName: z.string().optional(),
     vat: z.number(),
-    codeCustomer: z.string(),
     orderPOs: z.array(
         z.object({
         poNumber: z.string(),
