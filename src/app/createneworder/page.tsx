@@ -23,6 +23,7 @@ type SteelItem = {
   length: number;
   thickness: number;
   notes: string;
+  hasNotes: boolean;
 };
 
 type SteelType = {
@@ -63,13 +64,14 @@ const NewJobOrder = () => {
   const [steelItems, setSteelItems] = useState<SteelItem[]>([
     {
       id: "",
-      steelType: "ss400",
-      shape: "line",
+      steelType: "",
+      shape: "",
       quantity: 1,
       width: 0,
       length: 0,
       thickness: 0,
       notes: "",
+      hasNotes: false,
     },
   ]);
 
@@ -288,12 +290,12 @@ const NewJobOrder = () => {
       });
 
       const rawText = await billRes.text(); // อ่านเป็น text ก่อน
-      console.log("createNewOrder status:", billRes.status);
-      console.log("createNewOrder raw response:", rawText);
+      // console.log("createNewOrder status:", billRes.status);
+      // console.log("createNewOrder raw response:", rawText);
 
       console.log("Payload Bill:", payloadBill);
       if (!billRes.ok) {
-        throw new Error(rawText || "เกิดข้อผิดพลาดในการสร้างออเดอร์ใหม่");
+        throw new Error("เกิดข้อผิดพลาดในการสร้างออเดอร์ใหม่");
       }
       let billData: undefined = null;
       try {
@@ -342,6 +344,7 @@ const NewJobOrder = () => {
       length: 0,
       thickness: 0,
       notes: "",
+      hasNotes: false,
     };
     setSteelItems((prev) => [...prev, newItem]);
   };

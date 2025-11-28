@@ -19,7 +19,9 @@ import {
 
 import "@/app/globals.css";
 
-import { Package, Plus, X } from "lucide-react";
+import { Check, Package, Plus, X } from "lucide-react";
+import { Checkbox } from "@radix-ui/react-checkbox";
+import React from "react";
 
 export default function AddItem({
   steelItems,
@@ -32,7 +34,6 @@ export default function AddItem({
   searchItem,
   setsearchItem,
   loadingSteel,
-  
 }) {
   // คำนวณวันที่ปัจจุบันในรูปแบบ YYYY-MM-DD
   const today = new Date().toISOString().split("T")[0];
@@ -86,7 +87,9 @@ export default function AddItem({
               type="text"
               placeholder="เช่น PO-2025001"
               value={headOrder.poNumber}
-              onChange={(e) => setheadOrder({ ...headOrder, poNumber: e.target.value })}
+              onChange={(e) =>
+                setheadOrder({ ...headOrder, poNumber: e.target.value })
+              }
               className="mt-1"
             />
           </div>
@@ -98,11 +101,13 @@ export default function AddItem({
               type="text"
               placeholder="เช่น REF100"
               value={headOrder.yourRef}
-              onChange={(e) => setheadOrder({ ...headOrder, yourRef: e.target.value })}
+              onChange={(e) =>
+                setheadOrder({ ...headOrder, yourRef: e.target.value })
+              }
               className="mt-1"
             />
           </div>
-          
+
           <div>
             <Label htmlFor="deliveryDate">วันที่ต้องการส่ง</Label>
             <Input
@@ -114,14 +119,16 @@ export default function AddItem({
               className="mt-1"
             />
           </div>
-          
         </div>
-        
 
         {/* รายการเหล็ก */}
         {steelItems.map((item, index) => (
-          <div key={item.id} className="border rounded-lg p-4 bg-muted/30">
-            <div className="flex items-center justify-between mb-4">
+          <React.Fragment key={item.id}>
+            {index > 0 && (
+      <div className="border-t border-border my-0" /> 
+    )}
+          <div className="bg-muted/30 p-4 rounded-lg my-0">
+            {/* <div className="flex items-center justify-between mb-4">
               <h4 className="font-semibold text-foreground">
                 ประเภทที่ {index + 1}
               </h4>
@@ -136,24 +143,45 @@ export default function AddItem({
                   <X className="h-4 w-4" />
                 </Button>
               )}
-            </div>
+            </div> */}
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 items-end">
               {/* ประเภทเหล็ก */}
               <div>
-                <Label>ประเภทเหล็ก</Label>
+                {/* ใช้ Label เป็น Flex Container เพื่อจัดเรียงเลขลำดับและปุ่ม X */}
+                <Label className="flex items-center justify-between">
+                  <span className="flex items-center">
+                    {/* แสดงเลขลำดับ: จัดรูปแบบให้ดูเด่นและเล็ก */}
+                    <span className="inline-flex items-center justify-center h-5 w-5 mr-2 text-xs font-bold bg-background border rounded-full">
+                      {index + 1}
+                    </span>
+                    ประเภทเหล็ก
+                  </span>
+
+                  {/* ปุ่มลบ (X): จัดไว้ชิดขวาของ Label */}
+                  {steelItems.length > 1 && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => removeSteelItem(item.id)}
+                      // ปรับขนาดปุ่มให้เล็ก h-6 w-6 และเอา padding ออก p-0
+                      className="text-destructive h-6 w-6 p-0 hover:bg-destructive/10"
+                    >
+                      <X className="h-3 w-3" /> {/* ใช้ไอคอนขนาดเล็ก h-3 w-3 */}
+                    </Button>
+                  )}
+                </Label>
+
                 <Select
                   value={item.steelType || ""}
                   onValueChange={(value) => {
-                    // ✅ หา steel type จาก name (ไม่ใช่ type.steelType)
                     const selected = steelTypes.find(
                       (type) => type.name === value
                     );
                     if (!selected) return;
 
-                    // เก็บชื่อไว้ใน steelType ของรายการ
                     updateSteelItem(item.id, "steelType", selected.name);
-                    // เก็บ shape เอาไว้ใช้ซ่อน/โชว์ช่องกว้าง/ยาว/หนา
                     updateSteelItem(item.id, "shape", selected.shape);
                   }}
                 >
@@ -162,6 +190,7 @@ export default function AddItem({
                   </SelectTrigger>
 
                   <SelectContent className="bg-background text-foreground shadow-md border z-50 max-h-[200px] overflow-y-auto">
+                    {/* ... ส่วน Select Options เดิม ... */}
                     <div className="px-2 py-1">
                       <Input
                         placeholder="ค้นหาประเภทเหล็ก..."
@@ -176,13 +205,11 @@ export default function AddItem({
                         กำลังโหลด...
                       </div>
                     )}
-
                     {!loadingSteel && steelTypes.length === 0 && (
                       <div className="px-2 py-1 text-xs text-muted-foreground">
                         ไม่พบประเภทเหล็ก
                       </div>
                     )}
-
                     {!loadingSteel &&
                       steelTypes.map((type) => (
                         <SelectItem key={type.id} value={type.name}>
@@ -197,8 +224,7 @@ export default function AddItem({
                   </SelectContent>
                 </Select>
               </div>
-
-              {/* จำนวน */}
+              {/* 2. จำนวน */}
               <div>
                 <Label>จำนวน (ชิ้น)</Label>
                 <Input
@@ -216,7 +242,7 @@ export default function AddItem({
                 />
               </div>
 
-              {/* กว้าง: สำหรับ shape = square เท่านั้น */}
+              {/* 3. กว้าง: สำหรับ shape = square เท่านั้น */}
               {item.shape === "square" && (
                 <div>
                   <Label>กว้าง (ซม.)</Label>
@@ -237,7 +263,7 @@ export default function AddItem({
                 </div>
               )}
 
-              {/* ยาว: square + line */}
+              {/* 4. ยาว: square + line */}
               {(item.shape === "square" || item.shape === "line") && (
                 <div>
                   <Label>ยาว (ซม.)</Label>
@@ -258,7 +284,7 @@ export default function AddItem({
                 </div>
               )}
 
-              {/* หนา: square + line */}
+              {/* 5. หนา: square + line */}
               {(item.shape === "square" || item.shape === "line") && (
                 <div>
                   <Label>หนา (ซม.)</Label>
@@ -278,21 +304,62 @@ export default function AddItem({
                   />
                 </div>
               )}
+              {/* 6. คอลัมน์ Checkbox สำหรับรายละเอียดเพิ่มเติม */}
+              <div className="col-span-full lg:col-span-1">
+                <div className="flex items-center justify-start h-full"> 
+                    <div className="flex items-center space-x-2 pb-1">
+                        <Checkbox
+                            id={`has-notes-${item.id}`}
+                            checked={item.hasNotes || false}
+                            onCheckedChange={(checked) => {
+                                updateSteelItem(item.id, "hasNotes", checked);
+                                if (!checked) {
+                                    updateSteelItem(item.id, "notes", "");
+                                }
+                            }}
+                        />
+                        <Label
+                            htmlFor={`has-notes-${item.id}`}
+                            className="cursor-pointer text-sm font-normal hidden lg:block"
+                        >
+                            {item.hasNotes ? "ซ่อนรายละเอียด" : "เพิ่มรายละเอียด"}
+                        </Label>
+                        <Label
+                            htmlFor={`has-notes-${item.id}`}
+                            className="cursor-pointer text-sm font-normal lg:hidden"
+                        >
+                            รายละเอียดเพิ่มเติม
+                        </Label>
+                    </div>
+                </div>
             </div>
-
-            <div className="mt-4">
-              <Label>รายละเอียดเพิ่มเติม</Label>
-              <Textarea
-                value={item.notes || ""}
-                onChange={(e) =>
-                  updateSteelItem(item.id, "notes", e.target.value)
-                }
-                placeholder="รายละเอียดเพิ่มเติมสำหรับเหล็กชิ้นนี้..."
-                className="mt-1"
-                rows={2}
-              />
+            
+            {/* ---------------------------------------------------- */}
+            {/* 7. Textarea (แสดงแบบเต็มความกว้างด้านล่างของ Grid เมื่อถูกเลือก) */}
+            {/* ---------------------------------------------------- */}
+            {item.hasNotes && (
+                // ใช้ col-span-full เพื่อให้ Textarea ขยายเต็มความกว้าง 6 คอลัมน์
+                <div className="col-span-full ">
+                    <Label htmlFor={`notes-${item.id}`} className="font-semibold">
+                        รายละเอียดเพิ่มเติม:
+                    </Label>
+                    <Input
+                        id={`notes-${item.id}`}
+                        value={item.notes || ""}
+                        onChange={(e) =>
+                            updateSteelItem(item.id, "notes", e.target.value)
+                        }
+                        placeholder="รายละเอียดเพิ่มเติมสำหรับเหล็กชิ้นนี้..."
+                        className="mt-1"
+                      
+                    />
+                </div>
+            )}
+              
+                
             </div>
           </div>
+          </React.Fragment>
         ))}
       </CardContent>
     </Card>
