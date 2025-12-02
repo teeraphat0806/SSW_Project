@@ -13,6 +13,7 @@
   --small-detail: 36 0% 50%;
   --aa: 0 0% 95%;
   --divborder: 36 100% 100%;
+  --hover: 240 5.9% 90%;
 
   --box: 0 0% 100%;
   --card: 0 0% 100%;
@@ -27,26 +28,20 @@
 
   --secondary: 215 25% 96%;
   --secondary-foreground: 215 25% 27%;
+  /* สีเน้น (Accent) เวลา Hover */
+  --accent: 0 0% 95%;
+  --accent-foreground: 240 5.9% 10%;
 
-  --muted: 215 25% 96%;
-  --muted-foreground: 215 15% 58%;
-
-  --accent: 213 27% 84%;
-  --accent-foreground: 215 25% 27%;
-
-  --steel: 213 27% 84%;
-  --steel-dark: 215 25% 65%;
-  --steel-darker: 215 25% 45%;
-
-  --success: 142 76% 36%;
-  --success-foreground: 0 0% 100%;
-
-  --warning: 38 92% 50%;
-  --warning-foreground: 0 0% 100%;
-
+  /* สี Destructive (ปุ่มลบ/ยกเลิก) */
   --destructive: 0 84.2% 60.2%;
-  --destructive-foreground: 210 40% 98%;
+  --destructive-foreground: 0 0% 98%;
 
+  /* เส้นขอบ  */
+  --border: 240 5.9% 90%;
+  --input: 240 5.9% 90%;
+  --ring: 240 10% 3.9%;
+
+  --radius: 0.75rem;
   /* Gradients */
   --gradient-steel: linear-gradient(
     135deg,
@@ -82,12 +77,15 @@
 
 /* Dark mode — media query style */
 .dark {
-  --background: 222.2 84% 4.9%;
+  --background: 240, 6%, 10%;
   --foreground: 210 40% 98%;
 
   --small-detail: 36 0% 70%;
   --aa: 36 0% 12%;
-  --divborder: 72 72 72;
+  --divborder:240 5% 26%;
+  --hover: 240, 5%, 26%;
+
+
   --card: #ffff;
   --card-foreground: 210 40% 98%;
 
@@ -95,7 +93,7 @@
   --popover-foreground: 210 40% 98%;
 
   --primary: 210 100% 56%;
-  --primary-foreground: 0 0% 100%;
+  --primary-foreground: #ffff;
   --primary-hover: 210 100% 48%;
 
   --secondary: 217.2 32.6% 17.5%;
@@ -124,7 +122,6 @@
   --sidebar-ring: 217.2 91.2% 59.8%;
 }
 
-
 /* Apply design tokens via pure CSS */
 body {
   background-color: hsl(var(--background));
@@ -148,4 +145,5 @@ body {
   --font-mono: var(--font-geist-mono);
   --color-small-detail: hsl(var(--small-detail));
   --color-aa: hsl(var(--aa));
+  --color-hover: hsl(var(--hover));
 }

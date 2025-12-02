@@ -1,154 +1,190 @@
-// Adjust the import paths to match your project structure
-import { Card } from "@/components/ui/card";
+import React from "react";
+import { cn } from "@/lib/utils"; // หรือ path ที่คุณเก็บ utils ไว้
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
-import { UserCog, Wrench } from "lucide-react";
-import * as React from "react";
+import { UserCog, Wrench, ShieldCheck, Users } from "lucide-react";
 
 export interface StaffInfoCardProps {
-  /** รายชื่อหัวหน้างาน (string หรือ null/undefined จะถูกจัดการให้) */
+  /** รายชื่อหัวหน้างาน */
   supervisorName?: (string | null | undefined)[];
-  /** รายชื่อช่าง (string หรือ null/undefined จะถูกจัดการให้) */
+  /** รายชื่อช่าง */
   technicians?: (string | null | undefined)[];
   /** className เสริมจากภายนอก */
   className?: string;
 }
 
 /**
- * StaffInfoCard
- * - แสดงหัวหน้างานและช่างที่รับผิดชอบในรูปแบบการ์ดเรียบง่าย มืออาชีพ
- * - แสดงเป็น list รายชื่อ ไม่มีกรอบ/Avatar ตามที่ระบุ
- * - ปลอดภัยต่อข้อมูลที่อาจเป็น null / undefined หรือ field หายจาก API
+ * StaffInfoCard (Enhanced Version)
+ * - Modern UI with Avatar placeholders
+ * - Color coded sections
+ * - Responsive layout
  */
 export function StaffInfoCard({
   supervisorName,
   technicians,
   className,
 }: StaffInfoCardProps) {
-  // ทำให้ข้อมูลสะอาด + ป้องกัน error ทุกเคส
   const supervisors = uniqueAndClean(supervisorName);
   const techs = uniqueAndClean(technicians);
 
   return (
-    <div className="px-5 py-4 space-y-4">
-      <Card
-        className={cn(
-          "rounded-2xl border bg-background shadow-sm",
-          "p-5 sm:p-6",
-          className
-        )}
-        aria-label="ข้อมูลผู้รับผิดชอบงาน"
-      >
-        {/* Header */}
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h3 className="text-base font-semibold tracking-tight text-foreground">
-              ข้อมูลผู้รับผิดชอบงาน
+    <Card
+      className={cn(
+        "overflow-hidden border-none shadow-md bg-white dark:bg-zinc-900/50 dark:border dark:border-zinc-800",
+        className
+      )}
+    >
+      {/* --- Header --- */}
+      <div className="border-b bg-background px-6 py-4 ">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="space-y-1">
+            <h3 className="flex items-center gap-2 text-base font-semibold text-foreground">
+              <Users className="h-5 w-5 text-primary" />
+              ทีมงานผู้รับผิดชอบ
             </h3>
             <p className="text-sm text-muted-foreground">
-              แสดงหัวหน้างานและช่างที่รับผิดชอบออเดอร์นี้
+              รายชื่อบุคลากรที่ดูแลจัดการและปฏิบัติงานในออเดอร์นี้
             </p>
           </div>
-          <div className="flex items-center gap-2 text-xs sm:text-sm">
-            <Badge variant="secondary" className="rounded-full">
-              หัวหน้างาน: {supervisors.length}
-            </Badge>
-            <Badge variant="secondary" className="rounded-full">
-              ช่าง: {techs.length}
-            </Badge>
+          <div className="flex gap-2">
+            <StatBadge count={supervisors.length} label="หัวหน้า" color="blue" />
+            <StatBadge count={techs.length} label="ช่าง" color="orange" />
           </div>
         </div>
+      </div>
 
-        <Separator className="my-2" />
-
-        {/* Content */}
-        <div className="grid grid-cols-2 gap-1">
-          {/* Supervisors */}
-          <div className="flex flex-col">
-            <SectionHeader
-              icon={<UserCog className="h-5 w-5 text-muted-foreground" />}
-              title="หัวหน้างาน"
-            />
-
+      {/* --- Content --- */}
+      <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-x md:divide-y-0 bg-background">
+        {/* Supervisors Section */}
+        <div className="p-6">
+          <SectionHeader
+            icon={<ShieldCheck className="h-5 w-5" />}
+            title="หัวหน้างาน (Supervisor)"
+            colorClass="bg-blue-500 text-white"
+          />
+          
+          <div className="mt-4">
             {supervisors.length === 0 ? (
               <EmptyState text="ยังไม่ได้ระบุหัวหน้างาน" />
             ) : (
-              <ScrollArea className="max-h-56 pr-1">
-                <ul
-                  className="mt-2 space-y-1 text-sm text-muted-foreground list-disc list-inside"
-                  role="list"
-                >
+              <ScrollArea className="h-full max-h-[200px] pr-4">
+                <div className="space-y-3">
                   {supervisors.map((name, idx) => (
-                    <li key={`sv-${idx}`}>{name}</li>
+                    <PersonItem 
+                        key={`sv-${idx}`} 
+                        name={name} 
+                        role="Supervisor" 
+                        avatarColor="bg-blue-500 text-white"
+                    />
                   ))}
-                </ul>
+                </div>
               </ScrollArea>
             )}
           </div>
+        </div>
 
-          {/* Technicians */}
-          <div className="flex w-full justify-center">
-            <div className="flex flex-col ">
-              <SectionHeader
-                icon={<Wrench className="h-5 w-5 text-muted-foreground" />}
-                title="ช่างรับผิดชอบ"
-              />
+        {/* Technicians Section */}
+        <div className="p-6">
+          <SectionHeader
+            icon={<Wrench className="h-5 w-5" />}
+            title="ช่างเทคนิค (Technician)"
+            colorClass="bg-orange-500 text-white"
+          />
 
-              {techs.length === 0 ? (
-                <EmptyState text="ยังไม่ได้ระบุช่างรับผิดชอบ" />
-              ) : (
-                <ScrollArea className="max-h-56 pr-1">
-                  <ul
-                    className="mt-2 space-y-1 text-sm text-muted-foreground list-disc list-inside"
-                    role="list"
-                  >
-                    {techs.map((name, idx) => (
-                      <li key={`tech-${idx}`}>{name}</li>
-                    ))}
-                  </ul>
-                </ScrollArea>
-              )}
-            </div>
+          <div className="mt-4">
+            {techs.length === 0 ? (
+              <EmptyState text="ยังไม่ได้ระบุช่างรับผิดชอบ" />
+            ) : (
+              <ScrollArea className="h-full max-h-[200px] pr-4">
+                <div className="space-y-3">
+                  {techs.map((name, idx) => (
+                    <PersonItem 
+                        key={`tech-${idx}`} 
+                        name={name} 
+                        role="Technician" 
+                        avatarColor="bg-orange-500 text-white"
+                    />
+                  ))}
+                </div>
+              </ScrollArea>
+            )}
           </div>
         </div>
-      </Card>
-    </div>
+      </div>
+    </Card>
   );
 }
 
-/* --------------------------------- Subparts -------------------------------- */
+/* --------------------------------- Sub-Components -------------------------------- */
+
+const StatBadge = ({ count, label, color }: { count: number, label: string, color: 'blue' | 'orange' }) => {
+    const colorStyle = color === 'blue' 
+        ? "bg-blue-500 text-white border-blue-800"
+        : "bg-orange-500 text-white border-orange-800";
+    
+    return (
+        <div className={cn("flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition-colors", colorStyle)}>
+            <span>{label}</span>
+            <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-white/80 px-1 text-[10px] font-bold shadow-sm dark:bg-black/20">
+                {count}
+            </span>
+        </div>
+    )
+}
 
 function SectionHeader({
   icon,
   title,
+  colorClass
 }: {
   icon: React.ReactNode;
   title: string;
+  colorClass: string;
 }) {
   return (
-    <div className="flex items-center gap-2">
-      {icon}
-      <h4 className="text-sm font-medium text-foreground">{title}</h4>
+    <div className="flex items-center gap-3 mb-2">
+      <div className={cn("flex h-10 w-10 items-center justify-center rounded-xl shadow-sm", colorClass)}>
+        {icon}
+      </div>
+      <h4 className="font-semibold text-foreground">{title}</h4>
     </div>
   );
 }
 
+function PersonItem({ name, role, avatarColor }: { name: string, role: string, avatarColor: string }) {
+    // ฟังก์ชันสร้างตัวย่อ 2 ตัวแรกของชื่อ
+    const getInitials = (n: string) => {
+        return n.split(' ').map(part => part[0]).slice(0, 2).join('').toUpperCase();
+    }
+
+    return (
+        <div className="group flex items-center gap-3 rounded-xl border border-transparent p-2 transition-all hover:bg-muted/50 hover:border-border hover:shadow-sm">
+            <div className={cn("flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-xs font-bold", avatarColor)}>
+                {getInitials(name)}
+            </div>
+            <div className="flex flex-col">
+                <span className="text-sm font-medium text-foreground group-hover:text-primary transition-colors">{name}</span>
+                <span className="text-[11px] text-muted-foreground">{role}</span>
+            </div>
+        </div>
+    )
+}
+
 function EmptyState({ text }: { text: string }) {
   return (
-    <div className="mt-2 rounded-xl border border-dashed bg-muted/20 p-3 text-xs sm:text-sm text-muted-foreground">
-      {text}
+    <div className="flex flex-col items-center justify-center rounded-xl border border-dashed py-8 text-center bg-muted/20">
+      <div className="rounded-full bg-muted/30 p-3 mb-2">
+        <Users className="h-5 w-5 text-muted-foreground/50" />
+      </div>
+      <p className="text-sm text-muted-foreground font-medium">{text}</p>
     </div>
   );
 }
 
 /* --------------------------------- Helpers --------------------------------- */
 
-// ✅ ป้องกัน build/runtime error:
-// - ถ้า arr ไม่ใช่ array -> คืน []
-// - ถ้า element เป็น null/undefined/ว่าง -> ตัดทิ้ง
-// - แปลงเป็น string อย่างปลอดภัยก่อน trim
 function uniqueAndClean(arr?: (string | null | undefined)[]): string[] {
   if (!Array.isArray(arr)) return [];
 
@@ -158,34 +194,9 @@ function uniqueAndClean(arr?: (string | null | undefined)[]): string[] {
         .map((value) => {
           if (typeof value === "string") return value.trim();
           if (typeof value === "number") return String(value).trim();
-          return ""; // null / undefined / etc.
+          return "";
         })
         .filter((s) => s.length > 0)
     )
   );
 }
-
-/* ---------------------------------- Usage / Tests ---------------------------------- */
-
-// ✅ ปกติ: มีหัวหน้าและช่างครบ
-// <StaffInfoCard
-//   supervisorName={["สมชาย ใจดี", "ชญาน์ทิพย์ อัครเดช"]}
-//   technicians={["วีระพล นาคน้อย", "อนุชา สายธาร", "สุรีย์พร เอี่ยมดี"]}
-// />
-
-// ✅ มีค่า null/undefined ปน -> จะถูกกรองออกและไม่ทำให้ build ล้ม
-// <StaffInfoCard
-//   supervisorName={["สมชาย ใจดี", null, undefined, " "]}
-//   technicians={[null, "อนุชา สายธาร", "อนุชา สายธาร"]}
-// />
-
-// ✅ ส่งค่ามาผิดเป็น non-array (เช่นมาจาก API ที่แปลก ๆ) -> uniqueAndClean จะกันและคืน []
-// (ที่ระดับ TypeScript จะเตือน แต่ runtime ไม่พัง)
-// uniqueAndClean("not-array" as any); // []
-
-// ✅ รายชื่อว่างทั้งหมด -> การ์ดแสดงข้อความ empty state ทั้งสองฝั่ง
-// <StaffInfoCard supervisorName={[]} technicians={[]} />
-
-// ✅ มีช่องว่าง, ชื่อซ้ำ, และตัวเลข -> จะถูก trim, remove duplicates, แปลงเป็น string
-// uniqueAndClean(["  ช่างเอ ", "ช่างเอ", "ช่างบี", 123 as any, null, ""]);
-// ผลที่คาดหวัง: ["ช่างเอ", "ช่างบี", "123"]

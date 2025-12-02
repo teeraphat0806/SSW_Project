@@ -23,9 +23,6 @@ import {
   Printer,
   Download,
   Edit,
-  Building2,
-  Factory,
-  Truck,
 } from "lucide-react";
 import { QuickAction } from "../../components/jobordertail/QuickAction";
 import { SteelTable } from "../../components/jobordertail/SteelTable";
@@ -33,9 +30,8 @@ import { StaffInfoCard } from "../../components/jobordertail/StaffInfoCard";
 import { CustomerTab } from "../../components/jobordertail/CustomerTab";
 import { ProductionTab } from "../../components/jobordertail/ProductionTab";
 import { DeliveryTab } from "../../components/jobordertail/DeliveryTab";
-// Consolidate Card imports to use the local UI component for consistent styling
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-
+import { Card } from "@radix-ui/themes";
+import { CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 interface JobOrder {
   id: string;
@@ -341,7 +337,7 @@ const JobOrderDetailPage = () => {
               </div>
             </div>
 
-            <Card className="overflow-hidden rounded-lg shadow-md ">
+            <Card className="overflow-hidden border-none shadow-md ">
               <CardHeader className="bg-background border-b px-6 py-4">
                 <div className="flex items-center gap-2">
                   <FileText className="h-5 w-5 text-primary" />
@@ -382,38 +378,25 @@ const JobOrderDetailPage = () => {
             </Card>
 
             {/* Tabs Card */}
-            <Card className="rounded-lg shadow-md ">
+            <Card className="border-none shadow-md ">
               {/* Tabs Header */}
               <Tabs defaultValue="StaffInfo" className="w-full">
                 {/* mt-6 grid grid-cols-1 gap-6 xl:grid-cols-12 */}
-               {/* 1. Header Section: เพิ่มพื้นหลังจางๆ และเส้นขอบ */}
-    <div className="border-b bg-muted/10 px-6 pt-2 dark:border-zinc-800">
-      <TabsList className="flex mb-3 h-auto w-full justify-start gap-8 bg-transparent p-0">
-        {[
-          { id: 'StaffInfo', label: 'Staff Info', icon: User2 },
-          { id: 'Customer', label: 'Customer', icon: Building2 },
-          { id: 'Production', label: 'Production', icon: Factory },
-          { id: 'Delivery', label: 'Delivery', icon: Truck },
-        ].map((tab) => (
-          <TabsTrigger
-            key={tab.id}
-            value={tab.id}
-            className="group relative flex items-center gap-2 rounded-xl border-b-[3px] border-transparent pb-4 pt-4 text-sm font-medium text-muted-foreground transition-all 
-            hover:text-wight 
-            data-[state=active]:border-primary 
-            data-[state=active]:text-primary 
-            data-[state=active]:shadow-none
-            dark:data-[state=active]:text-white" 
-          >
-            {/* Icon พร้อม Effect เปลี่ยนสี */}
-            <tab.icon className="h-4 w-4 transition-transform group-data-[state=active]:scale-110" />
-            <span>{tab.label}</span>
-          </TabsTrigger>
-        ))}
-      </TabsList>
-    </div>
+                <div className="border-b px-6 pt-4">
+                        <TabsList className="h-auto w-full justify-start gap-6 bg-transparent p-0">
+                            {['StaffInfo', 'Customer', 'Production', 'Delivery'].map((tab) => (
+                                <TabsTrigger 
+                                    key={tab}
+                                    value={tab}
+                                    className="relative rounded-none border-b-2 border-transparent px-2 pb-3 pt-2 font-medium text-muted-foreground hover:text-foreground data-[state=active]:border-primary data-[state=active]:text-white data-[state=active]:shadow-none"
+                                >
+                                    {tab}
+                                </TabsTrigger>
+                            ))}
+                        </TabsList>
+                    </div>
                 {/* Specifications */}
-                <TabsContent value="StaffInfo" className="mt-1">
+                <TabsContent value="StaffInfo" className="mt-0">
                   <StaffInfoCard
                     supervisorName={["สมชาย รักดี", "สมศรี สวยงาม"]}
                     technicians={[
@@ -423,33 +406,32 @@ const JobOrderDetailPage = () => {
                       "วรเมธ โพธิ์ทอง",
                     ]}
                   />
-                  
+                  <div className="text-center text-muted-foreground  py-10">StaffInfo Content</div>
                 </TabsContent>
 
                 {/* Customer */}
-                <TabsContent value="Customer" className="mt-1">
+                <TabsContent value="Customer" className="mt-0">
                   <CustomerTab
                     customer={{
                       name: "บริษัท จำกัด",
                       email: "arm1532arm@gmail.com",
-                      code: "213254",
                       phone: "0655389857",
                       shippingAddress:
                         "ตำบล บางรัก อำเภอ เมือง จังหวัด กรุงเทพ 10500",
                     }}
                   />
-                  
+                  <div className="text-center text-muted-foreground py-10">Customer Content</div>
                 </TabsContent>
 
                 {/* Production */}
-                <TabsContent value="Production" className="mt-2">
+                <TabsContent value="Production" className="mt-0">
                   <ProductionTab
                     status={jobOrder.status}
                     assignedCutter={jobOrder.assignedCutter}
                     onUpdateStatus={handleStatusUpdate}
                     getStatusColor={getStatusColor}
                   />
-                 
+                  <div className="text-center text-muted-foreground py-10">Production Content</div>
                 </TabsContent>
 
                 {/* Delivery */}
@@ -461,7 +443,7 @@ const JobOrderDetailPage = () => {
                     onUpdateStatus={handleStatusUpdate}
                     className=""
                   />
-                  
+                  <div className="text-center text-muted-foreground py-10">Delivery Content</div>
                 </TabsContent>
               </Tabs>
 
