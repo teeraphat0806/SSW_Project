@@ -19,19 +19,19 @@ import {
   CalendarDays,
   User2,
   Hash,
-  File,
   Printer,
-  Download,
   Edit,
+  Building2,
+  Factory,
+  Truck,
 } from "lucide-react";
 import { QuickAction } from "../../components/jobordertail/QuickAction";
-import { SteelTable } from "../../components/jobordertail/SteelTable";
 import { StaffInfoCard } from "../../components/jobordertail/StaffInfoCard";
 import { CustomerTab } from "../../components/jobordertail/CustomerTab";
 import { ProductionTab } from "../../components/jobordertail/ProductionTab";
 import { DeliveryTab } from "../../components/jobordertail/DeliveryTab";
-import { Card } from "@radix-ui/themes";
-import { CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+// Consolidate Card imports to use the local UI component for consistent styling
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 interface JobOrder {
   id: string;
@@ -134,29 +134,29 @@ const mockJobOrder: JobOrder = {
   deliveryDate: "2024-02-24",
 };
 
-type InfoItemProps = {
-  label: string;
-  value: React.ReactNode;
-  icon: React.ReactNode;
-};
+// type InfoItemProps = {
+//   label: string;
+//   value: React.ReactNode;
+//   icon: React.ReactNode;
+// };
 
-const InfoItem = ({ label, value, icon }: InfoItemProps) => {
-  return (
-    <div className="flex items-start gap-3">
-      {/* icon */}
-      <div className="mt-0.5 flex h-6 w-6 items-center justify-center text-muted-foreground">
-        {icon}
-      </div>
-      {/* text */}
-      <div className="space-y-0.5">
-        <div className="text-xs font-medium text-muted-foreground tracking-wide">
-          {label}
-        </div>
-        <div className="text-sm font-semibold text-foreground">{value}</div>
-      </div>
-    </div>
-  );
-};
+// const InfoItem = ({ label, value, icon }: InfoItemProps) => {
+//   return (
+//     <div className="flex items-start gap-3">
+//       {/* icon */}
+//       <div className="mt-0.5 flex h-6 w-6 items-center justify-center text-muted-foreground">
+//         {icon}
+//       </div>
+//       {/* text */}
+//       <div className="space-y-0.5">
+//         <div className="text-xs font-medium text-muted-foreground tracking-wide">
+//           {label}
+//         </div>
+//         <div className="text-sm font-semibold text-foreground">{value}</div>
+//       </div>
+//     </div>
+//   );
+// };
 
 const InfoStat = ({ label, value, icon: Icon }) => (
   <div className="flex items-start gap-3 rounded-lg border p-3 bg-background hover:bg-hover transition-colors">
@@ -240,7 +240,7 @@ const JobOrderDetailPage = () => {
   //       </div>
   //     );
   return (
-    <div className="min-h-screen bg-background md:pl-24">
+    <>
       {/* Top nav + actions */}
       <header className="sticky top-0 z-40 border-b bg-background backdrop-blur-sm shadow-sm dark:border-zinc-800">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
@@ -311,33 +311,35 @@ const JobOrderDetailPage = () => {
             {/* Order Overview Card */}
 
             {/* Content Box*/}
-            <div className="space-y-6 p-5 ">
-              {/* Order Info */}
-              <div className="grid grid-cols-2 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                <InfoStat
-                  label="Order ID"
-                  value={`#${jobOrder.id}`}
-                  icon={Hash}
-                />
-                <InfoStat
-                  label="เลขที่ใบสั่งซื้อ (PO)"
-                  value={jobOrder.poNumber}
-                  icon={FileText}
-                />
-                <InfoStat
-                  label="กำหนดส่งสินค้า"
-                  value="24 ก.พ. 2024"
-                  icon={CalendarDays}
-                />
-                <InfoStat
-                  label="ผู้รับผิดชอบ (ตัด)"
-                  value="สมชาย ใจดี"
-                  icon={User2}
-                />
+            <Card>
+              <div className="space-y-6 p-5">
+                {/* Order Info */}
+                <div className="grid grid-cols-2 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                  <InfoStat
+                    label="Order ID"
+                    value={`#${jobOrder.id}`}
+                    icon={Hash}
+                  />
+                  <InfoStat
+                    label="เลขที่ใบสั่งซื้อ (PO)"
+                    value={jobOrder.poNumber}
+                    icon={FileText}
+                  />
+                  <InfoStat
+                    label="กำหนดส่งสินค้า"
+                    value="24 ก.พ. 2024"
+                    icon={CalendarDays}
+                  />
+                  <InfoStat
+                    label="ผู้รับผิดชอบ (ตัด)"
+                    value="สมชาย ใจดี"
+                    icon={User2}
+                  />
+                </div>
               </div>
-            </div>
+            </Card>
 
-            <Card className="overflow-hidden border-none shadow-md ">
+            <Card className="overflow-hidden rounded-lg shadow-md ">
               <CardHeader className="bg-background border-b px-6 py-4">
                 <div className="flex items-center gap-2">
                   <FileText className="h-5 w-5 text-primary" />
@@ -349,9 +351,9 @@ const JobOrderDetailPage = () => {
               <CardContent className="p-0">
                 <div className="w-full text-sm text-left">
                   <div className="bg-background px-6 py-3 font-medium text-muted-foreground grid grid-cols-3">
-                    <span>ประเภทเหล็ก</span>
-                    <span>น้ำหนัก (Kg)</span>
-                    <span className="text-right">ราคาประเมิน</span>
+                    <span className="font-bold">ประเภทเหล็ก</span>
+                    <span className="font-bold">น้ำหนัก (Kg)</span>
+                    <span className="text-right font-bold">ราคาประเมิน</span>
                   </div>
                   {jobOrder.steel.map((item, idx) => (
                     <div
@@ -362,7 +364,9 @@ const JobOrderDetailPage = () => {
                       <span className="text-muted-foreground">
                         {item.weight}
                       </span>
-                      <span className="text-right font-mono">{item.price}</span>
+                      <span className="text-right font-mono">
+                        {Number(item.price).toLocaleString("th-TH")}
+                      </span>
                     </div>
                   ))}
                   <div className="flex justify-between bg-background">
@@ -378,25 +382,38 @@ const JobOrderDetailPage = () => {
             </Card>
 
             {/* Tabs Card */}
-            <Card className="border-none shadow-md ">
+            <Card className="rounded-lg shadow-md ">
               {/* Tabs Header */}
               <Tabs defaultValue="StaffInfo" className="w-full">
                 {/* mt-6 grid grid-cols-1 gap-6 xl:grid-cols-12 */}
-                <div className="border-b px-6 pt-4">
-                        <TabsList className="h-auto w-full justify-start gap-6 bg-transparent p-0">
-                            {['StaffInfo', 'Customer', 'Production', 'Delivery'].map((tab) => (
-                                <TabsTrigger 
-                                    key={tab}
-                                    value={tab}
-                                    className="relative rounded-none border-b-2 border-transparent px-2 pb-3 pt-2 font-medium text-muted-foreground hover:text-foreground data-[state=active]:border-primary data-[state=active]:text-white data-[state=active]:shadow-none"
-                                >
-                                    {tab}
-                                </TabsTrigger>
-                            ))}
-                        </TabsList>
-                    </div>
+                {/* 1. Header Section: เพิ่มพื้นหลังจางๆ และเส้นขอบ */}
+                <div className="border-b bg-muted/10 px-6 pt-2 dark:border-zinc-800">
+                  <TabsList className="flex mb-3 h-auto w-full justify-start gap-8 bg-transparent p-0">
+                    {[
+                      { id: "StaffInfo", label: "Staff Info", icon: User2 },
+                      { id: "Customer", label: "Customer", icon: Building2 },
+                      { id: "Production", label: "Production", icon: Factory },
+                      { id: "Delivery", label: "Delivery", icon: Truck },
+                    ].map((tab) => (
+                      <TabsTrigger
+                        key={tab.id}
+                        value={tab.id}
+                        className="group relative flex items-center gap-2 rounded-xl border-b-[3px] border-transparent pb-4 pt-4 text-sm font-medium text-muted-foreground transition-all 
+            hover:text-wight 
+            data-[state=active]:border-primary 
+            data-[state=active]:text-white 
+            data-[state=active]:shadow-none
+            dark:data-[state=active]:text-white"
+                      >
+                        {/* Icon พร้อม Effect เปลี่ยนสี */}
+                        <tab.icon className="h-4 w-4 transition-transform group-data-[state=active]:scale-110" />
+                        <span>{tab.label}</span>
+                      </TabsTrigger>
+                    ))}
+                  </TabsList>
+                </div>
                 {/* Specifications */}
-                <TabsContent value="StaffInfo" className="mt-0">
+                <TabsContent value="StaffInfo" className="mt-1">
                   <StaffInfoCard
                     supervisorName={["สมชาย รักดี", "สมศรี สวยงาม"]}
                     technicians={[
@@ -406,32 +423,30 @@ const JobOrderDetailPage = () => {
                       "วรเมธ โพธิ์ทอง",
                     ]}
                   />
-                  <div className="text-center text-muted-foreground  py-10">StaffInfo Content</div>
                 </TabsContent>
 
                 {/* Customer */}
-                <TabsContent value="Customer" className="mt-0">
+                <TabsContent value="Customer" className="mt-1">
                   <CustomerTab
                     customer={{
                       name: "บริษัท จำกัด",
                       email: "arm1532arm@gmail.com",
+                      code: "213254",
                       phone: "0655389857",
                       shippingAddress:
                         "ตำบล บางรัก อำเภอ เมือง จังหวัด กรุงเทพ 10500",
                     }}
                   />
-                  <div className="text-center text-muted-foreground py-10">Customer Content</div>
                 </TabsContent>
 
                 {/* Production */}
-                <TabsContent value="Production" className="mt-0">
+                <TabsContent value="Production" className="mt-2">
                   <ProductionTab
                     status={jobOrder.status}
                     assignedCutter={jobOrder.assignedCutter}
                     onUpdateStatus={handleStatusUpdate}
                     getStatusColor={getStatusColor}
                   />
-                  <div className="text-center text-muted-foreground py-10">Production Content</div>
                 </TabsContent>
 
                 {/* Delivery */}
@@ -442,8 +457,8 @@ const JobOrderDetailPage = () => {
                     deliveryAddress={jobOrder.deliveryAddress}
                     onUpdateStatus={handleStatusUpdate}
                     className=""
+                    items={jobOrder.steelActual}
                   />
-                  <div className="text-center text-muted-foreground py-10">Delivery Content</div>
                 </TabsContent>
               </Tabs>
 
@@ -493,9 +508,8 @@ const JobOrderDetailPage = () => {
           </aside>
         </div>
       </main>
-    </div>
+    </>
   );
 };
 
 export default JobOrderDetailPage;
-

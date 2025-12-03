@@ -15,7 +15,9 @@ export default function JobOrderDetailLayout({
 }) {
   return (
     <Layout>
-          <ThemeProvider attribute="class">{children}</ThemeProvider>;
+      <div className="bg-muted min-h-screen md:pl-20 ">
+        <ThemeProvider attribute="class">{children}</ThemeProvider>
+      </div>
     </Layout>
   );
 }

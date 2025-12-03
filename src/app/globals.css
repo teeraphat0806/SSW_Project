@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "@radix-ui/themes/styles.css";
+@custom-variant dark (&:where(.dark, .dark *));
 
 /* 
    Design System: สี, gradients, shadows, radius ทั้งหมดใช้ HSL
@@ -18,6 +19,9 @@
   --box: 0 0% 100%;
   --card: 0 0% 100%;
   --card-foreground: 215 25% 27%;
+
+  --muted: 240 4.8% 95.9%
+  --muted-foreground: 240 3.8% 46.1%
 
   --popover: 0 0% 100%;
   --popover-foreground: 215 25% 27%;
@@ -82,9 +86,8 @@
 
   --small-detail: 36 0% 70%;
   --aa: 36 0% 12%;
-  --divborder:240 5% 26%;
+  --divborder: 240 5% 26%;
   --hover: 240, 5%, 26%;
-
 
   --card: #ffff;
   --card-foreground: 210 40% 98%;
@@ -99,8 +102,8 @@
   --secondary: 217.2 32.6% 17.5%;
   --secondary-foreground: 210 40% 98%;
 
-  --muted: 217.2 32.6% 17.5%;
-  --muted-foreground: 215 20.2% 65.1%;
+  --muted: 240 3.7% 15.9%;
+  --muted-foreground: 240 5% 64.9%;
 
   --accent: 217.2 32.6% 17.5%;
   --accent-foreground: 210 40% 98%;

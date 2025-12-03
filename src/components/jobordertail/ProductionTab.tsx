@@ -1,23 +1,30 @@
 "use client";
 
-import { 
-  Scissors, 
-  Scale, 
-  CheckCircle2, 
-  Clock, 
-  User, 
+import {
+  Scissors,
+  Scale,
+  CheckCircle2,
+  Clock,
+  User,
   ArrowRight,
   Play,
-  PackageCheck
+  PackageCheck,
+  RotateCcw, // เพิ่ม icon สำหรับ Undo
+  Check,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress"; // ถ้ามี component progress
-// ถ้าไม่มี progress ให้ใช้ div ธรรมดา
+import { Progress } from "@/components/ui/progress";
 
-type ProductionStatus = "pending" | "cutting" | "weighing" | "ready" | "shipped" | "completed";
+type ProductionStatus =
+  | "pending"
+  | "cutting"
+  | "weighing"
+  | "ready"
+  | "shipped"
+  | "completed";
 
 type ProductionTabProps = {
   status: ProductionStatus;
@@ -28,11 +35,10 @@ type ProductionTabProps = {
 
 export function ProductionTab({
   status,
-  
+  assignedCutter,
   onUpdateStatus,
   getStatusColor,
 }: ProductionTabProps) {
-  
   // ลำดับขั้นตอนการผลิต (Production Flow)
   const steps = [
     { id: "pending", label: "รอตัด", icon: Clock },
@@ -42,20 +48,21 @@ export function ProductionTab({
   ];
 
   const currentStepIndex = steps.findIndex((s) => s.id === status);
-  // ถ้าสถานะเป็น shipped/completed ให้ถือว่าผ่าน process การผลิตหมดแล้ว (index = 4)
   const activeIndex = currentStepIndex === -1 ? 4 : currentStepIndex;
 
   // คำนวณ % ความคืบหน้า
-  const progressPercentage = Math.min(100, (activeIndex / (steps.length - 1)) * 100);
+  const progressPercentage = Math.min(
+    100,
+    (activeIndex / (steps.length - 1)) * 100
+  );
 
   return (
     <div className="px-5 py-6 space-y-8">
-      
       {/* 1. Status Stepper (Timeline) */}
       <div className="relative">
         {/* Progress Bar Background */}
-        <div className="absolute top-5 left-0 h-1 w-full rounded-full bg-blue-200">
-          <div 
+        <div className="absolute top-5 bg-gray-200 left-0 h-1 w-full rounded-full  dark:bg-zinc-800">
+          <div
             className="h-full rounded-full bg-primary transition-all duration-500 ease-in-out"
             style={{ width: `${progressPercentage}%` }}
           />
@@ -69,21 +76,23 @@ export function ProductionTab({
 
             return (
               <div key={step.id} className="flex flex-col items-center gap-2">
-                <div 
+                <div
                   className={cn(
                     "z-10 flex h-10 w-10 items-center justify-center rounded-full border-2 transition-all duration-300",
-                    isActive 
-                      ? "border-primary bg-primary text-white shadow-lg shadow-primary/20" 
-                      : "border-muted bg-gray-600 text-white "
+                    isActive
+                      ? "border-primary bg-primary text-white shadow-lg shadow-primary/20"
+                      : "border-muted bg-white text-foreground dark:border-zinc-700 dark:bg-zinc-900"
                   )}
                 >
                   <step.icon className="h-5 w-5" />
                 </div>
-                <span className={cn(
-                  "text-xs font-medium transition-colors duration-300",
-                  isActive ? "text-primary" : "text-muted-foreground",
-                  isCurrent && "font-bold scale-105"
-                )}>
+                <span
+                  className={cn(
+                    "text-xs font-medium transition-colors duration-300",
+                    isActive ? "text-primary" : "text-muted-foreground",
+                    isCurrent && "font-bold scale-105"
+                  )}
+                >
                   {step.label}
                 </span>
               </div>
@@ -94,39 +103,45 @@ export function ProductionTab({
 
       {/* 2. Action Area */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {/* Card: Start Cutting */}
+        {/* Card 1: Start Cutting (Pending -> Cutting) */}
         <ActionCard
           title="เริ่มงานตัด"
           description="เปลี่ยนสถานะเป็นกำลังตัด"
           isActive={status === "pending"}
-          isDisabled={status !== "pending"}
+          isCompleted={activeIndex > 0} // ผ่านขั้นตอนนี้ไปแล้ว
+          canUndo={status === "cutting"} // ย้อนกลับได้ถ้าสถานะปัจจุบันคือ cutting
           onClick={() => onUpdateStatus("cutting")}
+          onUndo={() => onUpdateStatus("pending")}
           icon={<Scissors className="h-5 w-5" />}
           activeLabel="กำลังดำเนินการ..."
           buttonLabel="เริ่มตัด (Start Cutting)"
           color="blue"
         />
 
-        {/* Card: Weighing */}
+        {/* Card 2: Weighing (Cutting -> Weighing) */}
         <ActionCard
           title="ชั่งน้ำหนัก"
           description="บันทึกน้ำหนักเหล็กจริง"
           isActive={status === "cutting"}
-          isDisabled={status !== "cutting"}
+          isCompleted={activeIndex > 1}
+          canUndo={status === "weighing"} // ย้อนกลับได้ถ้าสถานะปัจจุบันคือ weighing
           onClick={() => onUpdateStatus("weighing")}
+          onUndo={() => onUpdateStatus("cutting")}
           icon={<Scale className="h-5 w-5" />}
           activeLabel="รอชั่งน้ำหนัก..."
           buttonLabel="ส่งชั่ง (To Weighing)"
           color="amber"
         />
 
-        {/* Card: Ready */}
+        {/* Card 3: Ready (Weighing -> Ready) */}
         <ActionCard
           title="เสร็จสิ้นการผลิต"
           description="สินค้าพร้อมสำหรับการจัดส่ง"
           isActive={status === "weighing"}
-          isDisabled={status !== "weighing"}
+          isCompleted={activeIndex > 2}
+          canUndo={status === "ready"} // ย้อนกลับได้ถ้าสถานะปัจจุบันคือ ready
           onClick={() => onUpdateStatus("ready")}
+          onUndo={() => onUpdateStatus("weighing")}
           icon={<CheckCircle2 className="h-5 w-5" />}
           activeLabel="เสร็จสิ้น"
           buttonLabel="ยืนยันเสร็จ (Mark Ready)"
@@ -138,24 +153,29 @@ export function ProductionTab({
       {/* <div className="rounded-xl border bg-muted/30 p-4 dark:bg-zinc-900/50 dark:border-zinc-800">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white shadow-sm dark:bg-zinc-800">
-                <User className="h-5 w-5 text-muted-foreground" />
-             </div>
-             <div>
-                <p className="text-sm font-medium text-muted-foreground">ผู้รับผิดชอบ (Cutter)</p>
-                <p className="text-base font-semibold text-foreground">
-                    {assignedCutter || "ยังไม่ระบุ"}
-                </p>
-             </div>
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white shadow-sm dark:bg-zinc-800">
+              <User className="h-5 w-5 text-muted-foreground" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">
+                ผู้รับผิดชอบ (Cutter)
+              </p>
+              <p className="text-base font-semibold text-foreground">
+                {assignedCutter || "ยังไม่ระบุ"}
+              </p>
+            </div>
           </div>
-          {status === 'pending' && (
-              <Button variant="ghost" size="sm" className="text-xs text-muted-foreground hover:text-primary">
-                เปลี่ยนผู้รับผิดชอบ
-              </Button>
+          {status === "pending" && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-xs text-muted-foreground hover:text-primary"
+            >
+              เปลี่ยนผู้รับผิดชอบ
+            </Button>
           )}
         </div>
       </div> */}
-
     </div>
   );
 }
@@ -165,86 +185,185 @@ export function ProductionTab({
 interface ActionCardProps {
   title: string;
   description: string;
-  isActive: boolean;
-  isDisabled: boolean;
+  isActive: boolean; // สถานะปัจจุบันอยู่ที่การ์ดใบนี้ (รอให้กด)
+  isCompleted: boolean; // ผ่านการ์ดใบนี้ไปแล้ว
+  canUndo: boolean; // สามารถกดย้อนกลับจากการ์ดใบนี้ได้ (เป็นขั้นตอนล่าสุดที่ทำเสร็จ)
+  isDisabled?: boolean; // ปิดการใช้งาน (สำหรับการ์ดในอนาคต)
+
   onClick: () => void;
+  onUndo: () => void;
+
   icon: React.ReactNode;
   activeLabel: string;
   buttonLabel: string;
-  color: 'blue' | 'amber' | 'green';
+  color: "blue" | "amber" | "green";
 }
 
 function ActionCard({
   title,
   description,
   isActive,
+  isCompleted,
+  canUndo,
   isDisabled,
   onClick,
+  onUndo,
   icon,
   activeLabel,
   buttonLabel,
-  color
+  color,
 }: ActionCardProps) {
-  
-  // Color mapping logic
   const colorStyles = {
     blue: {
-        active: "border-blue-500 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-500",
-        btn: "bg-blue-600 hover:bg-blue-700 text-white",
-        icon: "text-blue-600 dark:text-blue-400"
+      activeCard:
+        "border-blue-500 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-500",
+      completedCard:
+        "border-blue-300 bg-blue-50/70 dark:bg-blue-900/40 dark:border-blue-500/60",
+      btn: "bg-blue-600 hover:bg-blue-700 text-white",
+      icon: "text-blue-600 dark:text-blue-400",
+      pingOuter: "bg-blue-400",
+      pingInner: "bg-blue-500",
     },
     amber: {
-        active: "border-amber-500 bg-amber-50 dark:bg-amber-900/20 dark:border-amber-500",
-        btn: "bg-amber-600 hover:bg-amber-700 text-white",
-        icon: "text-amber-600 dark:text-amber-400"
+      activeCard:
+        "border-amber-500 bg-amber-50 dark:bg-amber-900/20 dark:border-amber-500",
+      completedCard:
+        "border-amber-300 bg-amber-50/70 dark:bg-amber-900/40 dark:border-amber-500/60",
+      btn: "bg-amber-600 hover:bg-amber-700 text-white",
+      icon: "text-amber-600 dark:text-amber-400",
+      pingOuter: "bg-amber-400",
+      pingInner: "bg-amber-500",
     },
     green: {
-        active: "border-green-500 bg-green-50 dark:bg-green-900/20 dark:border-green-500",
-        btn: "bg-green-600 hover:bg-green-700 text-white",
-        icon: "text-green-600 dark:text-green-400"
-    }
-  };
+      activeCard:
+        "border-green-500 bg-green-50 dark:bg-green-900/20 dark:border-green-500",
+      completedCard:
+        "border-green-300 bg-green-50/70 dark:bg-green-900/40 dark:border-green-500/60",
+      btn: "bg-green-600 hover:bg-green-700 text-white",
+      icon: "text-green-600 dark:text-green-400",
+      pingOuter: "bg-green-400",
+      pingInner: "bg-green-500",
+    },
+  } as const;
 
   const currentStyle = colorStyles[color];
 
+  // default: ขั้นตอนอนาคต / ยังไม่ถึง
+  let cardClass =
+    "bg-card border-border/70 text-muted-foreground opacity-60 dark:bg-zinc-900/50 dark:border-zinc-800";
+
+  if (isActive) {
+    // ขั้นตอนปัจจุบัน – เด่นสุด
+    cardClass = cn(
+      "shadow-md ring-1 ring-border opacity-100 text-foreground",
+      currentStyle.activeCard
+    );
+  } else if (isCompleted) {
+    // ขั้นที่ทำเสร็จแล้ว – ยังพอเห็นสีเดิม แต่ซอฟต์ลง
+    cardClass = cn(
+      "opacity-100 text-muted-foreground",
+      currentStyle.completedCard
+    );
+  }
+
+  const disabled = isDisabled || (!isActive && !isCompleted);
+
   return (
-    <div 
-        className={cn(
-            "relative flex flex-col justify-between rounded-xl border p-4 transition-all duration-200",
-            isActive 
-                ? cn("shadow-md ring-1", currentStyle.active)
-                : "bg-card border-border opacity-60 hover:opacity-100 dark:bg-zinc-900/50 dark:border-zinc-800"
-        )}
+    <div
+      className={cn(
+        "relative flex flex-col justify-between rounded-xl border p-4 transition-all duration-200",
+        cardClass
+      )}
     >
+      {/* Header */}
       <div className="space-y-2">
-        <div className="flex items-center justify-between">
-            <div className={cn("rounded-lg p-2 bg-background/80 backdrop-blur-sm", currentStyle.icon)}>
-                {icon}
-            </div>
-            {isActive && (
-                <span className="flex h-2 w-2">
-                  <span className={cn("animate-ping absolute inline-flex h-2 w-2 rounded-full opacity-75", `bg-${color}-400`)}></span>
-                  <span className={cn("relative inline-flex rounded-full h-2 w-2", `bg-${color}-500`)}></span>
-                </span>
+        <div className="flex items-start justify-between gap-2">
+          <div
+            className={cn(
+              "rounded-lg p-2 bg-background/80 backdrop-blur-sm",
+              isActive || isCompleted
+                ? currentStyle.icon
+                : "text-muted-foreground"
             )}
+          >
+            {isCompleted ? (
+              <Check className="h-5 w-5 text-green-600 dark:text-green-500" />
+            ) : (
+              icon
+            )}
+          </div>
+
+          {/* Active Indicator */}
+          {isActive && (
+            <span className="relative flex h-2 w-2 mt-1">
+              <span
+                className={cn(
+                  "absolute inline-flex h-full w-full rounded-full opacity-75 animate-ping",
+                  currentStyle.pingOuter
+                )}
+              />
+              <span
+                className={cn(
+                  "relative inline-flex h-2 w-2 rounded-full",
+                  currentStyle.pingInner
+                )}
+              />
+            </span>
+          )}
+
+          {/* Undo Button */}
+          {canUndo && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 -mr-2 -mt-2"
+              onClick={onUndo}
+              title="ย้อนกลับสถานะ (Undo)"
+            >
+              <RotateCcw className="h-4 w-4" />
+            </Button>
+          )}
         </div>
+
         <div>
-            <h4 className="font-semibold text-foreground">{title}</h4>
-            <p className="text-xs text-muted-foreground">{description}</p>
+          <h4
+            className={cn(
+              "font-semibold",
+              isCompleted ? "text-muted-foreground" : "text-foreground"
+            )}
+          >
+            {title}
+          </h4>
+          <p className="text-xs text-muted-foreground">{description}</p>
         </div>
       </div>
 
+      {/* Button / Status */}
       <div className="mt-4">
-        <Button 
-            className={cn("w-full gap-2 transition-all", isActive ? currentStyle.btn : "")}
-            variant={isActive ? "default" : "outline"}
+        {isActive ? (
+          <Button
+            className={cn("w-full gap-2 transition-all", currentStyle.btn)}
             size="sm"
             onClick={onClick}
-            disabled={isDisabled}
-        >
-            {isActive ? <Play className="h-3 w-3 fill-current" /> : null}
+            disabled={disabled}
+          >
+            <Play className="h-3 w-3 fill-current" />
             {buttonLabel}
-        </Button>
+          </Button>
+        ) : isCompleted ? (
+          <div className="flex h-9 w-full items-center justify-center gap-2 rounded-md border border-dashed text-xs font-medium text-muted-foreground">
+            <Check className="h-3 w-3" /> เสร็จสิ้นแล้ว
+          </div>
+        ) : (
+          <Button
+            variant="outline"
+            size="sm"
+            className="w-full text-xs"
+            disabled
+          >
+            รอขั้นตอนก่อนหน้า
+          </Button>
+        )}
       </div>
     </div>
   );
