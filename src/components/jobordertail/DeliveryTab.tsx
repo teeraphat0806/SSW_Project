@@ -459,7 +459,7 @@ function DeliveryStepCard({
   onClick,
   onUndo,
   icon,
-  activeLabel,
+
   buttonLabel,
   color,
 }: DeliveryStepCardProps) {
@@ -505,7 +505,7 @@ function DeliveryStepCard({
   }
 
   // Determine if button should be disabled
-  const buttonDisabled = isDisabled || (!isActive && !isCompleted);
+  // const buttonDisabled = isDisabled || (!isActive && !isCompleted);
 
   return (
     <div

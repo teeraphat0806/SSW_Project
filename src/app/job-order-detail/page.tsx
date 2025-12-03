@@ -134,30 +134,6 @@ const mockJobOrder: JobOrder = {
   deliveryDate: "2024-02-24",
 };
 
-// type InfoItemProps = {
-//   label: string;
-//   value: React.ReactNode;
-//   icon: React.ReactNode;
-// };
-
-// const InfoItem = ({ label, value, icon }: InfoItemProps) => {
-//   return (
-//     <div className="flex items-start gap-3">
-//       {/* icon */}
-//       <div className="mt-0.5 flex h-6 w-6 items-center justify-center text-muted-foreground">
-//         {icon}
-//       </div>
-//       {/* text */}
-//       <div className="space-y-0.5">
-//         <div className="text-xs font-medium text-muted-foreground tracking-wide">
-//           {label}
-//         </div>
-//         <div className="text-sm font-semibold text-foreground">{value}</div>
-//       </div>
-//     </div>
-//   );
-// };
-
 const InfoStat = ({ label, value, icon: Icon }) => (
   <div className="flex items-start gap-3 rounded-lg border p-3 bg-background hover:bg-hover transition-colors">
     <div className="flex h-10 w-10 items-center justify-center rounded-full bg-background border shadow-sm text-primary">
@@ -473,38 +449,6 @@ const JobOrderDetailPage = () => {
             <div className="mt-3 grid gap-2">
               <QuickAction orderId={jobOrder.id} />
             </div>
-
-            {/* Activity Timeline */}
-            {/* <div className="rounded-2xl border border-gray-200 bg-background p-5 shadow-sm">
-              <h3 className="text-base font-semibold">Activity Timeline</h3>
-              <ol className="mt-3 space-y-4">
-                <li className="flex items-start gap-3">
-                  <span className="mt-1 h-2.5 w-2.5 rounded-full bg-gray-300" />
-                  <div>
-                    <p className="text-sm font-medium">Order Created</p>
-                    <p className="text-xs text-gray-500">
-                      1/15/2024, 9:30:16 AM
-                    </p>
-                  </div>
-                </li>
-                <li className="flex items-start gap-3">
-                  <span className="mt-1 h-2.5 w-2.5 rounded-full bg-blue-600" />
-                  <div>
-                    <p className="text-sm font-medium">Cutting Started</p>
-                    <p className="text-xs text-gray-500">
-                      Assigned to John Smith
-                    </p>
-                  </div>
-                </li>
-                <li className="flex items-start gap-3 opacity-70">
-                  <span className="mt-1 h-2.5 w-2.5 rounded-full bg-amber-500" />
-                  <div>
-                    <p className="text-sm font-medium">Awaiting Completion</p>
-                    <p className="text-xs text-gray-500">In progress…</p>
-                  </div>
-                </li>
-              </ol>
-            </div> */}
           </aside>
         </div>
       </main>
