@@ -19,6 +19,39 @@ model User {
   staff     Staff?   @relation("UserStaff")
 }
 
+model Staff {
+  id                           Int           @id @default(autoincrement())
+  userId                       Int?          @unique
+  user                         User?         @relation("UserStaff", fields: [userId], references: [id], onDelete: SetNull)
+  position                     String        @default("พนักงานทั่วไป")
+  bankAccount                  String        @unique
+  bankName                     String
+  startDate                    DateTime
+  code                         String        @unique
+  social_security              String        @unique
+  currentSalary                Float
+  updatedAt                    DateTime @updatedAt
+  OrderPO                      OrderPO[]
+  Bill_Bill_deliveredByToStaff Bill[]        @relation("Bill_deliveredByToStaff")
+  Bill_Bill_salesNameToStaff   Bill[]        @relation("Bill_salesNameToStaff")
+  StaffIncome                  StaffIncome[]
+  StaffSalary                  StaffSalary[]
+  ExpenseCategory              ExpenseCategory[]
+}
+
+model Customer {
+  id            Int             @id @default(autoincrement())
+  code          String          @unique
+  name          String
+  address       String
+  tel           String          @unique
+  taxNumber     String          @unique
+  faxNumber     String          @unique
+  email         String          @unique
+  Bill          Bill[]
+  OrderPO       OrderPO[]
+}
+
 model Bill {
   id                            Int       @id @default(autoincrement())
   customerId                    Int?
@@ -53,24 +86,10 @@ model Bill {
   @@index([deliveredById])
 }
 
-model Customer {
-  id            Int             @id @default(autoincrement())
-  code          String          @unique
-  name          String
-  address       String
-  tel           String          @unique
-  taxNumber     String          @unique
-  faxNumber     String          @unique
-  email         String          @unique
-  Bill          Bill[]
-  OrderPO       OrderPO[]
-}
-
 model OrderPO {
   id                Int       @id @default(autoincrement())
   poNumber          String    @unique
   customerId        Int?
-  assignedCutterId  Int?
   billId            Int?
   status            JobStatus @default(pending)
   total             Float
@@ -79,7 +98,7 @@ model OrderPO {
   urlPo             String[]
   bill              Bill?     @relation(fields: [billId], references: [id], onDelete: SetNull)
   Customer          Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
-  Staff             Staff?     @relation(fields: [assignedCutterId], references: [id], onDelete: SetNull)
+  Staff             Staff[]
   Product           Product[]
 
   @@index([status])
@@ -87,7 +106,6 @@ model OrderPO {
   @@index([customerId, status])
   @@index([billId])
   @@index([customerId])
-  @@index([assignedCutterId])
 }
 
 model Product {
@@ -114,25 +132,7 @@ model Product {
 }
 
 
-model Staff {
-  id                           Int           @id @default(autoincrement())
-  userId                       Int?          @unique
-  user                         User?         @relation("UserStaff", fields: [userId], references: [id], onDelete: SetNull)
-  position                     String        @default("พนักงานทั่วไป")
-  bankAccount                  String        @unique
-  bankName                     String
-  startDate                    DateTime
-  code                         String        @unique
-  social_security              String        @unique
-  currentSalary                Float
-  updatedAt                    DateTime @updatedAt
-  OrderPO                      OrderPO[]
-  Bill_Bill_deliveredByToStaff Bill[]        @relation("Bill_deliveredByToStaff")
-  Bill_Bill_salesNameToStaff   Bill[]        @relation("Bill_salesNameToStaff")
-  StaffIncome                  StaffIncome[]
-  StaffSalary                  StaffSalary[]
-  ExpenseCategory              ExpenseCategory[]
-}
+
 
 model StaffSalary {
   id            Int      @id @default(autoincrement())

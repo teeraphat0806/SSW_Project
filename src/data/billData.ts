@@ -1,7 +1,6 @@
 import { randomBytes } from "crypto";
 
-
-function  generateCode(
+function generateCode(
   length = 20,
   charset = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-_"
 ) {
@@ -30,7 +29,6 @@ function  generateCode(
   return result.join("");
 }
 
-
 export const billData = [
   {
     Customer: { connect: { id: 1 } },
@@ -47,8 +45,8 @@ export const billData = [
     description: "กรดไหลย้อนคำสั่งวิ่งพนมมือกล่าวคลานผู้ร้าย",
     subtotal: 1000,
     discount: 7.74,
-    vat: 70.0,           
-    grandTotal: 1062.26, 
+    vat: 70.0,
+    grandTotal: 1062.26,
     dateReceive: new Date("2025-08-01"),
 
     OrderPO: {
@@ -59,6 +57,7 @@ export const billData = [
           Customer: { connect: { id: 1 } },
           urlPo: ["po/1/1764165666751_6845381f_3754_20250619154804853.pdf"],
           date: new Date(),
+          Staff: { connect: [{ id: 3 }, { id: 4 }, { id: 6 }, { id: 7 }] },
           Product: {
             create: [
               {
@@ -98,8 +97,8 @@ export const billData = [
     description: "ระเบียงมัสยิดเคย ",
     subtotal: 1000,
     discount: 7.74,
-    vat: 70.0,           
-    grandTotal: 1062.26, 
+    vat: 70.0,
+    grandTotal: 1062.26,
     dateReceive: new Date("2025-08-01"),
     OrderPO: {
       create: [
@@ -109,6 +108,7 @@ export const billData = [
           Customer: { connect: { id: 2 } },
           urlPo: ["po/2/1764165579932_a96687e4_3214654_104x104x460.pdf"],
           date: new Date(),
+          Staff: { connect: [{ id: 3 }, { id: 4 }, { id: 7 }] },
           Product: {
             create: [
               {
@@ -147,8 +147,8 @@ export const billData = [
     description: "โตยตอกไหนอัศจรรย์ ",
     subtotal: 1000,
     discount: 7.74,
-    vat: 70.0,           
-    grandTotal: 1062.26, 
+    vat: 70.0,
+    grandTotal: 1062.26,
     dateReceive: new Date("2025-08-01"),
     OrderPO: {
       create: [
@@ -158,6 +158,7 @@ export const billData = [
           Customer: { connect: { id: 3 } },
           urlPo: ["po/3/1764165700182_9832fd5d_375455_PVS0289.pdf"],
           date: new Date(),
+          Staff: { connect: [{ id: 3 }, { id: 4 }, { id: 6 }, { id: 7 }] },
           Product: {
             create: [
               {
@@ -197,8 +198,8 @@ export const billData = [
     description: "ทุกข์เกาหลีขนมชั้นพิการเนื่องจากสมาคมแตะ ",
     subtotal: 1000,
     discount: 7.74,
-    vat: 70.0,           
-    grandTotal: 1062.26, 
+    vat: 70.0,
+    grandTotal: 1062.26,
     dateReceive: new Date("2025-08-01"),
     OrderPO: {
       create: [
@@ -208,6 +209,7 @@ export const billData = [
           Customer: { connect: { id: 4 } },
           urlPo: ["po/4/1764165734119_7e5effad_52467_SSW250833__2_.pdf"],
           date: new Date(),
+          Staff: { connect: [{ id: 4 }, { id: 6 }, { id: 7 }] },
           Product: {
             create: [
               {
@@ -247,8 +249,8 @@ export const billData = [
     description: "วัฒนธรรมใหม่ขันน้ำองค์คะแนนทดหอย ",
     subtotal: 1000,
     discount: 7.74,
-    vat: 70.0,           
-    grandTotal: 1062.26, 
+    vat: 70.0,
+    grandTotal: 1062.26,
     dateReceive: new Date("2025-08-01"),
     OrderPO: {
       create: [
@@ -258,6 +260,7 @@ export const billData = [
           Customer: { connect: { id: 5 } },
           urlPo: ["po/5/1764165758648_904c45d3_88964_SSW250833__2_.pdf"],
           date: new Date(),
+          Staff: { connect: [{ id: 3 }, { id: 4 }, { id: 6 }] },
           Product: {
             create: [
               {

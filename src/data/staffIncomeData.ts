@@ -39,4 +39,20 @@ export const staffIncomeData = [
     date: new Date(),
     typeId: 5,
   },
+  {
+    detail: "โบนัสพิเศษ",
+    nameIncome: "BONUS-006",
+    amount: 3000.0,
+    staffId: 6,
+    date: new Date(),
+    typeId: 5,
+  },
+  {
+    detail: "โบนัสพิเศษ",
+    nameIncome: "BONUS-007",
+    amount: 3000.0,
+    staffId: 7,
+    date: new Date(),
+    typeId: 5,
+  },
 ];
