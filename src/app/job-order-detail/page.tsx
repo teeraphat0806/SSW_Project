@@ -40,6 +40,10 @@ interface JobOrder {
   customerEmail: string;
   customerPhone: string;
   deliveryAddress: string;
+  staff: Array<{
+    name: string;
+    role: string;
+  }>;
   steel: Array<{
     steelType: string;
     amount: number;
@@ -80,6 +84,12 @@ const mockJobOrder: JobOrder = {
   customerEmail: "customer@example.com",
   customerPhone: "0123456789",
   deliveryAddress: "123 Main St, Bangkok, Thailand",
+  staff: [
+    { name: "สมชาย ใจดี", role: "cutter" },
+    { name: "สมศักดิ์ แก่นทอง", role: "supervisor" },
+    { name: "สมปอง มีสุข", role: "cutter" },
+  ],
+
   steel: [
     {
       steelType: "แผ่น SS400 4x8",
