@@ -8,10 +8,18 @@ export interface Employee {
   bankName: string;
   currentSalary: number;
   social_security: string;  
+  staffName: string;
+  user?: {
+    id: number;
+    name: string;
+  }
 }
 
 export interface SalaryAdjustment {
   id: string;
+  name?: string;
+  createdAt?: string;
+  effectiveDate?: string;
   staffId: string;
   amount: number;
   detail: string;

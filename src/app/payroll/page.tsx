@@ -225,7 +225,7 @@ export default function PayrollPage() {
 
   // ดูค่า latestList ทุกครั้งที่เปลี่ยน
 
-  const mapIncome = (r): SalaryAdjustment => ({
+  const mapIncome = (r:SalaryAdjustment): SalaryAdjustment => ({
     id: String(r.id),
     staffId: String(r.staffId),
     amount: Number(r.amount) ?? 0,
@@ -236,7 +236,7 @@ export default function PayrollPage() {
     type: isDeduction(r.name, r.detail) ? "decrease" : "increase",
   });
 
-  const mapSalary = (r): SalaryAdjustment => ({
+  const mapSalary = (r:SalaryAdjustment): SalaryAdjustment => ({
     id: String(r.id),
     staffId: String(r.staffId),
     amount: Number(r.amount) ?? 0,
@@ -470,7 +470,7 @@ export default function PayrollPage() {
     }
     setEmployees((prev) =>
       prev.map((emp) =>
-        emp.id === adjustment.staffId
+        emp.id === Number(adjustment.staffId)
           ? {
               ...emp,
               currentSalary: emp.currentSalary + adjustment.amount,
@@ -948,7 +948,6 @@ export default function PayrollPage() {
                       handleSalaryAdjustment(payload);
                     }
                   }}
-                  type={adjustmentType}
                 />
               </CardContent>
             </Card>
@@ -978,7 +977,7 @@ export default function PayrollPage() {
                         ทั้งหมด (แนะนำเลือกพนักงานเพื่อความละเอียด)
                       </SelectItem>
                       {employees.map((emp) => (
-                        <SelectItem key={emp.id} value={emp.id}>
+                        <SelectItem key={emp.id} value={String(emp.id)}>
                           {emp.name}
                         </SelectItem>
                       ))}

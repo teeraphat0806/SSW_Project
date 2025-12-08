@@ -255,7 +255,7 @@ const NewJobOrder = () => {
         files: UploadFile,
         poNumber: headOrder.poNumber,
 
-        customerId: customerId,
+        customerId: customerId || "",
       });
 
       const payloadBill = {
@@ -300,7 +300,7 @@ const NewJobOrder = () => {
       if (!billRes.ok) {
         throw new Error("เกิดข้อผิดพลาดในการสร้างออเดอร์ใหม่");
       }
-      let billData: undefined = null;
+      let billData: any = null;
       try {
         billData = JSON.parse(rawText);
       } catch {
@@ -316,8 +316,8 @@ const NewJobOrder = () => {
       router.push("/dashboard");
     } catch (error) {
       console.error("Error create New Order", error);
-
-      toast.error(`สร้างออเดอรืใหม่ไม่สำเร็จ: ${error.message}`, {
+      const message = error instanceof Error ? error : new Error(String(error));
+      toast.error(`สร้างออเดอรืใหม่ไม่สำเร็จ: ${message}`, {
         position: "bottom-right",
       });
     } finally {

@@ -32,9 +32,10 @@ import { ProductionTab } from "../../components/jobordertail/ProductionTab";
 import { DeliveryTab } from "../../components/jobordertail/DeliveryTab";
 // Consolidate Card imports to use the local UI component for consistent styling
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Icon } from "leaflet";
 
 interface JobOrder {
-  id: string;
+  id: string ;
   poNumber: string;
   customerId: string;
   customerEmail: string;
@@ -144,7 +145,7 @@ const mockJobOrder: JobOrder = {
   deliveryDate: "2024-02-24",
 };
 
-const InfoStat = ({ label, value, icon: Icon }) => (
+const InfoStat = ({ label, value, icon: Icon }:{label:string,value:string,icon: React.ComponentType<any>;}) => (
   <div className="flex items-start gap-3 rounded-lg border p-3 bg-background hover:bg-hover transition-colors">
     <div className="flex h-10 w-10 items-center justify-center rounded-full bg-background border shadow-sm text-primary">
       {Icon && <Icon className="h-5 w-5" />}
@@ -255,13 +256,13 @@ const JobOrderDetailPage = () => {
             <div>
               <div className="flex items-center gap-3">
                 <h1 className="text-2xl font-bold tracking-tight text-foreground">
-                  รายละเอียดออเดอร์ #{jobOrder.id}
+                  รายละเอียดออเดอร์ #{jobOrder?.id || "N/A"}
                 </h1>
                 <Badge
                   variant="outline"
-                  className={getStatusColor(jobOrder.status)}
+                  className={getStatusColor(jobOrder?.status || "pending")}
                 >
-                  {jobOrder.status.toUpperCase()}
+                  {jobOrder?.status?.toUpperCase() || "N/A"}
                 </Badge>
                 <Badge
                   variant="secondary"
@@ -272,7 +273,7 @@ const JobOrderDetailPage = () => {
               </div>
               <p className="mt-1 text-sm text-muted-foreground">
                 จัดการข้อมูลการผลิต สถานะ และการจัดส่งสำหรับ PO:{" "}
-                {jobOrder.poNumber}
+                {jobOrder?.poNumber || "N/A"}
               </p>
             </div>
           </div>
@@ -303,12 +304,12 @@ const JobOrderDetailPage = () => {
                 <div className="grid grid-cols-2 gap-4 sm:grid-cols-2 lg:grid-cols-4">
                   <InfoStat
                     label="Order ID"
-                    value={`#${jobOrder.id}`}
+                    value={`#${jobOrder?.id || ""}`}
                     icon={Hash}
                   />
                   <InfoStat
                     label="เลขที่ใบสั่งซื้อ (PO)"
-                    value={jobOrder.poNumber}
+                    value={jobOrder?.poNumber || "" }
                     icon={FileText}
                   />
                   <InfoStat
@@ -344,7 +345,7 @@ const JobOrderDetailPage = () => {
                     </span>
                     <span className="text-right font-bold">ราคาประเมิน</span>
                   </div>
-                  {jobOrder.steel.map((item, idx) => (
+                  {jobOrder?.steel.map((item, idx) => (
                     <div
                       key={idx}
                       className="px-6 py-4 border-b last:border-0 grid grid-cols-4 bg-background  items-center hover:bg-hover transition-colors"
@@ -364,17 +365,17 @@ const JobOrderDetailPage = () => {
                   <div className="px-6 py-4 border-b last:border-0 grid grid-cols-4 bg-background  items-center hover:bg-hover transition-colors">
                     <span className="font-semibold">รวมทั้งหมด</span>
                     <span className="font-semibold text-center">
-                      {jobOrder.steel
+                      {jobOrder?.steel
                         .reduce((sum, item) => sum + item.weight, 0)
                         .toLocaleString()}
                     </span>
                     <span className="font-semibold text-center">
-                      {jobOrder.steel
+                      {jobOrder?.steel
                         .reduce((sum, item) => sum + item.weight, 0)
                         .toLocaleString()}
                     </span>
                     <span className="font-semibold text-green-400 text-right">
-                      {jobOrder.steel
+                      {jobOrder?.steel
                         .reduce((sum, item) => sum + item.price, 0)
                         .toLocaleString()}
                     </span>
@@ -444,8 +445,8 @@ const JobOrderDetailPage = () => {
                 {/* Production */}
                 <TabsContent value="Production" className="mt-2">
                   <ProductionTab
-                    status={jobOrder.status}
-                    assignedCutter={jobOrder.assignedCutter}
+                    status={jobOrder?.status || "pending"}
+                    assignedCutter={jobOrder?.assignedCutter || ""}
                     onUpdateStatus={handleStatusUpdate}
                     getStatusColor={getStatusColor}
                   />
@@ -454,12 +455,12 @@ const JobOrderDetailPage = () => {
                 {/* Delivery */}
                 <TabsContent value="Delivery" className="mt-0">
                   <DeliveryTab
-                    status={jobOrder.status}
-                    deliveryDate={jobOrder.deliveryDate}
-                    deliveryAddress={jobOrder.deliveryAddress}
+                    status={jobOrder?.status || "pending"}
+                    deliveryDate={jobOrder?.deliveryDate}
+                    deliveryAddress={jobOrder?.deliveryAddress}
                     onUpdateStatus={handleStatusUpdate}
                     className=""
-                    items={jobOrder.steelActual}
+                    items={jobOrder?.steelActual}
                   />
                 </TabsContent>
               </Tabs>
@@ -473,7 +474,7 @@ const JobOrderDetailPage = () => {
             {/* Quick Actions */}
 
             <div className="mt-3 grid gap-2">
-              <QuickAction orderId={jobOrder.id} />
+              <QuickAction orderId={jobOrder?.id || ""} />
             </div>
           </aside>
         </div>
