@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-
+import {Staff} from "@/types/staff";
+import { Product } from "@/types/product";
 type ApiJobOrder = {
   id: number;
   poNumber: string;
@@ -71,11 +72,11 @@ export async function GET(
       customerPhone: jobOrder.Customer?.tel ?? null,
       deliveryAddress: jobOrder.Customer?.address ?? null,
       keyPo: jobOrder.urlPo,
-      staff: jobOrder.Staff.map((s: any) => ({
+      staff: jobOrder.Staff.map((s: Staff) => ({
         name: s.user?.name ?? s.code, // ถ้า user.name ไม่มี ใช้ code แทน
         role: s.position ?? null, // ตอนนี้ใช้ position แทน role เช่น "cutter", "supervisor"
       })),
-      steel: jobOrder.Product.map((p: any) => ({
+      steel: jobOrder.Product.map((p: Product) => ({
         steelType: p.SteelType?.codeSteel,
         amount: p.amount ?? 0, // สมมติว่าเก็บจำนวนใน field amount
         width: p.wide ?? null, // สมมติ

@@ -19,7 +19,7 @@ export async function GET(
       where: { billId: bill?.id },
     });
     const product = await prisma.product.findMany({
-      where: { orderPOId: { in: orderPO.map((order) => order.id) } },
+      where: { orderPOId: { in: orderPO.map((order: any) => order.id) } },
     });
     return NextResponse.json(
       { bill, customer, orderPO, product },
