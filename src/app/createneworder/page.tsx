@@ -39,10 +39,15 @@ const NewJobOrder = () => {
   const [showForm, setShowForm] = useState(false); //แสดงหรือซ่อนข้อมุลลูกค้า
   const toggleForm = () => setShowForm(!showForm); //ฟังก์ชั่นแสดงฟอร์มลูกค้า
   const [open, setOpen] = useState(false); //เปิดหรือปิด SelectCustomer
+  // ลูกค้า
   const [customers, setCustomers] = useState<{ id: string; name: string }[]>(
     []
-  ); //เก็บข้อมุลลูกค้า
-  const [search, setSearch] = useState(""); // เก็บค่าที่ค้นหา
+  );
+  const [searchCustoer, setsearchCustoer] = useState(""); // เก็บค่าที่ค้นหาลูกค้า
+
+  // สินค้า
+  const [searchItem, setsearchItem] = useState(""); //เก็บค่าที่ค้นหาสินค้า
+  const [loadingSteel, setLoadingSteel] = useState(false);
   const [loading, setLoading] = useState(false); //สถานะโหลดข้อมุล
 
   const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(
@@ -78,8 +83,8 @@ const NewJobOrder = () => {
       try {
         const urlSteelType =
           searchItem.trim() === ""
-            ? `${process.env.NEXTAUTH_URL}/steelType`
-            : `${process.env.NEXTAUTH_URL}/steelType/${encodeURIComponent(
+            ? "http://localhost:3000/api/steelType"
+            : `http://localhost:3000/api/steelType/${encodeURIComponent(
                 searchItem
               )}`;
 
@@ -180,11 +185,10 @@ const NewJobOrder = () => {
     const form = new FormData();
     form.append("poNumber", poNumber);
     form.append("customerId", String(customerId)); // สำคัญ: แปลงเป็น string
-
     files.forEach((f) => form.append("files", f));
 
     // ใช้ relative path กัน CORS/timezone/env
-    const res = await fetch("/api/upload/po", {
+    const res = await fetch("/api/upload/po/uploadPo", {
       method: "POST",
       body: form,
     });
@@ -196,6 +200,7 @@ const NewJobOrder = () => {
     }
     const data: UploadResponse = await res.json().catch(() => ({}));
     if (!res.ok) {
+      console.error("Upload error:", data?.error);
       throw new Error(data?.error || "อัปโหลดไฟล์ไม่สำเร็จ");
     }
 
@@ -245,20 +250,19 @@ const NewJobOrder = () => {
 
       const poKeys = await UploadFiles({
         files: UploadFile,
-        poNumber: po.poNumber,
+        poNumber: headOrder.poNumber,
+
         customerId: customerId,
       });
 
       const payloadBill = {
         customerId: Number(customerId),
         yourRef: "REF108",
-        invoiceNo: "INV108",
-        deliveryDate: new Date(po.deliveryDate).toISOString(),
-        deliveryOrderNo: "DO108",
+        deliveryDate: new Date(headOrder.deliveryDate).toISOString(),
         vat: 7.0,
         orderPOs: [
           {
-            poNumber: po.poNumber,
+            poNumber: headOrder.poNumber,
             total: steelItems.reduce((sum, item) => {
               return sum + item.quantity;
             }, 0),
@@ -284,10 +288,23 @@ const NewJobOrder = () => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payloadBill),
       });
+
+      const rawText = await billRes.text(); // อ่านเป็น text ก่อน
+      // console.log("createNewOrder status:", billRes.status);
+      // console.log("createNewOrder raw response:", rawText);
+
+      console.log("Payload Bill:", payloadBill);
       if (!billRes.ok) {
         throw new Error("เกิดข้อผิดพลาดในการสร้างออเดอร์ใหม่");
       }
-      const billData = await billRes.json();
+      let billData: undefined = null;
+      try {
+        billData = JSON.parse(rawText);
+      } catch {
+        // ถ้า backend ไม่ได้ส่ง JSON กลับมา ก็ปล่อยเป็น null ไป
+        billData = null;
+      }
+
       console.log("สร้างออเดอร์ใหม่สำเร็จ:", billData);
       toast.success("สร้างออเดอร์ใหม่สำเร็จ", {
         position: "bottom-right",
@@ -350,8 +367,8 @@ const NewJobOrder = () => {
       if (!formData.faxNumber.trim()) return "กรุณากรอกเลข Fax";
     }
     if (!UploadFile.length) return "กรุณาอัปโหลดไฟล์ใบ PO";
-    if (!po.poNumber.trim()) return "กรุณากรอกหมายเลข PO";
-    if (!po.deliveryDate) return "กรุณากรอกวันที่ต้องการสินค้า";
+    if (!headOrder.poNumber.trim()) return "กรุณากรอกหมายเลข PO";
+    if (!headOrder.deliveryDate) return "กรุณากรอกวันที่ต้องการสินค้า";
     for (const item of steelItems) {
       if (!item.steelType) return "กรุณาเลือกประเภทเหล็ก";
       if (item.quantity <= 0) return "จำนวนชิ้นต้องมากกว่า 0";
