@@ -336,18 +336,24 @@ const JobOrderDetailPage = () => {
               </CardHeader>
               <CardContent className="p-0">
                 <div className="w-full text-sm text-left">
-                  <div className="bg-background px-6 py-3 font-medium text-muted-foreground grid grid-cols-3">
+                  <div className="bg-background px-6 py-3 font-medium text-muted-foreground grid grid-cols-4">
                     <span className="font-bold">ประเภทเหล็ก</span>
-                    <span className="font-bold">น้ำหนัก (Kg)</span>
+                    <span className="font-bold text-center">น้ำหนัก (Kg)</span>
+                    <span className="font-bold text-center">
+                      ราคาต่อหน่วย (Kg)
+                    </span>
                     <span className="text-right font-bold">ราคาประเมิน</span>
                   </div>
                   {jobOrder.steel.map((item, idx) => (
                     <div
                       key={idx}
-                      className="px-6 py-4 border-b last:border-0 grid grid-cols-3 bg-background  items-center hover:bg-hover transition-colors"
+                      className="px-6 py-4 border-b last:border-0 grid grid-cols-4 bg-background  items-center hover:bg-hover transition-colors"
                     >
                       <span className="font-medium">{item.steelType}</span>
-                      <span className="text-muted-foreground">
+                      <span className="text-muted-foreground text-center">
+                        {item.weight}
+                      </span>
+                      <span className="text-muted-foreground text-center">
                         {item.weight}
                       </span>
                       <span className="text-right font-mono">
@@ -355,9 +361,19 @@ const JobOrderDetailPage = () => {
                       </span>
                     </div>
                   ))}
-                  <div className="flex justify-between bg-background">
-                    <span className="px-6 py-4 font-semibold">รวมทั้งหมด</span>
-                    <span className="px-6 py-4 font-semibold text-green-400">
+                  <div className="px-6 py-4 border-b last:border-0 grid grid-cols-4 bg-background  items-center hover:bg-hover transition-colors">
+                    <span className="font-semibold">รวมทั้งหมด</span>
+                    <span className="font-semibold text-center">
+                      {jobOrder.steel
+                        .reduce((sum, item) => sum + item.weight, 0)
+                        .toLocaleString()}
+                    </span>
+                    <span className="font-semibold text-center">
+                      {jobOrder.steel
+                        .reduce((sum, item) => sum + item.weight, 0)
+                        .toLocaleString()}
+                    </span>
+                    <span className="font-semibold text-green-400 text-right">
                       {jobOrder.steel
                         .reduce((sum, item) => sum + item.price, 0)
                         .toLocaleString()}

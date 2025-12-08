@@ -93,16 +93,18 @@ model OrderPO {
   billId            Int?
   status            JobStatus @default(pending)
   total             Float
-  date              DateTime  @default(now())
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt()
   completedAt       DateTime?
   urlPo             String[]
   bill              Bill?     @relation(fields: [billId], references: [id], onDelete: SetNull)
   Customer          Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
   Staff             Staff[]
   Product           Product[]
+  
 
   @@index([status])
-  @@index([date])
+  @@index([createdAt])
   @@index([customerId, status])
   @@index([billId])
   @@index([customerId])
@@ -184,7 +186,7 @@ model SteelType{
   Product   Product[] 
   SteelStock SteelStock[]
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  updatedAt DateTime @updatedAt()
 }
 
 model SteelStock {
