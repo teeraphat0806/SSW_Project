@@ -71,11 +71,11 @@ export async function GET(
       customerPhone: jobOrder.Customer?.tel ?? null,
       deliveryAddress: jobOrder.Customer?.address ?? null,
       keyPo: jobOrder.urlPo,
-      staff: jobOrder.Staff.map((s) => ({
+      staff: jobOrder.Staff.map((s: any) => ({
         name: s.user?.name ?? s.code, // ถ้า user.name ไม่มี ใช้ code แทน
         role: s.position ?? null, // ตอนนี้ใช้ position แทน role เช่น "cutter", "supervisor"
       })),
-      steel: jobOrder.Product.map((p) => ({
+      steel: jobOrder.Product.map((p: any) => ({
         steelType: p.SteelType?.codeSteel,
         amount: p.amount ?? 0, // สมมติว่าเก็บจำนวนใน field amount
         width: p.wide ?? null, // สมมติ

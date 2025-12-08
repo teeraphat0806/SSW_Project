@@ -62,7 +62,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(result, { status: 200 });
   } catch (error) {
     return NextResponse.json(
-      { error: `Failed to run SQL: ${error?.message ?? String(error)}` },
+      { error: `Failed to run SQL` },
       { status: 500 }
     );
   }
