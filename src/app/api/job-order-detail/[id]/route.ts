@@ -1,33 +1,32 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import {Staff} from "@/types/staff";
-import { Product } from "@/types/product";
+
 type ApiJobOrder = {
   id: number;
   poNumber: string;
-  customerId: string | null;
-  customerName: string | null;
-  customerEmail: string | null;
-  customerPhone: string | null;
-  deliveryAddress: string | null;
+  customerId: string;
+  customerName: string;
+  customerEmail: string;
+  customerPhone: string;
+  deliveryAddress: string;
   keyPo: string[];
   staff: {
     name: string;
-    role: string | null;
+    role: string;
   }[];
   steel: {
     steelType: string;
     amount: number;
-    width: number | null;
-    length: number | null;
-    thickness: number | null;
-    price: number | null;
-    weight: number | null;
+    width: number;
+    length: number;
+    thickness: number;
+    price: number;
+    weight: number;
   }[];
-  updatedAt: string | null;
+  updatedAt: Date;
   status: string;
   createdAt: Date;
-  deliveryDate: string | null;
+  deliveryDate: Date;
 };
 
 export async function GET(
@@ -36,6 +35,10 @@ export async function GET(
 ) {
   const { id } = await context.params;
   const poId = Number(id);
+
+  if (Number.isNaN(poId)) {
+    return NextResponse.json({ error: "Invalid id" }, { status: 400 });
+  }
 
   try {
     const jobOrder = await prisma.orderPO.findUnique({
@@ -63,42 +66,54 @@ export async function GET(
       );
     }
 
+    // 🔴 ถ้าไม่มี Customer หรือ Bill ถือว่าข้อมูล order เสีย / ไม่สมบูรณ์
+    if (!jobOrder.Customer || !jobOrder.bill) {
+      return NextResponse.json(
+        { error: "Order is missing Customer or Bill relation" },
+        { status: 500 }
+      );
+    }
+
+    const customer = jobOrder.Customer;
+    const bill = jobOrder.bill;
+
     const apiJobOrder: ApiJobOrder = {
       id: jobOrder.id,
       poNumber: jobOrder.poNumber,
-      customerId: jobOrder.Customer?.id?.toString() ?? null,
-      customerName: jobOrder.customer?.name ?? null,
-      customerEmail: jobOrder.Customer?.email ?? null,
-      customerPhone: jobOrder.Customer?.tel ?? null,
-      deliveryAddress: jobOrder.Customer?.address ?? null,
-      keyPo: jobOrder.urlPo,
-      staff: jobOrder.Staff.map((s: Staff) => ({
-        name: s.user?.name ?? s.code, // ถ้า user.name ไม่มี ใช้ code แทน
-        role: s.position ?? null, // ตอนนี้ใช้ position แทน role เช่น "cutter", "supervisor"
+      customerId: customer.id.toString(),
+      customerName: customer.name,
+      customerEmail: customer.email,
+      customerPhone: customer.tel,
+      deliveryAddress: customer.address,
+      keyPo: jobOrder.urlPo ?? [],
+      staff: jobOrder.Staff.map((s) => ({
+        // user เป็น optional ใน schema → ใช้ชื่อ user ถ้ามี ไม่งั้นใช้ code
+        name: s.user?.name ?? s.code,
+        role: s.position,
       })),
-      steel: jobOrder.Product.map((p: Product) => ({
-        steelType: p.SteelType?.codeSteel,
-        amount: p.amount ?? 0, // สมมติว่าเก็บจำนวนใน field amount
-        width: p.wide ?? null, // สมมติ
-        length: p.length ?? null,
-        thickness: p.thickness ?? null,
-        price: p.price ?? null,
-        weight: p.weight ?? null,
+      steel: jobOrder.Product.map((p) => ({
+        steelType: p.SteelType.codeSteel, // SteelType เป็น non-null ตาม schema
+        amount: p.amount,
+        width: p.wide ?? 0,
+        length: p.length ?? 0,
+        thickness: p.thickness ?? 0,
+        price: p.SteelType.price,
+        // actualWeight เป็น optional → ถ้าไม่มีใช้ calculatedWeight ถ้าไม่มีอีกให้ 0
+        weight: p.actualWeight ?? 0,
       })),
       status: jobOrder.status,
-      createdAt: jobOrder.date,
+      // createdAt จาก OrderPO เอง (ตาม schema)
+      createdAt: jobOrder.createdAt,
       updatedAt: jobOrder.updatedAt,
-      deliveryDate: jobOrder.completedAt
-        ? jobOrder.completedAt.toISOString().split("T")[0]
-        : null,
+      // deliveryDate ต้องมาจาก Bill (บังคับมีค่าใน schema)
+      deliveryDate: bill.deliveryDate,
     };
 
     return NextResponse.json(apiJobOrder, { status: 200 });
   } catch (error) {
     console.error("Database error:", error);
-    return NextResponse.json(
-      { error: "Failed to fecth OrderPo" },
-      { status: 500 }
-    );
+    const message =
+      error instanceof Error ? error.message : "Failed to fetch OrderPO";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
