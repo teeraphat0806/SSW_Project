@@ -4,10 +4,8 @@
   "private": true,
   "scripts": {
     "check-errors": "npm run check:ts && npm run check:lint",
-
-  "check:ts": "tsc --noEmit || true",
-   "check:ts:file": "tsc --noEmit",
-  "check:lint": "eslint . --ext .js,.jsx,.ts,.tsx || true",
+    "check:ts": "tsc --noEmit || true",
+    "check:lint": "eslint . --ext .js,.jsx,.ts,.tsx || true",
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
