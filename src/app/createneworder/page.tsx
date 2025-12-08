@@ -78,8 +78,8 @@ const NewJobOrder = () => {
       try {
         const urlSteelType =
           searchItem.trim() === ""
-            ? "http://localhost:3000/api/steelType"
-            : `http://localhost:3000/api/steelType/${encodeURIComponent(
+            ? `${process.env.NEXTAUTH_URL}/steelType`
+            : `${process.env.NEXTAUTH_URL}/steelType/${encodeURIComponent(
                 searchItem
               )}`;
 

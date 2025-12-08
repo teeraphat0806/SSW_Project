@@ -425,7 +425,7 @@ export async function GETSQL(sql: string) {
   console.log("Executing SQL from chatbot:", sql);
   const encodedSQL = encodeURIComponent(sql);
   const resp = await fetch(
-    `http://localhost:3000/api/chatbot?sql=${encodedSQL}`,
+    `${process.env.NEXTAUTH_URL}api/chatbot?sql=${encodedSQL}`,
     {
       method: "POST",
       headers: {
