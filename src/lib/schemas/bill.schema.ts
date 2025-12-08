@@ -1,4 +1,4 @@
-import { z } from 'zod'
+import { z } from "zod";
 
 export const BillSchema = z.object({
   id: z.number().optional(),
@@ -13,4 +13,5 @@ export const BillSchema = z.object({
   discount: z.number().optional().nullable(),
   vat: z.number(),
   dateReceive: z.coerce.date().optional().nullable(),
-})
+  deliveryDate: z.coerce.date(),
+});

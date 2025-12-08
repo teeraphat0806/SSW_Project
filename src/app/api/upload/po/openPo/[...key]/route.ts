@@ -7,7 +7,7 @@ export const runtime = "nodejs";
 
 export async function GET(
   req: NextRequest,
-  context: { params: Promise<{ key: string[] }> } 
+  context: { params: Promise<{ key: string[] }> }
 ) {
   try {
     if (!BUCKET) {
@@ -17,11 +17,10 @@ export async function GET(
       );
     }
 
- 
     const { key } = await context.params;
     console.log("key:", key);
     const objectKey = key.join("/"); // "po/2/1764....pdf"
-    const fileName = key[key.length - 1];
+    //const fileName = key[key.length - 1];
 
     const res = await minioClient.send(
       new GetObjectCommand({
@@ -48,14 +47,11 @@ export async function GET(
       headers: {
         "Content-Type": res.ContentType || "application/pdf",
         // ถ้าอยากให้โหลดเลย:
-         //"Content-Disposition": `inline;filename="${encodeURIComponent(fileName)}"`
+        //"Content-Disposition": `inline;filename="${encodeURIComponent(fileName)}"`
       },
     });
   } catch (e) {
     console.error(e);
-    return NextResponse.json(
-      { error: "Failed to get file" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to get file" }, { status: 500 });
   }
 }

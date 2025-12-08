@@ -101,9 +101,10 @@ export async function POST(req: NextRequest) {
       result: narration,
     });
   } catch (e) {
-    return NextResponse.json(
-      { error: e?.message || "Internal error" },
-      { status: 500 }
-    );
+    if (e instanceof Error) {
+      return NextResponse.json({ error: e.message }, { status: 500 });
+    }
+    // fallback กรณีไม่ใช่ Error เช่น string, object แปลก ๆ
+    return NextResponse.json({ error: "Internal error" }, { status: 500 });
   }
 }

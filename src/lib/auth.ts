@@ -4,6 +4,22 @@ import prisma from "./prisma";
 import bcrypt from "bcrypt";
 import { PrismaAdapter } from "@next-auth/prisma-adapter";
 
+// type เสริมสำหรับ role/id ของเราเอง
+type AppUser = {
+  id: string | number;
+  role?: string | null;
+};
+
+type AppToken = {
+  id?: string | number;
+  role?: string | null;
+};
+
+type AppSessionUser = {
+  id?: string | number;
+  role?: string | null;
+};
+
 export const authOptions: AuthOptions = {
   providers: [
     CredentialsProvider({
@@ -42,18 +58,26 @@ export const authOptions: AuthOptions = {
     jwt: async ({ token, user }) => {
       // When a user signs in, attach id and role to the token.
       if (user) {
-        return { ...token, id: (user as any).id, role: (user as any).role };
+        const u = user as AppUser;
+        return {
+          ...token,
+          id: u.id,
+          role: u.role,
+        };
       }
       return token;
     },
     session: async ({ session, token }) => {
-      // Expose id and role on the session.user object returned to the client
+      const t = token as AppToken;
+      const baseUser = (session.user || {}) as AppSessionUser;
+
       return {
         ...session,
         user: {
-          ...(session.user as any),
-          id: (token as any).id,
-          role: (token as any).role,
+          ...baseUser,
+          ...session.user, // เผื่อ next-auth ใส่ name/email/etc มาให้
+          id: t.id,
+          role: t.role,
         },
       };
     },

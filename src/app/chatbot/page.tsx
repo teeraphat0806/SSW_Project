@@ -171,6 +171,7 @@ export default function Home() {
 
   const handleHint = () => {
     let newHint = "";
+    console.log("hint", hint);
     if (mode === "view") {
       newHint =
         "💡แนะนำ: สามารถถามข้อมูลลูกค้า ข้อมูลการสั่งซื้อ ข้อมูลสต็อคสินค้าได้เลย";

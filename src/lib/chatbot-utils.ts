@@ -1,5 +1,5 @@
 // helpers สำหรับ chatbot NL2SQL (ย้ายมาจาก route.ts)
-import { NextResponse } from "next/server";
+//import { NextResponse } from "next/server";
 
 // ---------- CONFIG ----------
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY!;
@@ -263,8 +263,8 @@ export async function callOpenRouter(userQuery: string): Promise<string> {
     {
       role: "user" as const,
       content:
-        `จงเขียนคำสั่ง SQL (PostgreSQL) เพียง 1 คำสั่ง สำหรับคำขอนี้ โดยทำตามกฎทั้งหมดด้านบน:\n` 
-         +`คำขอ: ${userQuery}\n\n` +
+        `จงเขียนคำสั่ง SQL (PostgreSQL) เพียง 1 คำสั่ง สำหรับคำขอนี้ โดยทำตามกฎทั้งหมดด้านบน:\n` +
+        `คำขอ: ${userQuery}\n\n` +
         `รูปแบบผลลัพธ์: ส่งเฉพาะคำสั่ง SQL เดียว ไม่มีคำอธิบาย ไม่มี backticks ไม่มีเครื่องหมาย \`\`\`.`,
     },
   ];

@@ -35,7 +35,7 @@ function looksSafeSelect(sql: string) {
 
 export async function POST(req: NextRequest) {
   const secret = req.headers.get("x-internal-secret");
-   if (secret !== INTERNAL_SECRET) {
+  if (secret !== INTERNAL_SECRET) {
     return new NextResponse("Unauthorized", { status: 401 });
   }
 
@@ -60,7 +60,7 @@ export async function POST(req: NextRequest) {
   try {
     const result = await prisma.$queryRawUnsafe(sql);
     return NextResponse.json(result, { status: 200 });
-  } catch (error: any) {
+  } catch (error) {
     return NextResponse.json(
       { error: `Failed to run SQL: ${error?.message ?? String(error)}` },
       { status: 500 }

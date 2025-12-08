@@ -31,13 +31,10 @@ type ApiJobOrder = {
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
-  const poId = Number(params.id);
-
-  if (Number.isNaN(poId)) {
-    return NextResponse.json({ error: "Invalid id" }, { status: 400 });
-  }
+  const { id } = await context.params;
+  const poId = Number(id);
 
   try {
     const jobOrder = await prisma.orderPO.findUnique({
