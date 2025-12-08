@@ -72,14 +72,13 @@ model Bill {
   dateReceive                   DateTime?
   salesNameId                   Int?
   deliveredById                 Int?
-  updatedAt                     DateTime @updatedAt
+  updatedAt                     DateTime  @updatedAt
   Customer                      Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
   Staff_Bill_deliveredByToStaff Staff?    @relation("Bill_deliveredByToStaff", fields: [deliveredById], references: [id], onDelete: SetNull)
   Staff_Bill_salesNameToStaff   Staff?    @relation("Bill_salesNameToStaff", fields: [salesNameId], references: [id], onDelete: SetNull)
   OrderPO                       OrderPO[]
 
   createdAt DateTime @default(now())
-  
 
   @@index([customerId])
   @@index([salesNameId])
@@ -111,7 +110,7 @@ model OrderPO {
 }
 
 model Product {
-  id               Int      @id @default(autoincrement())
+  id               Int     @id @default(autoincrement())
   orderPOId        Int
   steelId          Int
   wide             Float?
@@ -125,9 +124,9 @@ model Product {
   actualLength     Float?
   actualThickness  Float?
   total            Float
-  
-  OrderPO          OrderPO @relation(fields: [orderPOId], references: [id], onDelete: Cascade)
-  SteelType        SteelType @relation(fields: [steelId], references: [id], onDelete:Restrict)
+
+  OrderPO   OrderPO   @relation(fields: [orderPOId], references: [id], onDelete: Cascade)
+  SteelType SteelType @relation(fields: [steelId], references: [id], onDelete: Restrict)
 
   @@index([orderPOId])
   @@index([steelId])
@@ -152,29 +151,27 @@ model StaffSalary {
 }
 
 model StaffIncome {
-  id      Int      @id @default(autoincrement())
-  amount  Float
+  id         Int      @id @default(autoincrement())
+  amount     Float
   nameIncome String
-  detail  String   @default("-")
-  staffId Int
-  date    DateTime @default(now())
-  Staff   Staff    @relation(fields: [staffId], references: [id])
+  detail     String   @default("-")
+  staffId    Int
+  date       DateTime @default(now())
+  Staff      Staff    @relation(fields: [staffId], references: [id])
 
-  typeId   Int? 
-  type     TypeStaffIncome? @relation(fields: [typeId], references: [id], onDelete: SetNull)
+  typeId Int?
+  type   TypeStaffIncome? @relation(fields: [typeId], references: [id], onDelete: SetNull)
 
   @@index([staffId])
   @@index([typeId])
 }
 
-
-
 model TypeStaffIncome {
-  id        Int    @id @default(autoincrement())
-  amount    Float
-  name      String
-  types     String
-  incomes   StaffIncome[]
+  id      Int           @id @default(autoincrement())
+  amount  Float
+  name    String
+  types   String
+  incomes StaffIncome[]
 }
 model SteelType{
   id        Int    @id @default(autoincrement())
@@ -190,39 +187,38 @@ model SteelType{
 }
 
 model SteelStock {
-  id           Int           @id @default(autoincrement())
-  width        Float
-  length       Float
-  thickness    Float
-  status       String       @default("unused")
-  createdAt    DateTime     @default(now())
-  updatedAt    DateTime     @updatedAt()
-  
-  steeltypeId  Int
-  SteelType    SteelType   @relation(fields:[steeltypeId],references: [id], onDelete:Restrict)
+  id        Int      @id @default(autoincrement())
+  width     Float
+  length    Float
+  thickness Float
+  status    String   @default("unused")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt()
+
+  steeltypeId Int
+  SteelType   SteelType @relation(fields: [steeltypeId], references: [id], onDelete: Restrict)
 }
 
 model Expense {
-  id           Int           @id @default(autoincrement())
-  description  String      
-  amount       Float         
-  expenseDate  DateTime      
-  categoryId   Int           
-  category     ExpenseCategory @relation(fields: [categoryId], references: [id], onDelete: SetNull)
-  receiptUrl   String?      
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
+  id          Int             @id @default(autoincrement())
+  description String
+  amount      Float
+  expenseDate DateTime
+  categoryId  Int
+  category    ExpenseCategory @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  receiptUrl  String?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
 }
 
 model ExpenseCategory {
   id          Int       @id @default(autoincrement())
-  name        String    @unique  
+  name        String    @unique
   description String
   expenses    Expense[]
   staffId     Int
-  Staff   Staff    @relation(fields: [staffId], references: [id])
+  Staff       Staff     @relation(fields: [staffId], references: [id])
 }
-
 
 enum Role {
   superadmin
@@ -234,14 +230,14 @@ enum Role {
   delivery
 }
 
-enum JobStatus { 
-  pending 
-  cutting 
-  weighing 
-  ready 
-  shipped 
-  completed 
-  }
+enum JobStatus {
+  pending
+  cutting
+  weighing
+  ready
+  shipped
+  completed
+}
 
 enum ShapeSteel {
   square
