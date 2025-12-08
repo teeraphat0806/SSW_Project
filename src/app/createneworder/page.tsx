@@ -83,8 +83,8 @@ const NewJobOrder = () => {
       try {
         const urlSteelType =
           searchItem.trim() === ""
-            ? "http://localhost:3000/api/steelType"
-            : `http://localhost:3000/api/steelType/${encodeURIComponent(
+            ? `${process.env.NEXTAUTH_URL}api/steelType`
+            : `${process.env.NEXTAUTH_URL}api/steelType/${encodeURIComponent(
                 searchItem
               )}`;
 
@@ -116,10 +116,10 @@ const NewJobOrder = () => {
       try {
         const urlCustomer =
           searchCustoer.trim() === ""
-            ? "http://localhost:3000/api/customer"
-            : `http://localhost:3000/api/customer/name/${encodeURIComponent(
-                searchCustoer
-              )}`;
+            ? `${process.env.NEXTAUTH_URL}api/customer`
+            : `${
+                process.env.NEXTAUTH_URL
+              }api/customer/name/${encodeURIComponent(searchCustoer)}`;
         const res = await fetch(urlCustomer);
         if (!res.ok) throw new Error("Error fetching customers");
 
@@ -231,11 +231,14 @@ const NewJobOrder = () => {
           faxNumber: formData.faxNumber,
           email: formData.customerEmail,
         };
-        const customerRes = await fetch("http://localhost:3000/api/customer", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payloadNewcustomer),
-        });
+        const customerRes = await fetch(
+          `${process.env.NEXTAUTH_URL}api/customer`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payloadNewcustomer),
+          }
+        );
         if (!customerRes.ok) {
           throw new Error("เกิดข้อผิดพลาดในการบันทึกข้อมูลลูกค้า");
         }
@@ -283,7 +286,7 @@ const NewJobOrder = () => {
         ],
       };
       //สร้างออเดอร์ใหม่
-      const billRes = await fetch("http://localhost:3000/api/createNewOrder", {
+      const billRes = await fetch(`${process.env.NEXTAUTH_URL}api/createNewOrder`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payloadBill),

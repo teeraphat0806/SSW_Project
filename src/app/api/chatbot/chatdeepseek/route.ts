@@ -117,7 +117,7 @@ const ALLOWED: Record<string, string[]> = {
 };
 
 export async function narrateArrayWithOpenRouter(
-  dataArray: any[]
+  dataArray: unknown[]
 ): Promise<string> {
   if (!OPENROUTER_API_KEY) {
     throw new Error("Missing OPENROUTER_API_KEY");
@@ -179,90 +179,90 @@ export async function narrateArrayWithOpenRouter(
   return text;
 }
 // แผนที่ชื่อคอลัมน์ -> ตาราง (ช่วยเช็ค disambiguation เวลาเจอ "id" ในหลายตาราง)
-const COLUMN_TO_TABLES: Record<string, string[]> = Object.entries(
-  ALLOWED
-).reduce<Record<string, string[]>>((acc, [table, cols]) => {
-  cols.forEach((c) => {
-    (acc[c] ||= []).push(table);
-  });
-  return acc;
-}, {});
+// const COLUMN_TO_TABLES: Record<string, string[]> = Object.entries(
+//   ALLOWED
+// ).reduce<Record<string, string[]>>((acc, [table, cols]) => {
+//   cols.forEach((c) => {
+//     (acc[c] ||= []).push(table);
+//   });
+//   return acc;
+// }, {});
 
 // ---------- 2) SAFETY GUARD ----------
-const DANGEROUS = [
-  /\b(insert|update|delete|drop|alter|truncate|create|grant|revoke|comment)\b/i,
-  /--|\/\*|\*\//, // comments
-  /;/, // multiple statements
-  /\bpg_sleep\s*\(/i, // time-based
-  /\bcopy\s+\w+\s+to\b/i, // exfiltration
-];
+// const DANGEROUS = [
+//   /\b(insert|update|delete|drop|alter|truncate|create|grant|revoke|comment)\b/i,
+//   /--|\/\*|\*\//, // comments
+//   /;/, // multiple statements
+//   /\bpg_sleep\s*\(/i, // time-based
+//   /\bcopy\s+\w+\s+to\b/i, // exfiltration
+// ];
 
-function looksSafeSelect(sql: string) {
-  const s = sql.trim();
+// function looksSafeSelect(sql: string) {
+//   const s = sql.trim();
 
-  // ต้องเริ่มด้วย SELECT (หรือ WITH ... SELECT)
-  const startsWithSelectOrWith =
-    /^\s*(select|with)\b/i.test(s) && /select\b/i.test(s);
-  if (!startsWithSelectOrWith)
-    return { ok: false, reason: "Query is not SELECT/WITH" };
+//   // ต้องเริ่มด้วย SELECT (หรือ WITH ... SELECT)
+//   const startsWithSelectOrWith =
+//     /^\s*(select|with)\b/i.test(s) && /select\b/i.test(s);
+//   if (!startsWithSelectOrWith)
+//     return { ok: false, reason: "Query is not SELECT/WITH" };
 
-  // ห้าม ; และ comments
-  for (const pat of DANGEROUS) {
-    if (pat.test(s))
-      return { ok: false, reason: "Dangerous token or comment found" };
-  }
+//   // ห้าม ; และ comments
+//   for (const pat of DANGEROUS) {
+//     if (pat.test(s))
+//       return { ok: false, reason: "Dangerous token or comment found" };
+//   }
 
-  // อนุญาตตารางที่กำหนดเท่านั้น (ชื่อ table ต้องมีเครื่องหมายคำพูดคู่เพราะใช้ camelCase)
-  const tableNames = Object.keys(ALLOWED);
-  const tblRegex =
-    /from\s+("?)([A-Za-z_][A-Za-z0-9_]*)\1|join\s+("?)([A-Za-z_][A-Za-z0-9_]*)\3/gi;
-  let m: RegExpExecArray | null;
-  const seenTables = new Set<string>();
-  while ((m = tblRegex.exec(s))) {
-    const t = (m[2] || m[4]) ?? "";
-    seenTables.add(t);
-  }
-  for (const t of seenTables) {
-    if (!tableNames.includes(t)) {
-      return { ok: false, reason: `Disallowed table: ${t}` };
-    }
-  }
+//   // อนุญาตตารางที่กำหนดเท่านั้น (ชื่อ table ต้องมีเครื่องหมายคำพูดคู่เพราะใช้ camelCase)
+//   const tableNames = Object.keys(ALLOWED);
+//   const tblRegex =
+//     /from\s+("?)([A-Za-z_][A-Za-z0-9_]*)\1|join\s+("?)([A-Za-z_][A-Za-z0-9_]*)\3/gi;
+//   let m: RegExpExecArray | null;
+//   const seenTables = new Set<string>();
+//   while ((m = tblRegex.exec(s))) {
+//     const t = (m[2] || m[4]) ?? "";
+//     seenTables.add(t);
+//   }
+//   for (const t of seenTables) {
+//     if (!tableNames.includes(t)) {
+//       return { ok: false, reason: `Disallowed table: ${t}` };
+//     }
+//   }
 
-  // ตรวจคอลัมน์แบบหยาบ ๆ: หา "Table"."column" หรือ "column" เดี่ยว ๆ
-  // (อนุญาต function/aggregation ได้, ตรวจเฉพาะคีย์เวิร์ดปกติ)
-  const colRegex =
-    /"([A-Za-z_][A-Za-z0-9_]*)"\."([A-Za-z_][A-Za-z0-9_]*)"|"(?:[A-Za-z_][A-Za-z0-9_]*)"/g;
-  let mc: RegExpExecArray | null;
-  while ((mc = colRegex.exec(s))) {
-    if (mc[1] && mc[2]) {
-      // รูป "Table"."column"
-      const table = mc[1];
-      const col = mc[2];
-      if (!ALLOWED[table]?.includes(col)) {
-        return { ok: false, reason: `Disallowed column ${table}.${col}` };
-      }
-    } else if (mc[0]) {
-      // รูป "identifier" เดี่ยว เช่น "id" ใน SELECT
-      const ident = mc[0].slice(1, -1);
-      // ถ้าระบุเดี่ยว ๆ ต้องแน่ใจว่าเป็นคอลัมน์ที่ทุกตารางไม่มี collision หรือมี USING alias/qualify
-      const tables = COLUMN_TO_TABLES[ident] || [];
-      // ผ่อนผัน: ถ้า collides หลายตาราง แต่ใน query ใช้ตารางเดียว ก็โอเค
-      if (tables.length > 1 && seenTables.size > 1) {
-        // แนะนำให้ model ใส่ qualifier แล้ว — ที่นี่เราตีตก
-        return {
-          ok: false,
-          reason: `Ambiguous column "${ident}" without table qualifier`,
-        };
-      }
-      // ถ้าไม่มีตารางไหนมีเลย ก็ผิด
-      if (tables.length === 0) {
-        return { ok: false, reason: `Unknown identifier "${ident}"` };
-      }
-    }
-  }
+//   // ตรวจคอลัมน์แบบหยาบ ๆ: หา "Table"."column" หรือ "column" เดี่ยว ๆ
+//   // (อนุญาต function/aggregation ได้, ตรวจเฉพาะคีย์เวิร์ดปกติ)
+//   const colRegex =
+//     /"([A-Za-z_][A-Za-z0-9_]*)"\."([A-Za-z_][A-Za-z0-9_]*)"|"(?:[A-Za-z_][A-Za-z0-9_]*)"/g;
+//   let mc: RegExpExecArray | null;
+//   while ((mc = colRegex.exec(s))) {
+//     if (mc[1] && mc[2]) {
+//       // รูป "Table"."column"
+//       const table = mc[1];
+//       const col = mc[2];
+//       if (!ALLOWED[table]?.includes(col)) {
+//         return { ok: false, reason: `Disallowed column ${table}.${col}` };
+//       }
+//     } else if (mc[0]) {
+//       // รูป "identifier" เดี่ยว เช่น "id" ใน SELECT
+//       const ident = mc[0].slice(1, -1);
+//       // ถ้าระบุเดี่ยว ๆ ต้องแน่ใจว่าเป็นคอลัมน์ที่ทุกตารางไม่มี collision หรือมี USING alias/qualify
+//       const tables = COLUMN_TO_TABLES[ident] || [];
+//       // ผ่อนผัน: ถ้า collides หลายตาราง แต่ใน query ใช้ตารางเดียว ก็โอเค
+//       if (tables.length > 1 && seenTables.size > 1) {
+//         // แนะนำให้ model ใส่ qualifier แล้ว — ที่นี่เราตีตก
+//         return {
+//           ok: false,
+//           reason: `Ambiguous column "${ident}" without table qualifier`,
+//         };
+//       }
+//       // ถ้าไม่มีตารางไหนมีเลย ก็ผิด
+//       if (tables.length === 0) {
+//         return { ok: false, reason: `Unknown identifier "${ident}"` };
+//       }
+//     }
+//   }
 
-  return { ok: true, reason: "OK" };
-}
+//   return { ok: true, reason: "OK" };
+// }
 
 // // ---------- 3) SCHEMA CONTEXT (ให้โมเดลอ่าน) ----------
 // const SCHEMA_CONTEXT = `
@@ -543,7 +543,7 @@ export async function POST(req: NextRequest) {
 
       if (rowWithUrlPo) {
         const filePath = rowWithUrlPo.urlPo[0].replace(/^\/+/, "");
-        const openPoUrl = `http://localhost:3000/api/upload/po/openPo/${filePath}`;
+        const openPoUrl = `${process.env.NEXTAUTH_URL}/api/upload/po/openPo/${filePath}`;
 
         const openPoResp = await fetch(openPoUrl, { method: "GET" });
 

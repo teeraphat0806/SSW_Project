@@ -26,7 +26,6 @@
 ### 1. แก้ไข Port URLs
 
 ```typescript
-// เปลี่ยนจาก http://localhost:3000 เป็น http://localhost:3001
 // ในไฟล์:
 // - src/app/createneworder/page.tsx
 // - src/components/CustomerInfoBox.tsx

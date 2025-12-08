@@ -43,7 +43,8 @@ export async function POST(req: NextRequest) {
   }
 
   // เรียก API /user/filter/?name={session.user.name}
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"; // ตั้งค่าใน .env
+  const baseUrl =
+    process.env.NEXT_PUBLIC_BASE_URL || `${process.env.NEXTAUTH_URL}`; // ตั้งค่าใน .env
   const res = await fetch(
     `${baseUrl}/api/user/filter?name=${encodeURIComponent(session.user.name!)}`,
     {
