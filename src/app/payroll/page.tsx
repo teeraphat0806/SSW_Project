@@ -144,7 +144,11 @@ export default function PayrollPage() {
     fetch("/api/staff")
       .then((res) => res.json())
       .then((data: Employee[]) => {
-        setEmployees(data);
+        const withName = data.map((e) => ({
+          ...e,
+          name: e.user?.name ?? e.staffName ?? "",
+        }));
+        setEmployees(withName);
       })
       .catch((err) => console.error("Error fetching employees:", err));
     fetch("/api/typeStaffIncome")

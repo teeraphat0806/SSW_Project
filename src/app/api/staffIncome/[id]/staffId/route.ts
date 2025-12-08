@@ -1,0 +1,40 @@
+import { NextRequest, NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
+import { authOptions } from "../../../auth/[...nextauth]/route";
+import prisma from "@/lib/prisma";
+// GET /api/payroll/[id]
+export async function GET(
+  req: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  const session = await getServerSession({ req, ...authOptions });
+  if (!session || !["superadmin", "supervisor"].includes(session.user?.role)) {
+    return NextResponse.json({ error: "Permission Denied!!" }, { status: 400 });
+  }
+  try {
+    const result = await prisma.staffIncome.findMany({
+      where: { staffId: Number(params.id) },
+      include: {
+        Staff: {
+          select: {
+            position: true,
+            bankAccount: true,
+            startDate: true,
+            code: true,
+            social_security: true,
+            currentSalary: true,
+            user: { select: { name: true } },
+          },
+        },
+      },
+    });
+
+    return NextResponse.json(result, { status: 200 });
+  } catch (error) {
+    console.log("error: ", error);
+    return NextResponse.json(
+      { error: "Failed to fetch payrolls" },
+      { status: 500 }
+    );
+  }
+}
