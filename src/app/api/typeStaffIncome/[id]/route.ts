@@ -66,8 +66,9 @@ export async function PATCH(
     });
     return NextResponse.json(result, { status: 200 });
   } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
     return NextResponse.json(
-      { error: error?.message ?? "Failed to update typeStaffIncome" },
+      { error: message || "Failed to update typeStaffIncome" },
       { status: 500 }
     );
   }
@@ -93,8 +94,9 @@ export async function DELETE(
     await prisma.typeStaffIncome.delete({ where: { id: idNum } });
     return new NextResponse(null, { status: 204 }); // No Content
   } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
     return NextResponse.json(
-      { error: error?.message ?? "Failed to delete typeStaffIncome" },
+      { error: message || "Failed to delete typeStaffIncome" },
       { status: 500 }
     );
   }

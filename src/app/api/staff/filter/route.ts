@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-
+import { Staff } from "@/types/staff";
 import prisma from "../../../../lib/prisma";
 export async function GET(req: NextRequest) {
   const session = await getServerSession({ req, ...authOptions });
@@ -18,10 +18,12 @@ export async function GET(req: NextRequest) {
       include: { user: { select: { name: true } } },
     });
 
-    const payload = result.map(({ user, ...rest }) => ({
-      ...rest,
-      staffName: user?.name ?? null, // <- ชื่อพนักงาน
-    }));
+    const payload = result.map(
+      (staff: Staff & { user: { name: string | null } | null }) => ({
+        ...staff,
+        staffName: staff.user?.name ?? null,
+      })
+    );
 
     return NextResponse.json(payload, { status: 200 });
   } catch (error) {

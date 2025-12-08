@@ -3,6 +3,8 @@ import { authOptions } from "@/lib/auth";
 import { NextResponse, NextRequest } from "next/server";
 import prisma from "../../../lib/prisma";
 import { StaffSchema } from "../../../lib/schemas/staff.schema";
+import { Staff } from "@/types/staff";
+
 export async function GET(req: NextRequest) {
   const session = await getServerSession({ req, ...authOptions });
   // Fix: Only allow if role is superadmin OR supervisor
@@ -14,10 +16,12 @@ export async function GET(req: NextRequest) {
     const result = await prisma.staff.findMany({
       include: { user: { select: { name: true } } },
     });
-    const payload = result.map(({ Staff, ...rest }) => ({
-      ...rest,
-      staffName: Staff?.user?.name ?? null, // <- ชื่อพนักงาน
-    }));
+    const payload = result.map(
+      (staff: Staff & { user: { name: string | null } | null }) => ({
+        ...staff,
+        staffName: staff.user?.name ?? null,
+      })
+    );
     return NextResponse.json(payload, { status: 200 });
   } catch (error) {
     return NextResponse.json(
