@@ -64,14 +64,13 @@ export async function POST(req: NextRequest) {
 
   const { staffId, typeId, ...rest } = parsed.data;
 
-  
   const data: Prisma.StaffIncomeUncheckedCreateInput = {
     amount: rest.amount,
     nameIncome: rest.nameIncome,
-    detail: rest.detail ?? null,
+    detail: rest.detail,
     date: new Date(),
-    staffId: staffId ?? null,
-    typeId: typeId ?? null,
+    staffId: Number(staffId),
+    typeId: Number(typeId),
   };
 
   try {
