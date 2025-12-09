@@ -3,6 +3,7 @@ import { authOptions } from "@/lib/auth";
 import { NextResponse, NextRequest } from "next/server";
 import prisma from "../../../lib/prisma";
 import { ProductSchema } from "../../../lib/schemas/product.schema";
+
 export async function GET(req: NextRequest) {
   const session = await getServerSession({ req, ...authOptions });
   // Fix: Only allow if role is superadmin OR supervisor
@@ -14,7 +15,11 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Permission Denied!!" }, { status: 400 });
   }
   try {
-    const result = await prisma.product.findMany({});
+    const result = await prisma.product.findMany({
+      include: {
+        SteelType: true,
+      },
+    });
 
     return NextResponse.json(result, { status: 200 });
   } catch (error) {
@@ -44,7 +49,21 @@ export async function POST(req: NextRequest) {
   }
   try {
     const result = await prisma.product.create({
-      data: parsed.data, // ✅ ใช้ข้อมูลที่ผ่านการตรวจสอบแล้ว
+      data: {
+        wide: parsed.data.wide,
+        length: parsed.data.length,
+        thickness: parsed.data.thickness,
+        amount: parsed.data.amount,
+        total: parsed.data.total,
+        calculatedWeight: parsed.data.calculatedWeight,
+        actualWeight: parsed.data.actualWeight,
+        SteelType: {
+          connect: { id: parsed.data.steelid },
+        },
+        OrderPO: {
+          connect: { id: parsed.data.orderPOId },
+        },
+      },
     });
     return NextResponse.json(result, { status: 201 });
   } catch (error) {
