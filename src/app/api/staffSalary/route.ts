@@ -12,22 +12,37 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Permission Denied!!" }, { status: 400 });
   }
   try {
-    const result = await prisma.staffSalary.findMany({
+    const raw = await prisma.staffSalary.findMany({
       include: {
         Staff: {
           select: {
-            name: true,
             position: true,
             bankAccount: true,
             startDate: true,
             code: true,
             social_security: true,
             currentSalary: true,
+            user: {
+              select: { name: true },
+            },
           },
         },
       },
     });
+    const result = raw.map((item) => {
+      if (!item.Staff) return item;
 
+      const { user, ...staffWithoutUser } = item.Staff;
+
+      return {
+        ...item,
+        Staff: {
+          ...staffWithoutUser,
+          name: user?.name ?? null, // ⭐ แปลงเป็น field name
+        },
+        name: user?.name ?? null,
+      };
+    });
     return NextResponse.json(result, { status: 200 });
   } catch (error) {
     return NextResponse.json(
@@ -44,13 +59,13 @@ export async function POST(req: NextRequest) {
 
   // เรียก API /user/filter/?name={session.user.name}
   const baseUrl =
-    process.env.NEXT_PUBLIC_BASE_URL || `${process.env.NEXTAUTH_URL}`; // ตั้งค่าใน .env
+    process.env.NEXT_PUBLIC_BASE_URL || `${process.env.NEXTAUTH_URL}`;
+
   const res = await fetch(
     `${baseUrl}/api/user/filter?name=${encodeURIComponent(session.user.name!)}`,
     {
       method: "GET",
       headers: { "Content-Type": "application/json" },
-      // credentials: "include" // ไม่จำเป็นใน server fetch เพราะส่งจากฝั่ง server อยู่แล้ว
     }
   );
 
@@ -62,26 +77,56 @@ export async function POST(req: NextRequest) {
   }
 
   const users = await res.json();
-  console.log("users:", users);
-
-  // สมมติว่าคุณต้องการเอา user แรกมาใช้เป็น createdBy
   const creatorId = users[0]?.id;
+
   const body = await req.json();
   const dateNow = new Date();
-  const requestBody = { ...body, effectiveDate: dateNow, createdBy: creatorId };
+
+  // เตรียม body ที่จะส่งเข้า Zod
+  const requestBody = {
+    ...body,
+    effectiveDate: dateNow,
+    createdBy: creatorId,
+  };
 
   const parsed = StaffSalarySchema.partial().safeParse(requestBody);
+
+  // ❗ ต้องเช็ก success ก่อนใช้ parsed.data
   if (!parsed.success) {
-    return NextResponse.json({ error: "Invalid data format" });
+    return NextResponse.json(
+      {
+        error: "Invalid data format",
+        details: parsed.error.format(),
+      },
+      { status: 400 }
+    );
+  }
+
+  // ตอนนี้ TypeScript รู้แล้วว่า parsed.data มีแน่ ๆ
+  const { staffId, ...rest } = parsed.data;
+
+  if (!staffId) {
+    return NextResponse.json({ error: "staffId is required" }, { status: 400 });
   }
 
   try {
     const result = await prisma.staffSalary.create({
       data: {
-        ...parsed.data,
-        createdBy: creatorId, // ✅ เพิ่มตรงนี้แทน
+        // ฟิลด์ตาม schema: amount, effectiveDate, detail, createdBy
+        amount: rest.amount!,
+        effectiveDate: rest.effectiveDate ?? dateNow,
+        detail: rest.detail,
+        createdBy: creatorId,
+
+        // ✅ ผูกกับ Staff ผ่าน relation แทนการ set staffId ตรง ๆ
+        Staff: {
+          connect: {
+            id: staffId,
+          },
+        },
       },
     });
+
     return NextResponse.json(result, { status: 201 });
   } catch (error) {
     return NextResponse.json(
