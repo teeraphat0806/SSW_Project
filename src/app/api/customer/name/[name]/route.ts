@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { requireAuth } from "@/lib/permissions";
 import prisma from "../../../../../lib/prisma";
 
 export async function GET(
@@ -8,13 +7,18 @@ export async function GET(
   context: { params: Promise<{ name: string }> }
 ) {
   const { name } = await context.params;
-  const session = await getServerSession({ req, ...authOptions });
-  if (
-    !session ||
-    !["superadmin", "supervisor", "clerk"].includes(session.user?.role)
-  ) {
-    return NextResponse.json({ error: "Permission Denied!!" }, { status: 400 });
+  const authResult = await requireAuth([
+    "superadmin",
+    "supervisor",
+    "clerk",
+    "delivery",
+  ]);
+
+  if ("response" in authResult) {
+    return authResult.response;
   }
+  const { session } = authResult;
+  console.log(session);
 
   try {
     const result = await prisma.customer.findMany({

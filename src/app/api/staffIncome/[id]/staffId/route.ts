@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+
 import prisma from "@/lib/prisma";
+import { requireAuth } from "@/lib/permissions";
 // GET /api/payroll/[id]
 export async function GET(
   req: NextRequest,
@@ -9,10 +9,18 @@ export async function GET(
 ) {
   const { id } = await context.params;
 
-  const session = await getServerSession({ req, ...authOptions });
-  if (!session || !["superadmin", "supervisor"].includes(session.user?.role)) {
-    return NextResponse.json({ error: "Permission Denied!!" }, { status: 400 });
+  const authResult = await requireAuth([
+    "superadmin",
+    "supervisor",
+    "clerk",
+    "delivery",
+  ]);
+
+  if ("response" in authResult) {
+    return authResult.response;
   }
+  const { session } = authResult;
+  console.log(session);
   try {
     const result = await prisma.staffIncome.findMany({
       where: { staffId: Number(id) },

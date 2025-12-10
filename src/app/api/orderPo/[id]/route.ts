@@ -1,25 +1,25 @@
-
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
-
 import prisma from "../../../../lib/prisma";
 import { OrderPOSchema } from "../../../../lib/schemas/orderPO.schema";
+import { requireAuth } from "@/lib/permissions";
 // GET /api/payroll/[id]
 export async function GET(
   req: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
   const { id } = await context.params;
-  const session = await getServerSession({ req, ...authOptions });
-  if (
-    !session ||
-    !["superadmin", "supervisor", "clerk", "cutter", "delivery"].includes(
-      session.user?.role
-    )
-  ) {
-    return NextResponse.json({ error: "Permission Denied!!" }, { status: 400 });
+  const authResult = await requireAuth([
+    "superadmin",
+    "supervisor",
+    "clerk",
+    "delivery",
+  ]);
+
+  if ("response" in authResult) {
+    return authResult.response;
   }
+  const { session } = authResult;
+  console.log(session);
   try {
     const result = await prisma.orderPO.findUnique({
       where: { id: Number(id) },
@@ -40,15 +40,18 @@ export async function PATCH(
   context: { params: Promise<{ id: string }> }
 ) {
   const { id } = await context.params;
-  const session = await getServerSession({ req, ...authOptions });
-  if (
-    !session ||
-    !["superadmin", "supervisor", "clerk", "cutter", "delivery"].includes(
-      session.user?.role
-    )
-  ) {
-    return NextResponse.json({ error: "Permission Denied!!" }, { status: 400 });
+  const authResult = await requireAuth([
+    "superadmin",
+    "supervisor",
+    "clerk",
+    "delivery",
+  ]);
+
+  if ("response" in authResult) {
+    return authResult.response;
   }
+  const { session } = authResult;
+  console.log(session);
   const body = await req.json();
   const parsed = OrderPOSchema.partial().safeParse(body);
   if (!parsed.success) {
@@ -75,15 +78,18 @@ export async function DELETE(
   context: { params: Promise<{ id: string }> }
 ) {
   const { id } = await context.params;
-  const session = await getServerSession({ req, ...authOptions });
-  if (
-    !session ||
-    !["superadmin", "supervisor", "clerk", "cutter", "delivery"].includes(
-      session.user?.role
-    )
-  ) {
-    return NextResponse.json({ error: "Permission Denied!!" }, { status: 400 });
+  const authResult = await requireAuth([
+    "superadmin",
+    "supervisor",
+    "clerk",
+    "delivery",
+  ]);
+
+  if ("response" in authResult) {
+    return authResult.response;
   }
+  const { session } = authResult;
+  console.log(session);
   try {
     await prisma.orderPO.delete({
       where: { id: Number(id) },

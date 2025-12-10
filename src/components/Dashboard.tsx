@@ -87,9 +87,21 @@ const mockJobOrders: JobOrder[] = [
   },
 ];
 
-const Dashboard = ({ role }) => {
-  const [currentRole, setCurrentRole] = useState<UserRole>(
-    role == "superadmin" ? "Supervisor" : role || "clerk"
+type DashboardProps = {
+  // role ที่รับจากข้างนอก อาจเป็น superadmin ก็ได้
+  role?: UserRole | "superadmin" | null;
+};
+
+function normalizeRole(role?: UserRole | "superadmin" | null): UserRole {
+  if (role === "superadmin" || role === "supervisor") return "supervisor";
+  if (role === "cutter") return "cutter";
+  if (role === "delivery") return "delivery";
+  return "clerk"; // default
+}
+
+const Dashboard = ({ role }: DashboardProps) => {
+  const [currentRole, setCurrentRole] = useState<UserRole>(() =>
+    normalizeRole(role)
   );
   const [jobOrders] = useState<JobOrder[]>(mockJobOrders);
   const router = useRouter();
@@ -359,7 +371,8 @@ const Dashboard = ({ role }) => {
 
                       <div className="flex justify-between items-center">
                         <span className="text-xs text-muted-foreground">
-                          สร้างเมื่อ: {new Date(order.createdAt).toLocaleDateString()}
+                          สร้างเมื่อ:{" "}
+                          {new Date(order.createdAt).toLocaleDateString()}
                         </span>
                         <div className="flex gap-2">
                           {currentRole === "clerk" && (

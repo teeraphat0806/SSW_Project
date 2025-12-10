@@ -1,5 +1,5 @@
 import {User} from "./user";
-import {OrderPO} from "./orderPo";
+import { OrderPO } from "./orderPO";
 import {Bill} from "./bill";
 import {StaffIncome} from "./staffIncome";
 import {StaffSalary} from "./staffSalary";

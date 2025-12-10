@@ -1,16 +1,21 @@
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 import { NextResponse, NextRequest } from "next/server";
 import prisma from "../../../lib/prisma";
 import { StaffSalarySchema } from "../../../lib/schemas/staffSalary.schema";
+import { requireAuth } from "@/lib/permissions";
 
 export async function GET(req: NextRequest) {
-  const session = await getServerSession({ req, ...authOptions });
-  // Fix: Only allow if role is superadmin OR supervisor
-  console.log("Session:", session);
-  if (!session || !["superadmin", "supervisor"].includes(session.user?.role)) {
-    return NextResponse.json({ error: "Permission Denied!!" }, { status: 400 });
+  const authResult = await requireAuth([
+    "superadmin",
+    "supervisor",
+    "clerk",
+    "delivery",
+  ]);
+
+  if ("response" in authResult) {
+    return authResult.response;
   }
+  const { session } = authResult;
+  console.log(session);
   try {
     const raw = await prisma.staffSalary.findMany({
       include: {
@@ -52,10 +57,18 @@ export async function GET(req: NextRequest) {
   }
 }
 export async function POST(req: NextRequest) {
-  const session = await getServerSession({ req, ...authOptions });
-  if (!session || !["superadmin", "supervisor"].includes(session.user?.role)) {
-    return NextResponse.json({ error: "Permission Denied!!" }, { status: 400 });
+  const authResult = await requireAuth([
+    "superadmin",
+    "supervisor",
+    "clerk",
+    "delivery",
+  ]);
+
+  if ("response" in authResult) {
+    return authResult.response;
   }
+  const { session } = authResult;
+  console.log(session);
 
   // เรียก API /user/filter/?name={session.user.name}
   const baseUrl =

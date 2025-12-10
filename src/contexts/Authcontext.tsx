@@ -11,6 +11,7 @@ export type UserRole =
   | "delivery";
 
 export interface UserProfile {
+  createdAt: string | number | Date;
   id: string;
   email: string;
   name: string | null;

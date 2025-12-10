@@ -1,5 +1,5 @@
+import { OrderPO } from "./orderPO";
 import { Customer } from "./customer";
-import { OrderPO } from "./orderPo";
 import { Staff } from "./staff";
 export interface Bill {
   id: number;

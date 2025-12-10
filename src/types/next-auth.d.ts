@@ -1,32 +1,25 @@
-import "next-auth";
+// src/types/next-auth.d.ts
+import { DefaultSession, DefaultUser } from "next-auth";
 
 declare module "next-auth" {
-  interface Session {
-    user: {
-      id: string;
-      name: string;
-      email: string;
-      role: string;
-      image?: string;
+  interface User extends DefaultUser {
+    role?: string | null;
+  }
+
+  // ให้ Session "extends" จาก DefaultSession
+  interface Session extends DefaultSession {
+    user: DefaultSession["user"] & {
+      id?: string | number;
+      role?: string | null;
     };
   }
-
-  interface User {
-    id: string;
-    name: string;
-    email: string;
-    role: string;
-  }
-}
-
-declare module "next-auth" {
-  export * from "next-auth/core/types";
-  export { getServerSession } from "next-auth/next";
 }
 
 declare module "next-auth/jwt" {
   interface JWT {
-    id: string;
-    role: string;
+    id?: string | number;
+    role?: string | null;
   }
 }
+
+export {};
