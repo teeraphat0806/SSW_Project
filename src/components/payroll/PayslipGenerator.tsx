@@ -1,11 +1,12 @@
-import { Card, CardContent } from '../../components/ui/card';
-import { Button } from '../../components/ui/button';
-import { Separator } from '../../components/ui/separator';
-import { Employee, Payslip, PayslipItem } from '../../types/payroll';
-import { format } from 'date-fns';
+import { Card, CardContent } from "../../components/ui/card";
+import { Button } from "../../components/ui/button";
+import { Separator } from "../../components/ui/separator";
+import { Employee, Payslip } from "../../types/payroll";
+import { format } from "date-fns";
 import { useRef } from "react";
 import { Printer, Download, ArrowLeft } from "lucide-react";
-import Logo  from '../../components/Logo'; 
+import Logo from "../../components/Logo";
+import { useState, useEffect } from "react";
 
 interface PayslipGeneratorProps {
   employee: Employee;
@@ -189,8 +190,8 @@ export const PayslipGenerator = ({
       const w = iframe.contentWindow;
       if (!w) return;
       // กันบางเครื่องพิมพ์ก่อนโหลดสไตล์/ฟอนต์
-      if ((w as any).document?.fonts?.ready) {
-        (w as any).document.fonts.ready.then(() => {
+      if (w.document?.fonts?.ready) {
+        w.document.fonts.ready.then(() => {
           w.focus();
           w.print();
           setTimeout(() => document.body.removeChild(iframe), 500);

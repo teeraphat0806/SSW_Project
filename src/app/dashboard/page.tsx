@@ -1,9 +1,15 @@
-'use client';
+"use client";
 import Dashboard from "@/components/Dashboard";
 import { useSession } from "next-auth/react";
+
+type UserRole = "clerk" | "supervisor" | "cutter" | "delivery";
+
 const Index = () => {
   const { data: session } = useSession();
-  return <Dashboard role={(session?.user as { role?: string })?.role} />;
+
+  const role = session?.user?.role as UserRole;
+
+  return <Dashboard role={role} />;
 };
 
 export default Index;

@@ -7,12 +7,13 @@ export interface Employee {
   bankAccount: string;
   bankName: string;
   currentSalary: number;
-  social_security: string;  
+  social_security: string;
   staffName: string;
   user?: {
     id: number;
     name: string;
-  }
+  };
+  userId?: number;
 }
 
 export interface SalaryAdjustment {
@@ -24,7 +25,7 @@ export interface SalaryAdjustment {
   amount: number;
   detail: string;
   date: string;
-  type: 'increase' | 'decrease';
+  type: "increase" | "decrease";
 }
 
 export interface PayslipItem {

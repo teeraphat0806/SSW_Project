@@ -1,6 +1,6 @@
 import { Product } from "./product";
 import { SteelStock } from "./steelStock";
-import { ShapeSteel } from "./enum/shapeSteel";
+import { ShapeSteel } from "./enums";
 
 export interface SteelType {
   id: number;

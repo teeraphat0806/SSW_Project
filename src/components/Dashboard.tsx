@@ -236,7 +236,7 @@ const Dashboard = ({ role }: DashboardProps) => {
   useEffect(() => {
     if (role === "superadmin") {
       setCurrentRole("supervisor");
-    } else if (role == "") {
+    } else if (!role) {
       setCurrentRole("clerk");
     }
   }, [role]);
