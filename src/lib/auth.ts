@@ -1,9 +1,11 @@
 // src/lib/auth.ts
-import type { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import prisma from "./prisma";
 import bcrypt from "bcrypt";
 import { PrismaAdapter } from "@next-auth/prisma-adapter";
+
+import type { Session, User } from "next-auth";
+import type { JWT } from "next-auth/jwt";
 
 type AppUser = {
   id: string | number;
@@ -20,7 +22,7 @@ type AppSessionUser = {
   role?: string | null;
 };
 
-export const authOptions: NextAuthOptions = {
+export const authOptions = {
   providers: [
     CredentialsProvider({
       name: "Credentials",
@@ -35,41 +37,58 @@ export const authOptions: NextAuthOptions = {
           where: { email: credentials.email },
         });
 
-        if (
-          user &&
-          (await bcrypt.compare(credentials.password, user.password))
-        ) {
-          return {
-            id: user.id.toString(),
-            name: user.name,
-            email: user.email,
-            role: user.role,
-          };
-        } else {
+        if (!user) return null;
+
+        const isValid = await bcrypt.compare(
+          credentials.password,
+          user.password
+        );
+
+        if (!isValid) {
           throw new Error("Invalid email or password");
         }
+
+        return {
+          id: user.id.toString(),
+          name: user.name,
+          email: user.email,
+          role: user.role,
+        };
       },
     }),
   ],
+
   adapter: PrismaAdapter(prisma),
+
   session: {
-    strategy: "jwt",
+    strategy: "jwt" as const,
     maxAge: 30 * 24 * 60 * 60,
   },
+
   callbacks: {
-    jwt: async ({ token, user }) => {
+    // ใส่ type ให้ param เองกัน implicit any
+    async jwt({
+      token,
+      user,
+    }: {
+      token: JWT;
+      user?: User | AppUser | null;
+    }) {
       if (user) {
         const u = user as AppUser;
-        return {
-          ...token,
-          id: u.id,
-          role: u.role,
-        };
+        (token as any).id = u.id;
+        (token as any).role = u.role;
       }
       return token;
     },
-    session: async ({ session, token }) => {
-      const t = token as AppToken;
+
+    async session({
+      session,
+      token,
+    }: {
+      session: Session;
+      token: JWT & AppToken;
+    }) {
       const baseUser = (session.user || {}) as AppSessionUser;
 
       return {
@@ -77,12 +96,13 @@ export const authOptions: NextAuthOptions = {
         user: {
           ...baseUser,
           ...session.user,
-          id: t.id,
-          role: t.role,
+          id: token.id,
+          role: token.role,
         },
       };
     },
   },
+
   pages: {
     signIn: "/auth",
   },

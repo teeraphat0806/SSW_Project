@@ -84,13 +84,13 @@ export function DeliveryTab({
   };
 
   const handleCopyAddress = () => {
-    navigator.clipboard.writeText(deliveryAddress);
+    navigator.clipboard.writeText(deliveryAddress ?? "");
     setIsAddressCopied(true);
     setTimeout(() => setIsAddressCopied(false), 2000);
   };
 
   const handleOpenGoogleMaps = () => {
-    const encodedAddress = encodeURIComponent(deliveryAddress);
+    const encodedAddress = encodeURIComponent(deliveryAddress ?? "");
     window.open(
       `https://www.google.com/maps/search/?api=1&query=${encodedAddress}`,
       "_blank"

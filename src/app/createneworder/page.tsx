@@ -14,6 +14,8 @@ import { ArrowLeft, FileText, Save, X } from "lucide-react";
 import SelectCustomer from "@/components/SelectCustomer";
 //import { se } from "date-fns/locale";
 
+import type { CustomerFormData } from "@/components/newJobOrder/CustomerForm";
+
 type SteelItem = {
   id: string;
   steelType: string;
@@ -29,7 +31,7 @@ type SteelItem = {
 type SteelType = {
   id: string;
   name: string; // ใช้แสดงใน Select
-  shape: string; // 'line' | 'square' | ...
+  shape: "line" | "square" | string;
 };
 
 const NewJobOrder = () => {
@@ -50,9 +52,10 @@ const NewJobOrder = () => {
   const [loadingSteel, setLoadingSteel] = useState(false);
   const [loading, setLoading] = useState(false); //สถานะโหลดข้อมุล
 
-  const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(
-    null
-  ); // เก็บ ID ลูกค้าที่เลือกจาก SelectCustomer
+  const [selectedCustomerId, setSelectedCustomerId] = useState<
+    string | number | null
+  >(null);
+  // เก็บ ID ลูกค้าที่เลือกจาก SelectCustomer
   const [headOrder, setheadOrder] = useState({
     //เก็บข้อมูล PO
     poNumber: "",
@@ -164,7 +167,7 @@ const NewJobOrder = () => {
   };
 
   // Form data customer
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<CustomerFormData>({
     code: "",
     customerName: "",
     customerEmail: "",
@@ -289,11 +292,14 @@ const NewJobOrder = () => {
         ],
       };
       //สร้างออเดอร์ใหม่
-      const billRes = await fetch(`${process.env.NEXTAUTH_URL}api/createNewOrder`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payloadBill),
-      });
+      const billRes = await fetch(
+        `${process.env.NEXTAUTH_URL}api/createNewOrder`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payloadBill),
+        }
+      );
 
       const rawText = await billRes.text(); // อ่านเป็น text ก่อน
       // console.log("createNewOrder status:", billRes.status);
@@ -329,11 +335,21 @@ const NewJobOrder = () => {
   };
 
   // Update form data
-  const updateFormData = (field: string, value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
+  const updateFormData = <K extends keyof CustomerFormData>(
+    field: K,
+    value: CustomerFormData[K]
+  ) => {
+    setFormData((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
   };
   // Update steel item
-  const updateSteelItem = (id: string, field: string, value: string) => {
+  const updateSteelItem = <K extends keyof SteelItem>(
+    id: SteelItem["id"],
+    field: K,
+    value: SteelItem[K]
+  ) => {
     setSteelItems((prev) =>
       prev.map((item) => (item.id === id ? { ...item, [field]: value } : item))
     );
@@ -497,7 +513,7 @@ const NewJobOrder = () => {
                       updateFormData={updateFormData}
                     />
                   ) : selectedCustomerId ? (
-                    <CustomerInfoBox customerId={selectedCustomerId} />
+                    <CustomerInfoBox customerId={String(selectedCustomerId)} />
                   ) : (
                     <div className="p-4 text-sm text-muted-foreground">
                       กรุณาเลือกลูกค้า

@@ -11,7 +11,28 @@ import { Textarea } from "@/components/ui/textarea";
 import "@/app/globals.css";
 import { Building2 } from "lucide-react";
 
-export default function CustomerForm({ formData, updateFormData }) {
+export type CustomerFormData = {
+  customerName: string;
+  code: string;
+  customerEmail: string;
+  customerPhone: string;
+  taxNumber: string;
+  faxNumber: string;
+  deliveryAddress: string;
+};
+
+type CustomerFormProps = {
+  formData: CustomerFormData;
+  updateFormData: <K extends keyof CustomerFormData>(
+    field: K,
+    value: CustomerFormData[K]
+  ) => void;
+};
+
+export default function CustomerForm({
+  formData,
+  updateFormData,
+}: CustomerFormProps) {
   return (
     <Card className="shadow-steel">
       <CardHeader>
@@ -24,7 +45,7 @@ export default function CustomerForm({ formData, updateFormData }) {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="grid grid-cols- md:grid-cols-3 gap-2">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
           <div>
             <Label htmlFor="customerName">ชื่อบริษัท *</Label>
             <Input
@@ -66,7 +87,7 @@ export default function CustomerForm({ formData, updateFormData }) {
               className="mt-1"
             />
           </div>
-       
+
           {/* <div>
             <Label htmlFor="deliveryDate">วันที่ต้องจัดส่ง</Label>
             <Input

@@ -4,6 +4,7 @@ import { StaffSalarySchema } from "../../../lib/schemas/staffSalary.schema";
 import { requireAuth } from "@/lib/permissions";
 
 export async function GET(req: NextRequest) {
+  //authenticate user
   const authResult = await requireAuth([
     "superadmin",
     "supervisor",
