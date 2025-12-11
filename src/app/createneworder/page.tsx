@@ -52,9 +52,10 @@ const NewJobOrder = () => {
   const [loadingSteel, setLoadingSteel] = useState(false);
   const [loading, setLoading] = useState(false); //สถานะโหลดข้อมุล
 
-  const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(
-    null
-  ); // เก็บ ID ลูกค้าที่เลือกจาก SelectCustomer
+  const [selectedCustomerId, setSelectedCustomerId] = useState<
+    string | number | null
+  >(null);
+  // เก็บ ID ลูกค้าที่เลือกจาก SelectCustomer
   const [headOrder, setheadOrder] = useState({
     //เก็บข้อมูล PO
     poNumber: "",
@@ -509,7 +510,7 @@ const NewJobOrder = () => {
                       updateFormData={updateFormData}
                     />
                   ) : selectedCustomerId ? (
-                    <CustomerInfoBox customerId={selectedCustomerId} />
+                    <CustomerInfoBox customerId={String(selectedCustomerId)} />
                   ) : (
                     <div className="p-4 text-sm text-muted-foreground">
                       กรุณาเลือกลูกค้า

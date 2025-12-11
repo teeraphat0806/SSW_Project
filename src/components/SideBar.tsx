@@ -6,9 +6,11 @@ import * as Avatar from "@radix-ui/react-avatar";
 import Link from "next/link";
 import Logo from "../components/Logo";
 import ThemeToggle from "../components/ThemeToggle";
+import type { Session } from "next-auth";
 
 export default function Sidebar() {
   const { data: session, status } = useSession();
+  const user = session?.user as Session["user"];
 
   if (status !== "authenticated" || !session?.user) return null;
 
@@ -64,13 +66,13 @@ export default function Sidebar() {
           <span className="hidden group-hover:inline text-sm font-medium truncate">
             <div className="px-2 py-1 border-b">
               <p className="text-sm">
-                <span className="font-bold">ชื่อ:</span> {session.user.name}
+                <span className="font-bold">ชื่อ:</span> {user.name}
               </p>
               <p className="text-xs">
-                <span className="font-bold">อีเมล:</span> {session.user.email}
+                <span className="font-bold">อีเมล:</span> {user.email}
               </p>
               <p className="text-xs">
-                <span className="font-bold">ตำเเหน่ง:</span> {session.user.role}
+                <span className="font-bold">ตำเเหน่ง:</span> {user.role}
               </p>
             </div>
           </span>

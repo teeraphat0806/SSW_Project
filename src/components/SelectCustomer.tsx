@@ -24,7 +24,9 @@ type SelectCustomerProps = {
   open: boolean;
   setOpen: (open: boolean) => void;
   selectedCustomerId: string | number | null;
-  setSelectedCustomer: (id: string | number | null) => void;
+  setSelectedCustomer: React.Dispatch<
+    React.SetStateAction<string | number | null>
+  >;
   customers: CustomerOption[];
   search: string;
   setSearch: (value: string) => void;

@@ -39,7 +39,8 @@ export async function requireAuth(
   allowedRoles?: Role[]
 ): Promise<RequireAuthResult> {
   // 👇 บอก TS ชัด ๆ ว่าเป็น Session | null
-  const session = (await getServerSession(authOptions)) as Session | null;
+  const session = (await getServerSession(authOptions as any)) as Session | null;
+
 
   if (!session || !session.user) {
     return {
