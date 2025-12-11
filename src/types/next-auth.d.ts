@@ -6,6 +6,7 @@ declare module "next-auth" {
     role?: string | null;
   }
 
+  // ให้ Session "extends" จาก DefaultSession
   interface Session extends DefaultSession {
     user: DefaultSession["user"] & {
       id?: string | number;

@@ -24,6 +24,8 @@ import {
   Plus,
 } from "lucide-react";
 
+type UserRole = "clerk" | "supervisor" | "cutter" | "delivery";
+
 interface JobOrder {
   id: string;
   poNumber: string;
@@ -85,14 +87,12 @@ const mockJobOrders: JobOrder[] = [
   },
 ];
 
-type UserRole = "clerk" | "supervisor" | "cutter" | "delivery";
-
 type DashboardProps = {
-  // role ดิบจาก session: string | null ก็ได้
-  role?: string | null;
+  // role ที่รับจากข้างนอก อาจเป็น superadmin ก็ได้
+  role?: UserRole | "superadmin" | null;
 };
 
-function normalizeRole(role?: string | null): UserRole {
+function normalizeRole(role?: UserRole | "superadmin" | null): UserRole {
   if (role === "superadmin" || role === "supervisor") return "supervisor";
   if (role === "cutter") return "cutter";
   if (role === "delivery") return "delivery";

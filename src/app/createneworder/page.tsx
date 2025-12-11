@@ -14,8 +14,6 @@ import { ArrowLeft, FileText, Save, X } from "lucide-react";
 import SelectCustomer from "@/components/SelectCustomer";
 //import { se } from "date-fns/locale";
 
-import type { CustomerFormData } from "@/components/newJobOrder/CustomerForm";
-
 type SteelItem = {
   id: string;
   steelType: string;
@@ -31,7 +29,7 @@ type SteelItem = {
 type SteelType = {
   id: string;
   name: string; // ใช้แสดงใน Select
-  shape: "line" | "square" | string;
+  shape: string; // 'line' | 'square' | ...
 };
 
 const NewJobOrder = () => {
@@ -166,7 +164,7 @@ const NewJobOrder = () => {
   };
 
   // Form data customer
-  const [formData, setFormData] = useState<CustomerFormData>({
+  const [formData, setFormData] = useState({
     code: "",
     customerName: "",
     customerEmail: "",
@@ -291,14 +289,11 @@ const NewJobOrder = () => {
         ],
       };
       //สร้างออเดอร์ใหม่
-      const billRes = await fetch(
-        `${process.env.NEXTAUTH_URL}api/createNewOrder`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payloadBill),
-        }
-      );
+      const billRes = await fetch(`${process.env.NEXTAUTH_URL}api/createNewOrder`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payloadBill),
+      });
 
       const rawText = await billRes.text(); // อ่านเป็น text ก่อน
       // console.log("createNewOrder status:", billRes.status);
@@ -334,21 +329,11 @@ const NewJobOrder = () => {
   };
 
   // Update form data
-  const updateFormData = <K extends keyof CustomerFormData>(
-    field: K,
-    value: CustomerFormData[K]
-  ) => {
-    setFormData((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
+  const updateFormData = (field: string, value: string) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
   };
   // Update steel item
-  const updateSteelItem = <K extends keyof SteelItem>(
-    id: SteelItem["id"],
-    field: K,
-    value: SteelItem[K]
-  ) => {
+  const updateSteelItem = (id: string, field: string, value: string) => {
     setSteelItems((prev) =>
       prev.map((item) => (item.id === id ? { ...item, [field]: value } : item))
     );

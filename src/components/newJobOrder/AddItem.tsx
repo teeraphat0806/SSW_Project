@@ -23,47 +23,6 @@ import { Package, Plus, X } from "lucide-react";
 import { Checkbox } from "@radix-ui/react-checkbox";
 import React from "react";
 
-export type SteelItemType = {
-  id: string;
-  steelType: string;
-  shape: "line" | "square" | string;
-  quantity: number;
-  width: number;
-  length: number;
-  thickness: number;
-  hasNotes: boolean;
-  notes: string;
-};
-
-export type SteelTypeOption = {
-  id: string | number;
-  name: string;
-  shape: "line" | "square" | string;
-};
-
-export type HeadOrderType = {
-  poNumber: string;
-  yourRef: string;
-  deliveryDate: string;
-};
-
-type AddItemProps = {
-  steelItems: SteelItemType[];
-  updateSteelItem: <K extends keyof SteelItemType>(
-    id: SteelItemType["id"],
-    field: K,
-    value: SteelItemType[K]
-  ) => void;
-  addSteelItem: () => void;
-  removeSteelItem: (id: SteelItemType["id"]) => void;
-  steelTypes: SteelTypeOption[];
-  headOrder: HeadOrderType;
-  setheadOrder: React.Dispatch<React.SetStateAction<HeadOrderType>>;
-  searchItem: string;
-  setsearchItem: React.Dispatch<React.SetStateAction<string>>;
-  loadingSteel: boolean;
-};
-
 export default function AddItem({
   steelItems,
   updateSteelItem,
@@ -75,12 +34,12 @@ export default function AddItem({
   searchItem,
   setsearchItem,
   loadingSteel,
-}: AddItemProps) {
+}) {
   // คำนวณวันที่ปัจจุบันในรูปแบบ YYYY-MM-DD
   const today = new Date().toISOString().split("T")[0];
 
   // ฟังก์ชันตรวจสอบว่าวันที่ที่เลือกไม่ใช่วันที่ผ่านมาแล้ว
-  const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleDateChange = (e) => {
     const selectedDate = e.target.value;
     const currentDate = new Date();
     const selectedDateTime = new Date(selectedDate);
@@ -352,9 +311,8 @@ export default function AddItem({
                         id={`has-notes-${item.id}`}
                         checked={item.hasNotes || false}
                         onCheckedChange={(checked) => {
-                          const value = Boolean(checked);
-                          updateSteelItem(item.id, "hasNotes", value);
-                          if (!value) {
+                          updateSteelItem(item.id, "hasNotes", checked);
+                          if (!checked) {
                             updateSteelItem(item.id, "notes", "");
                           }
                         }}

@@ -77,7 +77,7 @@ export const SalaryAdjustmentForm = ({ employees, onAdjustmentSubmit }: SalaryAd
                     {employees.map((employee) => (
                         <SelectItem
                             key={employee.id}
-                            value={String(employee.id)}
+                            value={employee.id}
                             className="bg-background text-muted-foreground hover:bg-blue-50 cursor-pointer"
                         >
                             <div className="flex flex-col">
