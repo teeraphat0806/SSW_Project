@@ -70,7 +70,8 @@ export default function Sidebar() {
                 <span className="font-bold">อีเมล:</span> {session.user.email}
               </p>
               <p className="text-xs">
-                <span className="font-bold">ตำเเหน่ง:</span> {session.user.role}
+                <span className="font-bold">ตำเเหน่ง:</span>{" "}
+                {session.user?.role}
               </p>
             </div>
           </span>

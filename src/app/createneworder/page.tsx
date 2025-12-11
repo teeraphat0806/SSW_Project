@@ -77,6 +77,9 @@ const NewJobOrder = () => {
     },
   ]);
 
+  const handleSetSelectedCustomer = (id: string | number | null) => {
+    setSelectedCustomerId(id ? String(id) : "");
+  };
   useEffect(() => {
     let ignore = false;
 
@@ -428,7 +431,7 @@ const NewJobOrder = () => {
               open={open}
               setOpen={setOpen}
               selectedCustomerId={selectedCustomerId}
-              setSelectedCustomer={setSelectedCustomerId}
+              setSelectedCustomer={handleSetSelectedCustomer}
               customers={customers}
               search={searchCustoer}
               setSearch={setsearchCustoer}
