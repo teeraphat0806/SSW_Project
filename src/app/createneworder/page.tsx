@@ -78,9 +78,6 @@ const NewJobOrder = () => {
     },
   ]);
 
-  const handleSetSelectedCustomer = (id: string | number | null) => {
-    setSelectedCustomerId(id ? String(id) : "");
-  };
   useEffect(() => {
     let ignore = false;
 
@@ -89,10 +86,8 @@ const NewJobOrder = () => {
       try {
         const urlSteelType =
           searchItem.trim() === ""
-            ? `${process.env.NEXTAUTH_URL}api/steelType`
-            : `${process.env.NEXTAUTH_URL}api/steelType/${encodeURIComponent(
-                searchItem
-              )}`;
+            ? `api/steelType`
+            : `api/steelType/${encodeURIComponent(searchItem)}`;
 
         const res = await fetch(urlSteelType);
         if (!res.ok) throw new Error("Error fetching steel types");
@@ -122,7 +117,7 @@ const NewJobOrder = () => {
       try {
         const urlCustomer =
           searchCustoer.trim() === ""
-            ? `${process.env.NEXTAUTH_URL}api/customer`
+            ? `api/customer`
             : `${
                 process.env.NEXTAUTH_URL
               }api/customer/name/${encodeURIComponent(searchCustoer)}`;
@@ -237,14 +232,12 @@ const NewJobOrder = () => {
           faxNumber: formData.faxNumber,
           email: formData.customerEmail,
         };
-        const customerRes = await fetch(
-          `${process.env.NEXTAUTH_URL}api/customer`,
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payloadNewcustomer),
-          }
-        );
+        const customerRes = await fetch(`api/customer`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payloadNewcustomer),
+        });
+
         if (!customerRes.ok) {
           throw new Error("เกิดข้อผิดพลาดในการบันทึกข้อมูลลูกค้า");
         }
@@ -292,14 +285,11 @@ const NewJobOrder = () => {
         ],
       };
       //สร้างออเดอร์ใหม่
-      const billRes = await fetch(
-        `${process.env.NEXTAUTH_URL}api/createNewOrder`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payloadBill),
-        }
-      );
+      const billRes = await fetch(`api/createNewOrder`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payloadBill),
+      });
 
       const rawText = await billRes.text(); // อ่านเป็น text ก่อน
       // console.log("createNewOrder status:", billRes.status);
@@ -432,7 +422,7 @@ const NewJobOrder = () => {
               open={open}
               setOpen={setOpen}
               selectedCustomerId={selectedCustomerId}
-              setSelectedCustomer={handleSetSelectedCustomer}
+              setSelectedCustomer={setSelectedCustomerId}
               customers={customers}
               search={searchCustoer}
               setSearch={setsearchCustoer}

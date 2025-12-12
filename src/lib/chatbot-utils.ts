@@ -239,16 +239,13 @@ export async function narrateArrayWithOpenRouter(
 export async function GETSQL(sql: string) {
   console.log("Executing SQL from chatbot (via internal proxy):", sql);
   const encodedSQL = encodeURIComponent(sql);
-  const resp = await fetch(
-    `${process.env.NEXTAUTH_URL}api/chatbot?sql=${encodedSQL}`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-internal-secret": INTERNAL_SECRET,
-      },
-    }
-  );
+  const resp = await fetch(`api/chatbot?sql=${encodedSQL}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-internal-secret": INTERNAL_SECRET,
+    },
+  });
 
   if (!resp.ok) {
     const errText = await resp.text().catch(() => "");

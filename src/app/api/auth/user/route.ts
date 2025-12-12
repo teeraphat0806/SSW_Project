@@ -1,5 +1,17 @@
 import prisma from "../../../../lib/prisma";
 export async function GET() {
+  const authResult = await requireAuth([
+    "superadmin",
+    "supervisor",
+    "clerk",
+    "delivery",
+  ]);
+
+  if ("response" in authResult) {
+    return authResult.response;
+  }
+  const { session } = authResult;
+  console.log(session);
   try {
     const users = await prisma.user.findMany({
       select: {

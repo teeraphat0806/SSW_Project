@@ -28,7 +28,7 @@ export default function CustomerInfoCard({
       try {
         console.log("Fetching customer with ID:", customerId);
         const response = await fetch(
-          `${process.env.NEXTAUTH_URL}api/customer/${customerId}`
+          `api/customer/${customerId}`
         );
         if (!response.ok) throw new Error("Failed to fetch Customer data");
         const data = await response.json();

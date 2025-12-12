@@ -11,17 +11,17 @@ import {
 // ---------- 5) HANDLER ----------
 export async function POST(req: NextRequest) {
   const authResult = await requireAuth([
-      "superadmin",
-      "supervisor",
-      "clerk",
-      "delivery",
-    ]);
-  
-    if ("response" in authResult) {
-      return authResult.response;
-    }
-    const { session } = authResult;
-    console.log(session);
+    "superadmin",
+    "supervisor",
+    "clerk",
+    "delivery",
+  ]);
+
+  if ("response" in authResult) {
+    return authResult.response;
+  }
+  const { session } = authResult;
+  console.log(session);
   try {
     const body = await req.json();
     const userQuery: string = (body?.query || "").toString().trim();
@@ -68,7 +68,7 @@ export async function POST(req: NextRequest) {
 
       if (rowWithUrlPo) {
         const filePath = rowWithUrlPo.urlPo[0].replace(/^\/+/, "");
-        const openPoUrl = `${process.env.NEXTAUTH_URL}/api/upload/po/openPo/${filePath}`;
+        const openPoUrl = `/api/upload/po/openPo/${filePath}`;
 
         const openPoResp = await fetch(openPoUrl, { method: "GET" });
 

@@ -72,11 +72,10 @@ export async function POST(req: NextRequest) {
   console.log(session);
 
   // เรียก API /user/filter/?name={session.user.name}
-  const baseUrl =
-    process.env.NEXT_PUBLIC_BASE_URL || `${process.env.NEXTAUTH_URL}`;
+  
 
   const res = await fetch(
-    `${baseUrl}/api/user/filter?name=${encodeURIComponent(session.user.name!)}`,
+    `api/user/filter?name=${encodeURIComponent(session.user.name!)}`,
     {
       method: "GET",
       headers: { "Content-Type": "application/json" },
