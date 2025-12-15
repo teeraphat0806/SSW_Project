@@ -179,6 +179,7 @@ model SteelType{
   detail    String?
   amount    Int    @default(0)
   shape     ShapeSteel
+  density   Float 
   price     Float
 
   Product   Product[] 

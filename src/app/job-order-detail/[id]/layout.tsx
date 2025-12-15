@@ -1,6 +1,6 @@
 // src/app/layout.tsx
-import "../globals.css";
-import Layout from "../../components/Layout";
+import "../../globals.css";
+import Layout from "../../../components/Layout";
 import { ThemeProvider } from "next-themes";
 
 export const metadata = {

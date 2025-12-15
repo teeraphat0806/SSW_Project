@@ -8,6 +8,7 @@ type ApiJobOrder = {
   customerName: string;
   customerEmail: string;
   customerPhone: string;
+  customercode: string;
   deliveryAddress: string;
   keyPo: string[];
   staff: {
@@ -17,11 +18,14 @@ type ApiJobOrder = {
   steel: {
     steelType: string;
     amount: number;
-    width: number;
-    length: number;
-    thickness: number;
+    width?: number;
+    length?: number;
+    thickness?: number;
     price: number;
     weight: number;
+    density: number;
+    detail?: string;
+    shape: string;
   }[];
   updatedAt: Date;
   status: string;
@@ -84,20 +88,24 @@ export async function GET(
       customerName: customer.name,
       customerEmail: customer.email,
       customerPhone: customer.tel,
+      customercode: customer.code,
       deliveryAddress: customer.address,
       keyPo: jobOrder.urlPo ?? [],
       staff:
         jobOrder.Staff?.map((s) => ({
           name: s.user?.name ?? s.code,
-          role: s.position,
+          role: s.user?.role ?? "unknown",
         })) ?? [],
       steel: jobOrder.Product.map((p) => ({
         steelType: p.SteelType.codeSteel, // SteelType เป็น non-null ตาม schema
         amount: p.amount,
-        width: p.wide ?? 0,
-        length: p.length ?? 0,
-        thickness: p.thickness ?? 0,
+        width: p.wide ?? null,
+        length: p.length ?? null,
+        thickness: p.thickness ?? null,
         price: p.SteelType.price,
+        density: p.SteelType.density,
+        detail: p.detail ?? undefined,
+        shape: p.SteelType.shape,
         // actualWeight เป็น optional → ถ้าไม่มีใช้ calculatedWeight ถ้าไม่มีอีกให้ 0
         weight: p.actualWeight ?? 0,
       })),

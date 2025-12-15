@@ -1,16 +1,11 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Button } from "../../components/ui/button";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "../../components/ui/tabs";
+import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 // Update the import path below if your use-toast file is located elsewhere
-import { toast } from "../../hooks/use-toast";
-import { Badge } from "../../components/ui/badge";
+import { toast } from "../../../hooks/use-toast";
+import { Badge } from "@/components/ui/badge";
 
 import {
   ArrowLeft,
@@ -25,22 +20,98 @@ import {
   Factory,
   Truck,
 } from "lucide-react";
-import { QuickAction } from "../../components/jobordertail/QuickAction";
-import { StaffInfoCard } from "../../components/jobordertail/StaffInfoCard";
-import { CustomerTab } from "../../components/jobordertail/CustomerTab";
-import { ProductionTab } from "../../components/jobordertail/ProductionTab";
-import { DeliveryTab } from "../../components/jobordertail/DeliveryTab";
+import { QuickAction } from "@/components/jobordertail/QuickAction";
+import { StaffInfoCard } from "@/components/jobordertail/StaffInfoCard";
+import { CustomerTab } from "@/components/jobordertail/CustomerTab";
+import { ProductionTab } from "@/components/jobordertail/ProductionTab";
+import { DeliveryTab } from "@/components/jobordertail/DeliveryTab";
 // Consolidate Card imports to use the local UI component for consistent styling
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Icon } from "leaflet";
+import { set } from "zod";
+import th from "zod/v4/locales/th.cjs";
+import { se } from "date-fns/locale";
+import router from "next/router";
+
+type ApiJobOrder = {
+  id: number;
+  poNumber: string;
+  customerId: string | null;
+  customerName: string | null;
+  customerEmail: string | null;
+  customerPhone: string | null;
+  deliveryAddress: string | null;
+  customercode: string | null;
+
+  staff: { name: string; role: string | null }[];
+
+  steel: {
+    steelType: string;
+    amount: number;
+    width?: number | null;
+    length?: number | null;
+    thickness?: number | null;
+    price: number | null;
+    weight: number | null;
+    density: number | null;
+    detail?: string | null;
+    shape: string;
+  }[];
+
+  status: string;
+  createdAt: string; // JSON -> string
+  updatedAt: string; // JSON -> string
+  deliveryDate: string;
+  assignedCutter?: string | null;
+  completedAt?: string | null;
+};
+
+const tojobOrder = (api: ApiJobOrder): JobOrder => {
+  return {
+    id: api.id.toString(),
+    poNumber: api.poNumber,
+    customerId: api.customerId,
+    customerName: api.customerName,
+    customerEmail: api.customerEmail,
+    customerPhone: api.customerPhone,
+    deliveryAddress: api.deliveryAddress,
+    customercode: api.customercode,
+    staff: (api.staff || []).map((s) => ({
+      name: s.name,
+      role: s.role,
+    })),
+
+    steel: (api.steel || []).map((s) => ({
+      steelType: s.steelType,
+      amount: s.amount,
+      width: s.width ?? null,
+      length: s.length ?? null,
+      thickness: s.thickness ?? null,
+      price: s.price ?? 0,
+      weight: s.weight ?? 0,
+      detail: s.detail ?? undefined,
+      density: s.density ?? 0,
+      shape: s.shape,
+    })),
+    status: api.status as JobOrder["status"],
+    createdAt: new Date(api.createdAt),
+
+    deliveryDate: new Date(api.deliveryDate),
+    updatedAt: new Date(api.updatedAt),
+    assignedCutter: api.assignedCutter ?? undefined,
+    completedAt: api.completedAt ? new Date(api.completedAt) : undefined,
+  };
+};
 
 interface JobOrder {
-  id: string ;
+  id: string;
   poNumber: string;
   customerId: string;
+  customerName: string;
   customerEmail: string;
   customerPhone: string;
   deliveryAddress: string;
+  customercode: string;
   staff: Array<{
     name: string;
     role: string;
@@ -48,22 +119,14 @@ interface JobOrder {
   steel: Array<{
     steelType: string;
     amount: number;
-    width: number;
-    length: number;
-    thickness: number;
+    width?: number;
+    length?: number;
+    thickness?: number;
     price: number;
     weight: number;
-    specialInstructions?: string;
-  }>;
-  steelActual?: Array<{
-    steelType: string;
-    amount?: number;
-    quantity?: number;
-    width: number;
-    length: number;
-    thickness: number;
-    price: number;
-    weight: number;
+    detail?: string;
+    density: number;
+    shape: string;
   }>;
   status:
     | "pending"
@@ -73,79 +136,53 @@ interface JobOrder {
     | "shipped"
     | "completed";
   createdAt: Date;
-  deliveryDate?: string;
+  deliveryDate?: Date;
+  updatedAt: Date;
   assignedCutter?: string;
   completedAt?: Date;
 }
 
-const mockJobOrder: JobOrder = {
-  id: "1",
-  poNumber: "PO-2024-001",
-  customerId: "CUST-001",
-  customerEmail: "customer@example.com",
-  customerPhone: "0123456789",
-  deliveryAddress: "123 Main St, Bangkok, Thailand",
-  staff: [
-    { name: "สมชาย ใจดี", role: "cutter" },
-    { name: "สมศักดิ์ แก่นทอง", role: "supervisor" },
-    { name: "สมปอง มีสุข", role: "cutter" },
-  ],
+const cm3ToM3 = (cm3: number) => cm3 / 1_000_000;
 
-  steel: [
-    {
-      steelType: "แผ่น SS400 4x8",
-      amount: 10,
-      width: 1200,
-      length: 2400,
-      thickness: 6,
-      price: 9500,
-      weight: 120,
-    },
-    {
-      steelType: "กลม 12 มม.",
-      amount: 20,
-      width: 12,
-      length: 6000,
-      thickness: 12,
-      price: 4100,
-      weight: 60,
-    },
-    {
-      steelType: "ฉาก 40x40",
-      amount: 15,
-      width: 40,
-      length: 6000,
-      thickness: 4,
-      price: 3100,
-      weight: 45.5,
-    },
-  ],
-  steelActual: [
-    {
-      steelType: "แผ่น SS400 4x8",
-      amount: 10,
-      width: 1200,
-      length: 2400,
-      thickness: 6,
-      price: 9625,
-      weight: 121.3,
-    },
-    {
-      steelType: "กลม 12 มม.",
-      amount: 20,
-      width: 12,
-      length: 6000,
-      thickness: 12,
-      price: 4185,
-      weight: 61.2,
-    },
-  ],
-  status: "pending",
-  createdAt: new Date("2024-01-15T09:30:16"),
-  deliveryDate: "2024-02-24",
+const calcPlateWeightKgCm = (
+  widthCm: number,
+  lengthCm: number,
+  thicknessCm: number,
+  density: number
+) => {
+  const volumeCm3 = widthCm * lengthCm * thicknessCm;
+  return cm3ToM3(volumeCm3) * density;
 };
 
-const InfoStat = ({ label, value, icon: Icon }:{label:string,value:string,icon: React.ComponentType<any>;}) => (
+// เหล็กเส้นทรงกลม: thickness = diameter
+const calcRoundBarWeightKgCm = (
+  diameterCm: number,
+  lengthCm: number,
+  density: number
+) => {
+  const r = diameterCm / 2;
+  const areaCm2 = Math.PI * r * r;
+  const volumeCm3 = areaCm2 * lengthCm;
+  return cm3ToM3(volumeCm3) * density;
+};
+
+const fmt = (n: number) =>
+  n.toLocaleString("th-TH", { maximumFractionDigits: 2 });
+
+const safeNum = (v: unknown) => {
+  const n = typeof v === "number" ? v : Number(v);
+  return Number.isFinite(n) ? n : 0;
+};
+
+const InfoStat = ({
+  label,
+  value,
+  icon: Icon,
+}: {
+  label: string;
+  value: string;
+  icon: React.ComponentType<any>;
+}) => (
   <div className="flex items-start gap-3 rounded-lg border p-3 bg-background hover:bg-hover transition-colors">
     <div className="flex h-10 w-10 items-center justify-center rounded-full bg-background border shadow-sm text-primary">
       {Icon && <Icon className="h-5 w-5" />}
@@ -156,21 +193,41 @@ const InfoStat = ({ label, value, icon: Icon }:{label:string,value:string,icon: 
     </div>
   </div>
 );
-const JobOrderDetailPage = () => {
+const JobOrderDetailPage = ({ id }: { id: string }) => {
   const [loading, setLoading] = useState(true);
   const [jobOrder, setJobOrder] = useState<JobOrder | null>(null);
+  const supervisors =
+    jobOrder?.staff.filter((s) => s.role === "supervisor").map((s) => s.name) ??
+    [];
+
+  const technicians =
+    jobOrder?.staff.filter((s) => s.role === "cutter").map((s) => s.name) ?? [];
+
   useEffect(() => {
     const fetchJobOrder = async () => {
-      setJobOrder(mockJobOrder);
-      setLoading(true);
-      await new Promise((resolve) => setTimeout(resolve, 800));
+      try {
+        setLoading(true);
 
-      setLoading(false);
+        const response = await fetch(`/api/job-order-detail/${id}`, {
+          cache: "no-store",
+        });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+        const apiData: ApiJobOrder = await response.json();
+        const mapped = tojobOrder(apiData);
+
+        setJobOrder(mapped);
+        console.log("mapped jobOrder:", mapped); // ✅ log ตัวที่แปลงแล้ว
+      } catch (error) {
+        console.error("Failed to fetch job order:", error);
+        setJobOrder(null);
+      } finally {
+        setLoading(false);
+      }
     };
 
     fetchJobOrder();
-  }, []);
-  const router = useRouter();
+  }, [id]);
 
   const getStatusColor = (status: JobOrder["status"]) => {
     switch (status) {
@@ -241,10 +298,16 @@ const JobOrderDetailPage = () => {
           </Button>
 
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <span>แก้ไขล่าสุดเมื่อ: 12/2/2025</span>
+            <span>
+              แก้ไขล่าสุดเมื่อ:
+              {jobOrder?.updatedAt.toLocaleDateString() || "N/A"}
+            </span>
           </div>
         </div>
       </header>
+      <pre className="text-xs overflow-auto p-3 border rounded">
+        {JSON.stringify(jobOrder, null, 2)}
+      </pre>
 
       <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
         {/* --- Page Header & Actions --- */}
@@ -309,77 +372,184 @@ const JobOrderDetailPage = () => {
                   />
                   <InfoStat
                     label="เลขที่ใบสั่งซื้อ (PO)"
-                    value={jobOrder?.poNumber || "" }
+                    value={jobOrder?.poNumber || "N/A"}
                     icon={FileText}
                   />
                   <InfoStat
                     label="กำหนดส่งสินค้า"
-                    value="24 ก.พ. 2024"
+                    value={
+                      jobOrder?.deliveryDate.toLocaleDateString("th-TH") ||
+                      "N/A"
+                    }
                     icon={CalendarDays}
                   />
                   <InfoStat
                     label="ผู้รับผิดชอบ (ตัด)"
-                    value="สมชาย ใจดี"
+                    value={supervisors[0] || "N/A"}
                     icon={User2}
                   />
                 </div>
               </div>
             </Card>
 
-            <Card className="overflow-hidden rounded-lg shadow-md ">
+            <Card className="overflow-hidden rounded-lg shadow-md">
               <CardHeader className="bg-background border-b px-6 py-4">
                 <div className="flex items-center gap-2">
                   <FileText className="h-5 w-5 text-primary" />
                   <CardTitle className="text-base font-semibold">
-                    รายการคำนวณเหล็ก
+                    รายการเหล็ก
                   </CardTitle>
                 </div>
               </CardHeader>
+
               <CardContent className="p-0">
                 <div className="w-full text-sm text-left">
                   <div className="bg-background px-6 py-3 font-medium text-muted-foreground grid grid-cols-4">
-                    <span className="font-bold">ประเภทเหล็ก</span>
+                    <span className="font-bold">ประเภทเหล็ก (ขนาด)</span>
                     <span className="font-bold text-center">น้ำหนัก (Kg)</span>
                     <span className="font-bold text-center">
                       ราคาต่อหน่วย (Kg)
                     </span>
                     <span className="text-right font-bold">ราคาประเมิน</span>
                   </div>
-                  {jobOrder?.steel.map((item, idx) => (
-                    <div
-                      key={idx}
-                      className="px-6 py-4 border-b last:border-0 grid grid-cols-4 bg-background  items-center hover:bg-hover transition-colors"
-                    >
-                      <span className="font-medium">{item.steelType}</span>
-                      <span className="text-muted-foreground text-center">
-                        {item.weight}
-                      </span>
-                      <span className="text-muted-foreground text-center">
-                        {item.weight}
-                      </span>
-                      <span className="text-right font-mono">
-                        {Number(item.price).toLocaleString("th-TH")}
-                      </span>
-                    </div>
-                  ))}
-                  <div className="px-6 py-4 border-b last:border-0 grid grid-cols-4 bg-background  items-center hover:bg-hover transition-colors">
-                    <span className="font-semibold">รวมทั้งหมด</span>
-                    <span className="font-semibold text-center">
-                      {jobOrder?.steel
-                        .reduce((sum, item) => sum + item.weight, 0)
-                        .toLocaleString()}
-                    </span>
-                    <span className="font-semibold text-center">
-                      {jobOrder?.steel
-                        .reduce((sum, item) => sum + item.weight, 0)
-                        .toLocaleString()}
-                    </span>
-                    <span className="font-semibold text-green-400 text-right">
-                      {jobOrder?.steel
-                        .reduce((sum, item) => sum + item.price, 0)
-                        .toLocaleString()}
-                    </span>
-                  </div>
+
+                  {(jobOrder?.steel ?? []).map((item, idx) => {
+                    const amount = safeNum(item.amount);
+                    const width = safeNum(item.width); // null/undefined/"0" -> 0
+                    const length = safeNum(item.length);
+                    const thickness = safeNum(item.thickness);
+
+                    const density = safeNum(item.density) || 7860;
+
+                    // ✅ weight ถ้ามี = น้ำหนักจริง “รวม”
+                    const actualWeightKg =
+                      item.weight != null ? safeNum(item.weight) : null;
+
+                    // ✅ ถ้าไม่มี weight → คำนวณ “ต่อชิ้น”
+                    const calculatedPerPieceKg =
+                      width > 0
+                        ? calcPlateWeightKgCm(width, length, thickness, density)
+                        : calcRoundBarWeightKgCm(thickness, length, density); // thickness = diameter
+
+                    // ✅ น้ำหนักที่ใช้จริงในแถวนี้
+                    const usedWeightKg =
+                      actualWeightKg != null
+                        ? actualWeightKg
+                        : calculatedPerPieceKg * amount;
+
+                    const pricePerKg = safeNum(item.price);
+                    const estimatedTotal = usedWeightKg * pricePerKg;
+
+                    const weightLabel =
+                      actualWeightKg != null ? "จริง" : "คำนวณ";
+
+                    return (
+                      <div
+                        key={idx}
+                        className="px-6 py-4 border-b last:border-0 grid grid-cols-4 bg-background items-center hover:bg-hover transition-colors"
+                      >
+                        <span className="font-medium">
+                          {item.steelType}{" "}
+                          <span className="text-muted-foreground">
+                            ({width > 0 ? `${width} x ` : ""}
+                            {length} x {thickness})
+                          </span>
+                          <span className="ml-2 text-xs text-muted-foreground">
+                            [{weightLabel}]
+                          </span>
+                          <span className="ml-2 text-xs text-muted-foreground">
+                            x{amount}
+                          </span>
+                        </span>
+
+                        <span className="text-muted-foreground text-center">
+                          {fmt(usedWeightKg)}
+                        </span>
+
+                        <span className="text-muted-foreground text-center">
+                          {fmt(pricePerKg)}
+                        </span>
+
+                        <span className="text-right font-mono">
+                          {fmt(estimatedTotal)}
+                        </span>
+                      </div>
+                    );
+                  })}
+
+                  {/* รวมทั้งหมด */}
+                  {(() => {
+                    const rows = jobOrder?.steel ?? [];
+
+                    const totalWeight = rows.reduce((sum, item) => {
+                      const amount = safeNum(item.amount);
+                      const width = safeNum(item.width);
+                      const length = safeNum(item.length);
+                      const thickness = safeNum(item.thickness);
+                      const density = safeNum(item.density) || 7860;
+
+                      const actualWeightKg =
+                        item.weight != null ? safeNum(item.weight) : null;
+
+                      const calculatedPerPieceKg =
+                        width > 0
+                          ? calcPlateWeightKgCm(
+                              width,
+                              length,
+                              thickness,
+                              density
+                            )
+                          : calcRoundBarWeightKgCm(thickness, length, density);
+
+                      const usedWeightKg =
+                        actualWeightKg != null
+                          ? actualWeightKg
+                          : calculatedPerPieceKg * amount;
+
+                      return sum + usedWeightKg;
+                    }, 0);
+
+                    const totalPrice = rows.reduce((sum, item) => {
+                      const amount = safeNum(item.amount);
+                      const width = safeNum(item.width);
+                      const length = safeNum(item.length);
+                      const thickness = safeNum(item.thickness);
+                      const density = safeNum(item.density) || 7860;
+
+                      const actualWeightKg =
+                        item.weight != null ? safeNum(item.weight) : null;
+
+                      const calculatedPerPieceKg =
+                        width > 0
+                          ? calcPlateWeightKgCm(
+                              width,
+                              length,
+                              thickness,
+                              density
+                            )
+                          : calcRoundBarWeightKgCm(thickness, length, density);
+
+                      const usedWeightKg =
+                        actualWeightKg != null
+                          ? actualWeightKg
+                          : calculatedPerPieceKg * amount;
+
+                      return sum + usedWeightKg * safeNum(item.price);
+                    }, 0);
+
+                    return (
+                      <div className="px-6 py-4 grid grid-cols-4 bg-background items-center">
+                        <span className="font-semibold">รวมทั้งหมด</span>
+                        <span className="font-semibold text-center">
+                          {fmt(totalWeight)}
+                        </span>
+                        <span className="font-semibold text-center">-</span>
+                        <span className="font-semibold text-green-400 text-right">
+                          {fmt(totalPrice)}
+                        </span>
+                      </div>
+                    );
+                  })()}
                 </div>
               </CardContent>
             </Card>
@@ -418,13 +588,8 @@ const JobOrderDetailPage = () => {
                 {/* Specifications */}
                 <TabsContent value="StaffInfo" className="mt-1">
                   <StaffInfoCard
-                    supervisorName={["สมชาย รักดี", "สมศรี สวยงาม"]}
-                    technicians={[
-                      "สมหมาย ใจดี",
-                      "สมศักดิ์ แก่นทอง",
-                      "สมปอง มีสุข",
-                      "วรเมธ โพธิ์ทอง",
-                    ]}
+                    supervisorName={supervisors}
+                    technicians={technicians}
                   />
                 </TabsContent>
 
@@ -432,12 +597,11 @@ const JobOrderDetailPage = () => {
                 <TabsContent value="Customer" className="mt-1">
                   <CustomerTab
                     customer={{
-                      name: "บริษัท จำกัด",
-                      email: "arm1532arm@gmail.com",
-                      code: "213254",
-                      phone: "0655389857",
-                      shippingAddress:
-                        "ตำบล บางรัก อำเภอ เมือง จังหวัด กรุงเทพ 10500",
+                      name: jobOrder?.customerName,
+                      email: jobOrder?.customerEmail,
+                      code: jobOrder?.customercode,
+                      phone: jobOrder?.customerPhone,
+                      shippingAddress: jobOrder?.deliveryAddress,
                     }}
                   />
                 </TabsContent>
@@ -456,7 +620,7 @@ const JobOrderDetailPage = () => {
                 <TabsContent value="Delivery" className="mt-0">
                   <DeliveryTab
                     status={jobOrder?.status || "pending"}
-                    deliveryDate={jobOrder?.deliveryDate}
+                    deliveryDate={jobOrder?.deliveryDate.toLocaleDateString()}
                     deliveryAddress={jobOrder?.deliveryAddress}
                     onUpdateStatus={handleStatusUpdate}
                     className=""
