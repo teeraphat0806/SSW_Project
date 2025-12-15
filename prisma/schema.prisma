@@ -180,23 +180,27 @@ model SteelType{
   amount    Int    @default(0)
   shape     ShapeSteel
   price     Float
+
   Product   Product[] 
   SteelStock SteelStock[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt()
 }
 
 model SteelStock {
   id        Int      @id @default(autoincrement())
-  width     Float
+  width     Float?
   length    Float
   thickness Float
-  status    String   @default("unused")
+  status    StockStatus   @default(available)
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt()
+  updatedAt     DateTime    @updatedAt
+  withdrawnAt   DateTime? 
 
   steeltypeId Int
   SteelType   SteelType @relation(fields: [steeltypeId], references: [id], onDelete: Restrict)
+  @@index([steeltypeId, status])
 }
 
 model Expense {
@@ -220,6 +224,9 @@ model ExpenseCategory {
   Staff       Staff     @relation(fields: [staffId], references: [id])
 }
 
+
+
+
 enum Role {
   superadmin
   guest
@@ -242,4 +249,9 @@ enum JobStatus {
 enum ShapeSteel {
   square
   line
+}
+
+enum StockStatus {
+  available
+  withdrawn
 }
