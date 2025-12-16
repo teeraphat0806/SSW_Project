@@ -12,6 +12,7 @@ type ApiJobOrder = {
   deliveryAddress: string;
   keyPo: string[];
   staff: {
+    id: number;
     name: string;
     role: string;
   }[];
@@ -93,6 +94,7 @@ export async function GET(
       keyPo: jobOrder.urlPo ?? [],
       staff:
         jobOrder.Staff?.map((s) => ({
+          id: s.id,
           name: s.user?.name ?? s.code,
           role: s.user?.role ?? "unknown",
         })) ?? [],

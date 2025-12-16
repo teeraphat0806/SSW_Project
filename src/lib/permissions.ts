@@ -39,10 +39,12 @@ export async function requireAuth(
   allowedRoles?: Role[]
 ): Promise<RequireAuthResult> {
   // 👇 บอก TS ชัด ๆ ว่าเป็น Session | null
-  const session = (await getServerSession(authOptions as any)) as Session | null;
-
+  const session = (await getServerSession(
+    authOptions as any
+  )) as Session | null;
 
   if (!session || !session.user) {
+    console.log("No session or user found");
     return {
       ok: false,
       response: NextResponse.json(
@@ -56,6 +58,7 @@ export async function requireAuth(
 
   if (allowedRoles && allowedRoles.length > 0) {
     if (!allowedRoles.includes(role)) {
+      console.log("session role:", role);
       return {
         ok: false,
         response: NextResponse.json(

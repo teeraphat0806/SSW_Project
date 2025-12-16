@@ -32,13 +32,15 @@ export type JobStatus =
 
 export type SteelItem = {
   steelType: string;
-  amount?: number;
-  quantity?: number;
-  width: number;
-  length: number;
-  thickness: number;
-  weight: number;
+  amount: number;
+  width?: number;
+  length?: number;
+  thickness?: number;
   price: number;
+  weight: number; // ถ้าส่งมาเป็น 0 ระบบจะคำนวณให้, ถ้ามีค่า > 0 จะใช้ค่านั้นเลย
+  detail?: string;
+  density: number;
+  shape: string;
 };
 
 export type DeliveryTabProps = {
@@ -288,7 +290,7 @@ export function DeliveryTab({
                             : "bg-muted dark:bg-zinc-800"
                         )}
                       >
-                        {item.quantity || item.amount || 0}
+                        {item.amount || 0}
                       </span>
                     </div>
                   </div>

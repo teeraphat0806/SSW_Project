@@ -32,6 +32,13 @@ import { set } from "zod";
 import th from "zod/v4/locales/th.cjs";
 import { se } from "date-fns/locale";
 import router from "next/router";
+import SteelOrderTable from "@/components/jobordertail/SteelOrderTable";
+
+type StaffMember = {
+  id: number;
+  name: string;
+  role: "supervisor" | "cutter" | string;
+};
 
 type ApiJobOrder = {
   id: number;
@@ -43,7 +50,7 @@ type ApiJobOrder = {
   deliveryAddress: string | null;
   customercode: string | null;
 
-  staff: { name: string; role: string | null }[];
+  staff: { id: number; name: string; role: "supervisor" | "cutter" | null }[];
 
   steel: {
     steelType: string;
@@ -77,6 +84,7 @@ const tojobOrder = (api: ApiJobOrder): JobOrder => {
     deliveryAddress: api.deliveryAddress,
     customercode: api.customercode,
     staff: (api.staff || []).map((s) => ({
+      id: s.id,
       name: s.name,
       role: s.role,
     })),
@@ -113,8 +121,9 @@ interface JobOrder {
   deliveryAddress: string;
   customercode: string;
   staff: Array<{
+    id: number;
     name: string;
-    role: string;
+    role: "supervisor" | "cutter" | string;
   }>;
   steel: Array<{
     steelType: string;
@@ -142,38 +151,6 @@ interface JobOrder {
   completedAt?: Date;
 }
 
-const cm3ToM3 = (cm3: number) => cm3 / 1_000_000;
-
-const calcPlateWeightKgCm = (
-  widthCm: number,
-  lengthCm: number,
-  thicknessCm: number,
-  density: number
-) => {
-  const volumeCm3 = widthCm * lengthCm * thicknessCm;
-  return cm3ToM3(volumeCm3) * density;
-};
-
-// เหล็กเส้นทรงกลม: thickness = diameter
-const calcRoundBarWeightKgCm = (
-  diameterCm: number,
-  lengthCm: number,
-  density: number
-) => {
-  const r = diameterCm / 2;
-  const areaCm2 = Math.PI * r * r;
-  const volumeCm3 = areaCm2 * lengthCm;
-  return cm3ToM3(volumeCm3) * density;
-};
-
-const fmt = (n: number) =>
-  n.toLocaleString("th-TH", { maximumFractionDigits: 2 });
-
-const safeNum = (v: unknown) => {
-  const n = typeof v === "number" ? v : Number(v);
-  return Number.isFinite(n) ? n : 0;
-};
-
 const InfoStat = ({
   label,
   value,
@@ -196,12 +173,11 @@ const InfoStat = ({
 const JobOrderDetailPage = ({ id }: { id: string }) => {
   const [loading, setLoading] = useState(true);
   const [jobOrder, setJobOrder] = useState<JobOrder | null>(null);
-  const supervisors =
-    jobOrder?.staff.filter((s) => s.role === "supervisor").map((s) => s.name) ??
-    [];
 
-  const technicians =
-    jobOrder?.staff.filter((s) => s.role === "cutter").map((s) => s.name) ?? [];
+  const supervisors: StaffMember[] =
+    jobOrder?.staff.filter((s) => s.role === "supervisor") ?? [];
+  const technicians: StaffMember[] =
+    jobOrder?.staff.filter((s) => s.role === "cutter") ?? [];
 
   useEffect(() => {
     const fetchJobOrder = async () => {
@@ -385,174 +361,15 @@ const JobOrderDetailPage = ({ id }: { id: string }) => {
                   />
                   <InfoStat
                     label="ผู้รับผิดชอบ (ตัด)"
-                    value={supervisors[0] || "N/A"}
+                    value={supervisors[0]?.name || "N/A"}
                     icon={User2}
                   />
                 </div>
               </div>
             </Card>
 
-            <Card className="overflow-hidden rounded-lg shadow-md">
-              <CardHeader className="bg-background border-b px-6 py-4">
-                <div className="flex items-center gap-2">
-                  <FileText className="h-5 w-5 text-primary" />
-                  <CardTitle className="text-base font-semibold">
-                    รายการเหล็ก
-                  </CardTitle>
-                </div>
-              </CardHeader>
-
-              <CardContent className="p-0">
-                <div className="w-full text-sm text-left">
-                  <div className="bg-background px-6 py-3 font-medium text-muted-foreground grid grid-cols-4">
-                    <span className="font-bold">ประเภทเหล็ก (ขนาด)</span>
-                    <span className="font-bold text-center">น้ำหนัก (Kg)</span>
-                    <span className="font-bold text-center">
-                      ราคาต่อหน่วย (Kg)
-                    </span>
-                    <span className="text-right font-bold">ราคาประเมิน</span>
-                  </div>
-
-                  {(jobOrder?.steel ?? []).map((item, idx) => {
-                    const amount = safeNum(item.amount);
-                    const width = safeNum(item.width); // null/undefined/"0" -> 0
-                    const length = safeNum(item.length);
-                    const thickness = safeNum(item.thickness);
-
-                    const density = safeNum(item.density) || 7860;
-
-                    // ✅ weight ถ้ามี = น้ำหนักจริง “รวม”
-                    const actualWeightKg =
-                      item.weight != null ? safeNum(item.weight) : null;
-
-                    // ✅ ถ้าไม่มี weight → คำนวณ “ต่อชิ้น”
-                    const calculatedPerPieceKg =
-                      width > 0
-                        ? calcPlateWeightKgCm(width, length, thickness, density)
-                        : calcRoundBarWeightKgCm(thickness, length, density); // thickness = diameter
-
-                    // ✅ น้ำหนักที่ใช้จริงในแถวนี้
-                    const usedWeightKg =
-                      actualWeightKg != null
-                        ? actualWeightKg
-                        : calculatedPerPieceKg * amount;
-
-                    const pricePerKg = safeNum(item.price);
-                    const estimatedTotal = usedWeightKg * pricePerKg;
-
-                    const weightLabel =
-                      actualWeightKg != null ? "จริง" : "คำนวณ";
-
-                    return (
-                      <div
-                        key={idx}
-                        className="px-6 py-4 border-b last:border-0 grid grid-cols-4 bg-background items-center hover:bg-hover transition-colors"
-                      >
-                        <span className="font-medium">
-                          {item.steelType}{" "}
-                          <span className="text-muted-foreground">
-                            ({width > 0 ? `${width} x ` : ""}
-                            {length} x {thickness})
-                          </span>
-                          <span className="ml-2 text-xs text-muted-foreground">
-                            [{weightLabel}]
-                          </span>
-                          <span className="ml-2 text-xs text-muted-foreground">
-                            x{amount}
-                          </span>
-                        </span>
-
-                        <span className="text-muted-foreground text-center">
-                          {fmt(usedWeightKg)}
-                        </span>
-
-                        <span className="text-muted-foreground text-center">
-                          {fmt(pricePerKg)}
-                        </span>
-
-                        <span className="text-right font-mono">
-                          {fmt(estimatedTotal)}
-                        </span>
-                      </div>
-                    );
-                  })}
-
-                  {/* รวมทั้งหมด */}
-                  {(() => {
-                    const rows = jobOrder?.steel ?? [];
-
-                    const totalWeight = rows.reduce((sum, item) => {
-                      const amount = safeNum(item.amount);
-                      const width = safeNum(item.width);
-                      const length = safeNum(item.length);
-                      const thickness = safeNum(item.thickness);
-                      const density = safeNum(item.density) || 7860;
-
-                      const actualWeightKg =
-                        item.weight != null ? safeNum(item.weight) : null;
-
-                      const calculatedPerPieceKg =
-                        width > 0
-                          ? calcPlateWeightKgCm(
-                              width,
-                              length,
-                              thickness,
-                              density
-                            )
-                          : calcRoundBarWeightKgCm(thickness, length, density);
-
-                      const usedWeightKg =
-                        actualWeightKg != null
-                          ? actualWeightKg
-                          : calculatedPerPieceKg * amount;
-
-                      return sum + usedWeightKg;
-                    }, 0);
-
-                    const totalPrice = rows.reduce((sum, item) => {
-                      const amount = safeNum(item.amount);
-                      const width = safeNum(item.width);
-                      const length = safeNum(item.length);
-                      const thickness = safeNum(item.thickness);
-                      const density = safeNum(item.density) || 7860;
-
-                      const actualWeightKg =
-                        item.weight != null ? safeNum(item.weight) : null;
-
-                      const calculatedPerPieceKg =
-                        width > 0
-                          ? calcPlateWeightKgCm(
-                              width,
-                              length,
-                              thickness,
-                              density
-                            )
-                          : calcRoundBarWeightKgCm(thickness, length, density);
-
-                      const usedWeightKg =
-                        actualWeightKg != null
-                          ? actualWeightKg
-                          : calculatedPerPieceKg * amount;
-
-                      return sum + usedWeightKg * safeNum(item.price);
-                    }, 0);
-
-                    return (
-                      <div className="px-6 py-4 grid grid-cols-4 bg-background items-center">
-                        <span className="font-semibold">รวมทั้งหมด</span>
-                        <span className="font-semibold text-center">
-                          {fmt(totalWeight)}
-                        </span>
-                        <span className="font-semibold text-center">-</span>
-                        <span className="font-semibold text-green-400 text-right">
-                          {fmt(totalPrice)}
-                        </span>
-                      </div>
-                    );
-                  })()}
-                </div>
-              </CardContent>
-            </Card>
+            {/* Steel Order Table */}
+            <SteelOrderTable steel={jobOrder?.steel || []} />
 
             {/* Tabs Card */}
             <Card className="rounded-lg shadow-md ">
@@ -588,6 +405,7 @@ const JobOrderDetailPage = ({ id }: { id: string }) => {
                 {/* Specifications */}
                 <TabsContent value="StaffInfo" className="mt-1">
                   <StaffInfoCard
+                    jobOrderId={id}
                     supervisorName={supervisors}
                     technicians={technicians}
                   />
@@ -624,7 +442,7 @@ const JobOrderDetailPage = ({ id }: { id: string }) => {
                     deliveryAddress={jobOrder?.deliveryAddress}
                     onUpdateStatus={handleStatusUpdate}
                     className=""
-                    items={jobOrder?.steelActual}
+                    items={jobOrder?.steel || []}
                   />
                 </TabsContent>
               </Tabs>
