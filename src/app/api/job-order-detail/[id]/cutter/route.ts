@@ -10,11 +10,11 @@ const BodySchema = z.object({
 
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } } // <- ไม่ต้อง Promise
+  context: { params: Promise<{ id: string }> }
 ) {
   const authResult = await requireAuth(["superadmin", "clerk", "supervisor"]);
   if ("response" in authResult) return authResult.response;
-  const { id } = await params;
+  const { id } = await context.params;
   const poId = Number(id);
   if (Number.isNaN(poId)) {
     return NextResponse.json({ error: "Invalid order id" }, { status: 400 });
@@ -57,11 +57,11 @@ export async function PATCH(
 
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } } // <- ไม่ต้อง Promise
+  context: { params: Promise<{ id: string }> }
 ) {
   const authResult = await requireAuth(["superadmin", "clerk", "supervisor"]);
   if ("response" in authResult) return authResult.response;
-  const { id } = await params;
+  const { id } = await context.params;
   const poId = Number(id);
   if (Number.isNaN(poId)) {
     return NextResponse.json({ error: "Invalid order id" }, { status: 400 });

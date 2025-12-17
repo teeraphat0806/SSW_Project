@@ -1,4 +1,5 @@
 import prisma from "../../../../lib/prisma";
+import { requireAuth } from "@/lib/permissions";
 export async function GET() {
   const authResult = await requireAuth([
     "superadmin",

@@ -10,7 +10,7 @@ const BodySchema = z.object({
 
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } } // <- ไม่ต้อง Promise
+  context: { params: Promise<{ id: string }> } 
 ) {
   const authResult = await requireAuth(["superadmin", "clerk"]);
 
@@ -19,7 +19,7 @@ export async function PATCH(
   }
   const { session } = authResult;
   console.log(session);
-  const { id } = await params;
+  const { id } = await context.params;
   const poId = Number(id);
   if (Number.isNaN(poId)) {
     return NextResponse.json({ error: "Invalid order id" }, { status: 400 });
@@ -62,7 +62,7 @@ export async function PATCH(
 
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } } // <- ไม่ต้อง Promise
+   context: { params: Promise<{ id: string }> } 
 ) {
   const authResult = await requireAuth(["superadmin", "clerk"]);
 
@@ -72,7 +72,7 @@ export async function DELETE(
   const { session } = authResult;
   console.log(session);
 
-  const { id } = await params;
+  const { id } = await context.params;
   const poId = Number(id);
   if (Number.isNaN(poId)) {
     return NextResponse.json({ error: "Invalid order id" }, { status: 400 });
