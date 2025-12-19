@@ -101,9 +101,9 @@ export async function GET(
       steel: jobOrder.Product.map((p) => ({
         steelType: p.SteelType.codeSteel, // SteelType เป็น non-null ตาม schema
         amount: p.amount,
-        width: p.wide ?? null,
-        length: p.length ?? null,
-        thickness: p.thickness ?? null,
+        width: p.wide ?? undefined,
+        length: p.length ?? undefined,
+        thickness: p.thickness ?? undefined,
         price: p.SteelType.price,
         density: p.SteelType.density,
         detail: p.detail ?? undefined,
