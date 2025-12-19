@@ -58,7 +58,8 @@ export const authOptions = {
     }),
   ],
 
-  adapter: PrismaAdapter(prisma),
+  // ลบบรรทัดนี้ออก หรือ comment ไว้
+  // adapter: PrismaAdapter(prisma),
 
   session: {
     strategy: "jwt" as const,

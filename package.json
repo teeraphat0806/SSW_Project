@@ -6,7 +6,7 @@
     "check-errors": "npm run check:ts && npm run check:lint",
     "check:ts": "tsc --noEmit || true",
     "check:lint": "eslint . --ext .js,.jsx,.ts,.tsx || true",
-    "dev": "next dev --turbopack",
+    "dev": "next dev --webpack",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
