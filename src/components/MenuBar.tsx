@@ -1,20 +1,19 @@
-'use client'
+"use client";
 
-import { useState } from 'react'
-import { Menu, Home, ClipboardList, Users, LogOut, X } from 'lucide-react'
-import Link from 'next/link'
-import { signOut, useSession } from 'next-auth/react'
-import * as Avatar from '@radix-ui/react-avatar'
-import Logo from '../components/Logo'
-import ThemeToggle from '../components/ThemeToggle'
+import { useState } from "react";
+import { Menu, Home, ClipboardList, Users, LogOut, X } from "lucide-react";
+import Link from "next/link";
+import { signOut, useSession } from "next-auth/react";
+import * as Avatar from "@radix-ui/react-avatar";
+import Logo from "../components/Logo";
+import ThemeToggle from "../components/ThemeToggle";
 //import MenuBar from '../components/MenuBar'
 
-
 export default function NavbarWithSidebar() {
-  const [open, setOpen] = useState(false)
-  const { data: session, status } = useSession()
- 
-  if (status !== 'authenticated' || !session?.user) return null
+  const [open, setOpen] = useState(false);
+  const { data: session, status } = useSession();
+
+  if (status !== "authenticated" || !session?.user) return null;
 
   return (
     <>
@@ -43,7 +42,7 @@ export default function NavbarWithSidebar() {
       {/* Slide-in Sidebar */}
       <aside
         className={`fixed top-0 left-0 h-full w-64 bg-background shadow-lg z-50 transform transition-transform duration-300 ${
-          open ? 'translate-x-0' : '-translate-x-full'
+          open ? "translate-x-0" : "-translate-x-full"
         }`}
       >
         <div className="flex items-center justify-between p-4 border-b">
@@ -55,23 +54,41 @@ export default function NavbarWithSidebar() {
 
         {/* Menu Links */}
         <nav className="flex flex-col px-4 py-2 space-y-2">
-          <SidebarItem icon={<Home size={20} />} label="Dashboard" href="/dashboard" />
-          <SidebarItem icon={<ClipboardList size={20} />} label="Orders" href="/orders" />
-          <SidebarItem icon={<Users size={20} />} label="Staffs" href="/staff" />
-          <ThemeToggle/>
-
+          <SidebarItem
+            icon={<Home size={20} />}
+            label="Dashboard"
+            href="/dashboard"
+          />
+          <SidebarItem
+            icon={<ClipboardList size={20} />}
+            label="Orders"
+            href="/orders"
+          />
+          <SidebarItem
+            icon={<Users size={20} />}
+            label="Staffs"
+            href="/staff"
+          />
+          <SidebarItem icon={<span>💬</span>} label="Chatbot" href="/chatbot" />
+          <ThemeToggle />
         </nav>
 
         {/* Bottom Avatar */}
         <div className="mt-auto p-4 border-t">
           <div className="flex items-center gap-3 mb-2">
             <Avatar.Root className="w-10 h-10 rounded-full bg-background overflow-hidden">
-              {session.user.image ? <Avatar.Image
-                src={session.user.image || ''}
-                className="w-full h-full object-cover"
-                alt={session.user.name ?? ''}
-              />:
-              <Avatar.Image src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRA1YK7AzLFlNa7rz_sxokNpo7RO-PHrJpvJQ&s" className="w-full h-full object-cover" />}
+              {session.user.image ? (
+                <Avatar.Image
+                  src={session.user.image || ""}
+                  className="w-full h-full object-cover"
+                  alt={session.user.name ?? ""}
+                />
+              ) : (
+                <Avatar.Image
+                  src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRA1YK7AzLFlNa7rz_sxokNpo7RO-PHrJpvJQ&s"
+                  className="w-full h-full object-cover"
+                />
+              )}
             </Avatar.Root>
             <div className="text-sm">
               <p className="font-semibold">{session.user.name}</p>
@@ -79,7 +96,7 @@ export default function NavbarWithSidebar() {
             </div>
           </div>
           <button
-            onClick={() => signOut({ callbackUrl: '/' })}
+            onClick={() => signOut({ callbackUrl: "/" })}
             className="text-red-600 text-sm hover:bg-red-100 px-2 py-1 rounded flex items-center gap-1"
           >
             <LogOut size={16} />
@@ -88,7 +105,7 @@ export default function NavbarWithSidebar() {
         </div>
       </aside>
     </>
-  )
+  );
 }
 
 function SidebarItem({
@@ -96,9 +113,9 @@ function SidebarItem({
   label,
   href,
 }: {
-  icon: React.ReactNode
-  label: string
-  href: string
+  icon: React.ReactNode;
+  label: string;
+  href: string;
 }) {
   return (
     <Link
@@ -108,5 +125,5 @@ function SidebarItem({
       {icon}
       {label}
     </Link>
-  )
+  );
 }
