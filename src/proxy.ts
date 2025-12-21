@@ -12,16 +12,15 @@ export async function proxy(request: NextRequest) {
 
   if (
     pathname.startsWith("/superadminDashboard") &&
-    (!user || user.role !== "superadmin")
+    user?.role !== "superadmin"
   ) {
     return NextResponse.redirect(new URL("/notFound", request.url));
   }
   if (
     pathname.startsWith("/chatbot") &&
-    (!user ||
-      (user.role !== "superadmin" &&
-        user.role !== "clerk" &&
-        user.role !== "supervisor"))
+    user?.role !== "superadmin" &&
+    user?.role !== "clerk" &&
+    user?.role !== "supervisor"
   ) {
     return NextResponse.redirect(new URL("/notFound", request.url));
   }

@@ -3,6 +3,7 @@
 import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
+import type { Session } from "next-auth";
 
 type ToastState = { show: boolean; message: string };
 
@@ -63,7 +64,7 @@ export default function Profile() {
     });
   };
 
-  const user = session?.user;
+  const user = session?.user as Session["user"];
 
   const userName = user?.name || "-";
   const userEmail = user?.email || "-";
@@ -123,10 +124,6 @@ export default function Profile() {
   if (status === "unauthenticated" || !user) return null;
 
   // Optional data
-  const userId = (user as any)?.id as string | undefined; // (ถ้าคุณ extend NextAuth types แล้ว ค่อยถอด any ออก)
-  const phone = (user as any)?.phone as string | undefined;
-  const companyName = (user as any)?.company?.name as string | undefined;
-  const taxId = (user as any)?.company?.taxId as string | undefined;
   const createdAt = (user as any)?.createdAt as string | undefined;
   const lastLoginAt = (user as any)?.lastLoginAt as string | undefined;
 
@@ -164,37 +161,37 @@ export default function Profile() {
           {/* Overview */}
           <section className="mb-8">
             <div className="flex items-end justify-between gap-4 mb-4">
-              <h2 className="text-2xl font-semibold">Overview</h2>
+              <h2 className="text-2xl font-semibold">ภาพรวม</h2>
               <p className="text-sm text-[hsl(var(--small-detail))]">
-                Manage your account info and security
+                จัดการข้อมูลบัญชีและความปลอดภัยของคุณ
               </p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div className="rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--aa))] p-4">
                 <p className="text-sm font-medium text-[hsl(var(--small-detail))] mb-1">
-                  Account Status
+                  สถานะบัญชี
                 </p>
                 <p className="text-lg font-bold">Active</p>
               </div>
 
               <div className="rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--aa))] p-4">
                 <p className="text-sm font-medium text-[hsl(var(--small-detail))] mb-1">
-                  Role
+                  ตำเเหน่ง
                 </p>
                 <p className="text-lg font-bold">{userRole}</p>
               </div>
 
               <div className="rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--aa))] p-4">
                 <p className="text-sm font-medium text-[hsl(var(--small-detail))] mb-1">
-                  Last Login
+                  เข้าสู่ระบบล่าสุด
                 </p>
                 <p className="text-lg font-bold">{formatDate(lastLoginAt)}</p>
               </div>
 
               <div className="rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--aa))] p-4">
                 <p className="text-sm font-medium text-[hsl(var(--small-detail))] mb-1">
-                  Member Since
+                  สมาชิกตั้งแต่
                 </p>
                 <p className="text-lg font-bold">{formatDate(createdAt)}</p>
               </div>
@@ -203,14 +200,13 @@ export default function Profile() {
 
           {/* Details */}
           <section className="mb-8">
-            <h2 className="text-2xl font-semibold mb-4">Account Details</h2>
+            <h2 className="text-2xl font-semibold mb-4">รายละเอียดบัญชี</h2>
 
             <div className="rounded-xl border border-[hsl(var(--border))] overflow-hidden">
               <dl className="divide-y divide-[hsl(var(--border))]">
                 {[
-                  ["User ID", userId || "-"],
-                  ["Full Name", userName],
-                  ["Email Address", userEmail],
+                  ["ชื่อเต็ม", userName],
+                  ["ที่อยู่อีเมล", userEmail],
                 ].map(([k, v]) => (
                   <div
                     key={k}
@@ -228,16 +224,16 @@ export default function Profile() {
 
           {/* Security */}
           <section className="mb-8">
-            <h2 className="text-2xl font-semibold mb-4">Security</h2>
+            <h2 className="text-2xl font-semibold mb-4">ความปลอดภัย</h2>
             <div className="flex flex-wrap gap-3">
               <button
                 onClick={handleLogout}
                 className="px-6 py-2.5 rounded-lg font-medium transition
                   bg-[hsl(var(--destructive))] text-[hsl(var(--destructive-foreground))]
                   hover:opacity-90
-                  focus:outline-none focus:ring-2 focus:ring-[hsl(var(--ring))] focus:ring-offset-2 focus:ring-offset-[hsl(var(--background))]"
+                  focus:outline-none focus:ring-2 focus:ring-[hsl(var(--ring))] focus:ring-offset-2 focus:ring-offset-[hsl(var(--background))] hover:cursor-pointer"
               >
-                Logout
+                ออกจากระบบ
               </button>
 
               <button
@@ -245,25 +241,25 @@ export default function Profile() {
                 className="px-6 py-2.5 rounded-lg font-medium transition
                   bg-[hsl(var(--secondary))] text-[hsl(var(--secondary-foreground))]
                   hover:bg-[hsl(var(--hover))]
-                  focus:outline-none focus:ring-2 focus:ring-[hsl(var(--ring))] focus:ring-offset-2 focus:ring-offset-[hsl(var(--background))]"
+                  focus:outline-none focus:ring-2 focus:ring-[hsl(var(--ring))] focus:ring-offset-2 focus:ring-offset-[hsl(var(--background))] hover:cursor-pointer"
               >
-                Copy Email
+                คัดลอก อีเมล
               </button>
             </div>
           </section>
 
           {/* Actions */}
           <section>
-            <h2 className="text-2xl font-semibold mb-4">Actions</h2>
+            <h2 className="text-2xl font-semibold mb-4">การดำเนินการ</h2>
             <div className="flex flex-wrap gap-3">
               <button
                 onClick={handleBackToHome}
                 className="px-6 py-2.5 rounded-lg font-medium transition
                   bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))]
                   hover:bg-[hsl(var(--primary-hover))]
-                  focus:outline-none focus:ring-2 focus:ring-[hsl(var(--ring))] focus:ring-offset-2 focus:ring-offset-[hsl(var(--background))]"
+                  focus:outline-none focus:ring-2 focus:ring-[hsl(var(--ring))] focus:ring-offset-2 focus:ring-offset-[hsl(var(--background))] hover:cursor-pointer"
               >
-                Back to Home
+                กลับไปหน้าหลัก
               </button>
 
               <button
@@ -271,9 +267,9 @@ export default function Profile() {
                 className="px-6 py-2.5 rounded-lg font-medium transition
                   bg-[hsl(var(--secondary))] text-[hsl(var(--secondary-foreground))]
                   hover:bg-[hsl(var(--hover))]
-                  focus:outline-none focus:ring-2 focus:ring-[hsl(var(--ring))] focus:ring-offset-2 focus:ring-offset-[hsl(var(--background))]"
+                  focus:outline-none focus:ring-2 focus:ring-[hsl(var(--ring))] focus:ring-offset-2 focus:ring-offset-[hsl(var(--background))] hover:cursor-pointer"
               >
-                Edit Profile
+                แก้ไขโปรไฟล์
               </button>
             </div>
           </section>
