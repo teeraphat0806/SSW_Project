@@ -41,7 +41,7 @@ export default function ThemeToggle() {
         id="theme-switch"
         checked={theme === "dark"}
         onCheckedChange={toggleTheme}
-        className="cursor-pointer w-12 h-6 bg-gray-300 rounded-full relative data-[state=checked]:bg-[hsl(var(--primary))] transition-colors"
+        className="cursor-pointer w-12 h-6 bg-gray-300 rounded-full relative data-[state=checked]:bg-[hsl(var(--primary))] transition-colors hidden group-hover:inline"
       >
         <Switch.Thumb className="block w-5 h-5 bg-white rounded-full shadow absolute top-0.5 left-0.5 transition-transform data-[state=checked]:translate-x-6" />
       </Switch.Root>

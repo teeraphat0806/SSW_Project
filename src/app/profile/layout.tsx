@@ -1,17 +1,12 @@
 // src/app/layout.tsx
 import "../globals.css";
 
-export const metadata = {
-  title: "My App",
-  description: "My App Description",
-};
+import Layout from "@/components/Layout";
 
 export default function ProfileLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  return (
-    <main>{children}</main>
-  );
+  return <Layout>{children}</Layout>;
 }

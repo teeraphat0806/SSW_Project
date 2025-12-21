@@ -20,36 +20,37 @@ model User {
 }
 
 model Staff {
-  id                           Int           @id @default(autoincrement())
-  userId                       Int?          @unique
-  user                         User?         @relation("UserStaff", fields: [userId], references: [id], onDelete: SetNull)
-  position                     String        @default("พนักงานทั่วไป")
-  bankAccount                  String        @unique
+  id                           Int               @id @default(autoincrement())
+  userId                       Int?              @unique
+  position                     String            @default("พนักงานทั่วไป")
+  bankAccount                  String            @unique
   bankName                     String
   startDate                    DateTime
-  code                         String        @unique
-  social_security              String        @unique
+  code                         String            @unique
+  social_security              String            @unique
   currentSalary                Float
-  updatedAt                    DateTime @updatedAt
-  OrderPO                      OrderPO[]
-  Bill_Bill_deliveredByToStaff Bill[]        @relation("Bill_deliveredByToStaff")
-  Bill_Bill_salesNameToStaff   Bill[]        @relation("Bill_salesNameToStaff")
+  updatedAt                    DateTime          @updatedAt
+  taxid                        String?           @default("1103700123451")
+  Bill_Bill_deliveredByToStaff Bill[]            @relation("Bill_deliveredByToStaff")
+  Bill_Bill_salesNameToStaff   Bill[]            @relation("Bill_salesNameToStaff")
+  ExpenseCategory              ExpenseCategory[]
+  user                         User?             @relation("UserStaff", fields: [userId], references: [id])
   StaffIncome                  StaffIncome[]
   StaffSalary                  StaffSalary[]
-  ExpenseCategory              ExpenseCategory[]
+  OrderPO                      OrderPO[]         @relation("OrderPOToStaff")
 }
 
 model Customer {
-  id            Int             @id @default(autoincrement())
-  code          String          @unique
-  name          String
-  address       String
-  tel           String          @unique
-  taxNumber     String          @unique
-  faxNumber     String          @unique
-  email         String          @unique
-  Bill          Bill[]
-  OrderPO       OrderPO[]
+  id        Int       @id @default(autoincrement())
+  code      String    @unique
+  name      String
+  address   String
+  tel       String    @unique
+  taxNumber String    @unique
+  faxNumber String    @unique
+  email     String    @unique
+  Bill      Bill[]
+  OrderPO   OrderPO[]
 }
 
 model Bill {
@@ -73,12 +74,11 @@ model Bill {
   salesNameId                   Int?
   deliveredById                 Int?
   updatedAt                     DateTime  @updatedAt
-  Customer                      Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
-  Staff_Bill_deliveredByToStaff Staff?    @relation("Bill_deliveredByToStaff", fields: [deliveredById], references: [id], onDelete: SetNull)
-  Staff_Bill_salesNameToStaff   Staff?    @relation("Bill_salesNameToStaff", fields: [salesNameId], references: [id], onDelete: SetNull)
+  createdAt                     DateTime  @default(now())
+  Customer                      Customer? @relation(fields: [customerId], references: [id])
+  Staff_Bill_deliveredByToStaff Staff?    @relation("Bill_deliveredByToStaff", fields: [deliveredById], references: [id])
+  Staff_Bill_salesNameToStaff   Staff?    @relation("Bill_salesNameToStaff", fields: [salesNameId], references: [id])
   OrderPO                       OrderPO[]
-
-  createdAt DateTime @default(now())
 
   @@index([customerId])
   @@index([salesNameId])
@@ -86,21 +86,20 @@ model Bill {
 }
 
 model OrderPO {
-  id                Int       @id @default(autoincrement())
-  poNumber          String    @unique
-  customerId        Int?
-  billId            Int?
-  status            JobStatus @default(pending)
-  total             Float
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt()
-  completedAt       DateTime?
-  urlPo             String[]
-  bill              Bill?     @relation(fields: [billId], references: [id], onDelete: SetNull)
-  Customer          Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
-  Staff             Staff[]
-  Product           Product[]
-  
+  id          Int       @id @default(autoincrement())
+  poNumber    String    @unique
+  customerId  Int?
+  billId      Int?
+  status      JobStatus @default(pending)
+  total       Float
+  completedAt DateTime?
+  urlPo       String[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  bill        Bill?     @relation(fields: [billId], references: [id])
+  Customer    Customer? @relation(fields: [customerId], references: [id])
+  Product     Product[]
+  Staff       Staff[]   @relation("OrderPOToStaff")
 
   @@index([status])
   @@index([createdAt])
@@ -110,7 +109,7 @@ model OrderPO {
 }
 
 model Product {
-  id               Int     @id @default(autoincrement())
+  id               Int       @id @default(autoincrement())
   orderPOId        Int
   steelId          Int
   wide             Float?
@@ -124,16 +123,12 @@ model Product {
   actualLength     Float?
   actualThickness  Float?
   total            Float
-
-  OrderPO   OrderPO   @relation(fields: [orderPOId], references: [id], onDelete: Cascade)
-  SteelType SteelType @relation(fields: [steelId], references: [id], onDelete: Restrict)
+  OrderPO          OrderPO   @relation(fields: [orderPOId], references: [id], onDelete: Cascade)
+  SteelType        SteelType @relation(fields: [steelId], references: [id])
 
   @@index([orderPOId])
   @@index([steelId])
 }
-
-
-
 
 model StaffSalary {
   id            Int      @id @default(autoincrement())
@@ -143,24 +138,22 @@ model StaffSalary {
   detail        String?
   createdBy     Int?
   createdAt     DateTime @default(now())
-
-  Staff Staff @relation(fields: [staffId], references: [id])
+  Staff         Staff    @relation(fields: [staffId], references: [id])
 
   @@unique([staffId, effectiveDate])
   @@index([staffId, effectiveDate(sort: Desc)])
 }
 
 model StaffIncome {
-  id         Int      @id @default(autoincrement())
+  id         Int              @id @default(autoincrement())
   amount     Float
   nameIncome String
-  detail     String   @default("-")
+  detail     String           @default("-")
   staffId    Int
-  date       DateTime @default(now())
-  Staff      Staff    @relation(fields: [staffId], references: [id])
-
-  typeId Int?
-  type   TypeStaffIncome? @relation(fields: [typeId], references: [id], onDelete: SetNull)
+  date       DateTime         @default(now())
+  typeId     Int?
+  Staff      Staff            @relation(fields: [staffId], references: [id])
+  type       TypeStaffIncome? @relation(fields: [typeId], references: [id])
 
   @@index([staffId])
   @@index([typeId])
@@ -173,34 +166,33 @@ model TypeStaffIncome {
   types   String
   incomes StaffIncome[]
 }
-model SteelType{
-  id        Int    @id @default(autoincrement())
-  codeSteel String @unique
-  detail    String?
-  amount    Int    @default(0)
-  shape     ShapeSteel
-  density   Float 
-  price     Float
 
-  Product   Product[] 
+model SteelType {
+  id         Int          @id @default(autoincrement())
+  codeSteel  String       @unique
+  detail     String?
+  amount     Int          @default(0)
+  shape      ShapeSteel
+  price      Float
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+  density    Float
+  Product    Product[]
   SteelStock SteelStock[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt()
 }
 
 model SteelStock {
-  id        Int      @id @default(autoincrement())
-  width     Float?
-  length    Float
-  thickness Float
-  status    StockStatus   @default(available)
-  createdAt DateTime @default(now())
-  updatedAt     DateTime    @updatedAt
-  withdrawnAt   DateTime? 
-
+  id          Int         @id @default(autoincrement())
+  width       Float?
+  length      Float
+  thickness   Float
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
   steeltypeId Int
-  SteelType   SteelType @relation(fields: [steeltypeId], references: [id], onDelete: Restrict)
+  withdrawnAt DateTime?
+  status      StockStatus @default(available)
+  SteelType   SteelType   @relation(fields: [steeltypeId], references: [id])
+
   @@index([steeltypeId, status])
 }
 
@@ -210,23 +202,20 @@ model Expense {
   amount      Float
   expenseDate DateTime
   categoryId  Int
-  category    ExpenseCategory @relation(fields: [categoryId], references: [id], onDelete: SetNull)
   receiptUrl  String?
   createdAt   DateTime        @default(now())
   updatedAt   DateTime        @updatedAt
+  category    ExpenseCategory @relation(fields: [categoryId], references: [id], onDelete: SetNull)
 }
 
 model ExpenseCategory {
   id          Int       @id @default(autoincrement())
   name        String    @unique
   description String
-  expenses    Expense[]
   staffId     Int
+  expenses    Expense[]
   Staff       Staff     @relation(fields: [staffId], references: [id])
 }
-
-
-
 
 enum Role {
   superadmin

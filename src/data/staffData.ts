@@ -7,6 +7,7 @@ export const staffData = [
     startDate: new Date("2023-01-10"),
     code: "STF1001",
     social_security: "SS123456001",
+    taxId: "1103700123451",
     currentSalary: 25000.0,
   },
   {
@@ -17,6 +18,7 @@ export const staffData = [
     startDate: new Date("2023-02-15"),
     code: "STF1002",
     social_security: "SS123456002",
+    taxId: "1103700123452",
     currentSalary: 24000.0,
   },
   {
@@ -27,6 +29,7 @@ export const staffData = [
     startDate: new Date("2023-03-01"),
     code: "STF1003",
     social_security: "SS123456003",
+    taxId: "1103700123453",
     currentSalary: 18000.0,
   },
   {
@@ -37,6 +40,7 @@ export const staffData = [
     startDate: new Date("2023-04-12"),
     code: "STF1004",
     social_security: "SS123456004",
+    taxId: "1103700123454",
     currentSalary: 18500.0,
   },
   {
@@ -47,6 +51,7 @@ export const staffData = [
     startDate: new Date("2023-05-20"),
     code: "STF1005",
     social_security: "SS123456005",
+    taxId: "1103700123455",
     currentSalary: 30000.0,
   },
   {
@@ -57,6 +62,7 @@ export const staffData = [
     startDate: new Date("2023-06-18"),
     code: "STF1006",
     social_security: "SS123456006",
+    taxId: "1103700123456",
     currentSalary: 20000.0,
   },
   {
@@ -67,6 +73,7 @@ export const staffData = [
     startDate: new Date("2023-07-22"),
     code: "STF1007",
     social_security: "SS123456007",
+    taxId: "1103700123457",
     currentSalary: 320000.0,
   },
 ];

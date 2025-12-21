@@ -41,11 +41,6 @@ export default function Sidebar() {
             label="Staffs"
             href="/staff"
           />
-          <SidebarItem
-            icon={<span className="text-foreground">💬</span>}
-            label="Chatbot"
-            href="/chatbot"
-          />
           <ThemeToggle />
         </nav>
       </div>
