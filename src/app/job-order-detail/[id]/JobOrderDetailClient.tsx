@@ -17,6 +17,7 @@ import {
   Printer,
   Edit,
   Building2,
+  AlertCircle,
   Factory,
   Truck,
 } from "lucide-react";
@@ -255,19 +256,6 @@ const JobOrderDetailPage = ({ id }: { id: string }) => {
     );
   }
 
-  //   return (
-  //       <div className="min-h-screen bg-gradient-to-br from-background to-steel/20 flex items-center justify-center">
-  //         <div className="text-center">
-  //           <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
-  //           <h2 className="text-2xl font-bold mb-2">ไม่พบรายการออเดอร์</h2>
-  //           <p className="text-muted-foreground mb-4">ไม่สามารถหารายการออเดอร์นี้ได้โปรดลองอีกครั้ง</p>
-  //           <Button onClick={() => router.push("/dashboard")}>
-  //             <ArrowLeft className="mr-2 h-4 w-4" />
-  //             กลับสู่หน้าหลัก
-  //           </Button>
-  //         </div>
-  //       </div>
-  //     );
   return (
     <>
       {/* Top nav + actions */}
@@ -290,9 +278,9 @@ const JobOrderDetailPage = ({ id }: { id: string }) => {
           </div>
         </div>
       </header>
-      <pre className="text-xs overflow-auto p-3 border rounded">
+      {/* <pre className="text-xs overflow-auto p-3 border rounded">
         {JSON.stringify(jobOrder, null, 2)}
-      </pre>
+      </pre> */}
 
       <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
         {/* --- Page Header & Actions --- */}
