@@ -66,49 +66,11 @@ type ApiJobOrder = {
   }[];
 
   status: string;
-  createdAt: string; // JSON -> string
-  updatedAt: string; // JSON -> string
+  createdAt: string;
+  updatedAt: string;
   deliveryDate: string;
   assignedCutter?: string | null;
   completedAt?: string | null;
-};
-
-const tojobOrder = (api: ApiJobOrder): JobOrder => {
-  return {
-    id: api.id.toString(),
-    poNumber: api.poNumber,
-    customerId: api.customerId,
-    customerName: api.customerName,
-    customerEmail: api.customerEmail,
-    customerPhone: api.customerPhone,
-    deliveryAddress: api.deliveryAddress,
-    customercode: api.customercode,
-    staff: (api.staff || []).map((s) => ({
-      id: s.id,
-      name: s.name,
-      role: s.role,
-    })),
-
-    steel: (api.steel || []).map((s) => ({
-      steelType: s.steelType,
-      amount: s.amount,
-      width: s.width ?? null,
-      length: s.length ?? null,
-      thickness: s.thickness ?? null,
-      price: s.price ?? 0,
-      weight: s.weight ?? 0,
-      detail: s.detail ?? undefined,
-      density: s.density ?? 0,
-      shape: s.shape,
-    })),
-    status: api.status as JobOrder["status"],
-    createdAt: new Date(api.createdAt),
-
-    deliveryDate: new Date(api.deliveryDate),
-    updatedAt: new Date(api.updatedAt),
-    assignedCutter: api.assignedCutter ?? undefined,
-    completedAt: api.completedAt ? new Date(api.completedAt) : undefined,
-  };
 };
 
 interface JobOrder {
@@ -128,7 +90,7 @@ interface JobOrder {
   steel: Array<{
     steelType: string;
     amount: number;
-    width?: number;
+    width?: number; // ? หมายถึง number | undefined (ห้าม null)
     length?: number;
     thickness?: number;
     price: number;
@@ -145,11 +107,58 @@ interface JobOrder {
     | "shipped"
     | "completed";
   createdAt: Date;
-  deliveryDate?: Date;
+  deliveryDate: Date;
   updatedAt: Date;
   assignedCutter?: string;
   completedAt?: Date;
 }
+
+// --- DATA MAPPING FUNCTION (จุดสำคัญที่แก้ไข) ---
+
+const tojobOrder = (api: ApiJobOrder): JobOrder => {
+  return {
+    id: api.id.toString(),
+    poNumber: api.poNumber,
+    // ✅ ใช้ ?? "" เพื่อแปลง null เป็น empty string
+    customerId: api.customerId ?? "",
+    customerName: api.customerName ?? "",
+    customerEmail: api.customerEmail ?? "",
+    customerPhone: api.customerPhone ?? "",
+    deliveryAddress: api.deliveryAddress ?? "",
+    customercode: api.customercode ?? "",
+
+    staff: (api.staff || []).map((s) => ({
+      id: s.id,
+      name: s.name,
+      // ✅ แปลง null role ให้เป็น string default
+      role: s.role ?? "staff",
+    })),
+
+    steel: (api.steel || []).map((s) => ({
+      steelType: s.steelType,
+      amount: s.amount,
+      // ✅ เปลี่ยนจาก ?? null เป็น ?? undefined เพื่อให้ตรงกับ type optional (?)
+      width: s.width ?? undefined,
+      length: s.length ?? undefined,
+      thickness: s.thickness ?? undefined,
+      // ✅ แปลง null price/weight เป็น 0
+      price: s.price ?? 0,
+      weight: s.weight ?? 0,
+      density: s.density ?? 0,
+      detail: s.detail ?? undefined,
+      shape: s.shape,
+    })),
+
+    // ✅ Type Assertion สำหรับ Status และ fallback เป็น pending
+    status: (api.status as JobOrder["status"]) || "pending",
+
+    createdAt: new Date(api.createdAt),
+    deliveryDate: new Date(api.deliveryDate),
+    updatedAt: new Date(api.updatedAt),
+    assignedCutter: api.assignedCutter ?? undefined,
+    completedAt: api.completedAt ? new Date(api.completedAt) : undefined,
+  };
+};
 
 const InfoStat = ({
   label,
@@ -415,11 +424,12 @@ const JobOrderDetailPage = ({ id }: { id: string }) => {
                 <TabsContent value="Customer" className="mt-1">
                   <CustomerTab
                     customer={{
-                      name: jobOrder?.customerName,
-                      email: jobOrder?.customerEmail,
-                      code: jobOrder?.customercode,
-                      phone: jobOrder?.customerPhone,
-                      shippingAddress: jobOrder?.deliveryAddress,
+                      // ✅ ใช้ ?? "" เพื่อบอกว่า ถ้าเป็น undefined ให้ส่ง "" ไปแทน
+                      name: jobOrder?.customerName ?? "",
+                      email: jobOrder?.customerEmail ?? "",
+                      code: jobOrder?.customercode ?? "",
+                      phone: jobOrder?.customerPhone ?? "",
+                      shippingAddress: jobOrder?.deliveryAddress ?? "",
                     }}
                   />
                 </TabsContent>
@@ -438,8 +448,14 @@ const JobOrderDetailPage = ({ id }: { id: string }) => {
                 <TabsContent value="Delivery" className="mt-0">
                   <DeliveryTab
                     status={jobOrder?.status || "pending"}
-                    deliveryDate={jobOrder?.deliveryDate.toLocaleDateString()}
-                    deliveryAddress={jobOrder?.deliveryAddress}
+                    // ✅ แก้ตรงนี้: เช็คว่ามี jobOrder ก่อนค่อยแปลงวันที่ ถ้าไม่มีให้ส่ง string ว่างหรือ "-"
+                    deliveryDate={
+                      jobOrder?.deliveryDate
+                        ? jobOrder.deliveryDate.toLocaleDateString("th-TH")
+                        : "-"
+                    }
+                    // ✅ แนะนำให้แก้ตรงนี้ด้วย: เพื่อป้องกันส่ง undefined ไปยัง Component ลูก
+                    deliveryAddress={jobOrder?.deliveryAddress ?? "-"}
                     onUpdateStatus={handleStatusUpdate}
                     className=""
                     items={jobOrder?.steel || []}
