@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { requireAuth } from "@/lib/permissions";
+import { OrderPOSchema } from "@/lib/schemas/orderPO.schema";
 
 type ApiJobOrder = {
   id: number;
@@ -125,5 +127,93 @@ export async function GET(
     const message =
       error instanceof Error ? error.message : "Failed to fetch OrderPO";
     return NextResponse.json({ error: message }, { status: 500 });
+  }
+}
+
+const ALLOWED_ROLES_BY_STATUS: Record<string, string[]> = {
+  pending: ["superadmin", "supervisor", "clerk"],
+  cutting: ["superadmin", "supervisor", "clerk"],
+  weighing: ["superadmin", "supervisor", "clerk", "delivery"],
+  ready: ["superadmin", "supervisor", "clerk", "delivery"],
+  shipped: ["superadmin", "clerk", "delivery"],
+  completed: ["superadmin", "clerk", "delivery"],
+};
+
+const STATUS_OPTIONS = Object.keys(ALLOWED_ROLES_BY_STATUS);
+//update status
+// PATCH /api/job-order-detail/[id]
+export async function PATCH(111000000000000000000000000000000000000000000000000000
+  req: NextRequest,
+  context: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await context.params;
+    const poId = Number(id);
+    if (Number.isNaN(poId)) {
+      return NextResponse.json({ error: "Invalid id" }, { status: 400 });
+    }
+    // 2. Validate Body
+    let body;
+    try {
+      body = await req.json();
+    } catch (e) {
+      return NextResponse.json(
+        { error: "Invalid JSON format" },
+        { status: 400 }
+      );
+    }
+
+    if (!STATUS_OPTIONS.includes(body.status)) {
+      return NextResponse.json(
+        {
+          error: `Invalid status value. Allowed: ${STATUS_OPTIONS.join(", ")}`,
+        },
+        { status: 400 }
+      );
+    }
+
+    const requiredRoles = ALLOWED_ROLES_BY_STATUS[body.status] || [
+      "superadmin",
+    ];
+
+    const authResult = await requireAuth(
+      requiredRoles as (
+        | "superadmin"
+        | "supervisor"
+        | "clerk"
+        | "delivery"
+        | "cutter"
+      )[]
+    );
+    if ("response" in authResult) {
+      return authResult.response;
+    }
+    // 4. Update Database
+    const result = await prisma.orderPO.update({
+      where: { id: poId },
+      data: { status: body.status },
+    });
+
+    return NextResponse.json(
+      {
+        message: "Status updated successfully",
+        status: result.status,
+        updatedAt: result.updatedAt,
+      },
+      { status: 200 }
+    );
+  } catch (error: any) {
+    if (error.code === "P2025") {
+      return NextResponse.json(
+        { error: "Job order not found" },
+        { status: 404 }
+      );
+    }
+
+    console.error("Update Order Error:", error);
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 }
+    );
   }
 }
