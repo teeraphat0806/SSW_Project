@@ -4,7 +4,8 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 // Update the import path below if your use-toast file is located elsewhere
-import { toast } from "../../../hooks/use-toast";
+import { toast } from "@/components/ui/use-toast";
+
 import { Badge } from "@/components/ui/badge";
 
 import {
@@ -32,7 +33,7 @@ import { Icon } from "leaflet";
 import { set } from "zod";
 import th from "zod/v4/locales/th.cjs";
 import { se } from "date-fns/locale";
-import router from "next/router";
+
 import SteelOrderTable from "@/components/jobordertail/SteelOrderTable";
 
 type StaffMember = {
@@ -183,6 +184,9 @@ const InfoStat = ({
 const JobOrderDetailPage = ({ id }: { id: string }) => {
   const [loading, setLoading] = useState(true);
   const [jobOrder, setJobOrder] = useState<JobOrder | null>(null);
+  const [isUpdating, setIsUpdating] = useState(false);
+
+  const router = useRouter();
 
   const supervisors: StaffMember[] =
     jobOrder?.staff.filter((s) => s.role === "supervisor") ?? [];
@@ -234,13 +238,76 @@ const JobOrderDetailPage = ({ id }: { id: string }) => {
     }
   };
 
-  const handleStatusUpdate = (newStatus: JobOrder["status"]) => {
-    if (jobOrder) {
-      setJobOrder({ ...jobOrder, status: newStatus });
+  // ✅ ฟังก์ชันอัปเดตสถานะผ่าน API
+
+  const handleStatusUpdate = async (newStatus: JobOrder["status"]) => {
+    if (!jobOrder) return;
+
+    if (newStatus === "ready") {
+      const ok =
+        jobOrder.steel.length > 0 &&
+        jobOrder.steel.every((s) => (s.weight ?? 0) > 0);
+      if (!ok) {
+        toast({
+          title: "ยังไปขั้นตอนถัดไปไม่ได้",
+          description: "ต้องกรอกน้ำหนักเหล็กก่อน แล้วจึงเปลี่ยนเป็น READY ได้",
+          variant: "default",
+        });
+        return;
+      }
+    }
+
+    setIsUpdating(true);
+    try {
+      const response = await fetch(`/api/job-order-detail/${jobOrder.id}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ status: newStatus }),
+      });
+
+      if (!response.ok) {
+        // 1. เช็คสิทธิ์การเข้าถึงก่อน (401/403) ป้องกันกรณี Response body ไม่ใช่ JSON
+        if (response.status === 401 || response.status === 403) {
+          toast({
+            title: "ไม่มีสิทธิ์เข้าถึง (Access Denied)",
+            description: "คุณไม่มีสิทธิ์ในการแก้ไขสถานะนี้",
+            variant: "destructive",
+          });
+          return; // สำคัญ: ไม่ throw
+        }
+
+        // 2. ถ้าไม่ใช่เรื่องสิทธิ์ ค่อยดึง Error message จาก API
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || "Failed to update status");
+      }
+
+      // Success: อัปเดต Local State
+      setJobOrder((prev) => (prev ? { ...prev, status: newStatus } : null));
+
       toast({
         title: "Status Updated",
-        description: `Job order status changed to ${newStatus.toUpperCase()}`,
+        description: `เปลี่ยนสถานะเป็น ${newStatus.toUpperCase()} เรียบร้อยแล้ว`,
+        variant: "default",
       });
+    } catch (error: any) {
+      console.error("Update Error:", error);
+
+      // ตรวจสอบข้อความ Error เพื่อเปลี่ยน Title ของ Toast ให้สื่อความหมาย
+      const isPermissionError =
+        error.message === "คุณไม่มีสิทธิ์ในการแก้ไขสถานะนี้";
+
+      toast({
+        title: isPermissionError
+          ? "ไม่มีสิทธิ์เข้าถึง (Access Denied)"
+          : "การดำเนินการล้มเหลว",
+        description:
+          error.message || "ไม่สามารถอัปเดตสถานะได้ กรุณาลองใหม่อีกครั้ง",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUpdating(false);
     }
   };
 
@@ -313,6 +380,9 @@ const JobOrderDetailPage = ({ id }: { id: string }) => {
               </p>
             </div>
           </div>
+          <pre className="text-xs bg-black text-white p-3 rounded overflow-auto">
+            {JSON.stringify(jobOrder, null, 2)}
+          </pre>
 
           <div className="flex flex-wrap items-center gap-2">
             <Button variant="outline" size="sm" className="h-9 gap-2">
@@ -426,7 +496,6 @@ const JobOrderDetailPage = ({ id }: { id: string }) => {
                 <TabsContent value="Production" className="mt-2">
                   <ProductionTab
                     status={jobOrder?.status || "pending"}
-                    assignedCutter={jobOrder?.assignedCutter || ""}
                     onUpdateStatus={handleStatusUpdate}
                     getStatusColor={getStatusColor}
                   />

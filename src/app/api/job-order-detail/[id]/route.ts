@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { requireAuth } from "@/lib/permissions";
 import { OrderPOSchema } from "@/lib/schemas/orderPO.schema";
+import { includes } from "zod";
+import { se } from "date-fns/locale";
 
 type ApiJobOrder = {
   id: number;
@@ -142,7 +144,7 @@ const ALLOWED_ROLES_BY_STATUS: Record<string, string[]> = {
 const STATUS_OPTIONS = Object.keys(ALLOWED_ROLES_BY_STATUS);
 //update status
 // PATCH /api/job-order-detail/[id]
-export async function PATCH(111000000000000000000000000000000000000000000000000000
+export async function PATCH(
   req: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
@@ -153,7 +155,7 @@ export async function PATCH(1110000000000000000000000000000000000000000000000000
       return NextResponse.json({ error: "Invalid id" }, { status: 400 });
     }
     // 2. Validate Body
-    let body;
+    let body: any;
     try {
       body = await req.json();
     } catch (e) {
@@ -187,6 +189,48 @@ export async function PATCH(1110000000000000000000000000000000000000000000000000
     );
     if ("response" in authResult) {
       return authResult.response;
+    }
+
+    if (body.status === "ready") {
+      const po = await prisma.orderPO.findUnique({
+        where: { id: poId },
+        select: {
+          status: true,
+          Product: { select: { actualWeight: true } }, // ✅ relation จริงคือ Product
+        },
+      });
+
+      if (!po) {
+        return NextResponse.json(
+          { error: "Job order not found" },
+          { status: 404 }
+        );
+      }
+
+      // (เลือกได้) บังคับ transition: ต้องอยู่ weighing ก่อนถึงจะไป ready
+      if (po.status !== "weighing") {
+        return NextResponse.json(
+          {
+            error:
+              "ไม่สามารถเปลี่ยนเป็น READY ได้: ต้องอยู่สถานะ WEIGHING ก่อน",
+          },
+          { status: 400 }
+        );
+      }
+
+      const hasMissingWeight = po.Product.some(
+        (p) => p.actualWeight == null || p.actualWeight <= 0
+      );
+
+      if (hasMissingWeight) {
+        return NextResponse.json(
+          {
+            error:
+              "ไม่สามารถเปลี่ยนเป็น READY ได้: ต้องกรอกน้ำหนักเหล็กก่อน (Actual Weight ต้องมากกว่า 0)",
+          },
+          { status: 400 }
+        );
+      }
     }
     // 4. Update Database
     const result = await prisma.orderPO.update({
