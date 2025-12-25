@@ -380,9 +380,6 @@ const JobOrderDetailPage = ({ id }: { id: string }) => {
               </p>
             </div>
           </div>
-          <pre className="text-xs bg-black text-white p-3 rounded overflow-auto">
-            {JSON.stringify(jobOrder, null, 2)}
-          </pre>
 
           <div className="flex flex-wrap items-center gap-2">
             <Button variant="outline" size="sm" className="h-9 gap-2">
@@ -391,7 +388,11 @@ const JobOrderDetailPage = ({ id }: { id: string }) => {
             {/* <Button variant="outline" size="sm" className="h-9 gap-2">
               <Download className="h-4 w-4" /> PDF
             </Button> */}
-            <Button size="sm" className="h-9 gap-2 text-white">
+            <Button
+              size="sm"
+              className="h-9 gap-2 text-white"
+              onClick={() => router.push("/up-date-order/" + id)}
+            >
               <Edit className="h-4 w-4" /> Edit Order
             </Button>
           </div>
@@ -529,7 +530,7 @@ const JobOrderDetailPage = ({ id }: { id: string }) => {
             {/* Quick Actions */}
 
             <div className="mt-3 grid gap-2">
-              <QuickAction orderId={jobOrder?.id || ""} />
+              <QuickAction orderId={id} />
             </div>
           </aside>
         </div>

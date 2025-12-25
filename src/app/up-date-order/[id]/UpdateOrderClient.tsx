@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
   Select,
   SelectContent,
@@ -9,7 +9,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-
 import { useRouter } from "next/navigation";
 import {
   Boxes,
@@ -24,8 +23,78 @@ import {
   Plus,
   ListChecks,
   Trash2,
+  Phone,
+  FileText,
+  Mail,
+  Printer,
+  MapPin,
+  User,
+  Building2,
+  Calculator,
 } from "lucide-react";
 import { Button } from "../../../components/ui/button";
+
+type shape = "square" | "line";
+type Joborder = {
+  id: string;
+  ponumber: string;
+  customerId: string;
+  customerName: string;
+  customerEmail: string;
+  customerPhone: string;
+  customerAddress: string;
+  customerTaxId: string;
+  customerCode: string;
+  customerFax: string;
+  steel: {
+    steeltype: string;
+    quantity: number;
+    width?: number | null;
+    length: number;
+    thickness: number;
+    detail?: string | null;
+    weight?: number | null;
+    shape: shape;
+  }[];
+  status:
+    | "pending"
+    | "cutting"
+    | "weighing"
+    | "ready"
+    | "shipped"
+    | "completed";
+};
+
+const mockJoborder: Joborder = {
+  id: "1",
+  ponumber: "PO-2025-00123",
+  customerId: "CUST-001",
+  customerName: "บจก. เอสเอสดับบลิว สตีล เซ็นเตอร์",
+  customerEmail: "contact@sswsteel.co.th",
+  customerPhone: "080-123-4567",
+  customerAddress: "99/9 ถนนบางกรวย-ไทรน้อย อ.บางบัวทอง จ.นนทบุรี 11110",
+  customerTaxId: "0105559999999",
+  customerCode: "1055115410",
+  customerFax: "02-765-4321",
+  steel: [
+    {
+      steeltype: "SS400",
+      quantity: 10,
+      width: 5.0,
+      length: 200.0,
+      thickness: 0.5,
+      shape: "square",
+    },
+    {
+      steeltype: "SKD11",
+      quantity: 5,
+      length: 150.0,
+      thickness: 1.0,
+      shape: "line",
+    },
+  ],
+  status: "pending",
+};
 
 const ORDER_STATUSES = [
   "รอตัด",
@@ -40,46 +109,13 @@ const ORDER_STATUSES = [
 type OrderStatus = (typeof ORDER_STATUSES)[number];
 
 const STATUS_ICONS: Record<OrderStatus, React.ReactNode> = {
-  รอตัด: <CircleDashed className="h-4 w-4" />,
-  กำลังตัด: <Scissors className="h-4 w-4" />,
-  ชั่งน้ำหนัก: <Scale className="h-4 w-4" />,
-  ตัดเสร็จสิ้น: <CheckCircle2 className="h-4 w-4" />,
-  ตรวจสอบ: <ClipboardCheck className="h-4 w-4" />,
-  กำลังส่ง: <Truck className="h-4 w-4" />,
-  ส่งสำเร็จ: <PackageCheck className="h-4 w-4" />,
-};
-
-export type Customer = {
-  name: string;
-  phone?: string; // เบอร์โทรหลัก
-  altPhone?: string; // เบอร์โทรสำรอง
-  email?: string;
-  taxId?: string; // เลขผู้เสียภาษี
-  code: string; // รหัสลูกค้า
-  fax?: string;
-  address: string;
-};
-
-const mockcustomer: Customer = {
-  name: "บจก. เอสเอสดับบลิว สตีล เซ็นเตอร์",
-  phone: "080-123-4567",
-  altPhone: "02-123-4567",
-  code: "1055115410",
-  email: "contact@sswsteel.co.th",
-  taxId: "0105559999999",
-  fax: "02-765-4321",
-  address: "99/9 ถนนบางกรวย-ไทรน้อย อ.บางบัวทอง จ.นนทบุรี 11110",
-};
-
-type SteelItem = {
-  id: string;
-  name: string; // key จากรายการเหล็ก
-  quantity: number;
-  width: number; // ซม.
-  length: number; // ซม.
-  height: number; // ซม.
-  weight?: number; // กก.
-  note?: string;
+  รอตัด: <CircleDashed className="h-5 w-5" />,
+  กำลังตัด: <Scissors className="h-5 w-5" />,
+  ชั่งน้ำหนัก: <Scale className="h-5 w-5" />,
+  ตัดเสร็จสิ้น: <CheckCircle2 className="h-5 w-5" />,
+  ตรวจสอบ: <ClipboardCheck className="h-5 w-5" />,
+  กำลังส่ง: <Truck className="h-5 w-5" />,
+  ส่งสำเร็จ: <PackageCheck className="h-5 w-5" />,
 };
 
 const steelOptions: { value: string; label: string; quantity: number }[] = [
@@ -90,49 +126,77 @@ const steelOptions: { value: string; label: string; quantity: number }[] = [
   { value: "SCM440", label: "SCM440", quantity: 7 },
 ];
 
+// ✅ map ไทย <-> อังกฤษ
+const toThaiStatus = (s: Joborder["status"]): OrderStatus => {
+  switch (s) {
+    case "pending":
+      return "รอตัด";
+    case "cutting":
+      return "กำลังตัด";
+    case "weighing":
+      return "ชั่งน้ำหนัก";
+    case "ready":
+      return "ตัดเสร็จสิ้น";
+    case "shipped":
+      return "กำลังส่ง";
+    case "completed":
+      return "ส่งสำเร็จ";
+    default:
+      return "รอตัด";
+  }
+};
+
+const toApiStatus = (s: OrderStatus): Joborder["status"] => {
+  switch (s) {
+    case "รอตัด":
+      return "pending";
+    case "กำลังตัด":
+      return "cutting";
+    case "ชั่งน้ำหนัก":
+      return "weighing";
+    case "ตัดเสร็จสิ้น":
+      return "ready";
+    // "ตรวจสอบ" ไม่มีใน enum เดิมของ Joborder → เลย map ไป "ready"
+    case "ตรวจสอบ":
+      return "ready";
+    case "กำลังส่ง":
+      return "shipped";
+    case "ส่งสำเร็จ":
+      return "completed";
+    default:
+      return "pending";
+  }
+};
+
 const UpdateOrderPage = ({ id }: { id: string }) => {
-  const [status, setStatus] = useState<OrderStatus>("รอตัด");
-  const [customer, setCustomer] = useState<Customer>(mockcustomer);
-  const [steelItems, setSteelItems] = useState<SteelItem[]>([
-    {
-      id: "1",
-      name: "SS400",
-      quantity: 10,
-      width: 5.0,
-      length: 200.0,
-      height: 0.5,
-    },
-    {
-      id: "2",
-      name: "SKD11",
-      quantity: 5,
-      width: 10.0,
-      length: 150.0,
-      height: 1.0,
-    },
-  ]);
+  const router = useRouter();
+
+  // ✅ state เดียว: job (มาจาก mockJoborder)
+  const [job, setJob] = useState<Joborder>(mockJoborder);
+
+  // ✅ สถานะที่ UI ใช้ (ไทย) derive จาก job.status
+  const status = useMemo(() => toThaiStatus(job.status), [job.status]);
 
   const weightEnabled =
     ORDER_STATUSES.indexOf(status) >= ORDER_STATUSES.indexOf("ชั่งน้ำหนัก");
-  // คำนวณสรุปหลัก
-  const itemCount = steelItems.length;
-  const uniqueTypeCount = new Set(steelItems.map((i) => i.name)).size;
-  const totalQty = steelItems.reduce(
+
+  // ✅ คำนวณจาก job.steel โดยตรง
+  const itemCount = job.steel.length;
+  const uniqueTypeCount = new Set(job.steel.map((i) => i.steeltype)).size;
+  const totalQty = job.steel.reduce(
     (sum, i) => sum + (Number(i.quantity) || 0),
     0
   );
 
-  // น้ำหนักรวม (คิดเมื่อ weightEnabled เท่านั้น)
   const totalWeight = weightEnabled
-    ? steelItems.reduce(
+    ? job.steel.reduce(
         (sum, i) => sum + (Number(i.weight) || 0) * (Number(i.quantity) || 0),
         0
       )
     : 0;
 
-  // breakdown ตาม "ชนิดเหล็ก" (เอาไว้แสดงย่อใต้การ์ด)
-  const summaryByType = steelItems.reduce((acc, i) => {
-    const key = i.name || "ไม่ระบุ";
+  const summaryByType = job.steel.reduce((acc, i) => {
+    const key = i.steeltype || "ไม่ระบุ";
     if (!acc[key]) acc[key] = { lines: 0, qty: 0, weight: 0 };
     acc[key].lines += 1;
     acc[key].qty += Number(i.quantity) || 0;
@@ -140,7 +204,6 @@ const UpdateOrderPage = ({ id }: { id: string }) => {
     return acc;
   }, {} as Record<string, { lines: number; qty: number; weight: number }>);
 
-  // helper แสดงตัวเลขสวย ๆ
   const fmtInt = (n: number) => Intl.NumberFormat().format(n);
   const fmtWeight = (n: number) =>
     Intl.NumberFormat(undefined, {
@@ -150,40 +213,56 @@ const UpdateOrderPage = ({ id }: { id: string }) => {
 
   const currentStep = ORDER_STATUSES.indexOf(status);
   const progressPct = (currentStep / (ORDER_STATUSES.length - 1)) * 100;
-  const router = useRouter();
 
-  const updateSteelItem = () => {
-    setSteelItems((prev) => [
+  // ✅ เพิ่มเหล็ก: แก้ job.steel
+  const addSteelItem = () => {
+    setJob((prev) => ({
       ...prev,
-      {
-        id: crypto.randomUUID?.() ?? Math.random().toString(36).slice(2),
-        name: steelOptions[0].label,
-        quantity: 1,
-        width: 0,
-        length: 0,
-        height: 0,
-        note: "",
-      },
-    ]);
+      steel: [
+        ...prev.steel,
+        {
+          steeltype: steelOptions[0].value,
+          quantity: 1,
+          width: 0,
+          length: 0,
+          thickness: 0,
+          detail: "",
+          weight: null,
+          shape: "square",
+        },
+      ],
+    }));
   };
 
-  const removeSteelItem = (id: string) => {
-    setSteelItems((prev) => prev.filter((item) => item.id !== id));
+  // ✅ ลบเหล็กด้วย index
+  const removeSteelItem = (index: number) => {
+    setJob((prev) => ({
+      ...prev,
+      steel: prev.steel.filter((_, i) => i !== index),
+    }));
   };
 
-  const patchSteelItem = (id: string, patch: Partial<SteelItem>) => {
-    setSteelItems((prev) =>
-      prev.map((item) => (item.id === id ? { ...item, ...patch } : item))
-    );
+  // ✅ patch เหล็กด้วย index
+  const patchSteelItem = (
+    index: number,
+    patch: Partial<Joborder["steel"][number]>
+  ) => {
+    setJob((prev) => ({
+      ...prev,
+      steel: prev.steel.map((item, i) =>
+        i === index ? { ...item, ...patch } : item
+      ),
+    }));
   };
 
+  // onChange={(e) =>
+  //                 setJob((prev) => ({ ...prev, customerPhone: e.target.value }))
   return (
     <div>
       {/*Header*/}
       <header className="sticky top-0 z-50 border-b border-border/40 bg-background/80 backdrop-blur-md supports-[backdrop-filter]:bg-background/60">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
           <div className="flex items-center gap-4">
-            {/* ปุ่มย้อนกลับ */}
             <Button
               variant="ghost"
               size="sm"
@@ -194,10 +273,8 @@ const UpdateOrderPage = ({ id }: { id: string }) => {
               <span className="hidden sm:inline">กลับ</span>
             </Button>
 
-            {/* เส้นคั่นแนวตั้ง */}
             <div className="h-6 w-px bg-border/60" />
 
-            {/* ส่วน Icon และ Title */}
             <div className="flex items-center gap-3">
               <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-600 text-white shadow-sm dark:bg-blue-500 dark:shadow-none">
                 <Boxes className="h-5 w-5" />
@@ -206,14 +283,14 @@ const UpdateOrderPage = ({ id }: { id: string }) => {
                 <h1 className="text-sm font-bold text-foreground leading-tight">
                   อัปเดตคำสั่งซื้อ
                 </h1>
-                <p className="text-xs text-muted-foreground font-mono">
-                  PO-2025-00123
+                {/* ✅ ดึงจาก mockJoborder */}
+                <p className="text-sm text-muted-foreground font-mono">
+                  {job.ponumber}
                 </p>
               </div>
             </div>
           </div>
 
-          {/* ปุ่มบันทึก */}
           <Button className="bg-blue-600 text-white shadow-sm hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-500 dark:shadow-none">
             บันทึกข้อมูล
           </Button>
@@ -221,42 +298,45 @@ const UpdateOrderPage = ({ id }: { id: string }) => {
       </header>
 
       <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 space-y-8">
-        <section className="relative rounded-2xl border border-border bg-card p-6 shadow-sm">
-          {/* Header Section */}
+        {/* ---------- สถานะ ---------- */}
+        <section className="relative rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
           <div className="mb-6 flex flex-col gap-1">
-            <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
-              <ClipboardCheck className="h-5 w-5 text-primary" />
+            <h2 className="flex items-center gap-2 text-lg font-semibold text-zinc-900 dark:text-zinc-50">
+              <ClipboardCheck className="h-5 w-5 text-blue-600 dark:text-blue-500" />
               สถานะการผลิต
             </h2>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-zinc-500 dark:text-zinc-400">
               อัปเดตสถานะงานปัจจุบันเพื่อให้ลูกค้าทราบความคืบหน้า
             </p>
           </div>
 
-          <div className="flex flex-col md:flex-row gap-8">
-            {/* Left: Quick Select */}
-            <div className="w-full md:w-72 shrink-0 space-y-2">
-              <label className="text-xs font-medium uppercase text-muted-foreground tracking-wider">
+          <div className="flex flex-col gap-8 md:flex-row">
+            <div className="w-full shrink-0 space-y-2 md:w-72">
+              <label className="text-sm font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
                 เปลี่ยนสถานะ
               </label>
+
               <Select
                 value={status}
-                onValueChange={(v) => setStatus(v as OrderStatus)}
+                onValueChange={(v) =>
+                  setJob((prev) => ({
+                    ...prev,
+                    status: toApiStatus(v as OrderStatus),
+                  }))
+                }
               >
-                <SelectTrigger className="w-full h-11 border-border bg-muted/30 focus:ring-primary">
+                <SelectTrigger className="h-11 w-full border-zinc-200 bg-zinc-50 focus:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-800/50 dark:text-zinc-100">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
+
+                <SelectContent className="border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-900">
                   {ORDER_STATUSES.map((s) => (
                     <SelectItem key={s} value={s}>
                       <div className="flex items-center gap-2">
-                        {/* Clone icon to enforce size consistent with design */}
                         {React.isValidElement(STATUS_ICONS[s]) &&
                           React.cloneElement(
                             STATUS_ICONS[s] as React.ReactElement,
-                            {
-                              class: "h-4 w-4",
-                            } as any
+                            { className: "h-5 w-5" } as any
                           )}
                         <span>{s}</span>
                       </div>
@@ -266,19 +346,15 @@ const UpdateOrderPage = ({ id }: { id: string }) => {
               </Select>
             </div>
 
-            {/* Right: Stepper Visual */}
-            <div className="flex-1 pb-4 md:pb-0">
+            {/* Stepper เดิมของคุณใช้ status ได้เหมือนเดิม */}
+            <div className="flex-1  pb-4 md:pb-0">
               <div className="relative min-w-[600px] px-2 pt-2">
-                {/* Track Background */}
-                <div className="absolute top-6 left-0 h-1 w-full rounded-full bg-muted" />
-
-                {/* Active Progress Bar */}
+                <div className="absolute left-0 top-6 h-1 w-full rounded-full bg-zinc-200 dark:bg-zinc-800" />
                 <div
-                  className="absolute top-6 left-0 h-1 rounded-full bg-primary transition-all duration-500 ease-out"
+                  className="absolute left-0 top-6 h-1 rounded-full bg-blue-600 transition-all duration-500 ease-out dark:bg-blue-500"
                   style={{ width: `${progressPct}%` }}
                 />
 
-                {/* Steps Nodes */}
                 <div className="relative z-10 flex justify-between">
                   {ORDER_STATUSES.map((s, i) => {
                     const isCompleted = i <= currentStep;
@@ -286,7 +362,12 @@ const UpdateOrderPage = ({ id }: { id: string }) => {
                     return (
                       <button
                         key={s}
-                        onClick={() => setStatus(s)}
+                        onClick={() =>
+                          setJob((prev) => ({
+                            ...prev,
+                            status: toApiStatus(s),
+                          }))
+                        }
                         className={`group flex flex-col items-center gap-2 outline-none transition-all ${
                           isActive ? "scale-110" : "hover:scale-105"
                         }`}
@@ -294,26 +375,27 @@ const UpdateOrderPage = ({ id }: { id: string }) => {
                         <div
                           className={`flex h-9 w-9 items-center justify-center rounded-full border-2 transition-colors duration-300 ${
                             isCompleted
-                              ? "border-primary bg-primary text-white shadow-md shadow-primary/20"
-                              : "border-border bg-card text-muted-foreground/40"
-                          } ${isActive ? "ring-4 ring-primary/20" : ""}`}
+                              ? "border-blue-600 bg-blue-600 text-white shadow-md shadow-blue-200 dark:border-blue-500 dark:bg-blue-500 dark:shadow-none"
+                              : "border-zinc-300 bg-white text-zinc-300 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-700"
+                          } ${
+                            isActive
+                              ? "ring-4 ring-blue-100 dark:ring-blue-900/40"
+                              : ""
+                          }`}
                         >
-                          {/* Clone icon to control sizing inside the circle */}
                           {React.isValidElement(STATUS_ICONS[s]) &&
                             React.cloneElement(
                               STATUS_ICONS[s] as React.ReactElement,
-                              {
-                                className: "h-4 w-4",
-                              }
+                              { className: "h-5 w-5" } as any
                             )}
                         </div>
                         <span
-                          className={`text-[10px] font-medium transition-colors ${
+                          className={`text-sm font-medium transition-colors ${
                             isActive
-                              ? "text-primary font-bold"
+                              ? "font-bold text-blue-600 dark:text-blue-400"
                               : isCompleted
-                              ? "text-foreground"
-                              : "text-muted-foreground"
+                              ? "text-zinc-700 dark:text-zinc-300"
+                              : "text-zinc-400 dark:text-zinc-600"
                           }`}
                         >
                           {s}
@@ -327,362 +409,425 @@ const UpdateOrderPage = ({ id }: { id: string }) => {
           </div>
         </section>
 
-        <section className="rounded-2xl border border-divborder bg-background shadow-lg p-4 ">
-          <h1 className="mb-3 text-foreground text-base font-semibold">
-            ข้อมูลลูกค้า
-          </h1>
-          <div className="grid gap-4 md:grid-cols-3">
-            <div className="space-y-2">
-              <label className="text-sm text-foreground">ชื่อลูกค้า</label>
-              <input
-                className="w-full rounded-xl border border-divborder bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900/20"
-                value={customer.name}
+        {/* --- Section 2: Customer Info --- */}
+        <section className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+          {/* Header Section */}
+          <div className="border-b border-zinc-100 bg-zinc-50/50 px-6 py-4 dark:border-zinc-800 dark:bg-zinc-800/50">
+            <h2 className="flex items-center gap-2 text-base font-semibold text-zinc-900 dark:text-zinc-100">
+              <Building2 className="h-5 w-5 text-zinc-500 dark:text-zinc-400" />
+              ข้อมูลลูกค้า
+            </h2>
+          </div>
+
+          {/* Form Grid */}
+          <div className="grid gap-6 p-6 md:grid-cols-2 lg:grid-cols-3">
+            {/* Customer Name */}
+            <div className="space-y-1.5">
+              <label className="flex items-center gap-2 text-sm font-semibold uppercase text-zinc-500 dark:text-zinc-400">
+                <User className="h-5 w-5" /> ชื่อลูกค้า
+              </label>
+              <Input
+                value={job.customerName}
                 onChange={(e) =>
-                  setCustomer({ ...customer, name: e.target.value })
+                  setJob({ ...job, customerName: e.target.value })
                 }
-                placeholder="example@email.com"
+                className="border-zinc-200 bg-white focus-visible:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:focus-visible:ring-blue-500"
               />
             </div>
 
-            <div className="space-y-2">
-              <label className="text-sm text-foreground">เบอร์โทร</label>
-              <input
-                className="w-full rounded-xl border border-divborder bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900/20"
-                value={customer.phone}
+            {/* Customer Code */}
+            <div className="space-y-1.5">
+              <label className="flex items-center gap-2 text-sm font-semibold uppercase text-zinc-500 dark:text-zinc-400">
+                <FileText className="h-5 w-5" /> รหัสลูกค้า (Code)
+              </label>
+              <Input
+                value={job.customerCode}
                 onChange={(e) =>
-                  setCustomer({ ...customer, phone: e.target.value })
+                  setJob({ ...job, customerCode: e.target.value })
                 }
-                placeholder="080-xxx-xxxx"
+                className="border-zinc-200 bg-white focus-visible:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:focus-visible:ring-blue-500"
               />
             </div>
 
-            <div className="space-y-2">
-              <label className="text-sm text-foreground">อีเมล</label>
-              <input
-                className="w-full rounded-xl border border-divborder bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900/20"
-                value={customer.email}
+            {/* Tax ID */}
+            <div className="space-y-1.5">
+              <label className="flex items-center gap-2 text-sm font-semibold uppercase text-zinc-500 dark:text-zinc-400">
+                <FileText className="h-5 w-5" /> เลขผู้เสียภาษี (Tax ID)
+              </label>
+              <Input
+                value={job.customerTaxId}
                 onChange={(e) =>
-                  setCustomer({ ...customer, email: e.target.value })
+                  setJob({ ...job, customerTaxId: e.target.value })
                 }
-                placeholder="example@email.com"
+                className="border-zinc-200 bg-white focus-visible:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:focus-visible:ring-blue-500"
               />
             </div>
 
-            <div className="space-y-2">
-              <label className="text-sm text-foreground">Code</label>
-              <input
-                className="w-full rounded-xl border border-divborder bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900/20"
-                value={customer.code}
+            {/* Phone */}
+            <div className="space-y-1.5">
+              <label className="flex items-center gap-2 text-sm font-semibold uppercase text-zinc-500 dark:text-zinc-400">
+                <Phone className="h-5 w-5" /> เบอร์โทรศัพท์
+              </label>
+              <Input
+                value={job.customerPhone}
                 onChange={(e) =>
-                  setCustomer({ ...customer, code: e.target.value })
+                  setJob((prev) => ({ ...prev, customerPhone: e.target.value }))
                 }
-                placeholder="รหัสลูกค้า"
+                className="border-zinc-200 bg-white focus-visible:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:focus-visible:ring-blue-500"
               />
             </div>
 
-            <div className="space-y-2">
-              <label className="text-sm text-foreground">Tax ID</label>
-              <input
-                className="w-full rounded-xl border border-divborder bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900/20"
-                value={customer.taxId}
+            {/* Email */}
+            <div className="space-y-1.5">
+              <label className="flex items-center gap-2 text-sm font-semibold uppercase text-zinc-500 dark:text-zinc-400">
+                <Mail className="h-5 w-5" /> อีเมล
+              </label>
+              <Input
+                value={job.customerEmail}
                 onChange={(e) =>
-                  setCustomer({ ...customer, taxId: e.target.value })
+                  setJob({ ...job, customerEmail: e.target.value })
                 }
-                placeholder="เลขผู้เสียภาษี 13 หลัก"
+                className="border-zinc-200 bg-white focus-visible:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:focus-visible:ring-blue-500"
               />
             </div>
 
-            <div className="space-y-2">
-              <label className="text-sm text-foreground">Fax</label>
-              <input
-                className="w-full rounded-xl border border-divborder bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900/20"
-                value={customer.fax}
+            {/* Fax */}
+            <div className="space-y-1.5">
+              <label className="flex items-center gap-2 text-sm font-semibold uppercase text-zinc-500 dark:text-zinc-400">
+                <Printer className="h-5 w-5" /> แฟกซ์
+              </label>
+              <Input
+                value={job.customerFax}
                 onChange={(e) =>
-                  setCustomer({ ...customer, fax: e.target.value })
+                  setJob({ ...job, customerFax: e.target.value })
                 }
-                placeholder="02-xxx-xxxx"
+                className="border-zinc-200 bg-white focus-visible:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:focus-visible:ring-blue-500"
               />
             </div>
 
-            <div className="space-y-2 md:col-span-3">
-              <label className="text-sm text-foreground">ที่อยู่</label>
+            {/* Address (Textarea) */}
+            <div className="space-y-1.5 md:col-span-3">
+              <label className="flex items-center gap-2 text-sm font-semibold uppercase text-zinc-500 dark:text-zinc-400">
+                <MapPin className="h-5 w-5" /> ที่อยู่จัดส่ง
+              </label>
               <textarea
-                className="w-full rounded-xl border border-divborder bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900/20"
-                rows={2}
-                value={customer.address}
+                className="flex min-h-[80px] w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm ring-offset-white placeholder:text-zinc-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:ring-offset-zinc-950 dark:placeholder:text-zinc-600 dark:focus-visible:ring-blue-500"
+                value={job.customerAddress}
                 onChange={(e) =>
-                  setCustomer({ ...customer, address: e.target.value })
+                  setJob({ ...job, customerAddress: e.target.value })
                 }
-                placeholder="บ้านเลขที่ ถนน ตำบล อำเภอ จังหวัด รหัสไปรษณีย์"
               />
             </div>
           </div>
         </section>
 
-        <section className="rounded-2xl border border-divborder bg-background shadow-lg p-4">
-          <div className="mb-3 flex items-center border border-divborder justify-between">
-            <h2 className="text-foreground font-semibold flex items-center gap-2">
-              <ListChecks className="h-4 w-4" />
-              รายการเหล็ก
-            </h2>
-            <Button
-              onClick={updateSteelItem}
-              className="inline-flex items-center text-white gap-2"
+        {/* --- Section 3: Order Lines --- */}
+        <section className="space-y-3">
+          {job.steel.map((it, idx) => (
+            <div
+              key={`${job.id}-${idx}`}
+              className="group relative rounded-xl border border-zinc-200 bg-white shadow-sm transition-all hover:shadow-md dark:border-zinc-800 dark:bg-zinc-900"
             >
-              <Plus className="h-4 w-4" /> เพิ่มรายการเหล็ก
-            </Button>
-          </div>
+              {/* ID Badge Absolute */}
+              <div className="absolute -left-2 top-4 z-10 hidden h-6 w-6 items-center justify-center rounded-full bg-zinc-800 text-sm font-bold text-white shadow-sm dark:bg-blue-600 lg:flex">
+                {idx + 1}
+              </div>
 
-          {/* cards list */}
-          <div className="space-y-3">
-            {steelItems.map((it, idx) => (
-              <div
-                key={it.id}
-                className="rounded-xl border border-divborder overflow-hidden"
-              >
-                {/* header: index badge + name + single delete */}
-                <div className="flex items-center justify-between gap-3 border-b border-divborder px-3 py-2">
-                  <div className="flex items-center gap-3 min-w-0">
-                    <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-[hsl(var(--foreground)/0.06)] text-xs font-semibold">
-                      {idx + 1}
-                    </span>
-                    <div className="min-w-0">
-                      <div className="truncate text-sm font-medium">
-                        {it.name || "— ยังไม่เลือกชนิดเหล็ก —"}
-                      </div>
-                      <div className="text-[11px] text-[hsl(var(--small-detail))]">
-                        : {it.id}
-                      </div>
-                    </div>
-                  </div>
-
-                  <Button
-                    variant="outline"
-                    onClick={() => removeSteelItem(it.id)}
-                    className="inline-flex items-center gap-2 border-red-300 text-red-600 hover:brightness-110"
-                    title="ลบรายการนี้"
-                  >
-                    <Trash2 className="h-4 w-4" /> ลบ
-                  </Button>
-                </div>
-
-                {/* body: editable grid */}
-                <div
-                  className={`grid gap-3 p-3 ${
-                    weightEnabled ? "md:grid-cols-6" : "md:grid-cols-5"
-                  }`}
-                >
-                  {/* ชนิดเหล็ก */}
-                  <div className="space-y-1">
-                    <label className="text-xs text-[hsl(var(--small-detail))]">
+              <div className="p-4 lg:flex lg:items-center lg:gap-4 lg:p-1">
+                {/* Grid Layout Container */}
+                <div className="grid flex-1 grid-cols-1 items-start gap-4 md:grid-cols-2 lg:grid-cols-12 lg:items-center">
+                  {/* Item Type - Col Span 3 */}
+                  <div className="lg:col-span-3 lg:pl-4">
+                    {/* Label ชนิดเหล็ก ให้แสดงตลอดเพื่อให้แนวบรรทัดตรงกัน */}
+                    <label className="mb-1 block text-sm text-zinc-500 dark:text-zinc-400">
                       ชนิดเหล็ก
                     </label>
                     <Select
-                      value={it.name}
-                      onValueChange={(v) => patchSteelItem(it.id, { name: v })}
+                      value={it.steeltype}
+                      onValueChange={(v) =>
+                        patchSteelItem(idx, { steeltype: v })
+                      }
                     >
-                      <SelectTrigger className="w-full rounded-xl border border-divborder bg-background px-3 py-2 text-sm">
-                        <SelectValue placeholder="เลือกชนิดเหล็ก" />
+                      <SelectTrigger className="h-10 border-zinc-200 bg-zinc-50 font-medium dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100">
+                        <SelectValue placeholder="เลือกชนิด" />
                       </SelectTrigger>
-                      <SelectContent className="max-h-[200px] overflow-y-auto">
+                      <SelectContent className="border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-900">
                         {steelOptions.map((opt) => (
-                          <SelectItem key={opt.value} value={opt.value}>
-                            <div className="flex flex-row">
-                              <span>{opt.label}</span>
-                              <span className="ml-2 text-[hsl(var(--small-detail))]">
-                                คงเหลือ: {opt.quantity} ชิ้น
-                              </span>
-                            </div>
+                          <SelectItem
+                            key={opt.value}
+                            value={opt.value}
+                            className="focus:bg-zinc-100 dark:text-zinc-200 dark:focus:bg-zinc-800"
+                          >
+                            {opt.label}{" "}
+                            <span className="ml-2 text-sm text-zinc-400 dark:text-zinc-500">
+                              (คงเหลือ {opt.quantity})
+                            </span>
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
                   </div>
 
-                  {/* จำนวน */}
-                  <div className="space-y-1">
-                    <label className="text-xs text-[hsl(var(--small-detail))]">
+                  {/* Dimensions Group - Col Span 4 */}
+                  <div className="grid grid-cols-3 gap-2 lg:col-span-4">
+                    <div>
+                      <label className="mb-1 block text-center text-sm text-zinc-500 dark:text-zinc-400">
+                        กว้าง
+                      </label>
+                      <div className="relative">
+                        <Input
+                          type="number"
+                          className="h-9 border-zinc-200 bg-white pr-6 text-center focus-visible:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
+                          value={it.width ?? 0}
+                          onChange={(e) =>
+                            patchSteelItem(idx, {
+                              width: Math.max(0, Number(e.target.value || 0)),
+                            })
+                          }
+                        />
+                        <span className="absolute right-2 top-1/2 -translate-y-1/2 text-sm text-zinc-400 dark:text-zinc-500">
+                          cm
+                        </span>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="mb-1 block text-center text-sm text-zinc-500 dark:text-zinc-400">
+                        ยาว
+                      </label>
+                      <div className="relative">
+                        <Input
+                          type="number"
+                          className="h-9 border-zinc-200 bg-white pr-6 text-center focus-visible:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
+                          value={it.length}
+                          onChange={(e) =>
+                            patchSteelItem(idx, {
+                              length: Math.max(0, Number(e.target.value || 0)),
+                            })
+                          }
+                        />
+                        <span className="absolute right-2 top-1/2 -translate-y-1/2 text-sm text-zinc-400 dark:text-zinc-500">
+                          cm
+                        </span>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="mb-1 block text-center text-sm text-zinc-500 dark:text-zinc-400">
+                        สูง
+                      </label>
+                      <div className="relative">
+                        <Input
+                          type="number"
+                          className="h-9 border-zinc-200 bg-white pr-6 text-center focus-visible:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
+                          value={it.thickness}
+                          onChange={(e) =>
+                            patchSteelItem(idx, {
+                              thickness: Math.max(
+                                0,
+                                Number(e.target.value || 0)
+                              ),
+                            })
+                          }
+                        />
+                        <span className="absolute right-2 top-1/2 -translate-y-1/2 text-sm text-zinc-400 dark:text-zinc-500">
+                          cm
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Quantity - Col Span 1 */}
+                  <div className="lg:col-span-1">
+                    {/* เอา lg:hidden ออก เพื่อให้แสดง label ตลอด */}
+                    <label className="mb-1 block text-center text-sm text-zinc-500 dark:text-zinc-400">
                       จำนวน
                     </label>
-                    <Input
-                      type="number"
-                      min={1}
-                      value={it.quantity}
-                      onChange={(e) =>
-                        patchSteelItem(it.id, {
-                          quantity: Math.max(1, Number(e.target.value || 0)),
-                        })
-                      }
-                      className="w-full rounded-xl border border-divborder bg-background px-3 py-2 text-sm"
-                    />
-                  </div>
-
-                  {/* กว้าง */}
-                  <div className="space-y-1">
-                    <label className="text-xs text-[hsl(var(--small-detail))]">
-                      กว้าง (ซม.)
-                    </label>
-                    <Input
-                      type="number"
-                      min={0}
-                      value={it.width}
-                      onChange={(e) =>
-                        patchSteelItem(it.id, {
-                          width: Math.max(0, Number(e.target.value || 0)),
-                        })
-                      }
-                      className="w-full rounded-xl border border-divborder bg-background px-3 py-2 text-sm"
-                    />
-                  </div>
-
-                  {/* ยาว */}
-                  <div className="space-y-1">
-                    <label className="text-xs text-[hsl(var(--small-detail))]">
-                      ยาว (ซม.)
-                    </label>
-                    <Input
-                      type="number"
-                      min={0}
-                      value={it.length}
-                      onChange={(e) =>
-                        patchSteelItem(it.id, {
-                          length: Math.max(0, Number(e.target.value || 0)),
-                        })
-                      }
-                      className="w-full rounded-xl border border-divborder bg-background px-3 py-2 text-sm"
-                    />
-                  </div>
-
-                  {/* สูง/หนา */}
-                  <div className="space-y-1">
-                    <label className="text-xs text-[hsl(var(--small-detail))]">
-                      สูง/หนา (ซม.)
-                    </label>
-                    <Input
-                      type="number"
-                      min={0}
-                      value={it.height}
-                      onChange={(e) =>
-                        patchSteelItem(it.id, {
-                          height: Math.max(0, Number(e.target.value || 0)),
-                        })
-                      }
-                      className="w-full rounded-xl border border-divborder bg-background px-3 py-2 text-sm"
-                    />
-                  </div>
-
-                  {weightEnabled && (
-                    <div className="space-y-1">
-                      <label className="text-xs text-[hsl(var(--small-detail))]">
-                        น้ำหนัก/ชิ้น (กก.)
-                      </label>
+                    <div className="flex items-center justify-center">
                       <Input
                         type="number"
-                        min={0}
-                        value={it.weight ?? 0}
+                        min={1}
+                        className="h-9 w-full border-blue-100 bg-blue-50/50 text-center font-semibold text-blue-600 focus-visible:ring-blue-500 dark:border-blue-900/50 dark:bg-blue-900/20 dark:text-blue-400"
+                        value={it.quantity}
                         onChange={(e) =>
-                          patchSteelItem(it.id, {
-                            weight: Math.max(0, Number(e.target.value || 0)),
+                          patchSteelItem(idx, {
+                            quantity: Math.max(1, Number(e.target.value || 1)),
                           })
                         }
-                        className="w-full rounded-xl border border-divborder bg-background px-3 py-2 text-sm"
                       />
                     </div>
-                  )}
+                  </div>
 
-                  {/* หมายเหตุ – เต็มแถว */}
-                  <div className="md:col-span-5">
-                    <label className="text-xs text-[hsl(var(--small-detail))]">
+                  {/* Weight (Conditional) - Col Span 2 */}
+                  <div className="lg:col-span-2">
+                    {weightEnabled ? (
+                      <div>
+                        {/* เอา lg:hidden ออก เพื่อให้แสดง label ตลอด */}
+                        <label className="mb-1 block text-center text-sm text-zinc-500 dark:text-zinc-400">
+                          น้ำหนัก/ชิ้น
+                        </label>
+                        <div className="relative">
+                          <Input
+                            type="number"
+                            className="h-9 border-zinc-200 bg-white pr-8 text-right font-mono text-sm focus-visible:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
+                            value={it.weight ?? 0}
+                            onChange={(e) =>
+                              patchSteelItem(idx, {
+                                weight: Math.max(
+                                  0,
+                                  Number(e.target.value || 0)
+                                ),
+                              })
+                            }
+                          />
+                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-zinc-400 dark:text-zinc-500">
+                            Kg.
+                          </span>
+                        </div>
+                      </div>
+                    ) : (
+                      // จัดตำแหน่ง Placeholder ให้ตรงกันเมื่อไม่มี Input
+                      <div className="flex h-full flex-col justify-end pb-2 lg:items-center">
+                        {/* ใส่ Label หลอกไว้เพื่อให้ความสูงเท่าเพื่อน (Optional) หรือจะปล่อยว่างก็ได้ */}
+                        <div className="mb-1 h-4 w-full" />
+                        <span className="text-sm italic text-zinc-300 dark:text-zinc-600">
+                          รอชั่ง
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Note & Action - Col Span 2 */}
+                  <div className="lg:col-span-2">
+                    {/* เพิ่ม Label ให้หมายเหตุด้วย เพื่อให้ระดับ Input เท่ากันทั้งแถว */}
+                    <label className="mb-1 block text-left text-sm text-zinc-500 dark:text-zinc-400">
                       หมายเหตุ
                     </label>
-                    <textarea
-                      value={it.note ?? ""}
-                      onChange={(e) =>
-                        patchSteelItem(it.id, { note: e.target.value })
-                      }
-                      placeholder="หมายเหตุ..."
-                      className="mt-1 w-full rounded-xl border border-divborder bg-background px-3 py-2 text-sm"
-                      rows={2}
-                    />
+                    <div className="flex items-center gap-2">
+                      <Input
+                        className="h-9 border-zinc-200 bg-white text-sm focus-visible:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
+                        placeholder="ระบุ..."
+                        value={it.detail ?? ""}
+                        onChange={(e) =>
+                          patchSteelItem(idx, { detail: e.target.value })
+                        }
+                      />
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => removeSteelItem(idx)}
+                        className="h-9 w-9 text-zinc-400 hover:bg-red-50 hover:text-red-600 dark:text-zinc-500 dark:hover:bg-red-900/20 dark:hover:text-red-400"
+                      >
+                        <Trash2 className="h-5 w-5" />
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </div>
-            ))}
-          </div>
+            </div>
+          ))}
         </section>
 
-        <section className="rounded-2xl border border-divborder bg-background shadow-lg p-4">
-          <h2 className="mb-2 text-base text-foreground font-semibold flex items-center gap-2">
-            <ClipboardCheck className="h-4 w-4" /> สรุป
-          </h2>
-
-          {/* การ์ดสรุปหลัก */}
-          <div className="grid gap-3 md:grid-cols-4">
-            <div className="rounded-2xl border border-divborder bg-background p-3">
-              <div className="text-sm text-foreground">จำนวนรายการ</div>
-              <div className="mt-1 text-2xl font-semibold">
-                {fmtInt(itemCount)}
+        {/* ---------- สรุป (อ่านจาก job.steel) ---------- */}
+        <section className="grid gap-6 lg:grid-cols-3">
+          {/* Summary Cards Grid */}
+          <div className="grid grid-cols-2 gap-4 lg:col-span-2 md:grid-cols-4">
+            {/* Card 1: รายการทั้งหมด */}
+            <div className="flex flex-col justify-between rounded-xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+              <div className="text-sm font-medium uppercase text-zinc-500 dark:text-zinc-400">
+                รายการทั้งหมด
               </div>
-              <div className="mt-1 text-xs text-[hsl(var(--small-detail))]">
-                นับทุกรายการ แม้เป็นชนิดเดียวกัน
-              </div>
-            </div>
-
-            <div className="rounded-2xl border border-divborder bg-background p-3">
-              <div className="text-sm text-foreground">จำนวนประเภท</div>
-              <div className="mt-1 text-2xl font-semibold">
-                {fmtInt(uniqueTypeCount)}
-              </div>
-              <div className="mt-1 text-xs text-[hsl(var(--small-detail))]">
-                รวมชนิดเหล็กไม่ซ้ำ
+              <div className="mt-2 flex items-end justify-between">
+                <span className="text-3xl font-bold text-zinc-900 dark:text-zinc-50">
+                  {fmtInt(itemCount)}
+                </span>
+                <Boxes className="h-5 w-5 text-zinc-300 dark:text-zinc-600" />
               </div>
             </div>
 
-            <div className="rounded-2xl border border-divborder bg-background p-3">
-              <div className="text-sm text-foreground">จำนวนชิ้นรวม</div>
-              <div className="mt-1 text-2xl font-semibold">
-                {fmtInt(totalQty)}
+            {/* Card 2: ประเภทเหล็ก */}
+            <div className="flex flex-col justify-between rounded-xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+              <div className="text-sm font-medium uppercase text-zinc-500 dark:text-zinc-400">
+                ประเภทเหล็ก
+              </div>
+              <div className="mt-2 flex items-end justify-between">
+                <span className="text-3xl font-bold text-zinc-900 dark:text-zinc-50">
+                  {fmtInt(uniqueTypeCount)}
+                </span>
+                <ListChecks className="h-5 w-5 text-zinc-300 dark:text-zinc-600" />
               </div>
             </div>
 
-            <div className="rounded-2xl border border-divborder bg-background p-3">
-              <div className="text-sm text-foreground">น้ำหนักรวม (กก.)</div>
-              <div className="mt-1 text-2xl font-semibold">
-                {weightEnabled ? fmtWeight(totalWeight) : "—"}
+            {/* Card 3: จำนวนชิ้นรวม (Gradient Highlight) */}
+            <div className="flex flex-col justify-between rounded-xl bg-gradient-to-br from-blue-600 to-indigo-700 p-4 text-white shadow-md shadow-blue-200 dark:from-blue-700 dark:to-indigo-800 dark:shadow-none">
+              <div className="text-sm font-medium uppercase text-blue-100">
+                จำนวนชิ้นรวม
               </div>
-              {!weightEnabled && (
-                <div className="mt-1 text-xs text-[hsl(var(--small-detail))]">
-                  จะแสดงเมื่อสถานะเมื่อชั่งน้ำหนักแล้ว
-                </div>
-              )}
+              <div className="mt-2 flex items-end justify-between">
+                <span className="text-3xl font-bold">{fmtInt(totalQty)}</span>
+                <span className="mb-1 text-sm text-blue-200">ชิ้น</span>
+              </div>
+            </div>
+
+            {/* Card 4: น้ำหนักรวม */}
+            <div className="flex flex-col justify-between rounded-xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+              <div className="text-sm font-medium uppercase text-zinc-500 dark:text-zinc-400">
+                น้ำหนักรวม
+              </div>
+              <div className="mt-2 flex items-end justify-between">
+                {weightEnabled ? (
+                  <span className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">
+                    {fmtWeight(totalWeight)}
+                  </span>
+                ) : (
+                  <span className="text-lg font-medium italic text-zinc-400 dark:text-zinc-600">
+                    --
+                  </span>
+                )}
+                <span className="mb-1 text-sm text-zinc-400 dark:text-zinc-500">
+                  Kg.
+                </span>
+              </div>
             </div>
           </div>
 
-          {/* แถบสรุปย่อยตามชนิดเหล็ก (อ่านง่าย แยกชัดเจน) */}
-          {Object.keys(summaryByType).length > 0 && (
-            <div className="mt-4">
-              <div className="mb-2 text-sm font-medium text-foreground">
-                สรุปตามชนิดเหล็ก
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {Object.entries(summaryByType).map(([type, v]) => (
-                  <div
-                    key={type}
-                    className="inline-flex items-center gap-2 rounded-xl border border-divborder bg-[hsl(var(--foreground)/0.04)] px-3 py-1.5 text-xs"
-                    title={`${type}: ${v.lines} รายการ, ${v.qty} ชิ้น${
-                      weightEnabled ? `, ${fmtWeight(v.weight)} กก.` : ""
-                    }`}
-                  >
-                    <span className="font-semibold">{type}</span>
-                    <span className="text-[hsl(var(--small-detail))]">
-                      {v.lines} รายการ • {fmtInt(v.qty)} ชิ้น
-                      {weightEnabled ? ` • ${fmtWeight(v.weight)} กก.` : ""}
+          {/* Right Panel: Type Breakdown */}
+          <div className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+            <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold text-zinc-800 dark:text-zinc-100">
+              <Calculator className="h-5 w-5 text-zinc-400 dark:text-zinc-500" />
+              สรุปแยกประเภท
+            </h3>
+            <div className="space-y-3">
+              {Object.entries(summaryByType).length === 0 && (
+                <p className="py-4 text-center text-sm text-zinc-400 dark:text-zinc-500">
+                  ยังไม่มีรายการ
+                </p>
+              )}
+              {Object.entries(summaryByType).map(([type, v]) => (
+                <div
+                  key={type}
+                  className="flex items-center justify-between text-sm"
+                >
+                  <div className="flex items-center gap-2">
+                    <div className="h-2 w-2 rounded-full bg-blue-600 dark:bg-blue-500" />
+                    <span className="font-medium text-zinc-700 dark:text-zinc-300">
+                      {type}
                     </span>
                   </div>
-                ))}
-              </div>
+                  <div className="text-right">
+                    <span className="font-semibold text-zinc-900 dark:text-zinc-100">
+                      {fmtInt(v.qty)} ชิ้น
+                    </span>
+                    {weightEnabled && (
+                      <span className="ml-2 text-sm text-zinc-400 dark:text-zinc-500">
+                        ({fmtWeight(v.weight)} kg)
+                      </span>
+                    )}
+                  </div>
+                </div>
+              ))}
             </div>
-          )}
+          </div>
         </section>
       </main>
     </div>

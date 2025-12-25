@@ -12,7 +12,7 @@ type ActionItem = {
   key: ActionKey;
   label: string;
   icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
-  run: () => Promise<void> | void;     // ฟังก์ชันเฉพาะของปุ่ม
+  run: () => Promise<void> | void; // ฟังก์ชันเฉพาะของปุ่ม
   visible?: boolean;
   disabled?: boolean;
 };
@@ -27,7 +27,7 @@ export function QuickAction({ orderId }: { orderId: string | number }) {
       key: "edit",
       label: "Edit Order",
       icon: Edit,
-      run: () => router.push(`/dashboard`),
+      run: () => router.push(`/up-date-order/${orderId}`),
     },
     {
       key: "print",
@@ -43,9 +43,14 @@ export function QuickAction({ orderId }: { orderId: string | number }) {
       label: "Email Customer",
       icon: Mail,
       run: async () => {
-        const res = await fetch(`/api/orders/${orderId}/email`, { method: "POST" });
+        const res = await fetch(`/api/orders/${orderId}/email`, {
+          method: "POST",
+        });
         if (!res.ok) throw new Error("Send email failed");
-        toast({ title: "Email sent", description: "Customer has been notified." });
+        toast({
+          title: "Email sent",
+          description: "Customer has been notified.",
+        });
       },
     },
     {
@@ -53,7 +58,9 @@ export function QuickAction({ orderId }: { orderId: string | number }) {
       label: "Generate Invoice",
       icon: FileText,
       run: async () => {
-        const res = await fetch(`/api/orders/${orderId}/invoice`, { method: "POST" });
+        const res = await fetch(`/api/orders/${orderId}/invoice`, {
+          method: "POST",
+        });
         if (!res.ok) throw new Error("Generate invoice failed");
         const { url } = await res.json();
         window.open(url, "_blank");
@@ -68,7 +75,11 @@ export function QuickAction({ orderId }: { orderId: string | number }) {
       setLoadingKey(a.key);
       await a.run();
     } catch (e: any) {
-      toast({ title: "Failed", description: e.message ?? "Unexpected error", variant: "destructive" });
+      toast({
+        title: "Failed",
+        description: e.message ?? "Unexpected error",
+        variant: "destructive",
+      });
     } finally {
       setLoadingKey(null);
     }
