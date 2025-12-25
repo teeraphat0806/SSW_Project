@@ -95,7 +95,6 @@ const NewJobOrder = () => {
         const data = await res.json();
 
         if (!ignore) {
-          // 👇 ตรงนี้เปลี่ยนเป็น setSteelTypes
           setSteelTypes(
             data.map((t: { id: number; codeSteel: string; shape: string }) => ({
               id: t.id.toString(),

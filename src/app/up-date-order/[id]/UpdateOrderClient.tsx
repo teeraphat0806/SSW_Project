@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Select,
   SelectContent,
@@ -33,8 +33,39 @@ import {
   Calculator,
 } from "lucide-react";
 import { Button } from "../../../components/ui/button";
+// ✅ ไม่ได้ใช้ เอาออกได้ (ถ้าจะใช้ค่อยใส่กลับ)
+// import { ca, th } from "date-fns/locale";
 
-type shape = "square" | "line";
+type ApiJobOrder = {
+  id: number;
+  poNumber: string;
+  customerId: string;
+  customerName: string;
+  customerEmail: string;
+  customerPhone: string;
+  customerAddress: string;
+  customerTaxId: string;
+  customerCode: string;
+  customerFax: string;
+  steel: {
+    steelType: string;
+    amount: number;
+    width?: number;
+    length: number;
+    thickness: number;
+    detail?: string | null;
+    weight?: number | null;
+    shape: "square" | "line";
+  }[];
+  status:
+    | "pending"
+    | "cutting"
+    | "weighing"
+    | "ready"
+    | "shipped"
+    | "completed";
+};
+
 type Joborder = {
   id: string;
   ponumber: string;
@@ -54,7 +85,7 @@ type Joborder = {
     thickness: number;
     detail?: string | null;
     weight?: number | null;
-    shape: shape;
+    shape: "square" | "line";
   }[];
   status:
     | "pending"
@@ -65,43 +96,35 @@ type Joborder = {
     | "completed";
 };
 
-const mockJoborder: Joborder = {
-  id: "1",
-  ponumber: "PO-2025-00123",
-  customerId: "CUST-001",
-  customerName: "บจก. เอสเอสดับบลิว สตีล เซ็นเตอร์",
-  customerEmail: "contact@sswsteel.co.th",
-  customerPhone: "080-123-4567",
-  customerAddress: "99/9 ถนนบางกรวย-ไทรน้อย อ.บางบัวทอง จ.นนทบุรี 11110",
-  customerTaxId: "0105559999999",
-  customerCode: "1055115410",
-  customerFax: "02-765-4321",
-  steel: [
-    {
-      steeltype: "SS400",
-      quantity: 10,
-      width: 5.0,
-      length: 200.0,
-      thickness: 0.5,
-      shape: "square",
-    },
-    {
-      steeltype: "SKD11",
-      quantity: 5,
-      length: 150.0,
-      thickness: 1.0,
-      shape: "line",
-    },
-  ],
-  status: "pending",
-};
+const toJoborder = (api: ApiJobOrder): Joborder => ({
+  id: api.id.toString(),
+  ponumber: api.poNumber,
+  customerId: api.customerId ?? "",
+  customerName: api.customerName ?? "",
+  customerEmail: api.customerEmail ?? "",
+  customerPhone: api.customerPhone ?? "",
+  customerAddress: api.customerAddress ?? "",
+  customerTaxId: api.customerTaxId ?? "",
+  customerCode: api.customerCode ?? "",
+  customerFax: api.customerFax ?? "",
+  steel: (api.steel ?? []).map((s) => ({
+    steeltype: s.steelType,
+    quantity: s.amount,
+    width: s.width ?? null,
+    length: s.length,
+    thickness: s.thickness,
+    detail: s.detail ?? null,
+    weight: s.weight ?? null,
+    shape: s.shape,
+  })),
+  status: api.status,
+});
 
 const ORDER_STATUSES = [
   "รอตัด",
   "กำลังตัด",
   "ชั่งน้ำหนัก",
   "ตัดเสร็จสิ้น",
-  "ตรวจสอบ",
   "กำลังส่ง",
   "ส่งสำเร็จ",
 ] as const;
@@ -113,7 +136,6 @@ const STATUS_ICONS: Record<OrderStatus, React.ReactNode> = {
   กำลังตัด: <Scissors className="h-5 w-5" />,
   ชั่งน้ำหนัก: <Scale className="h-5 w-5" />,
   ตัดเสร็จสิ้น: <CheckCircle2 className="h-5 w-5" />,
-  ตรวจสอบ: <ClipboardCheck className="h-5 w-5" />,
   กำลังส่ง: <Truck className="h-5 w-5" />,
   ส่งสำเร็จ: <PackageCheck className="h-5 w-5" />,
 };
@@ -156,9 +178,6 @@ const toApiStatus = (s: OrderStatus): Joborder["status"] => {
       return "weighing";
     case "ตัดเสร็จสิ้น":
       return "ready";
-    // "ตรวจสอบ" ไม่มีใน enum เดิมของ Joborder → เลย map ไป "ready"
-    case "ตรวจสอบ":
-      return "ready";
     case "กำลังส่ง":
       return "shipped";
     case "ส่งสำเร็จ":
@@ -170,15 +189,56 @@ const toApiStatus = (s: OrderStatus): Joborder["status"] => {
 
 const UpdateOrderPage = ({ id }: { id: string }) => {
   const router = useRouter();
+  const [job, setJob] = useState<Joborder | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // ✅ state เดียว: job (มาจาก mockJoborder)
-  const [job, setJob] = useState<Joborder>(mockJoborder);
+  useEffect(() => {
+    let cancelled = false;
+    const run = async () => {
+      try {
+        setLoading(true);
+        setError(null);
 
-  // ✅ สถานะที่ UI ใช้ (ไทย) derive จาก job.status
-  const status = useMemo(() => toThaiStatus(job.status), [job.status]);
+        const res = await fetch(`/api/up-date-order/${id}`, {
+          method: "GET",
+          cache: "no-store",
+        });
 
+        const data = await res.json();
+
+        if (!res.ok) {
+          throw new Error(data.error || "Failed to fetch order");
+        }
+
+        const mapped = toJoborder(data as ApiJobOrder);
+
+        if (!cancelled) setJob(mapped);
+      } catch (e) {
+        if (!cancelled)
+          setError(
+            e instanceof Error ? e.message : "Failed to fetch job order"
+          );
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+    run();
+    return () => {
+      cancelled = true;
+    };
+  }, [id]);
+
+  if (loading) return <div className="p-6">กำลังโหลด...</div>;
+  if (error) return <div className="p-6 text-red-600">Error: {error}</div>;
+  if (!job) return <div className="p-6">ไม่พบข้อมูล</div>;
+
+  const status: OrderStatus = toThaiStatus(job.status);
   const weightEnabled =
     ORDER_STATUSES.indexOf(status) >= ORDER_STATUSES.indexOf("ชั่งน้ำหนัก");
+
+  const currentStep = ORDER_STATUSES.indexOf(status);
+  const progressPct = (currentStep / (ORDER_STATUSES.length - 1)) * 100;
 
   // ✅ คำนวณจาก job.steel โดยตรง
   const itemCount = job.steel.length;
@@ -211,48 +271,51 @@ const UpdateOrderPage = ({ id }: { id: string }) => {
       maximumFractionDigits: 2,
     }).format(n);
 
-  const currentStep = ORDER_STATUSES.indexOf(status);
-  const progressPct = (currentStep / (ORDER_STATUSES.length - 1)) * 100;
-
-  // ✅ เพิ่มเหล็ก: แก้ job.steel
+  // ✅ เพิ่มเหล็ก
   const addSteelItem = () => {
-    setJob((prev) => ({
-      ...prev,
-      steel: [
-        ...prev.steel,
-        {
-          steeltype: steelOptions[0].value,
-          quantity: 1,
-          width: 0,
-          length: 0,
-          thickness: 0,
-          detail: "",
-          weight: null,
-          shape: "square",
-        },
-      ],
-    }));
+    setJob((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        steel: [
+          ...prev.steel,
+          {
+            steeltype: steelOptions[0].value,
+            quantity: 1,
+            width: 0,
+            length: 0,
+            thickness: 0,
+            detail: "",
+            weight: null,
+            shape: "square",
+          },
+        ],
+      };
+    });
   };
 
-  // ✅ ลบเหล็กด้วย index
+  // ✅ ลบเหล็ก
   const removeSteelItem = (index: number) => {
-    setJob((prev) => ({
-      ...prev,
-      steel: prev.steel.filter((_, i) => i !== index),
-    }));
+    setJob((prev) => {
+      if (!prev) return prev;
+      return { ...prev, steel: prev.steel.filter((_, i) => i !== index) };
+    });
   };
 
-  // ✅ patch เหล็กด้วย index
+  // ✅ แก้เหล็ก
   const patchSteelItem = (
     index: number,
     patch: Partial<Joborder["steel"][number]>
   ) => {
-    setJob((prev) => ({
-      ...prev,
-      steel: prev.steel.map((item, i) =>
-        i === index ? { ...item, ...patch } : item
-      ),
-    }));
+    setJob((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        steel: prev.steel.map((item, i) =>
+          i === index ? { ...item, ...patch } : item
+        ),
+      };
+    });
   };
 
   // onChange={(e) =>
