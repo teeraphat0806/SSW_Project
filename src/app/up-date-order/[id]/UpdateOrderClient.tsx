@@ -190,6 +190,7 @@ const toApiStatus = (s: OrderStatus): Joborder["status"] => {
 const UpdateOrderPage = ({ id }: { id: string }) => {
   const router = useRouter();
   const [job, setJob] = useState<Joborder | null>(null);
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -229,9 +230,25 @@ const UpdateOrderPage = ({ id }: { id: string }) => {
     };
   }, [id]);
 
-  if (loading) return <div className="p-6">กำลังโหลด...</div>;
-  if (error) return <div className="p-6 text-red-600">Error: {error}</div>;
-  if (!job) return <div className="p-6">ไม่พบข้อมูล</div>;
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-background to-steel/20 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading job order details...</p>
+        </div>
+      </div>
+    );
+  }
+  if (error || !job) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-background to-steel/20 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-600">Error ไม่พบข้อมูลคำสั่งซื้อ</p>
+        </div>
+      </div>
+    );
+  }
 
   const status: OrderStatus = toThaiStatus(job.status);
   const weightEnabled =
@@ -586,6 +603,24 @@ const UpdateOrderPage = ({ id }: { id: string }) => {
 
         {/* --- Section 3: Order Lines --- */}
         <section className="space-y-3">
+          <div className="flex items-center justify-between">
+            <h2 className="flex items-center gap-2 text-lg font-semibold text-zinc-900 dark:text-zinc-50">
+              <ListChecks className="h-5 w-5 text-blue-600 dark:text-blue-500" />
+              รายการสินค้า
+              <span className="ml-2 inline-flex items-center rounded-full bg-zinc-100 px-2.5 py-0.5 text-xs font-medium text-zinc-900 dark:bg-zinc-800 dark:text-zinc-200">
+                {itemCount} รายการ
+              </span>
+            </h2>
+
+            <Button
+              onClick={addSteelItem}
+              size="sm"
+              className="bg-zinc-900 text-white shadow-sm hover:bg-zinc-800 dark:bg-blue-600 dark:hover:bg-blue-500 dark:shadow-none"
+            >
+              <Plus className="mr-1.5 h-4 w-4" />
+              เพิ่มรายการ
+            </Button>
+          </div>
           {job.steel.map((it, idx) => (
             <div
               key={`${job.id}-${idx}`}
@@ -789,6 +824,12 @@ const UpdateOrderPage = ({ id }: { id: string }) => {
               </div>
             </div>
           ))}
+          <button
+            onClick={addSteelItem}
+            className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-zinc-300 p-4 text-sm font-medium text-zinc-500 transition-all duration-200 hover:border-blue-500 hover:bg-blue-50 hover:text-blue-600 dark:border-zinc-700 dark:text-zinc-400 dark:hover:border-blue-500 dark:hover:bg-blue-900/20 dark:hover:text-blue-400"
+          >
+            <Plus className="h-4 w-4" /> เพิ่มรายการใหม่
+          </button>
         </section>
 
         {/* ---------- สรุป (อ่านจาก job.steel) ---------- */}

@@ -52,7 +52,7 @@ export async function POST(req: NextRequest) {
   }
   try {
     const result = await prisma.customer.create({
-      data: parsed.data, // ✅ ใช้ข้อมูลที่ผ่านการตรวจสอบแล้ว
+      data: parsed.data, 
     });
     return NextResponse.json(result, { status: 201 });
   } catch (error) {

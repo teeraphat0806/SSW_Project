@@ -21,7 +21,7 @@ type SteelItem = {
   steelType: string;
   shape: "line" | "square" | string;
   quantity: number;
-  width: number;
+  width: number | null;
   length: number;
   thickness: number;
   notes: string;
@@ -70,7 +70,7 @@ const NewJobOrder = () => {
       steelType: "",
       shape: "",
       quantity: 1,
-      width: 0,
+      width: null,
       length: 0,
       thickness: 0,
       notes: "",
@@ -258,7 +258,7 @@ const NewJobOrder = () => {
 
       const payloadBill = {
         customerId: Number(customerId),
-        yourRef: "REF108",
+        yourRef: headOrder.yourRef,
         deliveryDate: new Date(headOrder.deliveryDate).toISOString(),
         vat: 7.0,
         orderPOs: [
@@ -272,7 +272,7 @@ const NewJobOrder = () => {
             products: steelItems.map((item) => {
               return {
                 steelType: item.steelType,
-                wide: item.width,
+                wide: item.width ?? null,
                 length: item.length,
                 amount: item.quantity,
                 thickness: item.thickness,

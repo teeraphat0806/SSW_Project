@@ -3,10 +3,9 @@ import { z } from "zod";
 export const CreateNewOrderSchema = z.object({
   customerId: z.number().int().positive(),
   yourRef: z.string(),
-  invoiceNo: z.string(),
   credit: z.coerce.date().optional(),
   deliveryDate: z.coerce.date(),
-  deliveryOrderNo: z.string(),
+  deliveryOrderNo: z.string().optional(),
   salesName: z.string().optional(),
   vat: z.number(),
   orderPOs: z.array(
@@ -20,7 +19,7 @@ export const CreateNewOrderSchema = z.object({
       products: z.array(
         z.object({
           steelType: z.string(),
-          wide: z.number(),
+          wide: z.number().nullable(),
           length: z.number(),
           thickness: z.number(),
           amount: z.number(),

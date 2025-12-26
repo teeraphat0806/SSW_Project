@@ -85,11 +85,11 @@ export async function POST(req: NextRequest) {
             Customer: { connect: { id: validateData.customerId } },
             total: po.total,
             urlPo: po.urlPo,
-            date: new Date(),
+            // date: new Date(),
             Product: {
               create: po.products.map((p) => ({
                 SteelType: { connect: { codeSteel: p.steelType } },
-                wide: p.wide,
+                wide: p.wide ?? null,
                 length: p.length,
                 thickness: p.thickness,
                 amount: p.amount,
