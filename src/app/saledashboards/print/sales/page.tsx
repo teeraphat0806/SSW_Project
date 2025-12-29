@@ -8,34 +8,60 @@ import {
   formatCurrency,
   formatDate,
 } from "@/lib/saleDashboard/print-utils";
-// Note: mockCustomers from mock-data, using empty array for now
-const mockCustomers: any[] = [];
+import {
+  useBills,
+  useCustomers,
+} from "@/hooks/saleDashboard/useSaleDashboardData";
 import { Button } from "@/components/ui/button";
 import { Printer } from "lucide-react";
 
 function PrintContent() {
   const searchParams = useSearchParams();
   const [isPrinting, setIsPrinting] = useState(false);
+  const { bills, loading: billsLoading } = useBills();
+  const { customers, loading: customersLoading } = useCustomers();
+  const loading = billsLoading || customersLoading;
 
   const year = Number.parseInt(searchParams.get("year") || "2025");
   const type = searchParams.get("type") || "monthly";
   const month = Number.parseInt(searchParams.get("month") || "1");
   const customerId = searchParams.get("customer") || "all";
-  const sortOrder = (searchParams.get("sort") || "date-desc") as any;
+  const sortOrder = (searchParams.get("sort") || "date-desc") as
+    | "date-desc"
+    | "date-asc"
+    | "sales-desc"
+    | "sales-asc";
   const isPreview = searchParams.get("preview") === "true";
 
-  const customerName =
-    customerId === "all"
-      ? "ทั้งหมด"
-      : mockCustomers.find((c) => c.id === Number.parseInt(customerId))?.name ||
-        "ไม่ระบุ";
+  const customerName = (() => {
+    if (customerId === "all") return "ทั้งหมด";
+    const customer = customers.find(
+      (c) => c.id === Number.parseInt(customerId)
+    );
+    return customer?.name || "ไม่ระบุ";
+  })();
 
   const monthlyData =
-    type === "monthly"
-      ? getMonthlyPrintData(year, month, customerId, sortOrder)
+    type === "monthly" && !loading
+      ? getMonthlyPrintData({
+          bills,
+          customers,
+          year,
+          month,
+          customerId,
+          sortOrder,
+        })
       : null;
   const yearlyData =
-    type === "yearly" ? getYearlyPrintData(year, customerId, sortOrder) : null;
+    type === "yearly" && !loading
+      ? getYearlyPrintData({
+          bills,
+          customers,
+          year,
+          customerId,
+          sortOrder,
+        })
+      : null;
 
   const handlePrint = () => {
     setIsPrinting(true);
@@ -54,6 +80,14 @@ function PrintContent() {
       return () => clearTimeout(timer);
     }
   }, [isPreview]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-white text-black flex items-center justify-center">
+        <p className="text-lg">กำลังโหลดข้อมูล...</p>
+      </div>
+    );
+  }
 
   const getSortLabel = (sort: string) => {
     const labels: { [key: string]: string } = {

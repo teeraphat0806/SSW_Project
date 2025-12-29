@@ -1,9 +1,5 @@
-// Note: Print utilities currently use empty mock data stubs
-// To use with real data, pass bills and customers as parameters to the functions
-
-// Mock data stubs for print utilities
-const mockBills: any[] = [];
-const mockCustomers: any[] = [];
+import type { Bill } from "@/types/bill";
+import type { Customer } from "@/types/customer";
 import { formatCurrency, formatDate } from "./analytics-utils";
 
 export interface PrintRowData {
@@ -32,6 +28,14 @@ export interface YearlyPrintData {
 }
 
 type SortOrder = "date-asc" | "date-desc" | "sales-asc" | "sales-desc";
+
+function getBillDate(bill: Bill): Date | null {
+  const raw = bill.dateReceive || bill.deliveryDate;
+  if (!raw) return null;
+
+  const date = new Date(raw);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
 
 function getThaiMonthName(month: number): string {
   const months = [
@@ -67,38 +71,50 @@ function sortRows(rows: PrintRowData[], sortOrder: SortOrder): PrintRowData[] {
   }
 }
 
-export function getMonthlyPrintData(
-  year: number,
-  month: number,
-  customerId = "all",
-  sortOrder: SortOrder = "date-desc"
-): MonthlyPrintData {
-  let bills = mockBills.filter((bill) => {
-    const date = bill.dateReceive || bill.deliveryDate;
+export function getMonthlyPrintData(params: {
+  bills: Bill[];
+  customers: Customer[];
+  year: number;
+  month: number;
+  customerId?: string;
+  sortOrder?: SortOrder;
+}): MonthlyPrintData {
+  const {
+    bills,
+    customers,
+    year,
+    month,
+    customerId = "all",
+    sortOrder = "date-desc",
+  } = params;
+
+  let filteredBills = bills
+    .map((bill) => ({ bill, date: getBillDate(bill) }))
+    .filter((entry) => entry.date !== null) as { bill: Bill; date: Date }[];
+
+  filteredBills = filteredBills.filter(({ date }) => {
     return date.getFullYear() === year && date.getMonth() + 1 === month;
   });
 
-  // Filter by customer if specified
   if (customerId !== "all") {
     const customerIdNum = Number.parseInt(customerId);
-    bills = bills.filter((bill) => bill.customerId === customerIdNum);
+    filteredBills = filteredBills.filter(
+      ({ bill }) => bill.customerId === customerIdNum
+    );
   }
 
-  // Transform to print rows
-  let rows: PrintRowData[] = bills.map((bill) => {
-    const customer = mockCustomers.find((c) => c.id === bill.customerId);
+  let rows: PrintRowData[] = filteredBills.map(({ bill, date }) => {
+    const customer = customers.find((c) => c.id === bill.customerId);
     return {
-      rowNumber: 0, // Will be assigned after sorting
-      saleDate: bill.dateReceive || bill.deliveryDate,
+      rowNumber: 0,
+      saleDate: date,
       customerName: customer?.name || "-",
-      salesAmount: bill.grandTotal || bill.subtotal || 0,
+      salesAmount: Number(bill.grandTotal ?? bill.subtotal ?? 0),
     };
   });
 
-  // Sort rows
   rows = sortRows(rows, sortOrder);
 
-  // Assign row numbers after sorting
   rows = rows.map((row, index) => ({
     ...row,
     rowNumber: index + 1,
@@ -113,42 +129,53 @@ export function getMonthlyPrintData(
   };
 }
 
-export function getYearlyPrintData(
-  year: number,
-  customerId = "all",
-  sortOrder: SortOrder = "date-desc"
-): YearlyPrintData {
-  const months = [];
+export function getYearlyPrintData(params: {
+  bills: Bill[];
+  customers: Customer[];
+  year: number;
+  customerId?: string;
+  sortOrder?: SortOrder;
+}): YearlyPrintData {
+  const {
+    bills,
+    customers,
+    year,
+    customerId = "all",
+    sortOrder = "date-desc",
+  } = params;
+
+  const months = [] as YearlyPrintData["months"];
   let yearlyTotal = 0;
   let yearlyOrderCount = 0;
 
   for (let month = 1; month <= 12; month++) {
-    let bills = mockBills.filter((bill) => {
-      const date = bill.dateReceive || bill.deliveryDate;
+    let filteredBills = bills
+      .map((bill) => ({ bill, date: getBillDate(bill) }))
+      .filter((entry) => entry.date !== null) as { bill: Bill; date: Date }[];
+
+    filteredBills = filteredBills.filter(({ date }) => {
       return date.getFullYear() === year && date.getMonth() + 1 === month;
     });
 
-    // Filter by customer if specified
     if (customerId !== "all") {
       const customerIdNum = Number.parseInt(customerId);
-      bills = bills.filter((bill) => bill.customerId === customerIdNum);
+      filteredBills = filteredBills.filter(
+        ({ bill }) => bill.customerId === customerIdNum
+      );
     }
 
-    // Transform to print rows
-    let rows: PrintRowData[] = bills.map((bill) => {
-      const customer = mockCustomers.find((c) => c.id === bill.customerId);
+    let rows: PrintRowData[] = filteredBills.map(({ bill, date }) => {
+      const customer = customers.find((c) => c.id === bill.customerId);
       return {
-        rowNumber: 0, // Will be assigned after sorting
-        saleDate: bill.dateReceive || bill.deliveryDate,
+        rowNumber: 0,
+        saleDate: date,
         customerName: customer?.name || "-",
-        salesAmount: bill.grandTotal || bill.subtotal || 0,
+        salesAmount: Number(bill.grandTotal ?? bill.subtotal ?? 0),
       };
     });
 
-    // Sort rows
     rows = sortRows(rows, sortOrder);
 
-    // Assign row numbers after sorting
     rows = rows.map((row, index) => ({
       ...row,
       rowNumber: index + 1,
