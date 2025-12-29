@@ -12,21 +12,21 @@ import {
 } from "@/components/ui/table";
 import { TrendingUp, TrendingDown } from "lucide-react";
 import {
-  getNetProfitByMonth,
-  getNetProfitSummary,
-  generateProfitInsight,
   formatCurrency,
 } from "@/lib/saleDashboard/analytics-utils";
 import { KPIStatCard } from "./kpi-stat-card";
+import { useSaleAnalytics } from "@/hooks/saleDashboard/useSaleAnalytics";
 
 interface NetProfitViewProps {
   year: number;
 }
 
 export function NetProfitView({ year }: NetProfitViewProps) {
-  const monthlyData = useMemo(() => getNetProfitByMonth(year), [year]);
-  const summary = useMemo(() => getNetProfitSummary(year), [year]);
-  const insight = useMemo(() => generateProfitInsight(year), [year]);
+  const { netProfitByMonth, netProfitSummary, profitInsight, loading, error } = useSaleAnalytics();
+  
+  const monthlyData = useMemo(() => netProfitByMonth(year), [year, netProfitByMonth]);
+  const summary = useMemo(() => netProfitSummary(year), [year, netProfitSummary]);
+  const insight = useMemo(() => profitInsight(year), [year, profitInsight]);
 
   const currentMonth = new Date().getMonth() + 1;
 

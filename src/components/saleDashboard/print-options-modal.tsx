@@ -19,13 +19,14 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Printer, Eye } from "lucide-react";
 import { getMonthName } from "@/lib/saleDashboard/analytics-utils";
-import { mockCustomers } from "@/lib/saleDashboard/mock-data";
+import { type Customer } from "@/types/customer";
 
 interface PrintOptionsModalProps {
   open: boolean;
   onClose: () => void;
   year: number;
   defaultMonth?: number;
+  customers: Customer[];
 }
 
 type ReportType = "monthly" | "yearly";
@@ -36,6 +37,7 @@ export function PrintOptionsModal({
   onClose,
   year,
   defaultMonth = 1,
+  customers,
 }: PrintOptionsModalProps) {
   const [reportType, setReportType] = useState<ReportType>("monthly");
   const [selectedMonth, setSelectedMonth] = useState<number>(defaultMonth);
@@ -143,7 +145,7 @@ export function PrintOptionsModal({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">ลูกค้าทั้งหมด</SelectItem>
-                {mockCustomers.map((customer) => (
+                {customers.map((customer) => (
                   <SelectItem key={customer.id} value={customer.id.toString()}>
                     {customer.name}
                   </SelectItem>

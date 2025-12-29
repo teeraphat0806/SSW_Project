@@ -8,7 +8,8 @@ import {
   formatCurrency,
   formatDate,
 } from "@/lib/saleDashboard/print-utils";
-import { mockCustomers } from "@/lib/saleDashboard/mock-data";
+// Note: mockCustomers from mock-data, using empty array for now
+const mockCustomers: any[] = [];
 import { Button } from "@/components/ui/button";
 import { Printer } from "lucide-react";
 

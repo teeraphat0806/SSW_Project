@@ -17,15 +17,12 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
-  getCashflowByMonth,
-  getCashflowSummary,
-  getMonthCashflowDetail,
   formatCurrency,
   getMonthName,
-  formatDate,
 } from "@/lib/saleDashboard/analytics-utils";
 import { KPIStatCard } from "./kpi-stat-card";
-import { mockExpenseCategories } from "@/lib/saleDashboard/mock-data";
+import type { ExpenseCategory } from "@/types/expenseCategory";
+import { useSaleAnalytics } from "@/hooks/saleDashboard/useSaleAnalytics";
 
 interface CashflowViewProps {
   year: number;
@@ -33,13 +30,42 @@ interface CashflowViewProps {
 
 export function CashflowView({ year }: CashflowViewProps) {
   const [selectedMonth, setSelectedMonth] = useState<number | null>(null);
-  const monthlyCashflow = useMemo(() => getCashflowByMonth(year), [year]);
-  const summary = useMemo(() => getCashflowSummary(year), [year]);
+  const {
+    cashflowByMonth,
+    cashflowSummary,
+    monthCashflowDetail,
+    loading,
+    error,
+  } = useSaleAnalytics();
+
+  const monthlyCashflow = useMemo(
+    () => cashflowByMonth(year),
+    [year, cashflowByMonth]
+  );
+  const summary = useMemo(() => cashflowSummary(year), [year, cashflowSummary]);
   const monthDetail = useMemo(
-    () => (selectedMonth ? getMonthCashflowDetail(year, selectedMonth) : null),
-    [year, selectedMonth]
+    () => (selectedMonth ? monthCashflowDetail(year, selectedMonth) : null),
+    [year, selectedMonth, monthCashflowDetail]
   );
 
+  const expenseCategoryMap = useMemo(
+    () =>
+      new Map(
+        (monthDetail?.expenses || []).map((e) => [e.categoryId, null] as const)
+      ),
+    [monthDetail?.expenses]
+  );
+
+  if (error && !loading) {
+    return (
+      <div className="text-center py-8">
+        <p className="text-red-600 mb-2">
+          ไม่สามารถโหลดข้อมูลการไหลเข้าออกเงินได้
+        </p>
+        <p className="text-sm text-muted-foreground">{error}</p>
+      </div>
+    );
+  }
   return (
     <div className="space-y-6">
       {/* Summary KPI Cards */}
@@ -71,6 +97,11 @@ export function CashflowView({ year }: CashflowViewProps) {
       {/* Monthly Cashflow Table */}
       <Card className="p-6">
         <h3 className="text-lg font-semibold mb-4">กระแสเงินสดรายเดือน</h3>
+        {loading && (
+          <p className="text-sm text-muted-foreground mb-4">
+            กำลังโหลดข้อมูล...
+          </p>
+        )}
         <div className="border rounded-lg overflow-hidden">
           <Table>
             <TableHeader>
@@ -202,7 +233,11 @@ export function CashflowView({ year }: CashflowViewProps) {
                       ) : (
                         monthDetail.incomes.map((income) => (
                           <TableRow key={income.id}>
-                            <TableCell>{formatDate(income.date)}</TableCell>
+                            <TableCell>
+                              {new Date(income.date).toLocaleDateString(
+                                "th-TH"
+                              )}
+                            </TableCell>
                             <TableCell>{income.nameIncome}</TableCell>
                             <TableCell className="text-sm text-muted-foreground">
                               {income.detail}
@@ -242,25 +277,22 @@ export function CashflowView({ year }: CashflowViewProps) {
                           </TableCell>
                         </TableRow>
                       ) : (
-                        monthDetail.expenses.map((expense) => {
-                          const category = mockExpenseCategories.find(
-                            (c) => c.id === expense.categoryId
-                          );
-                          return (
-                            <TableRow key={expense.id}>
-                              <TableCell>
-                                {formatDate(expense.expenseDate)}
-                              </TableCell>
-                              <TableCell>{expense.description}</TableCell>
-                              <TableCell className="text-sm text-muted-foreground">
-                                {category?.name || "-"}
-                              </TableCell>
-                              <TableCell className="text-right">
-                                {formatCurrency(expense.amount)}
-                              </TableCell>
-                            </TableRow>
-                          );
-                        })
+                        monthDetail.expenses.map((expense) => (
+                          <TableRow key={expense.id}>
+                            <TableCell>
+                              {new Date(expense.expenseDate).toLocaleDateString(
+                                "th-TH"
+                              )}
+                            </TableCell>
+                            <TableCell>{expense.description}</TableCell>
+                            <TableCell className="text-sm text-muted-foreground">
+                              {expense.category?.name || "-"}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              {formatCurrency(expense.amount)}
+                            </TableCell>
+                          </TableRow>
+                        ))
                       )}
                     </TableBody>
                   </Table>

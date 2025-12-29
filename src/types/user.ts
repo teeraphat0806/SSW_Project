@@ -1,5 +1,5 @@
-import { Role } from './enums';
-import { Staff } from './staff';
+import { Role } from "./enums";
+import { Staff } from "./staff";
 
 export interface User {
   id: number;

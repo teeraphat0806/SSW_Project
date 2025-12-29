@@ -24,11 +24,8 @@ import { PrintOptionsModal } from "./print-options-modal";
 import {
   getMonthName,
   formatCurrency,
-  formatDate,
-  getMonthSalesData,
-  getMonthCustomerBreakdown,
-  getMonthOrders,
 } from "@/lib/saleDashboard/analytics-utils";
+import { useSaleAnalytics } from "@/hooks/saleDashboard/useSaleAnalytics";
 import { Printer } from "lucide-react";
 
 interface MonthDashboardPanelProps {
@@ -55,21 +52,30 @@ export function MonthDashboardPanel({
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [showPrintModal, setShowPrintModal] = useState(false);
 
-  const monthSalesData = useMemo(
-    () => getMonthSalesData(year, selectedMonth),
-    [year, selectedMonth]
+  const {
+    monthSalesData,
+    monthCustomerBreakdown,
+    monthOrders,
+    loading,
+    error,
+    customers: allCustomers,
+  } = useSaleAnalytics();
+
+  const sales = useMemo(
+    () => monthSalesData(year, selectedMonth),
+    [year, selectedMonth, monthSalesData]
   );
-  const monthCustomers = useMemo(
-    () => getMonthCustomerBreakdown(year, selectedMonth),
-    [year, selectedMonth]
+  const customers = useMemo(
+    () => monthCustomerBreakdown(year, selectedMonth),
+    [year, selectedMonth, monthCustomerBreakdown]
   );
-  const monthOrders = useMemo(
-    () => getMonthOrders(year, selectedMonth),
-    [year, selectedMonth]
+  const orders = useMemo(
+    () => monthOrders(year, selectedMonth),
+    [year, selectedMonth, monthOrders]
   );
 
   const sortedCustomers = useMemo(() => {
-    const data = [...monthCustomers];
+    const data = [...customers];
     switch (customerSortMode) {
       case "orders-high":
         return data.sort((a, b) => b.orderCount - a.orderCount);
@@ -82,10 +88,10 @@ export function MonthDashboardPanel({
       default:
         return data;
     }
-  }, [monthCustomers, customerSortMode]);
+  }, [customers, customerSortMode]);
 
   const filteredAndSortedOrders = useMemo(() => {
-    let data = [...monthOrders];
+    let data = [...orders];
 
     if (statusFilter !== "all") {
       data = data.filter((order) => order.status === statusFilter);
@@ -94,11 +100,13 @@ export function MonthDashboardPanel({
     switch (orderSortMode) {
       case "latest":
         return data.sort(
-          (a, b) => b.createdAt.getTime() - a.createdAt.getTime()
+          (a, b) =>
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
         );
       case "oldest":
         return data.sort(
-          (a, b) => a.createdAt.getTime() - b.createdAt.getTime()
+          (a, b) =>
+            new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
         );
       case "total-high":
         return data.sort((a, b) => b.total - a.total);
@@ -107,7 +115,7 @@ export function MonthDashboardPanel({
       default:
         return data;
     }
-  }, [monthOrders, statusFilter, orderSortMode]);
+  }, [orders, statusFilter, orderSortMode]);
 
   const handlePrint = () => {
     setShowPrintModal(true);
@@ -159,24 +167,24 @@ export function MonthDashboardPanel({
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <KPIStatCard
           title="ยอดขายเดือนนี้"
-          value={monthSalesData.totalSales}
+          value={sales.totalSales}
           format="currency"
         />
         <KPIStatCard
           title="คำสั่งซื้อทั้งหมด"
-          value={monthSalesData.totalOrders}
+          value={sales.totalOrders}
           format="number"
         />
         <KPIStatCard
           title="ยอดเฉลี่ยต่อคำสั่งซื้อ"
-          value={monthSalesData.avgOrderValue}
+          value={sales.avgOrderValue}
           format="currency"
         />
         <KPIStatCard
           title="สถานะ"
-          value={monthSalesData.completedOrders}
+          value={sales.completedOrders}
           format="number"
-          subtitle={`เสร็จสิ้น: ${monthSalesData.completedOrders} | รอ: ${monthSalesData.pendingOrders}`}
+          subtitle={`เสร็จสิ้น: ${sales.completedOrders} | รอ: ${sales.pendingOrders}`}
         />
       </div>
 
@@ -319,7 +327,9 @@ export function MonthDashboardPanel({
                     <TableCell className="text-right font-mono">
                       {formatCurrency(order.total)}
                     </TableCell>
-                    <TableCell>{formatDate(order.createdAt)}</TableCell>
+                    <TableCell>
+                      {new Date(order.createdAt).toLocaleDateString("th-TH")}
+                    </TableCell>
                     <TableCell className="text-center">
                       <Button
                         variant="ghost"
@@ -346,6 +356,7 @@ export function MonthDashboardPanel({
         onClose={() => setShowPrintModal(false)}
         year={year}
         defaultMonth={selectedMonth}
+        customers={allCustomers}
       />
     </div>
   );

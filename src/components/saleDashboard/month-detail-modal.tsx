@@ -31,18 +31,20 @@ import {
   getMonthName,
   type OrderSortType,
 } from "@/lib/saleDashboard/analytics-utils";
-import { mockCustomers } from "@/lib/saleDashboard/mock-data";
 import { OrderDetailModal } from "./order-detail-modal";
+import { type Customer } from "@/types/customer";
 
 interface MonthDetailModalProps {
   year: number;
   month: number | null;
+  customers: Customer[];
   onClose: () => void;
 }
 
 export function MonthDetailModal({
   year,
   month,
+  customers,
   onClose,
 }: MonthDetailModalProps) {
   const [selectedCustomerId, setSelectedCustomerId] = useState<
@@ -156,7 +158,7 @@ export function MonthDetailModal({
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">ลูกค้าทั้งหมด</SelectItem>
-                    {mockCustomers.map((customer) => (
+                    {customers.map((customer) => (
                       <SelectItem
                         key={customer.id}
                         value={customer.id.toString()}
@@ -223,9 +225,10 @@ export function MonthDetailModal({
                       monthOrders.orders.map((order) => {
                         const statusLabels: { [key: string]: string } = {
                           pending: "รอดำเนินการ",
-                          in_progress: "กำลังดำเนินการ",
-                          completed: "เสร็จสมบูรณ์",
-                          cancelled: "ยกเลิก",
+                          cutting: "กำลังตัด",
+                          weighing: "กำลังชั่ง",
+                          ready: "พร้อมจัดส่ง",
+                          shipped: "จัดส่งแล้ว",
                         };
 
                         return (
@@ -241,13 +244,13 @@ export function MonthDetailModal({
                             <TableCell>
                               <span
                                 className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                                  order.status === "completed"
+                                  order.status === "shipped"
                                     ? "bg-green-100 text-green-800"
                                     : order.status === "pending"
                                     ? "bg-yellow-100 text-yellow-800"
-                                    : order.status === "cancelled"
-                                    ? "bg-red-100 text-red-800"
-                                    : "bg-blue-100 text-blue-800"
+                                    : order.status === "ready"
+                                    ? "bg-blue-100 text-blue-800"
+                                    : "bg-purple-100 text-purple-800"
                                 }`}
                               >
                                 {statusLabels[order.status]}
@@ -256,10 +259,12 @@ export function MonthDetailModal({
                             <TableCell className="text-right">
                               {formatCurrency(order.total)}
                             </TableCell>
-                            <TableCell>{formatDate(order.createdAt)}</TableCell>
+                            <TableCell>
+                              {formatDate(new Date(order.createdAt))}
+                            </TableCell>
                             <TableCell>
                               {order.completedAt
-                                ? formatDate(order.completedAt)
+                                ? formatDate(new Date(order.completedAt))
                                 : "-"}
                             </TableCell>
                             <TableCell>{order.billInvoiceNo || "-"}</TableCell>

@@ -1,16 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { YearSelector } from "@/components/saleDashboard/year-selector";
 import { SalesDashboard } from "@/components/saleDashboard/sales-dashboard";
 import { IncomeExpenseDashboard } from "@/components/saleDashboard/income-expense-dashboard";
-import { getAvailableYears } from "@/lib/saleDashboard/analytics-utils";
+import { useSaleAnalytics } from "@/hooks/saleDashboard/useSaleAnalytics";
 
 type DashboardMode = "sales" | "income-expense";
 
 export default function DashboardPage() {
-  const availableYears = getAvailableYears();
-  const [selectedYear, setSelectedYear] = useState(availableYears[0] || 2024);
+  const { years } = useSaleAnalytics();
+  const [selectedYear, setSelectedYear] = useState(years[0] || 2024);
   const [mode, setMode] = useState<DashboardMode>("sales");
 
   return (
@@ -29,7 +29,7 @@ export default function DashboardPage() {
             </div>
             <div className="flex items-center gap-4">
               <YearSelector
-                years={availableYears}
+                years={years}
                 selectedYear={selectedYear}
                 onYearChange={setSelectedYear}
               />
