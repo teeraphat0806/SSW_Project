@@ -62,7 +62,7 @@ export function PrintOptionsModal({
       preview: "true",
     });
 
-    window.open(`/saleDashboard/print/sales?${params.toString()}`, "_blank");
+    window.open(`/saledashboards/print/sales?${params.toString()}`, "_blank");
   };
 
   const handlePrint = () => {
@@ -81,7 +81,7 @@ export function PrintOptionsModal({
       sort: sortOrder,
     });
 
-    window.open(`/saleDashboard/print/sales?${params.toString()}`, "_blank");
+    window.open(`/saledashboards/print/sales?${params.toString()}`, "_blank");
   };
 
   return (
