@@ -88,7 +88,7 @@ export function YearOverviewPanel({
       </div>
 
       {/* Order Status Breakdown */}
-      <Card className="p-6">
+      <Card className="p-6 shadow-[10px_10px_20px_rgba(0,0,0,0.1)] rounded-2xl border-2 border-transparent hover:border-primary transition-colors">
         <h3 className="text-lg font-semibold mb-4">สถานะคำสั่งซื้อ</h3>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {orderStatus.map((status) => (
@@ -104,8 +104,8 @@ export function YearOverviewPanel({
       </Card>
 
       {/* Monthly Sales Overview */}
-      <Card className="p-6">
-        <div className="flex items-center justify-between mb-4">
+      <Card className="p-6 shadow-[5px_5px_10px_rgba(0,0,0,0.1)] rounded-2xl border-2 border-transparent hover:border-primary transition-colors">
+        <div className="flex items-center justify-between mb-4 ">
           <h3 className="text-lg font-semibold">ยอดขายรายเดือน</h3>
           <div className="flex gap-2">
             <Button
@@ -172,7 +172,7 @@ export function YearOverviewPanel({
 
         {/* Table for desktop */}
         <div className="hidden md:block border rounded-lg overflow-hidden">
-          <Table>
+          <Table className=" rounded-2xl border-2 border-transparent hover:border-primary transition-colors">
             <TableHeader>
               <TableRow>
                 <TableHead>เดือน</TableHead>

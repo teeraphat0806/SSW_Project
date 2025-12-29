@@ -188,7 +188,7 @@ export function MonthDashboardPanel({
         />
       </div>
 
-      <Card className="p-6">
+      <Card className="p-6 shadow-[5px_5px_10px_rgba(0,0,0,0.1)] rounded-2xl border-2 border-transparent hover:border-primary transition-colors">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
           <h3 className="text-lg font-semibold">ยอดขายตามลูกค้า</h3>
           <Select
@@ -210,7 +210,7 @@ export function MonthDashboardPanel({
         </div>
 
         <div className="border rounded-lg overflow-hidden">
-          <Table>
+          <Table className=" rounded-2xl border-2 border-transparent hover:border-primary transition-colors">
             <TableHeader>
               <TableRow>
                 <TableHead>ลูกค้า</TableHead>
@@ -252,7 +252,7 @@ export function MonthDashboardPanel({
         </div>
       </Card>
 
-      <Card className="p-6">
+      <Card className="p-6 shadow-[10px_10px_20px_rgba(0,0,0,0.1)] rounded-2xl border-2 border-transparent hover:border-primary transition-colors">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
           <h3 className="text-lg font-semibold">
             คำสั่งซื้อทั้งหมด ({filteredAndSortedOrders.length})
@@ -288,7 +288,7 @@ export function MonthDashboardPanel({
         </div>
 
         <div className="border rounded-lg overflow-x-auto">
-          <Table>
+          <Table className=" rounded-2xl border-2 border-transparent hover:border-primary transition-colors">
             <TableHeader>
               <TableRow>
                 <TableHead>เลขที่ PO</TableHead>
