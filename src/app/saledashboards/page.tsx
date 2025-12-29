@@ -79,7 +79,7 @@ export default function DashboardPage() {
       <footer className="border-t bg-card mt-12 print:hidden">
         <div className="container mx-auto px-4 py-6">
           <p className="text-center text-sm text-muted-foreground">
-            ระบบแดshบอร์ดวิเคราะห์ธุรกิจ © {new Date().getFullYear()}
+            ระบบแดชบอร์ดวิเคราะห์ธุรกิจ © {new Date().getFullYear()}
           </p>
         </div>
       </footer>

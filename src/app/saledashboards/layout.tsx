@@ -7,7 +7,7 @@ export const metadata = {
   description: "My App Description",
 };
 
-export default function TestpageLayout({
+export default function SaleDashboardLayout({
   children,
 }: {
   children: React.ReactNode;
