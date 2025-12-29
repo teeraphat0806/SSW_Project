@@ -26,6 +26,7 @@ model Staff {
   position                     String        @default("พนักงานทั่วไป")
   bankAccount                  String        @unique
   bankName                     String
+  taxid                        String        
   startDate                    DateTime
   code                         String        @unique
   social_security              String        @unique
@@ -118,11 +119,7 @@ model Product {
   thickness        Float?
   amount           Int
   detail           String?
-  calculatedWeight Float?
   actualWeight     Float?
-  actualWide       Float?
-  actualLength     Float?
-  actualThickness  Float?
   total            Float
 
   OrderPO   OrderPO   @relation(fields: [orderPOId], references: [id], onDelete: Cascade)

@@ -1,10 +1,25 @@
 "use client";
 
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ListChecks, Plus, Trash2 } from "lucide-react";
+import { ListChecks, Plus, Trash2, Check, ChevronsUpDown } from "lucide-react";
+import { cn } from "@/lib/utils";
+
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
 
 type SteelItem = {
   steeltype: string;
@@ -17,20 +32,106 @@ type SteelItem = {
   shape: "square" | "line";
 };
 
+type SteelOption = { value: string; label: string; quantity: number };
+
+// ✅ job ต้องมีอย่างน้อย id + steel
 type JobWithSteel = {
-  id: string;
+  id: string | number;
   steel: SteelItem[];
 };
 
-type SteelOption = { value: string; label: string; quantity: number };
-
+// ✅ รับ job เป็น null ได้ (ตรงกับ parent)
 type Props<T extends JobWithSteel> = {
-  job: T;
+  job: T | null;
   setJob: React.Dispatch<React.SetStateAction<T | null>>;
   steelOptions: SteelOption[];
   weightEnabled: boolean;
   className?: string;
 };
+
+function SteelSearchSelect({
+  value,
+  onChange,
+  options,
+  disabled,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  options: SteelOption[];
+  disabled?: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+
+  const selectedLabel =
+    options.find((o) => o.value === value)?.label || value || "เลือกชนิด";
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          type="button"
+          variant="outline"
+          role="combobox"
+          aria-expanded={open}
+          disabled={disabled}
+          className={cn(
+            "h-10 w-full justify-between border-zinc-200 bg-zinc-50 font-medium",
+            "dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
+          )}
+        >
+          <span className="truncate">{selectedLabel}</span>
+          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-60" />
+        </Button>
+      </PopoverTrigger>
+
+      <PopoverContent
+        align="start"
+        className={cn(
+          "w-[--radix-popover-trigger-width] p-0 border-zinc-200 bg-white",
+          "dark:border-zinc-700 dark:bg-zinc-900"
+        )}
+      >
+        <Command>
+          <CommandInput placeholder="พิมพ์ค้นหาเหล็ก..." />
+          <CommandList>
+            <CommandEmpty>ไม่พบเหล็กที่ค้นหา</CommandEmpty>
+
+            <CommandGroup>
+              {options.map((opt) => {
+                const isSelected = opt.value === value;
+                return (
+                  <CommandItem
+                    key={opt.value}
+                    value={opt.label} // ใช้ label ให้ค้นหาด้วยข้อความได้
+                    onSelect={() => {
+                      onChange(opt.value);
+                      setOpen(false);
+                    }}
+                    className="flex items-center justify-between"
+                  >
+                    <div className="flex min-w-0 items-center gap-2">
+                      <Check
+                        className={cn(
+                          "h-4 w-4",
+                          isSelected ? "opacity-100" : "opacity-0"
+                        )}
+                      />
+                      <span className="truncate">{opt.label}</span>
+                    </div>
+
+                    <span className="ml-3 shrink-0 text-sm text-zinc-400 dark:text-zinc-500">
+                      (คงเหลือ {opt.quantity})
+                    </span>
+                  </CommandItem>
+                );
+              })}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  );
+}
 
 export default function DetailItem<T extends JobWithSteel>({
   job,
@@ -39,7 +140,18 @@ export default function DetailItem<T extends JobWithSteel>({
   weightEnabled,
   className,
 }: Props<T>) {
-  const itemCount = useMemo(() => job.steel?.length ?? 0, [job.steel]);
+  const itemCount = useMemo(() => job?.steel?.length ?? 0, [job?.steel]);
+
+  // ✅ กัน null ก่อน (ไม่งั้น job.steel จะพัง)
+  if (!job) {
+    return (
+      <section className={["space-y-3", className ?? ""].join(" ")}>
+        <div className="rounded-xl border border-zinc-200 bg-white p-4 text-sm text-zinc-500 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-400">
+          กำลังโหลดข้อมูล...
+        </div>
+      </section>
+    );
+  }
 
   // ✅ เพิ่มเหล็ก
   const addSteelItem = () => {
@@ -50,7 +162,7 @@ export default function DetailItem<T extends JobWithSteel>({
       return {
         ...prev,
         steel: [
-          ...prev.steel,
+          ...(prev.steel ?? []),
           {
             steeltype: first,
             quantity: 1,
@@ -70,7 +182,10 @@ export default function DetailItem<T extends JobWithSteel>({
   const removeSteelItem = (index: number) => {
     setJob((prev) => {
       if (!prev) return prev;
-      return { ...prev, steel: prev.steel.filter((_, i) => i !== index) };
+      return {
+        ...prev,
+        steel: (prev.steel ?? []).filter((_, i) => i !== index),
+      };
     });
   };
 
@@ -80,7 +195,9 @@ export default function DetailItem<T extends JobWithSteel>({
       if (!prev) return prev;
       return {
         ...prev,
-        steel: prev.steel.map((item, i) => (i === index ? { ...item, ...patch } : item)),
+        steel: (prev.steel ?? []).map((item, i) =>
+          i === index ? { ...item, ...patch } : item
+        ),
       };
     });
   };
@@ -99,6 +216,7 @@ export default function DetailItem<T extends JobWithSteel>({
         <Button
           onClick={addSteelItem}
           size="sm"
+          disabled={steelOptions.length === 0}
           className="bg-zinc-900 text-white shadow-sm hover:bg-zinc-800 dark:bg-blue-600 dark:hover:bg-blue-500 dark:shadow-none"
         >
           <Plus className="mr-1.5 h-4 w-4" />
@@ -106,53 +224,46 @@ export default function DetailItem<T extends JobWithSteel>({
         </Button>
       </div>
 
-      {job.steel.map((it, idx) => (
+      {(job.steel ?? []).map((it, idx) => (
         <div
           key={`${job.id}-${idx}`}
           className="group relative rounded-xl border border-zinc-200 bg-white shadow-sm transition-all hover:shadow-md dark:border-zinc-800 dark:bg-zinc-900"
         >
-          {/* ID Badge Absolute */}
           <div className="absolute -left-2 top-4 z-10 hidden h-6 w-6 items-center justify-center rounded-full bg-zinc-800 text-sm font-bold text-white shadow-sm dark:bg-blue-600 lg:flex">
             {idx + 1}
           </div>
 
           <div className="p-4 lg:flex lg:items-center lg:gap-4 lg:p-1">
             <div className="grid flex-1 grid-cols-1 items-start gap-4 md:grid-cols-2 lg:grid-cols-12 lg:items-center">
-              {/* Item Type */}
+              {/* Steel Type (searchable) */}
               <div className="lg:col-span-3 lg:pl-4">
-                <label className="mb-1 block text-sm text-zinc-500 dark:text-zinc-400">ชนิดเหล็ก</label>
-                <Select value={it.steeltype} onValueChange={(v) => patchSteelItem(idx, { steeltype: v })}>
-                  <SelectTrigger className="h-10 border-zinc-200 bg-zinc-50 font-medium dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100">
-                    <SelectValue placeholder="เลือกชนิด" />
-                  </SelectTrigger>
-                  <SelectContent className="border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-900">
-                    {steelOptions.map((opt) => (
-                      <SelectItem
-                        key={opt.value}
-                        value={opt.value}
-                        className="focus:bg-zinc-100 dark:text-zinc-200 dark:focus:bg-zinc-800"
-                      >
-                        {opt.label}{" "}
-                        <span className="ml-2 text-sm text-zinc-400 dark:text-zinc-500">
-                          (คงเหลือ {opt.quantity})
-                        </span>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <label className="mb-1 block text-sm text-zinc-500 dark:text-zinc-400">
+                  ชนิดเหล็ก
+                </label>
+
+                <SteelSearchSelect
+                  value={it.steeltype}
+                  onChange={(v) => patchSteelItem(idx, { steeltype: v })}
+                  options={steelOptions}
+                  disabled={steelOptions.length === 0}
+                />
               </div>
 
               {/* Dimensions */}
               <div className="grid grid-cols-3 gap-2 lg:col-span-4">
                 <div>
-                  <label className="mb-1 block text-center text-sm text-zinc-500 dark:text-zinc-400">กว้าง</label>
+                  <label className="mb-1 block text-center text-sm text-zinc-500 dark:text-zinc-400">
+                    กว้าง
+                  </label>
                   <div className="relative">
                     <Input
                       type="number"
                       className="h-9 border-zinc-200 bg-white pr-6 text-center focus-visible:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
                       value={it.width ?? 0}
                       onChange={(e) =>
-                        patchSteelItem(idx, { width: Math.max(0, Number(e.target.value || 0)) })
+                        patchSteelItem(idx, {
+                          width: Math.max(0, Number(e.target.value || 0)),
+                        })
                       }
                     />
                     <span className="absolute right-2 top-1/2 -translate-y-1/2 text-sm text-zinc-400 dark:text-zinc-500">
@@ -162,14 +273,18 @@ export default function DetailItem<T extends JobWithSteel>({
                 </div>
 
                 <div>
-                  <label className="mb-1 block text-center text-sm text-zinc-500 dark:text-zinc-400">ยาว</label>
+                  <label className="mb-1 block text-center text-sm text-zinc-500 dark:text-zinc-400">
+                    ยาว
+                  </label>
                   <div className="relative">
                     <Input
                       type="number"
                       className="h-9 border-zinc-200 bg-white pr-6 text-center focus-visible:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
-                      value={it.length}
+                      value={it.length ?? 0}
                       onChange={(e) =>
-                        patchSteelItem(idx, { length: Math.max(0, Number(e.target.value || 0)) })
+                        patchSteelItem(idx, {
+                          length: Math.max(0, Number(e.target.value || 0)),
+                        })
                       }
                     />
                     <span className="absolute right-2 top-1/2 -translate-y-1/2 text-sm text-zinc-400 dark:text-zinc-500">
@@ -179,14 +294,18 @@ export default function DetailItem<T extends JobWithSteel>({
                 </div>
 
                 <div>
-                  <label className="mb-1 block text-center text-sm text-zinc-500 dark:text-zinc-400">สูง</label>
+                  <label className="mb-1 block text-center text-sm text-zinc-500 dark:text-zinc-400">
+                    หนา
+                  </label>
                   <div className="relative">
                     <Input
                       type="number"
                       className="h-9 border-zinc-200 bg-white pr-6 text-center focus-visible:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
-                      value={it.thickness}
+                      value={it.thickness ?? 0}
                       onChange={(e) =>
-                        patchSteelItem(idx, { thickness: Math.max(0, Number(e.target.value || 0)) })
+                        patchSteelItem(idx, {
+                          thickness: Math.max(0, Number(e.target.value || 0)),
+                        })
                       }
                     />
                     <span className="absolute right-2 top-1/2 -translate-y-1/2 text-sm text-zinc-400 dark:text-zinc-500">
@@ -198,18 +317,20 @@ export default function DetailItem<T extends JobWithSteel>({
 
               {/* Quantity */}
               <div className="lg:col-span-1">
-                <label className="mb-1 block text-center text-sm text-zinc-500 dark:text-zinc-400">จำนวน</label>
-                <div className="flex items-center justify-center">
-                  <Input
-                    type="number"
-                    min={1}
-                    className="h-9 w-full border-blue-100 bg-blue-50/50 text-center font-semibold text-blue-600 focus-visible:ring-blue-500 dark:border-blue-900/50 dark:bg-blue-900/20 dark:text-blue-400"
-                    value={it.quantity}
-                    onChange={(e) =>
-                      patchSteelItem(idx, { quantity: Math.max(1, Number(e.target.value || 1)) })
-                    }
-                  />
-                </div>
+                <label className="mb-1 block text-center text-sm text-zinc-500 dark:text-zinc-400">
+                  จำนวน
+                </label>
+                <Input
+                  type="number"
+                  min={1}
+                  className="h-9 w-full border-blue-100 bg-blue-50/50 text-center font-semibold text-blue-600 focus-visible:ring-blue-500 dark:border-blue-900/50 dark:bg-blue-900/20 dark:text-blue-400"
+                  value={it.quantity ?? 1}
+                  onChange={(e) =>
+                    patchSteelItem(idx, {
+                      quantity: Math.max(1, Number(e.target.value || 1)),
+                    })
+                  }
+                />
               </div>
 
               {/* Weight */}
@@ -217,7 +338,7 @@ export default function DetailItem<T extends JobWithSteel>({
                 {weightEnabled ? (
                   <div>
                     <label className="mb-1 block text-center text-sm text-zinc-500 dark:text-zinc-400">
-                      น้ำหนัก/ชิ้น
+                      น้ำหนักท/กก.
                     </label>
                     <div className="relative">
                       <Input
@@ -225,7 +346,9 @@ export default function DetailItem<T extends JobWithSteel>({
                         className="h-9 border-zinc-200 bg-white pr-8 text-right font-mono text-sm focus-visible:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
                         value={it.weight ?? 0}
                         onChange={(e) =>
-                          patchSteelItem(idx, { weight: Math.max(0, Number(e.target.value || 0)) })
+                          patchSteelItem(idx, {
+                            weight: Math.max(0, Number(e.target.value || 0)),
+                          })
                         }
                       />
                       <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-zinc-400 dark:text-zinc-500">
@@ -236,20 +359,26 @@ export default function DetailItem<T extends JobWithSteel>({
                 ) : (
                   <div className="flex h-full flex-col justify-end pb-2 lg:items-center">
                     <div className="mb-1 h-4 w-full" />
-                    <span className="text-sm italic text-zinc-300 dark:text-zinc-600">รอชั่ง</span>
+                    <span className="text-sm italic text-zinc-300 dark:text-zinc-600">
+                      รอชั่ง
+                    </span>
                   </div>
                 )}
               </div>
 
-              {/* Note & Action */}
+              {/* Note + Delete */}
               <div className="lg:col-span-2">
-                <label className="mb-1 block text-left text-sm text-zinc-500 dark:text-zinc-400">หมายเหตุ</label>
+                <label className="mb-1 block text-left text-sm text-zinc-500 dark:text-zinc-400">
+                  หมายเหตุ
+                </label>
                 <div className="flex items-center gap-2">
                   <Input
                     className="h-9 border-zinc-200 bg-white text-sm focus-visible:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
                     placeholder="ระบุ..."
                     value={it.detail ?? ""}
-                    onChange={(e) => patchSteelItem(idx, { detail: e.target.value })}
+                    onChange={(e) =>
+                      patchSteelItem(idx, { detail: e.target.value })
+                    }
                   />
                   <Button
                     variant="ghost"
@@ -269,7 +398,8 @@ export default function DetailItem<T extends JobWithSteel>({
       <button
         type="button"
         onClick={addSteelItem}
-        className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-zinc-300 p-4 text-sm font-medium text-zinc-500 transition-all duration-200 hover:border-blue-500 hover:bg-blue-50 hover:text-blue-600 dark:border-zinc-700 dark:text-zinc-400 dark:hover:border-blue-500 dark:hover:bg-blue-900/20 dark:hover:text-blue-400"
+        disabled={steelOptions.length === 0}
+        className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-zinc-300 p-4 text-sm font-medium text-zinc-500 transition-all duration-200 hover:border-blue-500 hover:bg-blue-50 hover:text-blue-600 disabled:cursor-not-allowed disabled:opacity-60 dark:border-zinc-700 dark:text-zinc-400 dark:hover:border-blue-500 dark:hover:bg-blue-900/20 dark:hover:text-blue-400"
       >
         <Plus className="h-4 w-4" /> เพิ่มรายการใหม่
       </button>

@@ -145,13 +145,33 @@ const STATUS_ICONS: Record<OrderStatus, React.ReactNode> = {
   ส่งสำเร็จ: <PackageCheck className="h-5 w-5" />,
 };
 
-const steelOptions: { value: string; label: string; quantity: number }[] = [
-  { value: "SS400", label: "SS400", quantity: 10 },
-  { value: "SKD11", label: "SKD11", quantity: 5 },
-  { value: "SKD61", label: "SKD61", quantity: 8 },
-  { value: "S45C", label: "S45C", quantity: 12 },
-  { value: "SCM440", label: "SCM440", quantity: 7 },
-];
+type SteelOption = { value: string; label: string; quantity: number };
+
+type SteelStockApiItem = {
+  id: number;
+  codeSteel: string;
+  amount: number;
+};
+function mergeOrderSteelIntoOptions(
+  options: SteelOption[],
+  job: Joborder | null
+): SteelOption[] {
+  if (!job?.steel?.length) return options;
+
+  const map = new Map(options.map((o) => [o.value, o]));
+
+  for (const s of job.steel) {
+    const code = s.steeltype?.trim();
+    if (!code) continue;
+
+    // ถ้าไม่มีใน options ให้เติมเข้าไป (quantity=0) เพื่อให้ Select แสดงได้
+    if (!map.has(code)) {
+      map.set(code, { value: code, label: code, quantity: 0 });
+    }
+  }
+
+  return Array.from(map.values());
+}
 
 // ✅ map ไทย <-> อังกฤษ
 const toThaiStatus = (s: Joborder["status"]): OrderStatus => {
@@ -192,15 +212,88 @@ const toApiStatus = (s: OrderStatus): Joborder["status"] => {
   }
 };
 
+type PatchPayload = {
+  status?: Joborder["status"];
+  customerId?: string;
+  steel?: {
+    codeSteel: string;
+    amount: number;
+    width?: number | null;
+    length: number;
+    thickness: number;
+    weight?: number | null;
+    detail?: string | null;
+  }[];
+};
+
+function buildPatchPayload(job: Joborder): PatchPayload {
+  return {
+    status: job.status,
+    customerId: job.customerId,
+    steel: job.steel.map((l) => ({
+      codeSteel: l.steeltype,
+      amount: l.quantity,
+      width: l.width ?? null,
+      length: l.length,
+      thickness: l.thickness,
+      weight: l.weight ?? null,
+      detail: l.detail ?? null,
+    })),
+  };
+}
+
+const ALL_KEY = "";
 const UpdateOrderPage = ({ id }: { id: string }) => {
   const router = useRouter();
+
   const [job, setJob] = useState<Joborder | null>(null);
+  const jobRef = React.useRef<Joborder | null>(null);
+
+  const [steelOptions, setSteelOptions] = useState<SteelOption[]>([]);
+  const [steelQuery, setSteelQuery] = useState("");
 
   const [loading, setLoading] = useState(true);
+  const [loadingSteel, setLoadingSteel] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+
+  // sync ref ให้ fetchSteel มองเห็น job ล่าสุดเสมอ
+  useEffect(() => {
+    jobRef.current = job;
+  }, [job]);
+
+  const fetchSteel = async (name: string, cancelledRef?: () => boolean) => {
+    setLoadingSteel(true);
+    try {
+      const res = await fetch(`/api/steelType/${encodeURIComponent(name)}`, {
+        cache: "no-store",
+      });
+      if (!res.ok) throw new Error(`Fetch failed: ${res.status}`);
+
+      const data: SteelStockApiItem[] = await res.json();
+      if (cancelledRef?.()) return;
+
+      const options: SteelOption[] = data.map((x) => ({
+        value: x.codeSteel,
+        label: x.codeSteel,
+        quantity: x.amount ?? 0,
+      }));
+
+      // ✅ merge ให้มีเหล็กที่ออเดอร์ใช้อยู่เสมอ
+      const merged = mergeOrderSteelIntoOptions(options, jobRef.current);
+
+      setSteelOptions(merged);
+    } finally {
+      if (!cancelledRef?.()) setLoadingSteel(false);
+    }
+  };
+
+  // ✅ โหลด order + โหลดเหล็กทั้งหมดครั้งแรก
   useEffect(() => {
     let cancelled = false;
+
     const run = async () => {
       try {
         setLoading(true);
@@ -212,14 +305,16 @@ const UpdateOrderPage = ({ id }: { id: string }) => {
         });
 
         const data = await res.json();
-
-        if (!res.ok) {
-          throw new Error(data.error || "Failed to fetch order");
-        }
+        if (!res.ok) throw new Error(data.error || "Failed to fetch order");
 
         const mapped = toJoborder(data as ApiJobOrder);
 
-        if (!cancelled) setJob(mapped);
+        if (!cancelled) {
+          setJob(mapped);
+          jobRef.current = mapped; // ✅ ให้ fetchSteel รอบแรก merge ได้ทันที
+        }
+
+        await fetchSteel(ALL_KEY, () => cancelled);
       } catch (e) {
         if (!cancelled)
           setError(
@@ -229,12 +324,65 @@ const UpdateOrderPage = ({ id }: { id: string }) => {
         if (!cancelled) setLoading(false);
       }
     };
+
     run();
     return () => {
       cancelled = true;
     };
   }, [id]);
 
+    const onSave = async () => {
+    if (!job) return;
+
+    setSaving(true);
+    setSaveError(null);
+
+    // ✅ optimistic UI: เก็บ snapshot เผื่อ rollback
+    const snapshot = job;
+
+    try {
+      const payload = buildPatchPayload(job);
+
+      // ✅ กัน payload ที่ codeSteel ว่าง
+      const badLine = payload.steel?.find((x) => !x.codeSteel);
+      if (badLine) throw new Error("กรุณาเลือกชนิดเหล็กให้ครบทุกบรรทัด");
+
+      const res = await fetch(`/api/up-date-order/${job.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        cache: "no-store",
+        body: JSON.stringify(payload),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || "Save failed");
+
+      // ✅ ให้ API ส่งกลับ order แบบ include Customer + Product + SteelType
+      // แล้ว map กลับมาเป็น Joborder เพื่อให้ state ตรงเสมอ
+      const mapped = toJoborder(data as ApiJobOrder);
+      setJob(mapped); // ✅ หน้าเปลี่ยนทันที
+    } catch (e) {
+      setJob(snapshot); // (optional) rollback
+      setSaveError(e instanceof Error ? e.message : "Save failed");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // ✅ debounce ค้นหาเหล็ก
+  useEffect(() => {
+    let cancelled = false;
+
+    const t = setTimeout(() => {
+      const q = steelQuery.trim();
+      fetchSteel(q.length ? q : ALL_KEY, () => cancelled);
+    }, 300);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(t);
+    };
+  }, [steelQuery]);
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-background to-steel/20 flex items-center justify-center">
@@ -304,6 +452,7 @@ const UpdateOrderPage = ({ id }: { id: string }) => {
               size="sm"
               onClick={() => router.push("/dashboard")}
               className="text-muted-foreground hover:text-foreground hover:bg-accent"
+              disabled={saving}
             >
               <ArrowLeft className="h-5 w-5 mr-1" />
               <span className="hidden sm:inline">กลับ</span>
@@ -319,7 +468,6 @@ const UpdateOrderPage = ({ id }: { id: string }) => {
                 <h1 className="text-sm font-bold text-foreground leading-tight">
                   อัปเดตคำสั่งซื้อ
                 </h1>
-                {/* ✅ ดึงจาก mockJoborder */}
                 <p className="text-sm text-muted-foreground font-mono">
                   {job.ponumber}
                 </p>
@@ -327,9 +475,20 @@ const UpdateOrderPage = ({ id }: { id: string }) => {
             </div>
           </div>
 
-          <Button className="bg-blue-600 text-white shadow-sm hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-500 dark:shadow-none">
-            บันทึกข้อมูล
-          </Button>
+          <div className="flex items-center gap-3">
+            {saveError && (
+              <span className="text-xs text-red-600 hidden sm:inline">
+                {saveError}
+              </span>
+            )}
+            <Button
+              onClick={onSave}
+              disabled={saving}
+              className="bg-blue-600 text-white shadow-sm hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-500 dark:shadow-none"
+            >
+              {saving ? "กำลังบันทึก..." : "บันทึกข้อมูล"}
+            </Button>
+          </div>
         </div>
       </header>
 
