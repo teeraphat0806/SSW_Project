@@ -53,6 +53,7 @@ type ApiJobOrder = {
   customerCode: string;
   customerFax: string;
   steel: {
+    id: number;
     steelType: string;
     amount: number;
     width?: number;
@@ -83,6 +84,7 @@ type Joborder = {
   customerCode: string;
   customerFax: string;
   steel: {
+    id: number;
     steeltype: string;
     quantity: number;
     width?: number | null;
@@ -113,6 +115,7 @@ const toJoborder = (api: ApiJobOrder): Joborder => ({
   customerCode: api.customerCode ?? "",
   customerFax: api.customerFax ?? "",
   steel: (api.steel ?? []).map((s) => ({
+    id: s.id,
     steeltype: s.steelType,
     quantity: s.amount,
     width: s.width ?? null,
@@ -145,7 +148,12 @@ const STATUS_ICONS: Record<OrderStatus, React.ReactNode> = {
   ส่งสำเร็จ: <PackageCheck className="h-5 w-5" />,
 };
 
-type SteelOption = { value: string; label: string; quantity: number };
+type SteelOption = {
+  value: string;
+  label: string;
+  quantity: number;
+  shape: "square" | "line";
+};
 
 type SteelStockApiItem = {
   id: number;
@@ -166,7 +174,7 @@ function mergeOrderSteelIntoOptions(
 
     // ถ้าไม่มีใน options ให้เติมเข้าไป (quantity=0) เพื่อให้ Select แสดงได้
     if (!map.has(code)) {
-      map.set(code, { value: code, label: code, quantity: 0 });
+      map.set(code, { value: code, label: code, quantity: 0, shape: "square" });
     }
   }
 
@@ -216,6 +224,7 @@ type PatchPayload = {
   status?: Joborder["status"];
   customerId?: string;
   steel?: {
+    id: number;
     codeSteel: string;
     amount: number;
     width?: number | null;
@@ -229,13 +238,14 @@ type PatchPayload = {
 function buildPatchPayload(job: Joborder): PatchPayload {
   return {
     status: job.status,
-    customerId: job.customerId,
+    customerId: String(job.customerId),
     steel: job.steel.map((l) => ({
-      codeSteel: l.steeltype,
-      amount: l.quantity,
+      id: l.id,
+      codeSteel: l.steeltype?.trim(),
+      amount: Number(l.quantity),
       width: l.width ?? null,
-      length: l.length,
-      thickness: l.thickness,
+      length: Number(l.length),
+      thickness: Number(l.thickness),
       weight: l.weight ?? null,
       detail: l.detail ?? null,
     })),
@@ -279,6 +289,7 @@ const UpdateOrderPage = ({ id }: { id: string }) => {
         value: x.codeSteel,
         label: x.codeSteel,
         quantity: x.amount ?? 0,
+        shape: "square",
       }));
 
       // ✅ merge ให้มีเหล็กที่ออเดอร์ใช้อยู่เสมอ
@@ -331,7 +342,7 @@ const UpdateOrderPage = ({ id }: { id: string }) => {
     };
   }, [id]);
 
-    const onSave = async () => {
+  const onSave = async () => {
     if (!job) return;
 
     setSaving(true);
@@ -344,7 +355,7 @@ const UpdateOrderPage = ({ id }: { id: string }) => {
       const payload = buildPatchPayload(job);
 
       // ✅ กัน payload ที่ codeSteel ว่าง
-      const badLine = payload.steel?.find((x) => !x.codeSteel);
+      const badLine = payload.steel?.find((x) => !x.codeSteel?.trim());
       if (badLine) throw new Error("กรุณาเลือกชนิดเหล็กให้ครบทุกบรรทัด");
 
       const res = await fetch(`/api/up-date-order/${job.id}`, {

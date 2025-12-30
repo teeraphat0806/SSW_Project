@@ -24,6 +24,7 @@ type ApiJobOrder = {
   customerCode: string;
   customerFax: string;
   steel: {
+    id: number;
     steelType: string;
     amount: number;
     width?: number;
@@ -88,6 +89,7 @@ export async function GET(
       customerCode: customer.code,
       customerFax: customer.faxNumber,
       steel: Product.map((item) => ({
+        id: item.id,
         steelType: item.SteelType.codeSteel,
         amount: item.amount,
         width: item.wide ?? undefined,
@@ -139,6 +141,7 @@ type UpdateOrderPayload = {
   status?: statusType;
   customerId?: string;
   steel?: Array<{
+    id: number;
     steelType: string;
     amount: number;
     width?: number;
@@ -160,8 +163,10 @@ export async function PATCH(
     }
 
     const body = await req.json().catch(() => null);
+    console.log("PATCH body:", body);
     const parsed = PatchSchema.safeParse(body);
     if (!parsed.success) {
+      console.error("Validation errors:", parsed.error.issues);
       return NextResponse.json(
         { error: "Invalid payload", issues: parsed.error.issues },
         { status: 400 }
@@ -225,7 +230,9 @@ export async function PATCH(
           },
         });
 
-        const codeToSteel = new Map(steelTypes.map((s) => [s.codeSteel, s]));
+        const codeToSteel = new Map<string, (typeof steelTypes)[0]>(
+          steelTypes.map((s) => [s.codeSteel, s])
+        );
         const missing = codes.filter((c) => !codeToSteel.has(c));
         if (missing.length)
           throw new Error(`SteelType not found: ${missing.join(", ")}`);

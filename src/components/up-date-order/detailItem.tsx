@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/command";
 
 type SteelItem = {
+  id: number;
   steeltype: string;
   quantity: number;
   width?: number | null;
@@ -32,7 +33,12 @@ type SteelItem = {
   shape: "square" | "line";
 };
 
-type SteelOption = { value: string; label: string; quantity: number };
+type SteelOption = {
+  value: string;
+  label: string;
+  quantity: number;
+  shape: "square" | "line";
+};
 
 // ✅ job ต้องมีอย่างน้อย id + steel
 type JobWithSteel = {
