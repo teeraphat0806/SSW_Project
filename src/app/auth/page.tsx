@@ -1,12 +1,23 @@
 "use client";
-import React, { useState } from 'react';
-import { useAuth } from '../../contexts/Authcontext';
-import { Button } from '../../components/ui/button';
-import { Input } from '../../components/ui/input';
-import { Label } from '../../components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
-import { Loader2, Shield } from 'lucide-react';
+import React, { useMemo, useState } from "react";
+import { useAuth } from "../../contexts/Authcontext";
+import { Button } from "../../components/ui/button";
+import { Input } from "../../components/ui/input";
+import { Label } from "../../components/ui/label";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "../../components/ui/card";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "../../components/ui/tabs";
+import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { ToastContainer, toast } from "react-toastify";
@@ -16,8 +27,19 @@ export default function Auth() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
+  const [tab, setTab] = useState("signin");
   const { user, signUp } = useAuth();
   const router = useRouter();
+  const backgroundStyle = useMemo(
+    () => ({
+      backgroundImage:
+        "linear-gradient(120deg, rgba(7, 12, 21, 0.5), rgba(10, 16, 29, 0.35)), url('/steelcutbackground.png')",
+      backgroundSize: "cover",
+      backgroundPosition: "center",
+      backgroundRepeat: "no-repeat",
+    }),
+    []
+  );
   if (user) {
     router.replace("/profile");
     return;
@@ -73,111 +95,193 @@ export default function Auth() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background text-foreground p-4">
-      <Card className="w-full max-w-md bg-background text-foreground">
-        <CardHeader className="text-center">
-          <div className="mx-auto w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mb-2">
-            <Shield className="h-6 w-6 text-primary text-blue-500" />
-          </div>
-          <CardTitle className="text-2xl text-blue-500">
-            Steel Works System
-          </CardTitle>
-          <CardDescription>Sign in to access your account</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Tabs defaultValue="signin" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="signin">Sign In</TabsTrigger>
-              <TabsTrigger value="signup">Sign Up</TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="signin">
-              <form onSubmit={handleSignIn} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="signin-email">Email</Label>
-                  <Input
-                    id="signin-email"
-                    type="email"
-                    placeholder="Enter your email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="signin-password">Password</Label>
-                  <Input
-                    id="signin-password"
-                    type="password"
-                    placeholder="Enter your password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                  />
-                </div>
-                <Button
-                  type="submit"
-                  className="w-full bg-blue-500"
-                  disabled={isLoading}
+    <div
+      className="relative min-h-screen overflow-hidden text-white"
+      style={backgroundStyle}
+    >
+      <div className="absolute inset-0 bg-gradient-to-b from-slate-900/55 via-slate-900/35 to-slate-950/55" />
+      <div
+        className="absolute inset-0 mix-blend-screen opacity-25"
+        aria-hidden
+      />
+      <div className="relative z-10 flex min-h-screen items-center justify-center px-4 py-12">
+        <Card className="w-full max-w-xl border-white/15 bg-slate-950/85 text-white shadow-[0_20px_80px_rgba(0,0,0,0.55)] ">
+          <CardHeader className="space-y-4 text-center">
+            <div className="mx-auto flex h-24 w-24 items-center justify-center shadow-lg shadow-blue-900/40">
+              <div className="flex items-center justify-center text-white">
+                <svg
+                  viewBox="0 0 100 100"
+                  className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24"
+                  preserveAspectRatio="xMidYMid meet"
                 >
-                  {isLoading && (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  )}
-                  Sign In
-                </Button>
-              </form>
-            </TabsContent>
+                  {/* Triangle */}
+                  <polygon
+                    points="50,10 90,80 10,80"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="3"
+                  />
 
-            <TabsContent value="signup">
-              <form onSubmit={handleSignUp} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="signup-name">Full Name</Label>
-                  <Input
-                    id="signup-name"
-                    type="text"
-                    placeholder="Enter your full name"
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="signup-email">Email</Label>
-                  <Input
-                    id="signup-email"
-                    type="email"
-                    placeholder="Enter your email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="signup-password">Password</Label>
-                  <Input
-                    id="signup-password"
-                    type="password"
-                    placeholder="Create a password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                  />
-                </div>
-                <Button
-                  type="submit"
-                  className="w-full bg-blue-500"
-                  disabled={isLoading}
+                  {/* S (top text) */}
+                  <text
+                    x="50"
+                    y="40"
+                    textAnchor="middle"
+                    dominantBaseline="middle"
+                    fontSize="18"
+                    fontWeight="bold"
+                    fill="currentColor"
+                  >
+                    S
+                  </text>
+
+                  {/* S W (bottom text) */}
+                  <text
+                    x="50"
+                    y="60"
+                    textAnchor="middle"
+                    dominantBaseline="middle"
+                    fontSize="18"
+                    fontWeight="bold"
+                    fill="currentColor"
+                  >
+                    S W
+                  </text>
+                </svg>
+              </div>
+            </div>
+            <div className="space-y-1">
+              <p className="text-sm uppercase tracking-[0.22em] text-blue-100/90">
+                s.s.w. steel center
+              </p>
+              <CardTitle className="text-3xl font-semibold text-white">
+                {tab === "signin" ? "เข้าสู่ระบบ" : "สมัครสมาชิก"}
+              </CardTitle>
+              <CardDescription className="text-slate-300">
+                ระบบจัดการงานเหล็กครบวงจรสำหรับทีมของคุณ
+              </CardDescription>
+            </div>
+          </CardHeader>
+          <CardContent className="pt-2 pb-6">
+            <Tabs value={tab} onValueChange={setTab} className="w-full">
+              <TabsList className="grid w-full grid-cols-2 rounded-full bg-white/5 p-1">
+                <TabsTrigger
+                  value="signin"
+                  className="rounded-full data-[state=active]:bg-blue-500 data-[state=active]:text-white"
                 >
-                  {isLoading && (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  )}
-                  Sign Up
-                </Button>
-              </form>
-            </TabsContent>
-          </Tabs>
-        </CardContent>
-      </Card>
+                  เข้าสู่ระบบ
+                </TabsTrigger>
+                <TabsTrigger
+                  value="signup"
+                  className="rounded-full data-[state=active]:bg-blue-500 data-[state=active]:text-white"
+                >
+                  สมัครสมาชิก
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="signin" className="mt-6">
+                <form onSubmit={handleSignIn} className="space-y-5">
+                  <div className="space-y-2">
+                    <Label htmlFor="signin-email" className="text-slate-200">
+                      Email
+                    </Label>
+                    <Input
+                      id="signin-email"
+                      type="email"
+                      placeholder="ชื่ออีเมลบริษัท"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                      className="bg-slate-900/60 border-white/10 text-white placeholder:text-slate-500"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="signin-password" className="text-slate-200">
+                      Password
+                    </Label>
+                    <Input
+                      id="signin-password"
+                      type="password"
+                      placeholder="รหัสผ่าน"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                      className="bg-slate-900/60 border-white/10 text-white placeholder:text-slate-500"
+                    />
+                  </div>
+                  <Button
+                    type="submit"
+                    className="w-full bg-gradient-to-r from-blue-500 to-cyan-400 text-slate-950 shadow-lg shadow-blue-900/40"
+                    disabled={isLoading}
+                  >
+                    {isLoading && (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    )}
+                    เข้าสู่ระบบ
+                  </Button>
+                </form>
+              </TabsContent>
+
+              <TabsContent value="signup" className="mt-6">
+                <form onSubmit={handleSignUp} className="space-y-5">
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-name" className="text-slate-200">
+                      Full Name
+                    </Label>
+                    <Input
+                      id="signup-name"
+                      type="text"
+                      placeholder="ชื่อ-นามสกุล"
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
+                      required
+                      className="bg-slate-900/60 border-white/10 text-white placeholder:text-slate-500"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-email" className="text-slate-200">
+                      Email
+                    </Label>
+                    <Input
+                      id="signup-email"
+                      type="email"
+                      placeholder="อีเมลบริษัท"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                      className="bg-slate-900/60 border-white/10 text-white placeholder:text-slate-500"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-password" className="text-slate-200">
+                      Password
+                    </Label>
+                    <Input
+                      id="signup-password"
+                      type="password"
+                      placeholder="ตั้งรหัสผ่าน"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                      className="bg-slate-900/60 border-white/10 text-white placeholder:text-slate-500"
+                    />
+                  </div>
+                  <Button
+                    type="submit"
+                    className="w-full bg-gradient-to-r from-blue-500 to-cyan-400 text-slate-950 shadow-lg shadow-blue-900/40"
+                    disabled={isLoading}
+                  >
+                    {isLoading && (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    )}
+                    สมัครสมาชิก
+                  </Button>
+                </form>
+              </TabsContent>
+            </Tabs>
+          </CardContent>
+        </Card>
+      </div>
       <ToastContainer />
     </div>
   );
