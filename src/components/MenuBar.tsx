@@ -1,7 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { Menu, Home, ClipboardList, Users, LogOut, X } from "lucide-react";
+import {
+  Menu,
+  Home,
+  ClipboardList,
+  Users,
+  LogOut,
+  X,
+  MessageCircle,
+} from "lucide-react";
 import Link from "next/link";
 import { signOut, useSession } from "next-auth/react";
 import * as Avatar from "@radix-ui/react-avatar";
@@ -56,45 +64,51 @@ export default function NavbarWithSidebar() {
         <nav className="flex flex-col px-4 py-2 space-y-2">
           <SidebarItem
             icon={<Home size={20} />}
-            label="Dashboard"
+            label="แดชบอร์ด"
             href="/dashboard"
           />
           <SidebarItem
             icon={<ClipboardList size={20} />}
-            label="Orders"
-            href="/orders"
+            label="ยอดขาย"
+            href="/saledashboards"
           />
           <SidebarItem
             icon={<Users size={20} />}
-            label="Staffs"
-            href="/staff"
+            label="จัดการพนักงาน"
+            href="/payroll"
           />
-          <SidebarItem icon={<span>💬</span>} label="Chatbot" href="/chatbot" />
+          <SidebarItem
+            icon={<MessageCircle size={20} />}
+            label="คุยกับบอท"
+            href="/chatbot"
+          />
           <ThemeToggle />
         </nav>
 
         {/* Bottom Avatar */}
         <div className="mt-auto p-4 border-t">
-          <div className="flex items-center gap-3 mb-2">
-            <Avatar.Root className="w-10 h-10 rounded-full bg-background overflow-hidden">
-              {session.user.image ? (
-                <Avatar.Image
-                  src={session.user.image || ""}
-                  className="w-full h-full object-cover"
-                  alt={session.user.name ?? ""}
-                />
-              ) : (
-                <Avatar.Image
-                  src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRA1YK7AzLFlNa7rz_sxokNpo7RO-PHrJpvJQ&s"
-                  className="w-full h-full object-cover"
-                />
-              )}
-            </Avatar.Root>
-            <div className="text-sm">
-              <p className="font-semibold">{session.user.name}</p>
-              <p className="text-xs text-gray-500">{session.user.email}</p>
+          <Link href="/profile" className="block">
+            <div className="flex items-center gap-3 mb-2">
+              <Avatar.Root className="w-10 h-10 rounded-full bg-background overflow-hidden">
+                {session.user.image ? (
+                  <Avatar.Image
+                    src={session.user.image || ""}
+                    className="w-full h-full object-cover"
+                    alt={session.user.name ?? ""}
+                  />
+                ) : (
+                  <Avatar.Image
+                    src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRA1YK7AzLFlNa7rz_sxokNpo7RO-PHrJpvJQ&s"
+                    className="w-full h-full object-cover"
+                  />
+                )}
+              </Avatar.Root>
+              <div className="text-sm">
+                <p className="font-semibold">{session.user.name}</p>
+                <p className="text-xs text-gray-500">{session.user.email}</p>
+              </div>
             </div>
-          </div>
+          </Link>
           <button
             onClick={() => signOut({ callbackUrl: "/" })}
             className="text-red-600 text-sm hover:bg-red-100 px-2 py-1 rounded flex items-center gap-1"

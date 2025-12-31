@@ -1,6 +1,12 @@
 "use client";
 
-import { Home, ClipboardList, Users, LogOut } from "lucide-react";
+import {
+  Home,
+  ClipboardList,
+  Users,
+  LogOut,
+  MessageCircle,
+} from "lucide-react";
 import { useSession, signOut } from "next-auth/react";
 import * as Avatar from "@radix-ui/react-avatar";
 import Link from "next/link";
@@ -27,19 +33,24 @@ export default function Sidebar() {
         {/* Menu */}
         <nav className="flex flex-col space-y-1 px-2">
           <SidebarItem
-            icon={<Home className="text-foreground" />}
-            label="Dashboard"
+            icon={<Home size={20} />}
+            label="แดชบอร์ด"
             href="/dashboard"
           />
           <SidebarItem
-            icon={<ClipboardList className="text-foreground" />}
-            label="Orders"
-            href="/orders"
+            icon={<ClipboardList size={20} />}
+            label="ยอดขาย"
+            href="/saledashboards"
           />
           <SidebarItem
-            icon={<Users className="text-foreground" />}
-            label="Staffs"
-            href="/staff"
+            icon={<Users size={20} />}
+            label="จัดการพนักงาน"
+            href="/payroll"
+          />
+          <SidebarItem
+            icon={<MessageCircle size={20} />}
+            label="คุยกับบอท"
+            href="/chatbot"
           />
           <ThemeToggle />
         </nav>
@@ -47,44 +58,46 @@ export default function Sidebar() {
 
       {/* Bottom - Avatar & Logout */}
       <div className="flex flex-col items-center px-2 py-4 border-t">
-        <div className="flex items-center gap-2 group-hover:justify-start w-full">
-          <Avatar.Root className="w-17 h-17 rounded-full bg-gray-300 overflow-hidden">
-            {session.user.image ? (
-              <Avatar.Image
-                src={session.user.image}
-                alt={session.user.name ?? "User"}
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <Avatar.Image
-                src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRA1YK7AzLFlNa7rz_sxokNpo7RO-PHrJpvJQ&s"
-                alt={session.user.name ?? "User"}
-                className="w-full h-full object-cover"
-              />
-            )}
-          </Avatar.Root>
-          <span className="hidden group-hover:inline text-sm font-medium truncate">
-            <div className="px-2 py-1 border-b">
-              <p className="text-sm">
-                <span className="font-bold">ชื่อ:</span> {user.name}
-              </p>
-              <p className="text-xs">
-                <span className="font-bold">อีเมล:</span> {user.email}
-              </p>
-              <p className="text-xs">
-                <span className="font-bold">ตำเเหน่ง:</span> {user.role}
-              </p>
-            </div>
-          </span>
-        </div>
+        <Link href="/profile" className="block">
+          <div className="flex items-center gap-2 group-hover:justify-start w-full">
+            <Avatar.Root className="w-17 h-17 rounded-full bg-gray-300 overflow-hidden">
+              {session.user.image ? (
+                <Avatar.Image
+                  src={session.user.image}
+                  alt={session.user.name ?? "User"}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <Avatar.Image
+                  src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRA1YK7AzLFlNa7rz_sxokNpo7RO-PHrJpvJQ&s"
+                  alt={session.user.name ?? "User"}
+                  className="w-full h-full object-cover"
+                />
+              )}
+            </Avatar.Root>
+            <span className="hidden group-hover:inline text-sm font-medium truncate">
+              <div className="px-2 py-1 border-b">
+                <p className="text-sm">
+                  <span className="font-bold">ชื่อ:</span> {user.name}
+                </p>
+                <p className="text-xs">
+                  <span className="font-bold">อีเมล:</span> {user.email}
+                </p>
+                <p className="text-xs">
+                  <span className="font-bold">ตำเเหน่ง:</span> {user.role}
+                </p>
+              </div>
+            </span>
+          </div>
 
-        <button
-          onClick={() => signOut({ callbackUrl: "/" })}
-          className="mt-3 flex items-center gap-2 text-red-600 hover:bg-red-50 hover:cursor-pointer rounded px-2 py-1 w-full group-hover:justify-start"
-        >
-          <LogOut size={18} />
-          <span className="hidden group-hover:inline text-sm">Logout</span>
-        </button>
+          <button
+            onClick={() => signOut({ callbackUrl: "/" })}
+            className="mt-3 flex items-center gap-2 text-red-600 hover:bg-red-50 hover:cursor-pointer rounded px-2 py-1 w-full group-hover:justify-start"
+          >
+            <LogOut size={18} />
+            <span className="hidden group-hover:inline text-sm">Logout</span>
+          </button>
+        </Link>
       </div>
     </aside>
   );
