@@ -159,6 +159,7 @@ type SteelStockApiItem = {
   id: number;
   codeSteel: string;
   amount: number;
+  shape: "square" | "line";
 };
 function mergeOrderSteelIntoOptions(
   options: SteelOption[],
@@ -278,6 +279,7 @@ const UpdateOrderPage = ({ id }: { id: string }) => {
     setLoadingSteel(true);
     try {
       const res = await fetch(`/api/steelType/${encodeURIComponent(name)}`, {
+        method: "GET",
         cache: "no-store",
       });
       if (!res.ok) throw new Error(`Fetch failed: ${res.status}`);
@@ -289,7 +291,7 @@ const UpdateOrderPage = ({ id }: { id: string }) => {
         value: x.codeSteel,
         label: x.codeSteel,
         quantity: x.amount ?? 0,
-        shape: "square",
+        shape: x.shape,
       }));
 
       // ✅ merge ให้มีเหล็กที่ออเดอร์ใช้อยู่เสมอ

@@ -20,6 +20,7 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
+import { is } from "date-fns/locale";
 
 type SteelItem = {
   id: number;
@@ -55,6 +56,8 @@ type Props<T extends JobWithSteel> = {
   className?: string;
 };
 
+const shapeText = (s: "square" | "line") => (s === "line" ? "line" : "square");
+
 function SteelSearchSelect({
   value,
   onChange,
@@ -67,9 +70,12 @@ function SteelSearchSelect({
   disabled?: boolean;
 }) {
   const [open, setOpen] = useState(false);
-
-  const selectedLabel =
-    options.find((o) => o.value === value)?.label || value || "เลือกชนิด";
+  const selectedOpt = options.find((o) => o.value === value);
+  const selectedLabel = selectedOpt
+    ? `${selectedOpt.label} (${shapeText(selectedOpt.shape)})`
+    : value
+    ? value
+    : "เลือกชนิด";
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -108,10 +114,10 @@ function SteelSearchSelect({
                 return (
                   <CommandItem
                     key={opt.value}
-                    value={opt.label} // ใช้ label ให้ค้นหาด้วยข้อความได้
+                    value={`${opt.label} ${shapeText(opt.shape)}`} //ค้นหาได้ทั้งชื่อและรูปทรง
                     onSelect={() => {
-                      onChange(opt.value);
-                      setOpen(false);
+                      onChange(opt.value); // ส่งค่า value กลับ
+                      setOpen(false); // ปิด dropdown
                     }}
                     className="flex items-center justify-between"
                   >
@@ -122,7 +128,9 @@ function SteelSearchSelect({
                           isSelected ? "opacity-100" : "opacity-0"
                         )}
                       />
-                      <span className="truncate">{opt.label}</span>
+                      <span className="truncate">
+                        {opt.label} ({shapeText(opt.shape)})
+                      </span>
                     </div>
 
                     <span className="ml-3 shrink-0 text-sm text-zinc-400 dark:text-zinc-500">
@@ -164,20 +172,23 @@ export default function DetailItem<T extends JobWithSteel>({
     setJob((prev) => {
       if (!prev) return prev;
 
-      const first = steelOptions?.[0]?.value ?? "";
+      const firstOpt = steelOptions?.[0];
+      const firstType = firstOpt?.value ?? "";
+      const firstShape: "square" | "line" = firstOpt?.shape ?? "square";
+
       return {
         ...prev,
         steel: [
           ...(prev.steel ?? []),
           {
-            steeltype: first,
+            steeltype: firstType,
             quantity: 1,
-            width: 0,
+            width: firstShape === "line" ? null : 0,
             length: 0,
             thickness: 0,
             detail: "",
             weight: null,
-            shape: "square",
+            shape: firstShape,
           },
         ],
       };
@@ -230,176 +241,206 @@ export default function DetailItem<T extends JobWithSteel>({
         </Button>
       </div>
 
-      {(job.steel ?? []).map((it, idx) => (
-        <div
-          key={`${job.id}-${idx}`}
-          className="group relative rounded-xl border border-zinc-200 bg-white shadow-sm transition-all hover:shadow-md dark:border-zinc-800 dark:bg-zinc-900"
-        >
-          <div className="absolute -left-2 top-4 z-10 hidden h-6 w-6 items-center justify-center rounded-full bg-zinc-800 text-sm font-bold text-white shadow-sm dark:bg-blue-600 lg:flex">
-            {idx + 1}
-          </div>
+      {(job.steel ?? []).map((it, idx) => {
+        const isLine = it.shape === "line";
+        return (
+          <div
+            key={`${job.id}-${idx}`}
+            className="group relative rounded-xl border border-zinc-200 bg-white shadow-sm transition-all hover:shadow-md dark:border-zinc-800 dark:bg-zinc-900"
+          >
+            <div className="absolute -left-2 top-4 z-10 hidden h-6 w-6 items-center justify-center rounded-full bg-zinc-800 text-sm font-bold text-white shadow-sm dark:bg-blue-600 lg:flex">
+              {idx + 1}
+            </div>
 
-          <div className="p-4 lg:flex lg:items-center lg:gap-4 lg:p-1">
-            <div className="grid flex-1 grid-cols-1 items-start gap-4 md:grid-cols-2 lg:grid-cols-12 lg:items-center">
-              {/* Steel Type (searchable) */}
-              <div className="lg:col-span-3 lg:pl-4">
-                <label className="mb-1 block text-sm text-zinc-500 dark:text-zinc-400">
-                  ชนิดเหล็ก
-                </label>
-
-                <SteelSearchSelect
-                  value={it.steeltype}
-                  onChange={(v) => patchSteelItem(idx, { steeltype: v })}
-                  options={steelOptions}
-                  disabled={steelOptions.length === 0}
-                />
-              </div>
-
-              {/* Dimensions */}
-              <div className="grid grid-cols-3 gap-2 lg:col-span-4">
-                <div>
-                  <label className="mb-1 block text-center text-sm text-zinc-500 dark:text-zinc-400">
-                    กว้าง
+            <div className="p-4 lg:flex lg:items-center lg:gap-4 lg:p-1">
+              <div className="grid flex-1 grid-cols-1 items-start gap-4 md:grid-cols-2 lg:grid-cols-12 lg:items-center">
+                {/* Steel Type (searchable) */}
+                <div className="lg:col-span-3 lg:pl-4">
+                  <label className="mb-1 block text-sm text-zinc-500 dark:text-zinc-400">
+                    ชนิดเหล็ก
                   </label>
-                  <div className="relative">
-                    <Input
-                      type="number"
-                      className="h-9 border-zinc-200 bg-white pr-6 text-center focus-visible:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
-                      value={it.width ?? 0}
-                      onChange={(e) =>
-                        patchSteelItem(idx, {
-                          width: Math.max(0, Number(e.target.value || 0)),
-                        })
-                      }
-                    />
-                    <span className="absolute right-2 top-1/2 -translate-y-1/2 text-sm text-zinc-400 dark:text-zinc-500">
-                      cm
-                    </span>
-                  </div>
+
+                  <SteelSearchSelect
+                    value={it.steeltype}
+                    onChange={(v) => {
+                      const opt = steelOptions.find((o) => o.value === v);
+                      setJob((prev) => {
+                        if (!prev) return prev;
+                        return {
+                          ...prev,
+                          steel: (prev.steel ?? []).map((item, i) => {
+                            if (i !== idx) return item;
+                            const nextShape =
+                              opt?.shape ?? item.shape ?? "square";
+                            return {
+                              ...item,
+                              steeltype: v,
+                              shape: nextShape,
+                              width:
+                                nextShape === "line" ? null : item.width ?? 0,
+                            };
+                          }),
+                        };
+                      });
+                    }}
+                    options={steelOptions}
+                    disabled={steelOptions.length === 0}
+                  />
                 </div>
 
-                <div>
-                  <label className="mb-1 block text-center text-sm text-zinc-500 dark:text-zinc-400">
-                    ยาว
-                  </label>
-                  <div className="relative">
-                    <Input
-                      type="number"
-                      className="h-9 border-zinc-200 bg-white pr-6 text-center focus-visible:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
-                      value={it.length ?? 0}
-                      onChange={(e) =>
-                        patchSteelItem(idx, {
-                          length: Math.max(0, Number(e.target.value || 0)),
-                        })
-                      }
-                    />
-                    <span className="absolute right-2 top-1/2 -translate-y-1/2 text-sm text-zinc-400 dark:text-zinc-500">
-                      cm
-                    </span>
-                  </div>
-                </div>
+                {/* Dimensions */}
 
-                <div>
-                  <label className="mb-1 block text-center text-sm text-zinc-500 dark:text-zinc-400">
-                    หนา
-                  </label>
-                  <div className="relative">
-                    <Input
-                      type="number"
-                      className="h-9 border-zinc-200 bg-white pr-6 text-center focus-visible:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
-                      value={it.thickness ?? 0}
-                      onChange={(e) =>
-                        patchSteelItem(idx, {
-                          thickness: Math.max(0, Number(e.target.value || 0)),
-                        })
-                      }
-                    />
-                    <span className="absolute right-2 top-1/2 -translate-y-1/2 text-sm text-zinc-400 dark:text-zinc-500">
-                      cm
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Quantity */}
-              <div className="lg:col-span-1">
-                <label className="mb-1 block text-center text-sm text-zinc-500 dark:text-zinc-400">
-                  จำนวน
-                </label>
-                <Input
-                  type="number"
-                  min={1}
-                  className="h-9 w-full border-blue-100 bg-blue-50/50 text-center font-semibold text-blue-600 focus-visible:ring-blue-500 dark:border-blue-900/50 dark:bg-blue-900/20 dark:text-blue-400"
-                  value={it.quantity ?? 1}
-                  onChange={(e) =>
-                    patchSteelItem(idx, {
-                      quantity: Math.max(1, Number(e.target.value || 1)),
-                    })
-                  }
-                />
-              </div>
-
-              {/* Weight */}
-              <div className="lg:col-span-2">
-                {weightEnabled ? (
+                <div
+                  className={cn(
+                    "grid gap-2 lg:col-span-4",
+                    isLine ? "grid-cols-2" : "grid-cols-3"
+                  )}
+                >
+                  {!isLine && (
+                    <div>
+                      <label className="mb-1 block text-center text-sm text-zinc-500 dark:text-zinc-400">
+                        กว้าง
+                      </label>
+                      <div className="relative">
+                        <Input
+                          type="number"
+                          className="h-9 border-zinc-200 bg-white pr-6 text-center focus-visible:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
+                          value={it.width ?? 0}
+                          onChange={(e) =>
+                            patchSteelItem(idx, {
+                              width: Math.max(0, Number(e.target.value || 0)),
+                            })
+                          }
+                        />
+                        <span className="absolute right-2 top-1/2 -translate-y-1/2 text-sm text-zinc-400 dark:text-zinc-500">
+                          cm
+                        </span>
+                      </div>
+                    </div>
+                  )}
                   <div>
                     <label className="mb-1 block text-center text-sm text-zinc-500 dark:text-zinc-400">
-                      น้ำหนักท/กก.
+                      ยาว
                     </label>
                     <div className="relative">
                       <Input
                         type="number"
-                        className="h-9 border-zinc-200 bg-white pr-8 text-right font-mono text-sm focus-visible:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
-                        value={it.weight ?? 0}
+                        className="h-9 border-zinc-200 bg-white pr-6 text-center focus-visible:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
+                        value={it.length ?? 0}
                         onChange={(e) =>
                           patchSteelItem(idx, {
-                            weight: Math.max(0, Number(e.target.value || 0)),
+                            length: Math.max(0, Number(e.target.value || 0)),
                           })
                         }
                       />
-                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-zinc-400 dark:text-zinc-500">
-                        Kg.
+                      <span className="absolute right-2 top-1/2 -translate-y-1/2 text-sm text-zinc-400 dark:text-zinc-500">
+                        cm
                       </span>
                     </div>
                   </div>
-                ) : (
-                  <div className="flex h-full flex-col justify-end pb-2 lg:items-center">
-                    <div className="mb-1 h-4 w-full" />
-                    <span className="text-sm italic text-zinc-300 dark:text-zinc-600">
-                      รอชั่ง
-                    </span>
-                  </div>
-                )}
-              </div>
 
-              {/* Note + Delete */}
-              <div className="lg:col-span-2">
-                <label className="mb-1 block text-left text-sm text-zinc-500 dark:text-zinc-400">
-                  หมายเหตุ
-                </label>
-                <div className="flex items-center gap-2">
+                  <div>
+                    <label className="mb-1 block text-center text-sm text-zinc-500 dark:text-zinc-400">
+                      หนา
+                    </label>
+                    <div className="relative">
+                      <Input
+                        type="number"
+                        className="h-9 border-zinc-200 bg-white pr-6 text-center focus-visible:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
+                        value={it.thickness ?? 0}
+                        onChange={(e) =>
+                          patchSteelItem(idx, {
+                            thickness: Math.max(0, Number(e.target.value || 0)),
+                          })
+                        }
+                      />
+                      <span className="absolute right-2 top-1/2 -translate-y-1/2 text-sm text-zinc-400 dark:text-zinc-500">
+                        cm
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Quantity */}
+                <div className="lg:col-span-1">
+                  <label className="mb-1 block text-center text-sm text-zinc-500 dark:text-zinc-400">
+                    จำนวน
+                  </label>
                   <Input
-                    className="h-9 border-zinc-200 bg-white text-sm focus-visible:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
-                    placeholder="ระบุ..."
-                    value={it.detail ?? ""}
+                    type="number"
+                    min={1}
+                    className="h-9 w-full border-blue-100 bg-blue-50/50 text-center font-semibold text-blue-600 focus-visible:ring-blue-500 dark:border-blue-900/50 dark:bg-blue-900/20 dark:text-blue-400"
+                    value={it.quantity ?? 1}
                     onChange={(e) =>
-                      patchSteelItem(idx, { detail: e.target.value })
+                      patchSteelItem(idx, {
+                        quantity: Math.max(1, Number(e.target.value || 1)),
+                      })
                     }
                   />
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => removeSteelItem(idx)}
-                    className="h-9 w-9 text-zinc-400 hover:bg-red-50 hover:text-red-600 dark:text-zinc-500 dark:hover:bg-red-900/20 dark:hover:text-red-400"
-                  >
-                    <Trash2 className="h-5 w-5" />
-                  </Button>
+                </div>
+
+                {/* Weight */}
+                <div className="lg:col-span-2">
+                  {weightEnabled ? (
+                    <div>
+                      <label className="mb-1 block text-center text-sm text-zinc-500 dark:text-zinc-400">
+                        น้ำหนักท/กก.
+                      </label>
+                      <div className="relative">
+                        <Input
+                          type="number"
+                          className="h-9 border-zinc-200 bg-white pr-8 text-right font-mono text-sm focus-visible:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
+                          value={it.weight ?? 0}
+                          onChange={(e) =>
+                            patchSteelItem(idx, {
+                              weight: Math.max(0, Number(e.target.value || 0)),
+                            })
+                          }
+                        />
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-zinc-400 dark:text-zinc-500">
+                          Kg.
+                        </span>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex h-full flex-col justify-end pb-2 lg:items-center">
+                      <div className="mb-1 h-4 w-full" />
+                      <span className="text-sm italic text-zinc-300 dark:text-zinc-600">
+                        รอชั่ง
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Note + Delete */}
+                <div className="lg:col-span-2">
+                  <label className="mb-1 block text-left text-sm text-zinc-500 dark:text-zinc-400">
+                    หมายเหตุ
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      className="h-9 border-zinc-200 bg-white text-sm focus-visible:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
+                      placeholder="ระบุ..."
+                      value={it.detail ?? ""}
+                      onChange={(e) =>
+                        patchSteelItem(idx, { detail: e.target.value })
+                      }
+                    />
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => removeSteelItem(idx)}
+                      className="h-9 w-9 text-zinc-400 hover:bg-red-50 hover:text-red-600 dark:text-zinc-500 dark:hover:bg-red-900/20 dark:hover:text-red-400"
+                    >
+                      <Trash2 className="h-5 w-5" />
+                    </Button>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
-      ))}
+        );
+      })}
 
       <button
         type="button"
