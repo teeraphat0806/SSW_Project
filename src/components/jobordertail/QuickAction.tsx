@@ -6,7 +6,7 @@ import { Edit, Printer, Mail, FileText } from "lucide-react";
 import { Button } from "../../components/ui/button";
 import { toast } from "../../hooks/use-toast";
 
-type ActionKey = "edit" | "print" | "email" | "invoice";
+type ActionKey = "edit" | "print" | "email" | "pofile";
 
 type ActionItem = {
   key: ActionKey;
@@ -18,7 +18,15 @@ type ActionItem = {
 };
 
 // รับได้ทั้ง string และ number ป้องกัน type mismatch
-export function QuickAction({ orderId }: { orderId: string | number }) {
+export function QuickAction({
+  billid,
+  orderId,
+  keyPo,
+}: {
+  billid: string | number;
+  orderId: string | number;
+  keyPo: string;
+}) {
   const router = useRouter();
   const [loadingKey, setLoadingKey] = React.useState<ActionKey | null>(null);
 
@@ -31,12 +39,9 @@ export function QuickAction({ orderId }: { orderId: string | number }) {
     },
     {
       key: "print",
-      label: "Print Summary",
+      label: "สร้างใบสั่งซื้อ (receipt) ",
       icon: Printer,
-      run: () => {
-        // ใช้ browser API เฉพาะตอนคลิก (ไม่กระทบ SSR)
-        window.print();
-      },
+      run: () => router.push(`/receipt-invoice/${billid}`),
     },
     {
       key: "email",
@@ -54,17 +59,12 @@ export function QuickAction({ orderId }: { orderId: string | number }) {
       },
     },
     {
-      key: "invoice",
-      label: "Generate Invoice",
+      key: "pofile",
+      label: "แสดงใบสั่งซื้อ (PO File)",
       icon: FileText,
-      run: async () => {
-        const res = await fetch(`/api/orders/${orderId}/invoice`, {
-          method: "POST",
-        });
-        if (!res.ok) throw new Error("Generate invoice failed");
-        const { url } = await res.json();
-        window.open(url, "_blank");
-        toast({ title: "Invoice created" });
+      run: () => {
+        window.open(`/api/upload/po/openPo/${keyPo}`, "_blank");
+        toast({ title: "เปิดใบสั่งซื้อแล้ว" });
       },
     },
   ];

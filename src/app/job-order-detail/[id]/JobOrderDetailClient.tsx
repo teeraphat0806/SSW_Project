@@ -44,6 +44,7 @@ type StaffMember = {
 
 type ApiJobOrder = {
   id: number;
+  billid: number;
   poNumber: string;
   customerId: string | null;
   customerName: string | null;
@@ -51,6 +52,7 @@ type ApiJobOrder = {
   customerPhone: string | null;
   deliveryAddress: string | null;
   customercode: string | null;
+  key: string;
 
   staff: { id: number; name: string; role: "supervisor" | "cutter" | null }[];
 
@@ -77,6 +79,7 @@ type ApiJobOrder = {
 
 interface JobOrder {
   id: string;
+  billid: number;
   poNumber: string;
   customerId: string;
   customerName: string;
@@ -84,6 +87,7 @@ interface JobOrder {
   customerPhone: string;
   deliveryAddress: string;
   customercode: string;
+  keyPo: string;
   staff: Array<{
     id: number;
     name: string;
@@ -121,6 +125,7 @@ const tojobOrder = (api: ApiJobOrder): JobOrder => {
   return {
     id: api.id.toString(),
     poNumber: api.poNumber,
+    billid: api.billid,
     // ✅ ใช้ ?? "" เพื่อแปลง null เป็น empty string
     customerId: api.customerId ?? "",
     customerName: api.customerName ?? "",
@@ -128,6 +133,7 @@ const tojobOrder = (api: ApiJobOrder): JobOrder => {
     customerPhone: api.customerPhone ?? "",
     deliveryAddress: api.deliveryAddress ?? "",
     customercode: api.customercode ?? "",
+    keyPo: api.key ?? "",
 
     staff: (api.staff || []).map((s) => ({
       id: s.id,
@@ -530,7 +536,11 @@ const JobOrderDetailPage = ({ id }: { id: string }) => {
             {/* Quick Actions */}
 
             <div className="mt-3 grid gap-2">
-              <QuickAction orderId={id} />
+              <QuickAction
+                orderId={id}
+                keyPo={jobOrder?.keyPo || ""}
+                billid={jobOrder?.billid || ""}
+              />
             </div>
           </aside>
         </div>

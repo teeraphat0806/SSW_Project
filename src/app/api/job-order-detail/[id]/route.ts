@@ -7,6 +7,7 @@ import { se } from "date-fns/locale";
 
 type ApiJobOrder = {
   id: number;
+  billid: number;
   poNumber: string;
   customerId: string;
   customerName: string;
@@ -14,7 +15,7 @@ type ApiJobOrder = {
   customerPhone: string;
   customercode: string;
   deliveryAddress: string;
-  keyPo: string[];
+  key: string;
   staff: {
     id: number;
     name: string;
@@ -44,7 +45,6 @@ export async function GET(
 ) {
   const { id } = await context.params;
   const poId = Number(id);
-  
 
   if (Number.isNaN(poId)) {
     return NextResponse.json({ error: "Invalid id" }, { status: 400 });
@@ -89,6 +89,7 @@ export async function GET(
 
     const apiJobOrder: ApiJobOrder = {
       id: jobOrder.id,
+      billid: bill.id,
       poNumber: jobOrder.poNumber,
       customerId: customer.id.toString(),
       customerName: customer.name,
@@ -96,7 +97,7 @@ export async function GET(
       customerPhone: customer.tel,
       customercode: customer.code,
       deliveryAddress: customer.address,
-      keyPo: jobOrder.urlPo ?? [],
+      key: jobOrder.urlPo[0],
       staff:
         jobOrder.Staff?.map((s) => ({
           id: s.id,

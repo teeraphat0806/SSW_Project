@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-
 import prisma from "@/lib/prisma";
 import { CreateNewOrderSchema } from "@/lib/schemas/createNewOrder.shema";
 import { randomBytes } from "crypto";
@@ -14,26 +13,113 @@ function generateCode(
   const n = chars.length;
   if (n < 2) throw new Error("charset ต้องมีอักขระอย่างน้อย 2 ตัว");
 
-  const bytes: Uint8Array = randomBytes(length * 2); // กันเผื่อทิ้งบาง byte
+  const bytes: Uint8Array = randomBytes(length * 2);
   const result: string[] = [];
-  const max = 256 - (256 % n); // ใช้เฉพาะค่า < max เพื่อลด modulo bias
+  const max = 256 - (256 % n);
 
   let i = 0;
   while (result.length < length) {
     if (i >= bytes.length) {
-      // ไม่พอ ก็ขอเพิ่ม
       const more = randomBytes(length);
       const tmp = new Uint8Array(more);
       for (let j = 0; j < tmp.length; j++) bytes[i + j] = tmp[j];
     }
     const rnd = bytes[i++]!;
-    if (rnd < max) {
-      result.push(chars[rnd % n]!);
-    }
+    if (rnd < max) result.push(chars[rnd % n]!);
   }
   return result.join("");
 }
 
+const round2 = (n: number) => Math.round(n * 100) / 100;
+const cm3ToM3 = (cm3: number) => cm3 / 1_000_000;
+const safeNum = (v: unknown) => {
+  const n = typeof v === "number" ? v : Number(v);
+  return Number.isFinite(n) ? n : 0;
+};
+
+type SteelShape = "square" | "line";
+
+function calcComputedWeightKg(params: {
+  shape: SteelShape;
+  amount: number;
+  width?: number | null;
+  length: number;
+  thickness: number;
+  density: number; // kg/m3
+}) {
+  const amount = safeNum(params.amount);
+  const width = safeNum(params.width);
+  const length = safeNum(params.length);
+  const thickness = safeNum(params.thickness);
+  const density = safeNum(params.density) || 7860;
+
+  if (amount <= 0 || length <= 0 || thickness <= 0) return 0;
+
+  let weightPerPieceKg = 0;
+
+  if (params.shape === "square") {
+    if (width <= 0) return 0;
+    const volumeCm3 = width * length * thickness;
+    weightPerPieceKg = cm3ToM3(volumeCm3) * density;
+  } else {
+    const r = thickness / 2;
+    const areaCm2 = Math.PI * r * r;
+    const volumeCm3 = areaCm2 * length;
+    weightPerPieceKg = cm3ToM3(volumeCm3) * density;
+  }
+
+  return weightPerPieceKg * amount; // ✅ น้ำหนักรวมทั้งรายการ (kg)
+}
+
+function calcLine(params: {
+  amount: number;
+  weight?: number | null; // ✅ น้ำหนักจริงที่กรอกมา (ตามที่คุณต้องการ: “คิดกับจำนวนด้วย”)
+  width?: number | null;
+  length: number;
+  thickness: number;
+  steel: { price: number; density: number; shape: SteelShape };
+}) {
+  const price = safeNum(params.steel.price);
+  const amount = safeNum(params.amount);
+  const manualWeight = safeNum(params.weight);
+
+  // ✅ เงื่อนไขที่คุณต้องการ:
+  // - ถ้ามีน้ำหนักจริง -> total = weight * amount * price
+  // - ถ้าไม่มี -> คำนวณน้ำหนักรวมจากมิติ (ซึ่งมันรวม amount อยู่แล้ว) แล้ว total = computedWeight * price
+  if (manualWeight > 0) {
+    const totalWeightKg = manualWeight * amount;
+    const total = round2(totalWeightKg * price);
+    return {
+      weightKg: round2(totalWeightKg),
+      total,
+      isManual: true as const,
+    };
+  }
+
+  const computedWeightKg = calcComputedWeightKg({
+    shape: params.steel.shape,
+    amount,
+    width: params.width ?? null,
+    length: params.length,
+    thickness: params.thickness,
+    density: params.steel.density,
+  });
+
+  const total = round2(computedWeightKg * price);
+  return {
+    weightKg: round2(computedWeightKg),
+    total,
+    isManual: false as const,
+  };
+}
+
+type SteelFromDB = {
+  id: number;
+  codeSteel: string;
+  price: number;
+  density: number;
+  shape: "square" | "line"; // ตรงกับ enum ของ Prisma
+};
 export async function POST(req: NextRequest) {
   const authResult = await requireAuth([
     "superadmin",
@@ -41,70 +127,128 @@ export async function POST(req: NextRequest) {
     "clerk",
     "delivery",
   ]);
+  if ("response" in authResult) return authResult.response;
 
-  if ("response" in authResult) {
-    return authResult.response;
-  }
   const { session } = authResult;
-  console.log(session);
 
   try {
     const body = await req.json();
-    const result = CreateNewOrderSchema.safeParse(body);
+    const parsed = CreateNewOrderSchema.safeParse(body);
 
-    if (!result.success) {
-      const formattedErrors = result.error.issues.map((err) => ({
+    if (!parsed.success) {
+      const formattedErrors = parsed.error.issues.map((err) => ({
         path: err.path.join("."),
         message: err.message,
       }));
-
       return NextResponse.json(
         { error: "Invalid input", details: formattedErrors },
         { status: 400 }
       );
     }
 
-    const validateData = result.data;
+    const data = parsed.data;
 
-    const newBill = await prisma.bill.create({
-      data: {
-        Customer: { connect: { id: validateData.customerId } },
-        yourRef: validateData.yourRef,
-        codeCustomer: generateCode(),
-        //credit: new Date(),
-        deliveryDate: new Date(validateData.deliveryDate),
+    const allCodes = Array.from(
+      new Set(
+        data.orderPOs.flatMap((po) =>
+          po.products.map((p) => String(p.steelType).trim())
+        )
+      )
+    );
 
-        salesName: session.user?.name,
-        Staff_Bill_salesNameToStaff: {
-          connect: { id: Number(session.user?.id) },
+    const newBill = await prisma.$transaction(async (tx) => {
+      const steelTypes = await tx.steelType.findMany({
+        where: { codeSteel: { in: allCodes } },
+        select: {
+          id: true,
+          codeSteel: true,
+          price: true,
+          density: true,
+          shape: true,
         },
-        vat: validateData.vat,
-        OrderPO: {
-          create: validateData.orderPOs.map((po) => ({
-            poNumber: po.poNumber,
-            Customer: { connect: { id: validateData.customerId } },
-            total: po.total,
-            urlPo: po.urlPo,
-            // date: new Date(),
-            Product: {
-              create: po.products.map((p) => ({
-                SteelType: { connect: { codeSteel: p.steelType } },
-                wide: p.wide ?? null,
-                length: p.length,
-                thickness: p.thickness,
-                amount: p.amount,
-                total: p.total,
-                detail: p.detail,
-              })),
-            },
-          })),
+      });
+
+      const mapSteel = new Map<string, SteelFromDB>(
+        steelTypes.map((s) => [s.codeSteel, s])
+      );
+
+      const missing = allCodes.filter((c) => !mapSteel.has(c));
+      if (missing.length)
+        throw new Error(`SteelType not found: ${missing.join(", ")}`);
+
+      const bill = await tx.bill.create({
+        data: {
+          Customer: { connect: { id: data.customerId } },
+          yourRef: data.yourRef,
+          codeCustomer: generateCode(),
+          deliveryDate: new Date(data.deliveryDate),
+
+          salesName: session.user?.name,
+          Staff_Bill_salesNameToStaff: {
+            connect: { id: Number(session.user?.id) },
+          },
+          vat: data.vat,
+
+          OrderPO: {
+            create: data.orderPOs.map((po) => {
+              const computed = po.products.map((p) => {
+                const code = String(p.steelType).trim();
+                const st = mapSteel.get(code)!;
+
+                // Prisma enum ของคุณคือ ShapeSteel แต่ค่าคือ square/line อยู่แล้ว
+                const shape = st.shape as unknown as SteelShape;
+
+                const line = calcLine({
+                  amount: p.amount,
+                  weight: p.weight ?? null,
+                  width: p.wide ?? null,
+                  length: p.length,
+                  thickness: p.thickness,
+                  steel: {
+                    price: st.price,
+                    density: st.density,
+                    shape,
+                  },
+                });
+
+                return { st, p, line };
+              });
+
+              const poTotal = round2(
+                computed.reduce((sum, x) => sum + x.line.total, 0)
+              );
+
+              return {
+                poNumber: po.poNumber,
+                Customer: { connect: { id: data.customerId } },
+                urlPo: po.urlPo,
+                total: poTotal,
+
+                Product: {
+                  create: computed.map(({ st, p, line }) => ({
+                    SteelType: { connect: { id: st.id } },
+                    wide: p.wide ?? null,
+                    length: p.length,
+                    thickness: p.thickness,
+                    amount: p.amount,
+                    detail: p.detail ?? null,
+                    // ✅ total ปัด 2 ตำแหน่งก่อนลง
+                    total: line.total,
+                  })),
+                },
+              };
+            }),
+          },
         },
-      },
-      include: {
-        Customer: true,
-        OrderPO: { include: { Product: true } },
-      },
+        include: {
+          Customer: true,
+          OrderPO: { include: { Product: true } },
+        },
+      });
+
+      return bill;
     });
+
     return NextResponse.json(newBill, { status: 201 });
   } catch (error) {
     console.error(error);

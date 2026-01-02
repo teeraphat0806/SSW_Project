@@ -18,7 +18,7 @@ export default function JobOrderDetailLayout({
       <div className="bg-muted min-h-screen md:pl-20 ">
         <ThemeProvider attribute="class">
           {children}
-          <Toaster /> 
+          <Toaster />
         </ThemeProvider>
       </div>
     </Layout>

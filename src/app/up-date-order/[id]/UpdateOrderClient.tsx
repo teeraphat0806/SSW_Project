@@ -359,7 +359,7 @@ const UpdateOrderPage = ({ id }: { id: string }) => {
       // ✅ กัน payload ที่ codeSteel ว่าง
       const badLine = payload.steel?.find((x) => !x.codeSteel?.trim());
       if (badLine) throw new Error("กรุณาเลือกชนิดเหล็กให้ครบทุกบรรทัด");
-
+      console.log("payload: " + JSON.stringify(payload));
       const res = await fetch(`/api/up-date-order/${job.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },

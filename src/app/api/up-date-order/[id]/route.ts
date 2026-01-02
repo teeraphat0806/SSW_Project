@@ -1,6 +1,6 @@
 import { requireAuth } from "@/lib/permissions";
 import prisma from "@/lib/prisma";
-import { se, tr } from "date-fns/locale";
+import { se, th, tr } from "date-fns/locale";
 import { NextRequest, NextResponse } from "next/server";
 import z, { custom, includes } from "zod";
 
@@ -151,6 +151,84 @@ type UpdateOrderPayload = {
   }>;
 };
 
+const round2 = (n: number) => Math.round(n * 100) / 100;
+const cm3ToM3 = (cm3: number) => cm3 / 1_000_000;
+
+const safeNum = (v: unknown) => {
+  const n = typeof v === "number" ? v : Number(v);
+  return Number.isFinite(n) ? n : 0;
+};
+
+type SteelShape = "square" | "line"; // ให้ตรงกับ enum ที่คุณใช้จริง
+
+function calcComputedWeightKg(params: {
+  shape: SteelShape;
+  amount: number;
+  width?: number | null;
+  length: number;
+  thickness: number;
+  density: number; // kg/m3
+}) {
+  const amount = safeNum(params.amount);
+  const width = safeNum(params.width);
+  const length = safeNum(params.length);
+  const thickness = safeNum(params.thickness);
+  const density = safeNum(params.density) || 7860;
+
+  if (amount <= 0 || length <= 0 || thickness <= 0) return 0;
+
+  // ใช้ shape เป็นหลัก ถ้า square = แผ่น, line = กลม/เส้น
+  let weightPerPieceKg = 0;
+
+  if (params.shape === "square") {
+    // plate: volume = w * l * t (cm3)
+    // ถ้าไม่ได้ส่ง width มาให้ถือว่า 0 -> จะได้ weight 0 (กันพัง)
+    if (width <= 0) return 0;
+
+    const volumeCm3 = width * length * thickness;
+    weightPerPieceKg = cm3ToM3(volumeCm3) * density;
+  } else {
+    // line/round: thickness = diameter (cm)
+    const r = thickness / 2;
+    const areaCm2 = Math.PI * r * r;
+    const volumeCm3 = areaCm2 * length;
+    weightPerPieceKg = cm3ToM3(volumeCm3) * density;
+  }
+
+  const totalWeightKg = weightPerPieceKg * amount;
+  return totalWeightKg;
+}
+
+function calcLine(params: {
+  amount: number;
+  weight?: number | null; // น้ำหนักจริงที่กรอกมา (ถ้ามี)
+  width?: number | null;
+  length: number;
+  thickness: number;
+  steel: { price: number; density: number; shape: SteelShape };
+}) {
+  const price = safeNum(params.steel.price);
+  const manualWeight = safeNum(params.weight);
+
+  // 1) มีน้ำหนักจริง -> ใช้น้ำหนักจริง (ถือว่าเป็น "น้ำหนักรวมของรายการ" แล้ว)
+  if (manualWeight > 0) {
+    const total = manualWeight * price;
+    return { weightKg: manualWeight, total };
+  }
+
+  // 2) ไม่มีน้ำหนักจริง -> คำนวณจากมิติ + density + shape + amount
+  const computedWeightKg = calcComputedWeightKg({
+    shape: params.steel.shape,
+    amount: params.amount,
+    width: params.width ?? null,
+    length: params.length,
+    thickness: params.thickness,
+    density: params.steel.density,
+  });
+
+  const total = round2(computedWeightKg * price);
+  return { weightKg: round2(computedWeightKg), total };
+}
 export async function PATCH(
   req: NextRequest,
   context: { params: Promise<{ id: string }> }
@@ -236,12 +314,25 @@ export async function PATCH(
         const missing = codes.filter((c) => !codeToSteel.has(c));
         if (missing.length)
           throw new Error(`SteelType not found: ${missing.join(", ")}`);
-
         await tx.product.deleteMany({ where: { orderPOId: poId } });
 
         await tx.product.createMany({
           data: patch.steel.map((l) => {
             const st = codeToSteel.get(l.codeSteel.trim())!;
+
+            const { total } = calcLine({
+              amount: l.amount,
+              weight: l.weight ?? null,
+              width: l.width ?? null,
+              length: l.length,
+              thickness: l.thickness,
+              steel: {
+                price: st.price,
+                density: st.density,
+                shape: st.shape as "square" | "line", // <- ถ้า st.shape เป็น enum ใน prisma TS มันจะเทียบได้เอง ให้ลบทิ้ง cast ได้
+              },
+            });
+
             return {
               orderPOId: poId,
               steelId: st.id,
@@ -250,8 +341,12 @@ export async function PATCH(
               thickness: l.thickness ?? null,
               amount: l.amount,
               detail: l.detail ?? null,
+
+              // เก็บ actualWeight เฉพาะที่ user กรอกจริง (คงความหมาย "actual")
               actualWeight: l.weight ?? null,
-              total: 0,
+
+              // ✅ total คำนวณตามเงื่อนไขใหม่
+              total,
             };
           }),
         });
@@ -265,6 +360,44 @@ export async function PATCH(
           where: { id: poId },
           data: { total: sum._sum.total ?? 0 },
         });
+
+        const subtotal = sum._sum.total ?? 0;
+        const orderWithBill = await tx.orderPO.findUnique({
+          where: { id: poId },
+          select: {
+            billId: true,
+            customerId: true,
+          },
+        });
+
+        if (!orderWithBill) throw new Error("Order not found");
+
+        let bill;
+
+        if (orderWithBill.billId) {
+          // 🔁 มี Bill อยู่แล้ว → update
+          bill = await tx.bill.findUnique({
+            where: { id: orderWithBill.billId },
+            select: { id: true, vatRate: true },
+          });
+
+          if (!bill) throw new Error("Bill not found");
+
+          const vatRate = bill.vatRate ?? 7;
+          const vat = round2(subtotal * (vatRate / 100));
+          const grandTotal = round2(subtotal + vat);
+
+          await tx.bill.update({
+            where: { id: bill.id },
+            data: {
+              subtotal,
+              vat,
+              grandTotal,
+            },
+          });
+        } else {
+          throw new Error("No bill associated with this order");
+        }
       }
 
       // ✅ re-fetch แบบ include เพื่อ map ออกเป็น ApiJobOrder
