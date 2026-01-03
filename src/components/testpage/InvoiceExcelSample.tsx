@@ -3,16 +3,16 @@
 import * as React from "react";
 
 type InvoiceItem = {
-  grade: string; // SS400
+  steelType: string; // SS400
   thickness: number; // 25
   width: number; // 430
   length: number; // 2745
   unit?: string; // mm.
   job: string; // 1
-  quantity?: number;
+  amount?: number;
   weight: number; // 233.00
-  pricePerKg: number; // 34.00
-  amount: number; // 7922.00
+  price: number; // 34.00
+  total: number; // 7922.00
 };
 
 type Inv71LikeInvoiceProps = {
@@ -25,21 +25,19 @@ type Inv71LikeInvoiceProps = {
   taxId: string;
 
   // ส่วนเอกสารขวาบน
-  docNo: string; // HS00127879
+  youRef: string; // HS00127879
   date: string; // 14/08/68
   credit: string; // 30 วัน
-  preparedBy: string; // J.Sirikran
+  selesName: string; // J.Sirikran
 
   // รายการ
   items: InvoiceItem[];
 
   // ยอดรวม
   subtotal: number; // 7,922.00
-  taxBase: number; // 7,922.00
   vat: number; // 554.54
   total: number; // 8,476.54
   totalTextThai: string; // แปดพันสี่ร้อยเจ็ดสิบหกบาทห้าสิบสี่สตางค์
-  accumulateTextThai?: string; // หนึ่งแสนสองหมื่น...
 };
 
 export const InvoiceExcelSample: React.FC<Inv71LikeInvoiceProps> = ({
@@ -49,23 +47,25 @@ export const InvoiceExcelSample: React.FC<Inv71LikeInvoiceProps> = ({
   tel,
   fax,
   taxId,
-  docNo,
+  youRef,
   date,
   credit,
-  preparedBy,
+  selesName,
   items,
   subtotal,
-  taxBase,
   vat,
   total,
   totalTextThai,
-  accumulateTextThai,
 }) => {
-  const formatNumber = (n: number) =>
-    n.toLocaleString("en-US", {
+  const formatNumber = (n?: number | null) => {
+    const x = typeof n === "number" ? n : Number(n);
+    // if (!Number.isFinite(x)) return "0.00";
+    return x.toLocaleString("en-US", {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     });
+  };
+  console.log("items in InvoiceExcelSample:", items);
 
   return (
     <div
@@ -83,7 +83,7 @@ export const InvoiceExcelSample: React.FC<Inv71LikeInvoiceProps> = ({
       "
     >
       {/* แถวแรก: ซ้ายบริษัท, ขวาเลขที่/วันที่/เครดิต/ผู้จัดทำ */}
-       <div className="mt-20" />
+      <div className="mt-20" />
       <div className="flex justify-between gap-4">
         {/* ซ้าย: ข้อมูลบริษัท */}
         <div className="space-y-[1px]">
@@ -101,7 +101,7 @@ export const InvoiceExcelSample: React.FC<Inv71LikeInvoiceProps> = ({
           <div className="flex justify-between">
             <span></span>
             {/* <span>เลขที่</span> */}
-            <span className="">{docNo}</span>
+            <span className="">{youRef}</span>
           </div>
           <div className="flex justify-between">
             <span></span>
@@ -116,7 +116,7 @@ export const InvoiceExcelSample: React.FC<Inv71LikeInvoiceProps> = ({
           <div className="flex justify-between">
             <span></span>
             {/* <span>ผู้จัดทำ</span> */}
-            <span>{preparedBy}</span>
+            <span>{selesName}</span>
           </div>
         </div>
       </div>
@@ -176,7 +176,7 @@ export const InvoiceExcelSample: React.FC<Inv71LikeInvoiceProps> = ({
               {/* ลำดับ (โชว์เฉพาะเลข ไม่ต้องมีหัวข้อ) */}
               <td className="pt-1 pr-1">{idx + 1}</td>
 
-              <td className="pt-1 pr-1">{`เหล็ก ${item.grade}`}</td>
+              <td className="pt-1 pr-1">{`เหล็ก ${item.steelType}`}</td>
 
               <td className="pt-1 pr-1">
                 {`${item.thickness} x ${item.width} x ${item.length} ${
@@ -186,18 +186,18 @@ export const InvoiceExcelSample: React.FC<Inv71LikeInvoiceProps> = ({
 
               <td className="pt-1 pr-1 text-left">{item.job}</td>
 
-              <td className="pt-1 pr-1 text-left">{item.quantity}</td>
+              <td className="pt-1 pr-1 text-left">{item.amount}</td>
 
               <td className="pt-1 pr-1 text-left">
                 {formatNumber(item.weight)}
               </td>
 
               <td className="pt-1 pr-1 text-left">
-                {formatNumber(item.pricePerKg)}
+                {formatNumber(item.price)}
               </td>
 
               <td className="pt-1 pr-1 text-left">
-                {formatNumber(item.amount)}
+                {formatNumber(item.total)}
               </td>
             </tr>
           ))}
@@ -211,16 +211,9 @@ export const InvoiceExcelSample: React.FC<Inv71LikeInvoiceProps> = ({
       <div className="space-y-[2px]">
         <div className="flex justify-between">
           <span className="flex-1" />
-          <span className="w-[160px] text-right">7,922.00</span>
+          <span className="w-[160px] text-right">{subtotal}</span>
         </div>
-        {/* <div className="flex justify-between">
-          <span className="flex-1" />
-          <span className="w-[160px] text-right">{formatNumber(subtotal)}</span>
-        </div>
-        <div className="flex justify-between">
-          <span className="flex-1" />
-          <span className="w-[160px] text-right">{formatNumber(taxBase)}</span>
-        </div> */}
+
         <div className="flex justify-between">
           <span className="flex-1" />
           <span className="w-[160px] text-right">{formatNumber(vat)}</span>

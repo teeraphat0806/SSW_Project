@@ -71,7 +71,7 @@ async function main() {
   await prisma.$executeRawUnsafe(
     `ALTER SEQUENCE "SteelType_id_seq" RESTART WITH 1`
   );
-   await prisma.$executeRawUnsafe(
+  await prisma.$executeRawUnsafe(
     `ALTER SEQUENCE "Bill_invoiceNo_seq" RESTART WITH 1000;`
   );
 
@@ -103,6 +103,7 @@ async function main() {
         position: s.position,
         bankAccount: s.bankAccount,
         bankName: s.bankName,
+        taxid: s.taxid,
         startDate: s.startDate,
         social_security: s.social_security,
         currentSalary: s.currentSalary,

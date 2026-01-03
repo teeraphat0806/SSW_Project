@@ -28,7 +28,7 @@ export type SteelItemType = {
   steelType: string;
   shape: "line" | "square" | string;
   quantity: number;
-  width: number;
+  width: number | null;
   length: number;
   thickness: number;
   hasNotes: boolean;
@@ -76,7 +76,6 @@ export default function AddItem({
   setsearchItem,
   loadingSteel,
 }: AddItemProps) {
-  // คำนวณวันที่ปัจจุบันในรูปแบบ YYYY-MM-DD
   const today = new Date().toISOString().split("T")[0];
 
   // ฟังก์ชันตรวจสอบว่าวันที่ที่เลือกไม่ใช่วันที่ผ่านมาแล้ว
@@ -167,23 +166,6 @@ export default function AddItem({
           <React.Fragment key={item.id}>
             {index > 0 && <div className="border-t border-border my-0" />}
             <div className="bg-muted/30 p-4 rounded-lg my-0">
-              {/* <div className="flex items-center justify-between mb-4">
-              <h4 className="font-semibold text-foreground">
-                ประเภทที่ {index + 1}
-              </h4>
-              {steelItems.length > 1 && (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => removeSteelItem(item.id)}
-                  className="text-destructive hover:text-destructive"
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              )}
-            </div> */}
-
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 items-end">
                 {/* ประเภทเหล็ก */}
                 <div>
@@ -290,12 +272,14 @@ export default function AddItem({
                       type="number"
                       min="0.1"
                       step="0.1"
-                      value={item.width}
+                      value={item.width ?? ""}
                       onChange={(e) =>
                         updateSteelItem(
                           item.id,
                           "width",
-                          parseFloat(e.target.value)
+                          e.target.value === ""
+                            ? null
+                            : parseFloat(e.target.value)
                         )
                       }
                       className="mt-1"

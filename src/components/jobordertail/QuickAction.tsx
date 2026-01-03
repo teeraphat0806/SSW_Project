@@ -6,19 +6,27 @@ import { Edit, Printer, Mail, FileText } from "lucide-react";
 import { Button } from "../../components/ui/button";
 import { toast } from "../../hooks/use-toast";
 
-type ActionKey = "edit" | "print" | "email" | "invoice";
+type ActionKey = "edit" | "print" | "email" | "pofile";
 
 type ActionItem = {
   key: ActionKey;
   label: string;
   icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
-  run: () => Promise<void> | void;     // ฟังก์ชันเฉพาะของปุ่ม
+  run: () => Promise<void> | void; // ฟังก์ชันเฉพาะของปุ่ม
   visible?: boolean;
   disabled?: boolean;
 };
 
 // รับได้ทั้ง string และ number ป้องกัน type mismatch
-export function QuickAction({ orderId }: { orderId: string | number }) {
+export function QuickAction({
+  billid,
+  orderId,
+  keyPo,
+}: {
+  billid: string | number;
+  orderId: string | number;
+  keyPo: string;
+}) {
   const router = useRouter();
   const [loadingKey, setLoadingKey] = React.useState<ActionKey | null>(null);
 
@@ -27,37 +35,37 @@ export function QuickAction({ orderId }: { orderId: string | number }) {
       key: "edit",
       label: "Edit Order",
       icon: Edit,
-      run: () => router.push(`/dashboard`),
+      run: () => router.push(`/up-date-order/${orderId}`),
     },
     {
       key: "print",
-      label: "Print Summary",
+      label: "สร้างใบสั่งซื้อ (receipt) ",
       icon: Printer,
-      run: () => {
-        // ใช้ browser API เฉพาะตอนคลิก (ไม่กระทบ SSR)
-        window.print();
-      },
+      run: () => router.push(`/receipt-invoice/${billid}`),
     },
     {
       key: "email",
       label: "Email Customer",
       icon: Mail,
       run: async () => {
-        const res = await fetch(`/api/orders/${orderId}/email`, { method: "POST" });
+        const res = await fetch(`/api/orders/${orderId}/email`, {
+          method: "POST",
+        });
         if (!res.ok) throw new Error("Send email failed");
-        toast({ title: "Email sent", description: "Customer has been notified." });
+        toast({
+          title: "Email sent",
+          description: "Customer has been notified.",
+        });
       },
     },
     {
-      key: "invoice",
-      label: "Generate Invoice",
+      key: "pofile",
+      label: "แสดงใบสั่งซื้อ (PO File)",
       icon: FileText,
-      run: async () => {
-        const res = await fetch(`/api/orders/${orderId}/invoice`, { method: "POST" });
-        if (!res.ok) throw new Error("Generate invoice failed");
-        const { url } = await res.json();
-        window.open(url, "_blank");
-        toast({ title: "Invoice created" });
+      run: () => {
+        console.log("Open PO File:", keyPo);
+        window.open(`/api/upload/po/openPo/${keyPo}`, "_blank");
+        toast({ title: "เปิดใบสั่งซื้อแล้ว" });
       },
     },
   ];
@@ -68,7 +76,11 @@ export function QuickAction({ orderId }: { orderId: string | number }) {
       setLoadingKey(a.key);
       await a.run();
     } catch (e: any) {
-      toast({ title: "Failed", description: e.message ?? "Unexpected error", variant: "destructive" });
+      toast({
+        title: "Failed",
+        description: e.message ?? "Unexpected error",
+        variant: "destructive",
+      });
     } finally {
       setLoadingKey(null);
     }

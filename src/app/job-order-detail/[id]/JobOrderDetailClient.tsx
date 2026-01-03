@@ -4,7 +4,8 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 // Update the import path below if your use-toast file is located elsewhere
-import { toast } from "../../../hooks/use-toast";
+import { toast } from "@/components/ui/use-toast";
+
 import { Badge } from "@/components/ui/badge";
 
 import {
@@ -17,6 +18,7 @@ import {
   Printer,
   Edit,
   Building2,
+  AlertCircle,
   Factory,
   Truck,
 } from "lucide-react";
@@ -31,7 +33,7 @@ import { Icon } from "leaflet";
 import { set } from "zod";
 import th from "zod/v4/locales/th.cjs";
 import { se } from "date-fns/locale";
-import router from "next/router";
+
 import SteelOrderTable from "@/components/jobordertail/SteelOrderTable";
 
 type StaffMember = {
@@ -42,6 +44,7 @@ type StaffMember = {
 
 type ApiJobOrder = {
   id: number;
+  billid: number;
   poNumber: string;
   customerId: string | null;
   customerName: string | null;
@@ -49,6 +52,7 @@ type ApiJobOrder = {
   customerPhone: string | null;
   deliveryAddress: string | null;
   customercode: string | null;
+  key: string;
 
   staff: { id: number; name: string; role: "supervisor" | "cutter" | null }[];
 
@@ -75,6 +79,7 @@ type ApiJobOrder = {
 
 interface JobOrder {
   id: string;
+  billid: number;
   poNumber: string;
   customerId: string;
   customerName: string;
@@ -82,6 +87,7 @@ interface JobOrder {
   customerPhone: string;
   deliveryAddress: string;
   customercode: string;
+  keyPo: string;
   staff: Array<{
     id: number;
     name: string;
@@ -119,6 +125,7 @@ const tojobOrder = (api: ApiJobOrder): JobOrder => {
   return {
     id: api.id.toString(),
     poNumber: api.poNumber,
+    billid: api.billid,
     // ✅ ใช้ ?? "" เพื่อแปลง null เป็น empty string
     customerId: api.customerId ?? "",
     customerName: api.customerName ?? "",
@@ -126,6 +133,7 @@ const tojobOrder = (api: ApiJobOrder): JobOrder => {
     customerPhone: api.customerPhone ?? "",
     deliveryAddress: api.deliveryAddress ?? "",
     customercode: api.customercode ?? "",
+    keyPo: api.key ?? "",
 
     staff: (api.staff || []).map((s) => ({
       id: s.id,
@@ -182,6 +190,9 @@ const InfoStat = ({
 const JobOrderDetailPage = ({ id }: { id: string }) => {
   const [loading, setLoading] = useState(true);
   const [jobOrder, setJobOrder] = useState<JobOrder | null>(null);
+  const [isUpdating, setIsUpdating] = useState(false);
+
+  const router = useRouter();
 
   const supervisors: StaffMember[] =
     jobOrder?.staff.filter((s) => s.role === "supervisor") ?? [];
@@ -233,13 +244,76 @@ const JobOrderDetailPage = ({ id }: { id: string }) => {
     }
   };
 
-  const handleStatusUpdate = (newStatus: JobOrder["status"]) => {
-    if (jobOrder) {
-      setJobOrder({ ...jobOrder, status: newStatus });
+  // ✅ ฟังก์ชันอัปเดตสถานะผ่าน API
+
+  const handleStatusUpdate = async (newStatus: JobOrder["status"]) => {
+    if (!jobOrder) return;
+
+    if (newStatus === "ready") {
+      const ok =
+        jobOrder.steel.length > 0 &&
+        jobOrder.steel.every((s) => (s.weight ?? 0) > 0);
+      if (!ok) {
+        toast({
+          title: "ยังไปขั้นตอนถัดไปไม่ได้",
+          description: "ต้องกรอกน้ำหนักเหล็กก่อน แล้วจึงเปลี่ยนเป็น READY ได้",
+          variant: "default",
+        });
+        return;
+      }
+    }
+
+    setIsUpdating(true);
+    try {
+      const response = await fetch(`/api/job-order-detail/${jobOrder.id}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ status: newStatus }),
+      });
+
+      if (!response.ok) {
+        // 1. เช็คสิทธิ์การเข้าถึงก่อน (401/403) ป้องกันกรณี Response body ไม่ใช่ JSON
+        if (response.status === 401 || response.status === 403) {
+          toast({
+            title: "ไม่มีสิทธิ์เข้าถึง (Access Denied)",
+            description: "คุณไม่มีสิทธิ์ในการแก้ไขสถานะนี้",
+            variant: "destructive",
+          });
+          return; // สำคัญ: ไม่ throw
+        }
+
+        // 2. ถ้าไม่ใช่เรื่องสิทธิ์ ค่อยดึง Error message จาก API
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || "Failed to update status");
+      }
+
+      // Success: อัปเดต Local State
+      setJobOrder((prev) => (prev ? { ...prev, status: newStatus } : null));
+
       toast({
         title: "Status Updated",
-        description: `Job order status changed to ${newStatus.toUpperCase()}`,
+        description: `เปลี่ยนสถานะเป็น ${newStatus.toUpperCase()} เรียบร้อยแล้ว`,
+        variant: "default",
       });
+    } catch (error: any) {
+      console.error("Update Error:", error);
+
+      // ตรวจสอบข้อความ Error เพื่อเปลี่ยน Title ของ Toast ให้สื่อความหมาย
+      const isPermissionError =
+        error.message === "คุณไม่มีสิทธิ์ในการแก้ไขสถานะนี้";
+
+      toast({
+        title: isPermissionError
+          ? "ไม่มีสิทธิ์เข้าถึง (Access Denied)"
+          : "การดำเนินการล้มเหลว",
+        description:
+          error.message || "ไม่สามารถอัปเดตสถานะได้ กรุณาลองใหม่อีกครั้ง",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUpdating(false);
     }
   };
 
@@ -255,19 +329,6 @@ const JobOrderDetailPage = ({ id }: { id: string }) => {
     );
   }
 
-  //   return (
-  //       <div className="min-h-screen bg-gradient-to-br from-background to-steel/20 flex items-center justify-center">
-  //         <div className="text-center">
-  //           <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
-  //           <h2 className="text-2xl font-bold mb-2">ไม่พบรายการออเดอร์</h2>
-  //           <p className="text-muted-foreground mb-4">ไม่สามารถหารายการออเดอร์นี้ได้โปรดลองอีกครั้ง</p>
-  //           <Button onClick={() => router.push("/dashboard")}>
-  //             <ArrowLeft className="mr-2 h-4 w-4" />
-  //             กลับสู่หน้าหลัก
-  //           </Button>
-  //         </div>
-  //       </div>
-  //     );
   return (
     <>
       {/* Top nav + actions */}
@@ -290,9 +351,9 @@ const JobOrderDetailPage = ({ id }: { id: string }) => {
           </div>
         </div>
       </header>
-      <pre className="text-xs overflow-auto p-3 border rounded">
+      {/* <pre className="text-xs overflow-auto p-3 border rounded">
         {JSON.stringify(jobOrder, null, 2)}
-      </pre>
+      </pre> */}
 
       <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
         {/* --- Page Header & Actions --- */}
@@ -333,7 +394,11 @@ const JobOrderDetailPage = ({ id }: { id: string }) => {
             {/* <Button variant="outline" size="sm" className="h-9 gap-2">
               <Download className="h-4 w-4" /> PDF
             </Button> */}
-            <Button size="sm" className="h-9 gap-2 text-white">
+            <Button
+              size="sm"
+              className="h-9 gap-2 text-white"
+              onClick={() => router.push("/up-date-order/" + id)}
+            >
               <Edit className="h-4 w-4" /> Edit Order
             </Button>
           </div>
@@ -438,7 +503,6 @@ const JobOrderDetailPage = ({ id }: { id: string }) => {
                 <TabsContent value="Production" className="mt-2">
                   <ProductionTab
                     status={jobOrder?.status || "pending"}
-                    assignedCutter={jobOrder?.assignedCutter || ""}
                     onUpdateStatus={handleStatusUpdate}
                     getStatusColor={getStatusColor}
                   />
@@ -472,7 +536,11 @@ const JobOrderDetailPage = ({ id }: { id: string }) => {
             {/* Quick Actions */}
 
             <div className="mt-3 grid gap-2">
-              <QuickAction orderId={jobOrder?.id || ""} />
+              <QuickAction
+                orderId={id}
+                keyPo={jobOrder?.keyPo || ""}
+                billid={jobOrder?.billid || ""}
+              />
             </div>
           </aside>
         </div>

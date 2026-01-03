@@ -1,6 +1,6 @@
 // src/app/layout.tsx
-import "../globals.css";
-import Layout from "../../components/Layout";
+import "../../globals.css";
+import Layout from "../../../components/Layout";
 import { ThemeProvider } from "next-themes";
 export const metadata = {
   title: "My App",
@@ -13,8 +13,10 @@ export default function TestpageLayout({
   children: React.ReactNode;
 }) {
   return (
-    <Layout >
-          <ThemeProvider attribute="class">{children}</ThemeProvider>;
+    <Layout>
+      <div className="bg-muted min-h-screen md:pl-25 ">
+        <ThemeProvider attribute="class">{children}</ThemeProvider>;
+      </div>
     </Layout>
   );
 }

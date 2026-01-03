@@ -28,14 +28,12 @@ type ProductionStatus =
 
 type ProductionTabProps = {
   status: ProductionStatus;
-  assignedCutter?: string | null;
   onUpdateStatus: (newStatus: ProductionStatus) => void;
   getStatusColor: (status: ProductionStatus) => string;
 };
 
 export function ProductionTab({
   status,
-  assignedCutter,
   onUpdateStatus,
   getStatusColor,
 }: ProductionTabProps) {
@@ -149,33 +147,6 @@ export function ProductionTab({
         />
       </div>
 
-      {/* 3. Assigned Info */}
-      {/* <div className="rounded-xl border bg-muted/30 p-4 dark:bg-zinc-900/50 dark:border-zinc-800">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white shadow-sm dark:bg-zinc-800">
-              <User className="h-5 w-5 text-muted-foreground" />
-            </div>
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">
-                ผู้รับผิดชอบ (Cutter)
-              </p>
-              <p className="text-base font-semibold text-foreground">
-                {assignedCutter || "ยังไม่ระบุ"}
-              </p>
-            </div>
-          </div>
-          {status === "pending" && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-xs text-muted-foreground hover:text-primary"
-            >
-              เปลี่ยนผู้รับผิดชอบ
-            </Button>
-          )}
-        </div>
-      </div> */}
     </div>
   );
 }
