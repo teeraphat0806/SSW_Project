@@ -4,7 +4,7 @@ export const BillSchema = z.object({
   id: z.number().optional(),
   customerId: z.number(),
   yourRef: z.string(),
-  credit: z.coerce.date(),
+  credit: z.number(),
   deliveryOrderNo: z.string().optional().nullable(),
   salesName: z.string(),
   deliveredBy: z.string().optional().nullable(),

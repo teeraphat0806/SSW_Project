@@ -28,7 +28,7 @@ export type SteelItemType = {
   steelType: string;
   shape: "line" | "square" | string;
   quantity: number;
-  width: number;
+  width: number | null;
   length: number;
   thickness: number;
   hasNotes: boolean;
@@ -272,12 +272,14 @@ export default function AddItem({
                       type="number"
                       min="0.1"
                       step="0.1"
-                      value={item.width}
+                      value={item.width ?? ""}
                       onChange={(e) =>
                         updateSteelItem(
                           item.id,
                           "width",
-                          parseFloat(e.target.value)
+                          e.target.value === ""
+                            ? null
+                            : parseFloat(e.target.value)
                         )
                       }
                       className="mt-1"

@@ -59,7 +59,7 @@ model Bill {
   yourRef                       String
   invoiceNo                     Int       @unique @default(autoincrement())
   codeCustomer                  String?   @unique
-  credit                        DateTime?
+  credit Int @default(30)
   deliveryDate                  DateTime
   deliveryOrderNo               String?
   salesName                     String?

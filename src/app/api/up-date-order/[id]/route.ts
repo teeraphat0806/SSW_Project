@@ -15,7 +15,7 @@ type statusType =
 type ApiJobOrder = {
   id: number;
   poNumber: string;
-  customerId: string;
+  customerId: number;
   customerName: string;
   customerEmail: string;
   customerPhone: string;
@@ -93,8 +93,8 @@ export async function GET(
         steelType: item.SteelType.codeSteel,
         amount: item.amount,
         width: item.wide ?? undefined,
-        length: item.length,
-        thickness: item.thickness,
+        length: item.length ?? 0,
+        thickness: item.thickness ?? 0,
         detail: item.detail ?? undefined,
         weight: item.actualWeight ?? undefined,
         shape: item.SteelType.shape,
@@ -417,7 +417,7 @@ export async function PATCH(
       const responseData: ApiJobOrder = {
         id: order.id,
         poNumber: order.poNumber,
-        customerId: String(customer.id),
+        customerId: customer.id,
         customerName: customer.name,
         customerEmail: customer.email,
         customerPhone: customer.tel,
@@ -426,6 +426,7 @@ export async function PATCH(
         customerCode: customer.code,
         customerFax: customer.faxNumber,
         steel: order.Product.map((p) => ({
+          id: p.id,
           steelType: p.SteelType.codeSteel,
           amount: p.amount,
           width: p.wide ?? undefined,

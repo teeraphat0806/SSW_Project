@@ -61,7 +61,6 @@ export async function POST(req: NextRequest) {
         thickness: parsed.data.thickness,
         amount: parsed.data.amount,
         total: parsed.data.total,
-        calculatedWeight: parsed.data.calculatedWeight,
         actualWeight: parsed.data.actualWeight,
         SteelType: {
           connect: { id: parsed.data.steelid },

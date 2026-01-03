@@ -1,4 +1,4 @@
-import ReceiptClient from "./receiptClient";
+import ReceiptClient from "./ReceiptClient";
 
 export default async function Page({
   params,

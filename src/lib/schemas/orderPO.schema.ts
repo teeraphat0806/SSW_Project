@@ -5,7 +5,7 @@ export const OrderPOSchema = z.object({
   poNumber: z.string(),
   customerId: z.number(),
   billId : z.number().optional(),
-  status: z.string(),
+  status: z.enum(['pending', 'cutting', 'weighing', 'ready', 'shipped', 'completed']).optional(),
   total: z.number(),
   vat: z.number(),
   completedAt: z.coerce.date().optional(),
