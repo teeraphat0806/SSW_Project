@@ -137,18 +137,15 @@ function SidebarItem({
   label,
   href,
   expanded,
-  onClick,
 }: {
   icon: React.ReactNode;
   label: string;
   href: string;
   expanded: boolean;
-  onClick: () => void;
 }) {
   return (
     <Link
       href={href}
-      onClick={onClick}
       className="flex items-center gap-3 px-3 py-2 rounded-md text-foreground hover:bg-gray-400 transition-colors duration-200"
     >
       {icon}
