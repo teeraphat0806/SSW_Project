@@ -63,6 +63,7 @@ export function QuickAction({
       label: "แสดงใบสั่งซื้อ (PO File)",
       icon: FileText,
       run: () => {
+        console.log("Open PO File:", keyPo);
         window.open(`/api/upload/po/openPo/${keyPo}`, "_blank");
         toast({ title: "เปิดใบสั่งซื้อแล้ว" });
       },
