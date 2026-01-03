@@ -15,7 +15,7 @@ export default function DashboardPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="min-h-screen bg-zinc-50/50 dark:bg-zinc-950 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
           <p className="text-muted-foreground">กำลังโหลดข้อมูล...</p>
@@ -25,16 +25,16 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-zinc-50/50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 transition-colors duration-300 font-sans">
       {/* Header */}
-      <header className="border-b bg-card print:hidden">
-        <div className="container mx-auto px-4 py-6">
+      <header className="print:hidden">
+        <div className="p-4 md:p-8">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div>
-              <h1 className="text-3xl font-bold tracking-tight">
-                แดชบอร์ดบริษัท
+              <h1 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-white">
+                แดชบอร์ดยอดขาย
               </h1>
-              <p className="text-muted-foreground mt-1">
+              <p className="text-zinc-500 dark:text-zinc-400 mt-1">
                 ระบบวิเคราะห์ข้อมูลธุรกิจ
               </p>
             </div>
@@ -50,35 +50,35 @@ export default function DashboardPage() {
       </header>
 
       {/* Dashboard Mode Tabs */}
-      <div className="border-b bg-card print:hidden">
-        <div className="container mx-auto px-4">
-          <div className="flex gap-1">
+      <div className="print:hidden">
+        <div className="p-4 md:p-8">
+          <div className="flex gap-2 bg-white/50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-xl p-1 w-fit">
             <button
               onClick={() => setMode("sales")}
-              className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors ${
+              className={`px-6 py-2.5 text-sm font-semibold rounded-lg transition-all duration-200 ${
                 mode === "sales"
-                  ? "border-primary text-primary"
-                  : "border-transparent text-muted-foreground hover:text-foreground"
+                  ? "bg-blue-600 text-white shadow-md hover:bg-blue-700"
+                  : "text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-zinc-100"
               }`}
             >
               แดชบอร์ดยอดขาย
             </button>
             <button
               onClick={() => setMode("income-expense")}
-              className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors ${
+              className={`px-6 py-2.5 text-sm font-semibold rounded-lg transition-all duration-200 ${
                 mode === "income-expense"
-                  ? "border-primary text-primary"
-                  : "border-transparent text-muted-foreground hover:text-foreground"
+                  ? "bg-blue-600 text-white shadow-md hover:bg-blue-700"
+                  : "text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-zinc-100"
               }`}
             >
-              แดชบอร์ดรายได้และรายจ่าย
+              รายได้และรายจ่าย
             </button>
           </div>
         </div>
       </div>
 
       {/* Main Content */}
-      <main className="container mx-auto px-4 py-8">
+      <main className="p-4 md:p-8">
         {mode === "sales" ? (
           <SalesDashboard year={selectedYear} />
         ) : (
@@ -87,9 +87,9 @@ export default function DashboardPage() {
       </main>
 
       {/* Footer */}
-      <footer className="border-t bg-card mt-12 print:hidden">
-        <div className="container mx-auto px-4 py-6">
-          <p className="text-center text-sm text-muted-foreground">
+      <footer className="border-t border-zinc-200 dark:border-zinc-800 mt-12 print:hidden">
+        <div className="p-4 md:p-8">
+          <p className="text-center text-sm text-zinc-500 dark:text-zinc-400">
             ระบบแดชบอร์ดวิเคราะห์ธุรกิจ © {new Date().getFullYear()}
           </p>
         </div>

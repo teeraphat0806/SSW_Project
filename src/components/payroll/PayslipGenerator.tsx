@@ -42,35 +42,148 @@ export const PayslipGenerator = ({
     const data: { detail?: string; nameIncome?: string; amount?: number }[] =
       await res.json();
 
-    // Add base salary as income
-    const incomeItems: PayslipItem[] = [
-      {
-        description: "เงินเดือนพนักงาน",
-        amount: employee.currentSalary || 0,
-      },
+    // Map income types from database
+    type IncomeType =
+      | "เงินเดือน"
+      | "ค่าล่วงเวลา"
+      | "เบี้ยขยัน"
+      | "เงินโบนัส"
+      | "เงินช่วยเหลือที่พัก"
+      | "คืนเงินประกันสังคม";
+    type DeductionType =
+      | "ประกันสังคม"
+      | "กองทุนสำรองเลี้ยงชีพ"
+      | "หักมาทำงานสาย"
+      | "หักขาดงาน"
+      | "หักเบิกล่วงหน้า"
+      | "ปรับลดเงินเดือน";
+
+    // Define standard income items
+    const standardIncomeItems: Record<IncomeType, number> = {
+      เงินเดือน: employee.currentSalary || 0,
+      ค่าล่วงเวลา: 0,
+      เบี้ยขยัน: 0,
+      เงินโบนัส: 0,
+      เงินช่วยเหลือที่พัก: 0,
+      คืนเงินประกันสังคม: 0,
+    };
+
+    // Define standard deduction items
+    const standardDeductionItems: Record<DeductionType, number> = {
+      ประกันสังคม: 0,
+      กองทุนสำรองเลี้ยงชีพ: 0,
+      หักมาทำงานสาย: 0,
+      หักขาดงาน: 0,
+      หักเบิกล่วงหน้า: 0,
+      ปรับลดเงินเดือน: 0,
+    };
+
+    // Track which items have been found in database
+    const usedIncomeNames = new Set<string>();
+    const usedDeductionNames = new Set<string>();
+    const otherIncomeItems: PayslipItem[] = [];
+    const otherDeductionItems: PayslipItem[] = [];
+
+    // Process database items
+    data.forEach((item) => {
+      const itemName = item.detail || item.nameIncome || "";
+      const amount = item.amount ?? 0;
+
+      if (amount > 0) {
+        // Check if it matches standard income types
+        let found = false;
+        for (const key of Object.keys(standardIncomeItems) as IncomeType[]) {
+          if (
+            itemName.toLowerCase().includes(key.toLowerCase()) ||
+            key.toLowerCase().includes(itemName.toLowerCase())
+          ) {
+            standardIncomeItems[key] = amount;
+            usedIncomeNames.add(key);
+            found = true;
+            break;
+          }
+        }
+
+        // If not found in standard items, add to other items
+        if (!found && amount > 0) {
+          otherIncomeItems.push({
+            description: itemName,
+            amount: amount,
+          });
+          usedIncomeNames.add(itemName);
+        }
+      } else if (amount < 0) {
+        // Check if it matches standard deduction types
+        let found = false;
+        for (const key of Object.keys(
+          standardDeductionItems
+        ) as DeductionType[]) {
+          if (
+            itemName.toLowerCase().includes(key.toLowerCase()) ||
+            key.toLowerCase().includes(itemName.toLowerCase())
+          ) {
+            standardDeductionItems[key] = Math.abs(amount);
+            usedDeductionNames.add(key);
+            found = true;
+            break;
+          }
+        }
+
+        // If not found in standard items, add to other items
+        if (!found) {
+          otherDeductionItems.push({
+            description: itemName,
+            amount: Math.abs(amount),
+          });
+          usedDeductionNames.add(itemName);
+        }
+      }
+    });
+
+    // Build income array with standard items (showing "-" for zero amounts)
+    const incomeItems: PayslipItem[] = [];
+    const incomeOrder: IncomeType[] = [
+      "เงินเดือน",
+      "ค่าล่วงเวลา",
+      "เบี้ยขยัน",
+      "เงินโบนัส",
+      "เงินช่วยเหลือที่พัก",
+      "คืนเงินประกันสังคม",
     ];
 
-    // Add other income (positive amounts)
-    data
-      .filter((item) => item.amount && item.amount > 0)
-      .forEach((item) => {
-        incomeItems.push({
-          description: item.detail || item.nameIncome || "",
-          amount: item.amount ?? 0,
-        });
+    incomeOrder.forEach((incomeType) => {
+      incomeItems.push({
+        description: incomeType,
+        amount: standardIncomeItems[incomeType],
       });
+    });
+
+    // Add other income items
+    incomeItems.push(...otherIncomeItems);
+
+    // Build deduction array with standard items (showing "-" for zero amounts)
+    const deductionItems: PayslipItem[] = [];
+    const deductionOrder: DeductionType[] = [
+      "ประกันสังคม",
+      "กองทุนสำรองเลี้ยงชีพ",
+      "หักมาทำงานสาย",
+      "หักขาดงาน",
+      "หักเบิกล่วงหน้า",
+      "ปรับลดเงินเดือน",
+    ];
+
+    deductionOrder.forEach((deductionType) => {
+      deductionItems.push({
+        description: deductionType,
+        amount: standardDeductionItems[deductionType],
+      });
+    });
+
+    // Add other deduction items
+    deductionItems.push(...otherDeductionItems);
 
     setIncome(incomeItems);
-
-    // Set deductions (negative amounts)
-    setDeductions(
-      data
-        .filter((item) => item.amount && item.amount < 0)
-        .map((item) => ({
-          description: item.detail || item.nameIncome || "",
-          amount: Math.abs(item.amount ?? 0),
-        }))
-    );
+    setDeductions(deductionItems);
   };
   useEffect(() => {
     const fetchData = async () => {
@@ -349,17 +462,23 @@ export const PayslipGenerator = ({
             {/* รายได้ / รายการหัก / สุทธิ */}
             <div className="grid grid-cols-3 gap-4 mb-4 text-sm">
               {/* รายได้ */}
-              <div>
+              <div className="flex flex-col">
                 <h3 className="font-bold text-center bg-muted py-1">
                   รายได้ (Income)
                 </h3>
-                <div className="border rounded p-2 space-y-1">
-                  {payslip.income.map((item, idx) => (
-                    <div key={idx} className="flex justify-between">
-                      <span>{item.description}</span>
-                      <span>฿{item.amount.toLocaleString()}</span>
-                    </div>
-                  ))}
+                <div className="border rounded p-2 space-y-1 flex flex-col flex-1">
+                  <div className="flex-1">
+                    {payslip.income.map((item, idx) => (
+                      <div key={idx} className="flex justify-between">
+                        <span>{item.description}</span>
+                        <span>
+                          {item.amount > 0
+                            ? `฿${item.amount.toLocaleString()}`
+                            : "-"}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
                   <Separator />
                   <div className="flex justify-between font-bold">
                     <span>รวมรายได้</span>
@@ -374,17 +493,23 @@ export const PayslipGenerator = ({
               </div>
 
               {/* รายการหัก */}
-              <div>
+              <div className="flex flex-col">
                 <h3 className="font-bold text-center bg-muted py-1">
                   รายการหัก (Deduction)
                 </h3>
-                <div className="border rounded p-2 space-y-1">
-                  {payslip.deductions.map((item, idx) => (
-                    <div key={idx} className="flex justify-between">
-                      <span>{item.description}</span>
-                      <span>฿{item.amount.toLocaleString()}</span>
-                    </div>
-                  ))}
+                <div className="border rounded p-2 space-y-1 flex flex-col flex-1">
+                  <div className="flex-1">
+                    {payslip.deductions.map((item, idx) => (
+                      <div key={idx} className="flex justify-between">
+                        <span>{item.description}</span>
+                        <span>
+                          {item.amount > 0
+                            ? `฿${item.amount.toLocaleString()}`
+                            : "-"}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
                   <Separator />
                   <div className="flex justify-between font-bold">
                     <span>รวมรายการหัก</span>
@@ -399,12 +524,12 @@ export const PayslipGenerator = ({
               </div>
 
               {/* รายได้สุทธิ */}
-              <div>
+              <div className="flex flex-col">
                 <h3 className="font-bold text-center bg-muted py-1">
                   รายได้สุทธิ (Net Income)
                 </h3>
-                <div className="border rounded p-2 space-y-1">
-                  <div className="flex justify-between h-17">
+                <div className="border rounded p-2 space-y-1 flex flex-col flex-1">
+                  <div className="flex justify-between">
                     <span className="font-medium">เงินได้สุทธิ</span>
                     <span className="font-bold">
                       ฿{payslip.netIncome.toLocaleString()}

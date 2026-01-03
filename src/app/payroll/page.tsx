@@ -634,36 +634,38 @@ export default function PayrollPage() {
      UI
   ========================= */
   return (
-    <div className="container mx-auto p-6 md:ml-24 space-y-6">
+    <div className="min-h-screen bg-zinc-50/50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 p-4 md:p-8 md:ml-24 transition-colors duration-300 font-sans space-y-6">
       {/* Header */}
-      <div className="rounded-2xl border bg-gradient-to-br from-primary/10 to-secondary/10 dark:from-primary/5 dark:to-secondary/5 p-8 text-center">
-        <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-foreground">
-          ระบบจัดการพนักงาน
-        </h1>
-        <p className="text-muted-foreground mt-2">
-          จัดการพนักงาน รายได้พนักงาน และออกสลิปแบบครบจบในที่เดียว
-        </p>
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-white">
+            ระบบจัดการพนักงาน
+          </h1>
+          <p className="text-zinc-500 dark:text-zinc-400 mt-1">
+            จัดการพนักงาน รายได้พนักงาน และออกสลิปแบบครบจบในที่เดียว
+          </p>
+        </div>
       </div>
 
-      <Tabs defaultValue="overview" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-3 rounded-xl bg-muted/50 p-1">
+      <Tabs defaultValue="overview" className="space-y-4 md:space-y-6">
+        <TabsList className="grid w-full grid-cols-3 rounded-xl bg-white/50 dark:bg-zinc-900/50 p-1 gap-0 border border-zinc-200 dark:border-zinc-800">
           <TabsTrigger
             value="overview"
-            className="data-[state=active]:bg-blue-500 data-[state=active]:text-white data-[state=active]:scale-110 data-[state=active]:shadow-sm rounded-lg"
+            className="text-xs md:text-sm data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:scale-100 md:data-[state=active]:scale-105 data-[state=active]:shadow-md rounded-lg py-2 md:py-3 text-zinc-700 dark:text-zinc-300"
           >
             ภาพรวม
           </TabsTrigger>
           <TabsTrigger
             value="adjustment"
-            className="data-[state=active]:bg-blue-500 data-[state=active]:text-white data-[state=active]:scale-110 data-[state=active]:shadow-sm rounded-lg"
+            className="text-xs md:text-sm data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:scale-100 md:data-[state=active]:scale-105 data-[state=active]:shadow-md rounded-lg py-2 md:py-3 text-zinc-700 dark:text-zinc-300"
           >
-            ปรับเงินเดือน/รายได้อื่น
+            ปรับเงิน
           </TabsTrigger>
           <TabsTrigger
             value="directory"
-            className="data-[state=active]:bg-blue-500 data-[state=active]:text-white data-[state=active]:scale-110 data-[state=active]:shadow-sm rounded-lg"
+            className="text-xs md:text-sm data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:scale-100 md:data-[state=active]:scale-105 data-[state=active]:shadow-md rounded-lg py-2 md:py-3 text-zinc-700 dark:text-zinc-300"
           >
-            รายชื่อ & สลิป
+            สลิป
           </TabsTrigger>
         </TabsList>
 
@@ -672,16 +674,16 @@ export default function PayrollPage() {
           {/* Employee Directory Table */}
           <EmployeeDirectory employees={employees} />
 
-          <Card className="border-border/60">
+          <Card className="border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm">
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center gap-2">
                 <BarChart3 className="h-5 w-5" />
                 ภาพรวมรายได้พนักงาน (Dashboard)
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-5">
+            <CardContent className="space-y-4 md:space-y-5">
               {/* Filters */}
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
                 <div className="space-y-2">
                   <Label>พนักงาน</Label>
                   <Select
@@ -763,7 +765,7 @@ export default function PayrollPage() {
               </div>
 
               {/* KPIs */}
-              <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+              <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4">
                 <Kpi
                   icon={<Wallet className="h-5 w-5 text-blue-500" />}
                   title="เงินเดือนปัจจุบัน"
@@ -802,7 +804,7 @@ export default function PayrollPage() {
               </div>
 
               {/* Chart */}
-              <div className="h-80 w-full rounded-xl border bg-card">
+              <div className="h-64 sm:h-72 md:h-80 w-full rounded-xl border bg-card">
                 <ResponsiveContainer width="100%" height="100%">
                   {timeframeMode === "year" ? (
                     <BarChart
@@ -836,13 +838,13 @@ export default function PayrollPage() {
         </TabsContent>
 
         {/* ========= ADJUSTMENT ========= */}
-        <TabsContent value="adjustment" className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <TabsContent value="adjustment" className="space-y-4 md:space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
             {/* Left column: Form */}
-            <Card className="lg:col-span-2">
+            <Card className="md:col-span-2">
               <CardHeader className="pb-2">
                 <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg">
+                  <CardTitle className="text-base md:text-lg">
                     {adjustmentType === "salary"
                       ? "ฟอร์มปรับเงินเดือน"
                       : "ฟอร์มปรับรายได้อื่น"}
@@ -854,8 +856,8 @@ export default function PayrollPage() {
                   </Badge>
                 </div>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <CardContent className="space-y-3 md:space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
                   <div className="space-y-2">
                     <Label>เลือกประเภทที่ต้องการปรับ</Label>
                     <Select
@@ -984,17 +986,19 @@ export default function PayrollPage() {
             </Card>
 
             {/* Right column: Latest */}
-            <Card>
-              <CardHeader className="pb-3">
+            <Card className="md:col-span-2 lg:col-span-1">
+              <CardHeader className="pb-2 md:pb-3">
                 <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg">รายการล่าสุด</CardTitle>
+                  <CardTitle className="text-base md:text-lg">
+                    รายการล่าสุด
+                  </CardTitle>
                   <Badge variant="outline" className="rounded-full capitalize">
                     {adjustmentType === "salary" ? "เงินเดือน" : "รายได้อื่น"}
                   </Badge>
                 </div>
               </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="space-y-2">
+              <CardContent className="space-y-2 md:space-y-3">
+                <div className="space-y-1 md:space-y-2">
                   <Label>พนักงาน</Label>
                   <Select
                     value={latestEmployeeOnly}
@@ -1024,7 +1028,7 @@ export default function PayrollPage() {
                 ) : latestList.length === 0 ? (
                   <EmptyState message="ยังไม่มีรายการปรับล่าสุดสำหรับพนักงานนี้" />
                 ) : (
-                  <ScrollArea className="h-96 rounded-xl border bg-card">
+                  <ScrollArea className="h-64 sm:h-72 md:h-80 lg:h-96 rounded-xl border bg-card">
                     <div className="p-2 space-y-2">
                       {latestList.map((adjustment) => {
                         const employee = employeeById.get(
@@ -1102,7 +1106,7 @@ export default function PayrollPage() {
         </TabsContent>
 
         {/* ========= DIRECTORY (Employees & Payslip) ========= */}
-        <TabsContent value="directory" className="space-y-6">
+        <TabsContent value="directory" className="space-y-4 md:space-y-6">
           <EmployeeOverview
             employees={employees}
             onGeneratePayslip={handleGeneratePayslip}
@@ -1140,19 +1144,26 @@ function Kpi({
 
   return (
     <div className="rounded-2xl border bg-card p-0 overflow-hidden">
-      <div className={`h-2 w-full bg-gradient-to-r ${gradient}`} aria-hidden />
-      <div className="p-4">
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-sm text-muted-foreground">
+      <div
+        className={`h-1.5 md:h-2 w-full bg-gradient-to-r ${gradient}`}
+        aria-hidden
+      />
+      <div className="p-3 md:p-4">
+        <div className="flex items-center justify-between gap-2">
+          <CardTitle className="text-xs md:text-sm text-muted-foreground line-clamp-1">
             {title}
           </CardTitle>
           <div
-            className={`rounded-full shadow-2xl shadow-black p-2 ${colorBackground}`}
+            className={`rounded-full shadow-lg md:shadow-2xl shadow-black p-1.5 md:p-2 flex-shrink-0 ${colorBackground}`}
           >
-            {icon && <div className="text-muted-foreground/80">{icon}</div>}
+            {icon && (
+              <div className="text-muted-foreground/80 h-4 w-4 md:h-5 md:w-5">
+                {icon}
+              </div>
+            )}
           </div>
         </div>
-        <div className="mt-2 text-2xl font-semibold text-foreground">
+        <div className="mt-1.5 md:mt-2 text-lg md:text-2xl font-semibold text-foreground">
           {display}
         </div>
       </div>
