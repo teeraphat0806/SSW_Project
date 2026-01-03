@@ -30,7 +30,7 @@ export interface YearlyPrintData {
 type SortOrder = "date-asc" | "date-desc" | "sales-asc" | "sales-desc";
 
 function getBillDate(bill: Bill): Date | null {
-  const raw = bill.dateReceive || bill.deliveryDate;
+  const raw = bill.createdAt;
   if (!raw) return null;
 
   const date = new Date(raw);
