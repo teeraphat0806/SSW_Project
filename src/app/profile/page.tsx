@@ -19,6 +19,7 @@ export default function Profile() {
   const router = useRouter();
   const [toast, setToast] = useState<ToastState>({ show: false, message: "" });
   const [theme, setTheme] = useState<"light" | "dark">("light");
+  const [loading, setLoading] = useState(true);
 
   // Redirect safely (no router.push during render)
   useEffect(() => {
@@ -51,6 +52,7 @@ export default function Profile() {
     setTheme(initial);
 
     document.documentElement.classList.toggle("dark", initial === "dark");
+    setLoading(false);
   }, []);
 
   const toggleTheme = () => {
@@ -88,33 +90,12 @@ export default function Profile() {
   const handleBackToHome = () => router.push("/");
 
   // Loading skeleton (token-based colors)
-  if (status === "loading") {
+  if (status === "loading" || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4 bg-[hsl(var(--background))] text-[hsl(var(--foreground))]">
-        <div className="w-full max-w-4xl rounded-2xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] shadow-[var(--shadow-elevation)] overflow-hidden">
-          <div className="p-8 bg-[hsl(var(--primary))]">
-            <div className="flex flex-col items-center animate-pulse">
-              <div className="w-32 h-32 rounded-full bg-black/10 dark:bg-white/10 mb-4" />
-              <div className="h-7 w-52 rounded bg-black/10 dark:bg-white/10 mb-2" />
-              <div className="h-4 w-36 rounded bg-black/10 dark:bg-white/10 mb-2" />
-              <div className="h-4 w-44 rounded bg-black/10 dark:bg-white/10" />
-            </div>
-          </div>
-
-          <div className="p-8 animate-pulse">
-            <div className="h-6 w-40 rounded bg-[hsl(var(--muted))] mb-4" />
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {[1, 2, 3].map((i) => (
-                <div
-                  key={i}
-                  className="rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--aa))] p-4"
-                >
-                  <div className="h-4 w-24 rounded bg-[hsl(var(--muted))] mb-2" />
-                  <div className="h-6 w-32 rounded bg-[hsl(var(--muted))]" />
-                </div>
-              ))}
-            </div>
-          </div>
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">กำลังโหลดข้อมูล...</p>
         </div>
       </div>
     );

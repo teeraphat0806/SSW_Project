@@ -9,9 +9,20 @@ import { useSaleAnalytics } from "@/hooks/saleDashboard/useSaleAnalytics";
 type DashboardMode = "sales" | "income-expense";
 
 export default function DashboardPage() {
-  const { years } = useSaleAnalytics();
+  const { years, loading } = useSaleAnalytics();
   const [selectedYear, setSelectedYear] = useState(years[0] || 2024);
   const [mode, setMode] = useState<DashboardMode>("sales");
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">กำลังโหลดข้อมูล...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
