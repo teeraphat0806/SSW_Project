@@ -60,6 +60,7 @@ import {
 import DeleteConfirmButton from "../../components/DeleteButton";
 import { SalaryAdjustmentForm } from "../../components/payroll/SalaryAdjustmentForm";
 import { PayslipGenerator } from "../../components/payroll/PayslipGenerator";
+import { EmployeeDirectory } from "../../components/payroll/EmployeeDirectory";
 import { EmployeeOverview } from "../../components/payroll/EmployeeOverview";
 import { mockEmployees, mockAdjustments } from "../../data/mockPayrollData";
 import type { Employee, SalaryAdjustment } from "../../types/payroll";
@@ -637,10 +638,10 @@ export default function PayrollPage() {
       {/* Header */}
       <div className="rounded-2xl border bg-gradient-to-br from-primary/10 to-secondary/10 dark:from-primary/5 dark:to-secondary/5 p-8 text-center">
         <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-foreground">
-          ระบบบริหารเงินเดือนพนักงาน
+          ระบบจัดการพนักงาน
         </h1>
         <p className="text-muted-foreground mt-2">
-          บริหารเงินเดือน รายได้อื่น ๆ และออกสลิปแบบครบจบในที่เดียว
+          จัดการพนักงาน รายได้พนักงาน และออกสลิปแบบครบจบในที่เดียว
         </p>
       </div>
 
@@ -668,6 +669,9 @@ export default function PayrollPage() {
 
         {/* ========= OVERVIEW ========= */}
         <TabsContent value="overview" className="space-y-6">
+          {/* Employee Directory Table */}
+          <EmployeeDirectory employees={employees} />
+
           <Card className="border-border/60">
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center gap-2">
