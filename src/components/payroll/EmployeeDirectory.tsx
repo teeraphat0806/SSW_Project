@@ -65,8 +65,9 @@ export function EmployeeDirectory({ employees }: EmployeeDirectoryProps) {
       position: emp.position,
       bankName: emp.bankName,
       bankAccount: emp.bankAccount,
-      startDate: emp.startDate,
+      taxid: emp.taxid,
       social_security: emp.social_security,
+      startDate: emp.startDate,
     });
     setIsEditOpen(true);
   };
@@ -207,6 +208,14 @@ export function EmployeeDirectory({ employees }: EmployeeDirectoryProps) {
                   เลขประจำตัวผู้เสียภาษี
                 </p>
                 <p className="font-semibold font-mono">
+                  {selectedEmployee.taxid}
+                </p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">
+                  เลขที่ประจำตัวสังคม
+                </p>
+                <p className="font-semibold font-mono">
                   {selectedEmployee.social_security}
                 </p>
               </div>
@@ -302,8 +311,22 @@ export function EmployeeDirectory({ employees }: EmployeeDirectoryProps) {
                   className="mt-1"
                 />
               </div>
-              <div className="col-span-2">
+              <div>
                 <Label>เลขประจำตัวผู้เสียภาษี</Label>
+                <Input
+                  value={editData.taxid || ""}
+                  onChange={(e) =>
+                    setEditData({
+                      ...editData,
+                      taxid: e.target.value,
+                    })
+                  }
+                  className="mt-1"
+                  placeholder="เช่น 1234567890123"
+                />
+              </div>
+              <div>
+                <Label>เลขที่ประจำตัวสังคม</Label>
                 <Input
                   value={editData.social_security || ""}
                   onChange={(e) =>
@@ -313,7 +336,7 @@ export function EmployeeDirectory({ employees }: EmployeeDirectoryProps) {
                     })
                   }
                   className="mt-1"
-                  placeholder="เช่น 1234567890123"
+                  placeholder="เช่น 1-2345-12345-12-0"
                 />
               </div>
               <div className="col-span-2">
