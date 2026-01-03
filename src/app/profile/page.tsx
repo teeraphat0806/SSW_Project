@@ -3,6 +3,7 @@
 import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
+import { Camera } from "lucide-react";
 import type { Session } from "next-auth";
 
 type ToastState = { show: boolean; message: string };
@@ -85,7 +86,7 @@ export default function Profile() {
     setToast({ show: true, message: "Email copied to clipboard!" });
   };
   const handleEditProfile = () => router.push("/profile/edit");
-  const handleBackToHome = () => router.push("/");
+  const handleBackToHome = () => router.push("/dashboard");
 
   // Loading skeleton (token-based colors)
   if (status === "loading" || loading) {
@@ -112,16 +113,25 @@ export default function Profile() {
         {/* Header */}
         <div className="p-8 bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))]">
           <div className="flex flex-col items-center gap-3">
-            <div className="w-32 h-32 rounded-full border-4 border-white/70 dark:border-white/25 shadow-lg bg-black/10 dark:bg-white/10 flex items-center justify-center overflow-hidden">
-              {user.image ? (
-                <img
-                  src={user.image}
-                  alt={userName}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <span className="text-5xl font-bold">{initials}</span>
-              )}
+            <div className="relative">
+              <div className="w-32 h-32 rounded-full border-4 border-white/70 dark:border-white/25 shadow-lg bg-black/10 dark:bg-white/10 flex items-center justify-center overflow-hidden">
+                {user.image ? (
+                  <img
+                    src={user.image}
+                    alt={userName}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <span className="text-5xl font-bold">{initials}</span>
+                )}
+              </div>
+              <button
+                onClick={() => router.push("/profile/edit")}
+                className="absolute bottom-0 right-0 w-10 h-10 rounded-full bg-white dark:bg-gray-800 text-gray-800 dark:text-white shadow-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center justify-center border-2 border-[hsl(var(--primary))] hover:cursor-pointer"
+                aria-label="เปลี่ยนรูปโปรไฟล์"
+              >
+                <Camera className="w-5 h-5 text-black dark:text-white" />
+              </button>
             </div>
 
             <h1 className="text-3xl font-bold">{userName}</h1>
@@ -247,16 +257,6 @@ export default function Profile() {
                   focus:outline-none focus:ring-2 focus:ring-[hsl(var(--ring))] focus:ring-offset-2 focus:ring-offset-[hsl(var(--background))] hover:cursor-pointer"
               >
                 กลับไปหน้าหลัก
-              </button>
-
-              <button
-                onClick={handleEditProfile}
-                className="px-6 py-2.5 rounded-lg font-medium transition
-                  bg-[hsl(var(--secondary))] text-[hsl(var(--secondary-foreground))]
-                  hover:bg-[hsl(var(--hover))]
-                  focus:outline-none focus:ring-2 focus:ring-[hsl(var(--ring))] focus:ring-offset-2 focus:ring-offset-[hsl(var(--background))] hover:cursor-pointer"
-              >
-                แก้ไขโปรไฟล์
               </button>
             </div>
           </section>

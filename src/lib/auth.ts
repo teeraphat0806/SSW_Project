@@ -79,15 +79,35 @@ export const authOptions = {
       trigger?: string;
       session?: any;
     }) {
+      // First login - store all user data in token
       if (user) {
         const u = user as AppUser;
         (token as any).id = u.id;
         (token as any).role = u.role;
+
+        // Fetch full user data including image
+        const userId = typeof u.id === "string" ? parseInt(u.id) : u.id;
+        const fullUser = await prisma.user.findUnique({
+          where: { id: userId },
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            image: true,
+            role: true,
+          },
+        });
+
+        if (fullUser) {
+          token.name = fullUser.name;
+          token.email = fullUser.email;
+          token.picture = fullUser.image;
+          (token as any).role = fullUser.role;
+        }
       }
 
-      // Update token when session is updated
-      if (trigger === "update" && session) {
-        // Fetch fresh user data from database
+      // Update token when session is updated (e.g., after profile image upload)
+      if (trigger === "update") {
         const userId = token.sub ? parseInt(token.sub) : null;
         if (userId) {
           const freshUser = await prisma.user.findUnique({
@@ -121,28 +141,16 @@ export const authOptions = {
     }) {
       const baseUser = (session.user || {}) as AppSessionUser;
 
-      // Fetch fresh user data including image
-      const userId = token.sub ? parseInt(token.sub) : null;
-      let userImage = token.picture;
-
-      if (userId) {
-        const user = await prisma.user.findUnique({
-          where: { id: userId },
-          select: { image: true },
-        });
-        if (user) {
-          userImage = user.image;
-        }
-      }
-
+      // Use data from token (which is stored in cookie and persists across refreshes)
       return {
         ...session,
         user: {
           ...baseUser,
-          ...session.user,
           id: token.id,
           role: token.role,
-          image: userImage,
+          name: token.name,
+          email: token.email,
+          image: token.picture, // image is stored in token.picture
         },
       };
     },

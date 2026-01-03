@@ -41,14 +41,27 @@ export const PayslipGenerator = ({
     const data: { detail?: string; nameIncome?: string; amount?: number }[] =
       await res.json();
 
-    setIncome(
-      data
-        .filter((item) => item.amount && item.amount > 0)
-        .map((item) => ({
+    // Add base salary as income
+    const incomeItems: PayslipItem[] = [
+      {
+        description: "เงินเดือนพนักงาน",
+        amount: employee.currentSalary || 0,
+      },
+    ];
+
+    // Add other income (positive amounts)
+    data
+      .filter((item) => item.amount && item.amount > 0)
+      .forEach((item) => {
+        incomeItems.push({
           description: item.detail || item.nameIncome || "",
           amount: item.amount ?? 0,
-        }))
-    );
+        });
+      });
+
+    setIncome(incomeItems);
+
+    // Set deductions (negative amounts)
     setDeductions(
       data
         .filter((item) => item.amount && item.amount < 0)
