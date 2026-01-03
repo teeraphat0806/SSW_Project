@@ -141,6 +141,7 @@ const ALLOWED_ROLES_BY_STATUS: Record<string, string[]> = {
   ready: ["superadmin", "supervisor", "clerk", "delivery"],
   shipped: ["superadmin", "clerk", "delivery"],
   completed: ["superadmin", "clerk", "delivery"],
+  canceled: ["superadmin", "supervisor", "clerk"],
 };
 
 const STATUS_OPTIONS = Object.keys(ALLOWED_ROLES_BY_STATUS);
@@ -234,6 +235,39 @@ export async function PATCH(
         );
       }
     }
+
+    // ✅ ตรวจสอบ transition rules
+    const poCurrent = await prisma.orderPO.findUnique({
+      where: { id: poId },
+      select: { status: true },
+    });
+
+    if (!poCurrent) {
+      return NextResponse.json(
+        { error: "Job order not found" },
+        { status: 404 }
+      );
+    }
+
+    // ❌ ถ้ายกเลิกแล้ว ห้ามเปลี่ยนสถานะต่อ
+    if (poCurrent.status === "canceled") {
+      return NextResponse.json(
+        { error: "ออเดอร์ถูกยกเลิกแล้ว ไม่สามารถเปลี่ยนสถานะได้" },
+        { status: 400 }
+      );
+    }
+
+    // ✅ ถ้าจะเปลี่ยนเป็น canceled
+    if (body.status === "canceled") {
+      // ❌ ห้ามยกเลิกหลังจัดส่ง/เสร็จ
+      if (poCurrent.status === "shipped" || poCurrent.status === "completed") {
+        return NextResponse.json(
+          { error: "ไม่สามารถยกเลิกได้: ออเดอร์ถูกจัดส่งหรือเสร็จสิ้นแล้ว" },
+          { status: 400 }
+        );
+      }
+    }
+
     // 4. Update Database
     const result = await prisma.orderPO.update({
       where: { id: poId },

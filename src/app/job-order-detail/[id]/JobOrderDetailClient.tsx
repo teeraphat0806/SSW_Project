@@ -111,7 +111,8 @@ interface JobOrder {
     | "weighing"
     | "ready"
     | "shipped"
-    | "completed";
+    | "completed"
+    | "canceled";
   createdAt: Date;
   deliveryDate: Date;
   updatedAt: Date;
@@ -239,6 +240,9 @@ const JobOrderDetailPage = ({ id }: { id: string }) => {
         return "bg-primary text-primary-foreground";
       case "completed":
         return "bg-success text-success-foreground";
+      case "canceled":
+        return "bg-destructive text-destructive-foreground";
+
       default:
         return "bg-muted text-muted-foreground";
     }
@@ -310,6 +314,63 @@ const JobOrderDetailPage = ({ id }: { id: string }) => {
           : "การดำเนินการล้มเหลว",
         description:
           error.message || "ไม่สามารถอัปเดตสถานะได้ กรุณาลองใหม่อีกครั้ง",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+  const handleCancelOrder = async () => {
+    if (!jobOrder) return;
+
+    // ถ้ายกเลิกแล้ว ไม่ต้องทำซ้ำ
+    if (jobOrder.status === "canceled") {
+      toast({
+        title: "ออเดอร์ถูกยกเลิกแล้ว",
+        description: "ไม่สามารถยกเลิกซ้ำได้",
+        variant: "default",
+      });
+      return;
+    }
+
+    // ยืนยันก่อนยกเลิก
+    const ok = window.confirm(
+      `คุณต้องการยกเลิกออเดอร์ #${jobOrder.id} ใช่หรือไม่?\n\nเมื่อยกเลิกแล้วจะไม่สามารถเปลี่ยนสถานะต่อได้`
+    );
+    if (!ok) return;
+
+    setIsUpdating(true);
+    try {
+      const response = await fetch(`/api/job-order-detail/${jobOrder.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "canceled" }),
+      });
+
+      if (!response.ok) {
+        if (response.status === 401 || response.status === 403) {
+          toast({
+            title: "ไม่มีสิทธิ์เข้าถึง",
+            description: "คุณไม่มีสิทธิ์ยกเลิกออเดอร์นี้",
+            variant: "destructive",
+          });
+          return;
+        }
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || "Failed to cancel order");
+      }
+
+      setJobOrder((prev) => (prev ? { ...prev, status: "canceled" } : null));
+
+      toast({
+        title: "ยกเลิกออเดอร์สำเร็จ",
+        description: `ออเดอร์ #${jobOrder.id} ถูกยกเลิกแล้ว`,
+        variant: "default",
+      });
+    } catch (error: any) {
+      toast({
+        title: "ยกเลิกล้มเหลว",
+        description: error.message || "ไม่สามารถยกเลิกออเดอร์ได้",
         variant: "destructive",
       });
     } finally {
@@ -388,12 +449,17 @@ const JobOrderDetailPage = ({ id }: { id: string }) => {
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            <Button variant="outline" size="sm" className="h-9 gap-2">
-              <Printer className="h-4 w-4" /> Print
+            <Button
+              variant="destructive"
+              size="sm"
+              className="h-9 gap-2"
+              onClick={handleCancelOrder}
+              disabled={isUpdating || jobOrder?.status === "canceled"}
+            >
+              <AlertCircle className="h-4 w-4" />
+              {jobOrder?.status === "canceled" ? "ยกเลิกแล้ว" : "ยกเลิกออเดอร์"}
             </Button>
-            {/* <Button variant="outline" size="sm" className="h-9 gap-2">
-              <Download className="h-4 w-4" /> PDF
-            </Button> */}
+
             <Button
               size="sm"
               className="h-9 gap-2 text-white"
@@ -502,7 +568,7 @@ const JobOrderDetailPage = ({ id }: { id: string }) => {
                 {/* Production */}
                 <TabsContent value="Production" className="mt-2">
                   <ProductionTab
-                    status={jobOrder?.status || "pending"}
+                    status={(jobOrder?.status || "pending") as Exclude<JobOrder["status"], "canceled">}
                     onUpdateStatus={handleStatusUpdate}
                     getStatusColor={getStatusColor}
                   />
@@ -511,7 +577,7 @@ const JobOrderDetailPage = ({ id }: { id: string }) => {
                 {/* Delivery */}
                 <TabsContent value="Delivery" className="mt-0">
                   <DeliveryTab
-                    status={jobOrder?.status || "pending"}
+                    status={(jobOrder?.status || "pending") as Exclude<JobOrder["status"], "canceled">}
                     // ✅ แก้ตรงนี้: เช็คว่ามี jobOrder ก่อนค่อยแปลงวันที่ ถ้าไม่มีให้ส่ง string ว่างหรือ "-"
                     deliveryDate={
                       jobOrder?.deliveryDate

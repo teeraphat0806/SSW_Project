@@ -242,6 +242,7 @@ enum JobStatus {
   ready
   shipped
   completed
+  canceled
 }
 
 enum ShapeSteel {
