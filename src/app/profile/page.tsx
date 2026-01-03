@@ -78,15 +78,13 @@ export default function Profile() {
     return n.charAt(0).toUpperCase();
   }, [user?.name]);
 
+  const handleLogout = () => signOut({ callbackUrl: "/" });
   const handleCopyEmail = () => {
     if (!user?.email) return;
     navigator.clipboard.writeText(user.email);
     setToast({ show: true, message: "Email copied to clipboard!" });
   };
-
-  const handleLogout = () => signOut({ callbackUrl: "/" });
-  const handleEditProfile = () =>
-    alert("Edit Profile functionality coming soon!");
+  const handleEditProfile = () => router.push("/profile/edit");
   const handleBackToHome = () => router.push("/");
 
   // Loading skeleton (token-based colors)
@@ -114,8 +112,16 @@ export default function Profile() {
         {/* Header */}
         <div className="p-8 bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))]">
           <div className="flex flex-col items-center gap-3">
-            <div className="w-32 h-32 rounded-full border-4 border-white/70 dark:border-white/25 shadow-lg bg-black/10 dark:bg-white/10 flex items-center justify-center">
-              <span className="text-5xl font-bold">{initials}</span>
+            <div className="w-32 h-32 rounded-full border-4 border-white/70 dark:border-white/25 shadow-lg bg-black/10 dark:bg-white/10 flex items-center justify-center overflow-hidden">
+              {user.image ? (
+                <img
+                  src={user.image}
+                  alt={userName}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <span className="text-5xl font-bold">{initials}</span>
+              )}
             </div>
 
             <h1 className="text-3xl font-bold">{userName}</h1>

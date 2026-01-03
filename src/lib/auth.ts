@@ -68,12 +68,47 @@ export const authOptions = {
 
   callbacks: {
     // ใส่ type ให้ param เองกัน implicit any
-    async jwt({ token, user }: { token: JWT; user?: User | AppUser | null }) {
+    async jwt({
+      token,
+      user,
+      trigger,
+      session,
+    }: {
+      token: JWT;
+      user?: User | AppUser | null;
+      trigger?: string;
+      session?: any;
+    }) {
       if (user) {
         const u = user as AppUser;
         (token as any).id = u.id;
         (token as any).role = u.role;
       }
+
+      // Update token when session is updated
+      if (trigger === "update" && session) {
+        // Fetch fresh user data from database
+        const userId = token.sub ? parseInt(token.sub) : null;
+        if (userId) {
+          const freshUser = await prisma.user.findUnique({
+            where: { id: userId },
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              image: true,
+              role: true,
+            },
+          });
+          if (freshUser) {
+            token.name = freshUser.name;
+            token.email = freshUser.email;
+            token.picture = freshUser.image;
+            (token as any).role = freshUser.role;
+          }
+        }
+      }
+
       return token;
     },
 
@@ -86,6 +121,20 @@ export const authOptions = {
     }) {
       const baseUser = (session.user || {}) as AppSessionUser;
 
+      // Fetch fresh user data including image
+      const userId = token.sub ? parseInt(token.sub) : null;
+      let userImage = token.picture;
+
+      if (userId) {
+        const user = await prisma.user.findUnique({
+          where: { id: userId },
+          select: { image: true },
+        });
+        if (user) {
+          userImage = user.image;
+        }
+      }
+
       return {
         ...session,
         user: {
@@ -93,6 +142,7 @@ export const authOptions = {
           ...session.user,
           id: token.id,
           role: token.role,
+          image: userImage,
         },
       };
     },
