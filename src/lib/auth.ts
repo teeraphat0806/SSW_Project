@@ -68,12 +68,67 @@ export const authOptions = {
 
   callbacks: {
     // ใส่ type ให้ param เองกัน implicit any
-    async jwt({ token, user }: { token: JWT; user?: User | AppUser | null }) {
+    async jwt({
+      token,
+      user,
+      trigger,
+      session,
+    }: {
+      token: JWT;
+      user?: User | AppUser | null;
+      trigger?: string;
+      session?: any;
+    }) {
+      // First login - store all user data in token
       if (user) {
         const u = user as AppUser;
         (token as any).id = u.id;
         (token as any).role = u.role;
+
+        // Fetch full user data including image
+        const userId = typeof u.id === "string" ? parseInt(u.id) : u.id;
+        const fullUser = await prisma.user.findUnique({
+          where: { id: userId },
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            image: true,
+            role: true,
+          },
+        });
+
+        if (fullUser) {
+          token.name = fullUser.name;
+          token.email = fullUser.email;
+          token.picture = fullUser.image;
+          (token as any).role = fullUser.role;
+        }
       }
+
+      // Update token when session is updated (e.g., after profile image upload)
+      if (trigger === "update") {
+        const userId = token.sub ? parseInt(token.sub) : null;
+        if (userId) {
+          const freshUser = await prisma.user.findUnique({
+            where: { id: userId },
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              image: true,
+              role: true,
+            },
+          });
+          if (freshUser) {
+            token.name = freshUser.name;
+            token.email = freshUser.email;
+            token.picture = freshUser.image;
+            (token as any).role = freshUser.role;
+          }
+        }
+      }
+
       return token;
     },
 
@@ -86,13 +141,16 @@ export const authOptions = {
     }) {
       const baseUser = (session.user || {}) as AppSessionUser;
 
+      // Use data from token (which is stored in cookie and persists across refreshes)
       return {
         ...session,
         user: {
           ...baseUser,
-          ...session.user,
           id: token.id,
           role: token.role,
+          name: token.name,
+          email: token.email,
+          image: token.picture, // image is stored in token.picture
         },
       };
     },

@@ -4,7 +4,7 @@ import { Separator } from "../../components/ui/separator";
 import { Employee, Payslip } from "../../types/payroll";
 import { format } from "date-fns";
 import { useRef } from "react";
-import { Printer, Download, ArrowLeft } from "lucide-react";
+import { Printer, Download, ArrowLeft, Loader2 } from "lucide-react";
 import Logo from "../../components/Logo";
 import { useState, useEffect } from "react";
 
@@ -31,6 +31,7 @@ export const PayslipGenerator = ({
   const [income, setIncome] = useState<PayslipItem[]>([]);
   const [deductions, setDeductions] = useState<PayslipItem[]>([]);
   const [name, setName] = useState<string>("");
+  const [loading, setLoading] = useState<boolean>(true);
   const fetchName = async () => {
     const res = await fetch(`/api/user/${employee.userId}`);
     const data = await res.json();
@@ -41,14 +42,27 @@ export const PayslipGenerator = ({
     const data: { detail?: string; nameIncome?: string; amount?: number }[] =
       await res.json();
 
-    setIncome(
-      data
-        .filter((item) => item.amount && item.amount > 0)
-        .map((item) => ({
+    // Add base salary as income
+    const incomeItems: PayslipItem[] = [
+      {
+        description: "เงินเดือนพนักงาน",
+        amount: employee.currentSalary || 0,
+      },
+    ];
+
+    // Add other income (positive amounts)
+    data
+      .filter((item) => item.amount && item.amount > 0)
+      .forEach((item) => {
+        incomeItems.push({
           description: item.detail || item.nameIncome || "",
           amount: item.amount ?? 0,
-        }))
-    );
+        });
+      });
+
+    setIncome(incomeItems);
+
+    // Set deductions (negative amounts)
     setDeductions(
       data
         .filter((item) => item.amount && item.amount < 0)
@@ -59,8 +73,15 @@ export const PayslipGenerator = ({
     );
   };
   useEffect(() => {
-    fetchIncome();
-    fetchName();
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        await Promise.all([fetchIncome(), fetchName()]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
   }, [employee.id]);
 
   // Generate mock payslip data
@@ -206,6 +227,20 @@ export const PayslipGenerator = ({
     };
   };
   useEffect(() => {}, []);
+
+  if (loading) {
+    return (
+      <div className="max-w-4xl mx-auto flex items-center justify-center min-h-[400px]">
+        <div className="flex flex-col items-center gap-4">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">
+            กำลังโหลดข้อมูลสลิปเงินเดือน...
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-4xl mx-auto ">
       {/* Toolbar (not printed) */}

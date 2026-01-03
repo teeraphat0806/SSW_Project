@@ -18,20 +18,26 @@ export interface UserProfile {
   role: UserRole;
 }
 export interface AuthError {
-  message: string;   // ข้อความอธิบาย
-  code?: string;     // รหัส error (ถ้ามี)
+  message: string; // ข้อความอธิบาย
+  code?: string; // รหัส error (ถ้ามี)
 }
 interface AuthContextType {
   user: UserProfile | null;
   loading: boolean;
-  signIn: (
-    email: string,
-    password: string
-  ) => Promise<{ error: AuthError }>;
+  signIn: (email: string, password: string) => Promise<{ error: AuthError }>;
   signUp: (
     email: string,
     password: string,
-    name?: string
+    name?: string,
+    staffData?: {
+      bankName?: string;
+      bankAccount?: string;
+      taxid?: string;
+      startDate?: string;
+      code?: string;
+      social_security?: string;
+      currentSalary?: number;
+    }
   ) => Promise<{ error: AuthError }>;
   signOut: () => Promise<void>;
   hasRole: (role: UserRole) => boolean;
@@ -96,13 +102,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   };
 
-  const signUp = async (email: string, password: string, name?: string) => {
+  const signUp = async (
+    email: string,
+    password: string,
+    name?: string,
+    staffData?: {
+      bankName?: string;
+      bankAccount?: string;
+      taxid?: string;
+      startDate?: string;
+      code?: string;
+      social_security?: string;
+      currentSalary?: number;
+    }
+  ) => {
     try {
       const res = await fetch("/api/auth/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ email, password, name }),
+        body: JSON.stringify({
+          email,
+          password,
+          name,
+          ...staffData,
+        }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -145,9 +169,5 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     canAccess,
   };
 
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

@@ -1,6 +1,11 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../components/ui/tabs";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "../../components/ui/tabs";
 import { Button } from "../../components/ui/button";
 import {
   Dialog,
@@ -12,7 +17,12 @@ import {
 } from "../../components/ui/dialog";
 import { Input } from "../../components/ui/input";
 import { Label } from "../../components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "../../components/ui/card";
 import { Separator } from "../../components/ui/separator";
 import { Badge } from "../../components/ui/badge";
 import {
@@ -50,6 +60,7 @@ import {
 import DeleteConfirmButton from "../../components/DeleteButton";
 import { SalaryAdjustmentForm } from "../../components/payroll/SalaryAdjustmentForm";
 import { PayslipGenerator } from "../../components/payroll/PayslipGenerator";
+import { EmployeeDirectory } from "../../components/payroll/EmployeeDirectory";
 import { EmployeeOverview } from "../../components/payroll/EmployeeOverview";
 import { mockEmployees, mockAdjustments } from "../../data/mockPayrollData";
 import type { Employee, SalaryAdjustment } from "../../types/payroll";
@@ -107,6 +118,7 @@ export default function PayrollPage() {
     useState<SalaryAdjustment[]>(mockAdjustments);
   const [selectedEmployeeForPayslip, setSelectedEmployeeForPayslip] =
     useState<Employee | null>(null);
+  const [loading, setLoading] = useState(true);
 
   // Overview filters
   const [overviewEmployee, setOverviewEmployee] = useState<string | "all">(
@@ -141,33 +153,34 @@ export default function PayrollPage() {
   const [manageOpen, setManageOpen] = useState(false);
 
   useEffect(() => {
-    fetch("/api/staff")
-      .then((res) => res.json())
-      .then((data: Employee[]) => {
-        const withName = data.map((e) => ({
-          ...e,
-          name: e.user?.name ?? e.staffName ?? "",
-        }));
-        setEmployees(withName);
-      })
-      .catch((err) => console.error("Error fetching employees:", err));
-    fetch("/api/typeStaffIncome")
-      .then((res) => {
-        if (!res.ok) throw new Error("Failed to fetch typeStaffIncome");
-        return res.json();
-      })
-      .then((data: OtherIncomeType[]) => {
-        const mapped: OtherIncomeType[] = data.map((item) => ({
-          id: String(item.id),
-          name: item.name,
-          defaultAmount: Number(item.defaultAmount),
-          types: item.types,
-        }));
-        setOtherIncomeTypes(mapped);
-      })
-      .catch((err) => {
-        console.error("Error fetching typeStaffIncome:", err);
-      });
+    setLoading(true);
+    Promise.all([
+      fetch("/api/staff")
+        .then((res) => res.json())
+        .then((data: Employee[]) => {
+          const withName = data.map((e) => ({
+            ...e,
+            name: e.user?.name ?? e.staffName ?? "",
+          }));
+          setEmployees(withName);
+        }),
+      fetch("/api/typeStaffIncome")
+        .then((res) => {
+          if (!res.ok) throw new Error("Failed to fetch typeStaffIncome");
+          return res.json();
+        })
+        .then((data: OtherIncomeType[]) => {
+          const mapped: OtherIncomeType[] = data.map((item) => ({
+            id: String(item.id),
+            name: item.name,
+            defaultAmount: Number(item.defaultAmount),
+            types: item.types,
+          }));
+          setOtherIncomeTypes(mapped);
+        }),
+    ])
+      .catch((err) => console.error("Error fetching data:", err))
+      .finally(() => setLoading(false));
   }, []);
 
   /* Derived – Dashboard */
@@ -225,7 +238,7 @@ export default function PayrollPage() {
 
   // ดูค่า latestList ทุกครั้งที่เปลี่ยน
 
-  const mapIncome = (r:SalaryAdjustment): SalaryAdjustment => ({
+  const mapIncome = (r: SalaryAdjustment): SalaryAdjustment => ({
     id: String(r.id),
     staffId: String(r.staffId),
     amount: Number(r.amount) ?? 0,
@@ -236,7 +249,7 @@ export default function PayrollPage() {
     type: isDeduction(r.name, r.detail) ? "decrease" : "increase",
   });
 
-  const mapSalary = (r:SalaryAdjustment): SalaryAdjustment => ({
+  const mapSalary = (r: SalaryAdjustment): SalaryAdjustment => ({
     id: String(r.id),
     staffId: String(r.staffId),
     amount: Number(r.amount) ?? 0,
@@ -292,7 +305,9 @@ export default function PayrollPage() {
   const currentSalaryKpi = useMemo(() => {
     if (overviewEmployee === "all")
       return employees.reduce((s, e) => s + e.currentSalary, 0);
-    const emp = employees.find((e) => String(e.id) === String(overviewEmployee));
+    const emp = employees.find(
+      (e) => String(e.id) === String(overviewEmployee)
+    );
     return emp?.currentSalary ?? 0;
   }, [overviewEmployee, employees]);
 
@@ -604,6 +619,17 @@ export default function PayrollPage() {
     );
   }
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">กำลังโหลดข้อมูล...</p>
+        </div>
+      </div>
+    );
+  }
+
   /* =========================
      UI
   ========================= */
@@ -612,10 +638,10 @@ export default function PayrollPage() {
       {/* Header */}
       <div className="rounded-2xl border bg-gradient-to-br from-primary/10 to-secondary/10 dark:from-primary/5 dark:to-secondary/5 p-8 text-center">
         <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-foreground">
-          ระบบบริหารเงินเดือนพนักงาน
+          ระบบจัดการพนักงาน
         </h1>
         <p className="text-muted-foreground mt-2">
-          บริหารเงินเดือน รายได้อื่น ๆ และออกสลิปแบบครบจบในที่เดียว
+          จัดการพนักงาน รายได้พนักงาน และออกสลิปแบบครบจบในที่เดียว
         </p>
       </div>
 
@@ -643,6 +669,9 @@ export default function PayrollPage() {
 
         {/* ========= OVERVIEW ========= */}
         <TabsContent value="overview" className="space-y-6">
+          {/* Employee Directory Table */}
+          <EmployeeDirectory employees={employees} />
+
           <Card className="border-border/60">
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center gap-2">
@@ -657,7 +686,9 @@ export default function PayrollPage() {
                   <Label>พนักงาน</Label>
                   <Select
                     value={String(overviewEmployee)}
-                    onValueChange={(v) => setOverviewEmployee(v as string | "all")}
+                    onValueChange={(v) =>
+                      setOverviewEmployee(v as string | "all")
+                    }
                   >
                     <SelectTrigger className="w-full">
                       <SelectValue placeholder="เลือกพนักงาน" />

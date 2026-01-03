@@ -21,6 +21,27 @@ export async function proxy(request: NextRequest) {
       prefix: "/saledashboards",
       allowedRoles: ["superadmin", "clerk", "supervisor"],
     },
+    { prefix: "/payroll", allowedRoles: ["superadmin", "clerk", "supervisor"] },
+    {
+      prefix: "/receipt-invoice",
+      allowedRoles: ["superadmin", "clerk", "supervisor"],
+    },
+    {
+      prefix: "/dashboard",
+      allowedRoles: ["superadmin", "clerk", "supervisor", "cutter", "delivery"],
+    },
+    {
+      prefix: "/createneworder",
+      allowedRoles: ["superadmin", "clerk", "supervisor"],
+    },
+    {
+      prefix: "/job-order-detail",
+      allowedRoles: ["superadmin", "clerk", "supervisor", "cutter", "delivery"],
+    },
+    {
+      prefix: "/up-date-order",
+      allowedRoles: ["superadmin", "clerk", "supervisor"],
+    },
   ];
 
   const matchedRoute = protectedRoutes.find(({ prefix }) =>

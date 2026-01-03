@@ -3,6 +3,7 @@
 import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
+import { Camera } from "lucide-react";
 import type { Session } from "next-auth";
 
 type ToastState = { show: boolean; message: string };
@@ -19,6 +20,7 @@ export default function Profile() {
   const router = useRouter();
   const [toast, setToast] = useState<ToastState>({ show: false, message: "" });
   const [theme, setTheme] = useState<"light" | "dark">("light");
+  const [loading, setLoading] = useState(true);
 
   // Redirect safely (no router.push during render)
   useEffect(() => {
@@ -51,6 +53,7 @@ export default function Profile() {
     setTheme(initial);
 
     document.documentElement.classList.toggle("dark", initial === "dark");
+    setLoading(false);
   }, []);
 
   const toggleTheme = () => {
@@ -76,45 +79,22 @@ export default function Profile() {
     return n.charAt(0).toUpperCase();
   }, [user?.name]);
 
+  const handleLogout = () => signOut({ callbackUrl: "/" });
   const handleCopyEmail = () => {
     if (!user?.email) return;
     navigator.clipboard.writeText(user.email);
     setToast({ show: true, message: "Email copied to clipboard!" });
   };
-
-  const handleLogout = () => signOut({ callbackUrl: "/" });
-  const handleEditProfile = () =>
-    alert("Edit Profile functionality coming soon!");
-  const handleBackToHome = () => router.push("/");
+  const handleEditProfile = () => router.push("/profile/edit");
+  const handleBackToHome = () => router.push("/dashboard");
 
   // Loading skeleton (token-based colors)
-  if (status === "loading") {
+  if (status === "loading" || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4 bg-[hsl(var(--background))] text-[hsl(var(--foreground))]">
-        <div className="w-full max-w-4xl rounded-2xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] shadow-[var(--shadow-elevation)] overflow-hidden">
-          <div className="p-8 bg-[hsl(var(--primary))]">
-            <div className="flex flex-col items-center animate-pulse">
-              <div className="w-32 h-32 rounded-full bg-black/10 dark:bg-white/10 mb-4" />
-              <div className="h-7 w-52 rounded bg-black/10 dark:bg-white/10 mb-2" />
-              <div className="h-4 w-36 rounded bg-black/10 dark:bg-white/10 mb-2" />
-              <div className="h-4 w-44 rounded bg-black/10 dark:bg-white/10" />
-            </div>
-          </div>
-
-          <div className="p-8 animate-pulse">
-            <div className="h-6 w-40 rounded bg-[hsl(var(--muted))] mb-4" />
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {[1, 2, 3].map((i) => (
-                <div
-                  key={i}
-                  className="rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--aa))] p-4"
-                >
-                  <div className="h-4 w-24 rounded bg-[hsl(var(--muted))] mb-2" />
-                  <div className="h-6 w-32 rounded bg-[hsl(var(--muted))]" />
-                </div>
-              ))}
-            </div>
-          </div>
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">กำลังโหลดข้อมูล...</p>
         </div>
       </div>
     );
@@ -133,8 +113,25 @@ export default function Profile() {
         {/* Header */}
         <div className="p-8 bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))]">
           <div className="flex flex-col items-center gap-3">
-            <div className="w-32 h-32 rounded-full border-4 border-white/70 dark:border-white/25 shadow-lg bg-black/10 dark:bg-white/10 flex items-center justify-center">
-              <span className="text-5xl font-bold">{initials}</span>
+            <div className="relative">
+              <div className="w-32 h-32 rounded-full border-4 border-white/70 dark:border-white/25 shadow-lg bg-black/10 dark:bg-white/10 flex items-center justify-center overflow-hidden">
+                {user.image ? (
+                  <img
+                    src={user.image}
+                    alt={userName}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <span className="text-5xl font-bold">{initials}</span>
+                )}
+              </div>
+              <button
+                onClick={() => router.push("/profile/edit")}
+                className="absolute bottom-0 right-0 w-10 h-10 rounded-full bg-white dark:bg-gray-800 text-gray-800 dark:text-white shadow-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center justify-center border-2 border-[hsl(var(--primary))] hover:cursor-pointer"
+                aria-label="เปลี่ยนรูปโปรไฟล์"
+              >
+                <Camera className="w-5 h-5 text-black dark:text-white" />
+              </button>
             </div>
 
             <h1 className="text-3xl font-bold">{userName}</h1>
@@ -260,16 +257,6 @@ export default function Profile() {
                   focus:outline-none focus:ring-2 focus:ring-[hsl(var(--ring))] focus:ring-offset-2 focus:ring-offset-[hsl(var(--background))] hover:cursor-pointer"
               >
                 กลับไปหน้าหลัก
-              </button>
-
-              <button
-                onClick={handleEditProfile}
-                className="px-6 py-2.5 rounded-lg font-medium transition
-                  bg-[hsl(var(--secondary))] text-[hsl(var(--secondary-foreground))]
-                  hover:bg-[hsl(var(--hover))]
-                  focus:outline-none focus:ring-2 focus:ring-[hsl(var(--ring))] focus:ring-offset-2 focus:ring-offset-[hsl(var(--background))] hover:cursor-pointer"
-              >
-                แก้ไขโปรไฟล์
               </button>
             </div>
           </section>

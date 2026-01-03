@@ -88,30 +88,31 @@ export default function NavbarWithSidebar() {
         {/* Bottom Avatar */}
         <div className="mt-auto p-4 border-t">
           <Link href="/profile" className="block">
-            <div className="flex items-center gap-3 mb-2">
-              <Avatar.Root className="w-10 h-10 rounded-full bg-background overflow-hidden">
+            <div className="flex items-center gap-3 mb-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg p-2 transition-colors">
+              <Avatar.Root className="w-10 h-10 rounded-full bg-background overflow-hidden border-2 border-gray-200 dark:border-gray-700">
                 {session.user.image ? (
                   <Avatar.Image
-                    src={session.user.image || ""}
+                    src={session.user.image}
                     className="w-full h-full object-cover"
                     alt={session.user.name ?? ""}
                   />
                 ) : (
-                  <Avatar.Image
-                    src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRA1YK7AzLFlNa7rz_sxokNpo7RO-PHrJpvJQ&s"
-                    className="w-full h-full object-cover"
-                  />
+                  <Avatar.Fallback className="w-full h-full flex items-center justify-center bg-primary text-primary-foreground font-semibold">
+                    {session.user.name?.charAt(0).toUpperCase() || "U"}
+                  </Avatar.Fallback>
                 )}
               </Avatar.Root>
-              <div className="text-sm">
+              <div className="text-sm flex-1">
                 <p className="font-semibold">{session.user.name}</p>
-                <p className="text-xs text-gray-500">{session.user.email}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  {session.user.email}
+                </p>
               </div>
             </div>
           </Link>
           <button
             onClick={() => signOut({ callbackUrl: "/" })}
-            className="text-red-600 text-sm hover:bg-red-100 px-2 py-1 rounded flex items-center gap-1"
+            className="text-red-600 text-sm hover:bg-red-100 dark:hover:bg-red-900/20 px-2 py-1 rounded flex items-center gap-1 w-full"
           >
             <LogOut size={16} />
             Logout
