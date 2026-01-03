@@ -6,23 +6,28 @@ export async function proxy(request: NextRequest) {
   const user = await getToken({
     req: request,
     secret: process.env.NEXTAUTH_SECRET,
+    secureCookie: process.env.NODE_ENV === "production",
   });
 
   const pathname = request.nextUrl.pathname;
 
-  if (
-    pathname.startsWith("/superadminDashboard") &&
-    (!user || user.role !== "superadmin")
-  ) {
-    return NextResponse.redirect(new URL("/notFound", request.url));
-  }
-  if (
-    pathname.startsWith("/chatbot") &&
-    (!user ||
-      (user.role !== "superadmin" &&
-        user.role !== "clerk" &&
-        user.role !== "supervisor"))
-  ) {
+  const protectedRoutes = [
+    { prefix: "/superadminDashboard", allowedRoles: ["superadmin"] },
+    {
+      prefix: "/chatbot",
+      allowedRoles: ["superadmin", "clerk", "supervisor"],
+    },
+    {
+      prefix: "/saledashboards",
+      allowedRoles: ["superadmin", "clerk", "supervisor"],
+    },
+  ];
+
+  const matchedRoute = protectedRoutes.find(({ prefix }) =>
+    pathname.startsWith(prefix)
+  );
+
+  if (matchedRoute && !matchedRoute.allowedRoles.includes(user?.role ?? "")) {
     return NextResponse.redirect(new URL("/notFound", request.url));
   }
 

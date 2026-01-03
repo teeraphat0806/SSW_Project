@@ -57,7 +57,7 @@ export const authOptions = {
       },
     }),
   ],
-
+  secret: process.env.NEXTAUTH_SECRET,
   // ลบบรรทัดนี้ออก หรือ comment ไว้
   // adapter: PrismaAdapter(prisma),
 
@@ -68,13 +68,7 @@ export const authOptions = {
 
   callbacks: {
     // ใส่ type ให้ param เองกัน implicit any
-    async jwt({
-      token,
-      user,
-    }: {
-      token: JWT;
-      user?: User | AppUser | null;
-    }) {
+    async jwt({ token, user }: { token: JWT; user?: User | AppUser | null }) {
       if (user) {
         const u = user as AppUser;
         (token as any).id = u.id;

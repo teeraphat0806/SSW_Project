@@ -1,10 +1,6 @@
-// src/app/layout.tsx
-import "../globals.css";
-import Layout from "../../components/Layout";
-export const metadata = {
-  title: "My App",
-  description: "My App Description",
-};
+"use client";
+
+import Layout from "@/components/Layout";
 
 export default function ChatBotLayout({
   children,
