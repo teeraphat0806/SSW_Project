@@ -25,13 +25,13 @@ model Staff {
   position                     String            @default("พนักงานทั่วไป")
   bankAccount                  String            @unique
   bankName                     String
-  taxid                        String        
+  taxid                        String
   startDate                    DateTime
   code                         String            @unique
   social_security              String            @unique
   currentSalary                Float
   updatedAt                    DateTime          @updatedAt
-  taxid                        String?           @default("1103700123451")
+  taxid                        String
   Bill_Bill_deliveredByToStaff Bill[]            @relation("Bill_deliveredByToStaff")
   Bill_Bill_salesNameToStaff   Bill[]            @relation("Bill_salesNameToStaff")
   ExpenseCategory              ExpenseCategory[]
@@ -60,7 +60,7 @@ model Bill {
   yourRef                       String
   invoiceNo                     Int       @unique @default(autoincrement())
   codeCustomer                  String?   @unique
-  credit Int @default(30)
+  credit                        Int       @default(30)
   deliveryDate                  DateTime
   deliveryOrderNo               String?
   salesName                     String?
@@ -76,6 +76,7 @@ model Bill {
   deliveredById                 Int?
   updatedAt                     DateTime  @updatedAt
   createdAt                     DateTime  @default(now())
+  credit                        Int       @default(30)
   Customer                      Customer? @relation(fields: [customerId], references: [id])
   Staff_Bill_deliveredByToStaff Staff?    @relation("Bill_deliveredByToStaff", fields: [deliveredById], references: [id])
   Staff_Bill_salesNameToStaff   Staff?    @relation("Bill_salesNameToStaff", fields: [salesNameId], references: [id])
@@ -110,18 +111,18 @@ model OrderPO {
 }
 
 model Product {
-  id               Int       @id @default(autoincrement())
-  orderPOId        Int
-  steelId          Int
-  wide             Float?
-  length           Float?
-  thickness        Float?
-  amount           Int
-  detail           String?
-  actualWeight     Float?
-  total            Float
-  OrderPO          OrderPO   @relation(fields: [orderPOId], references: [id], onDelete: Cascade)
-  SteelType        SteelType @relation(fields: [steelId], references: [id])
+  id           Int       @id @default(autoincrement())
+  orderPOId    Int
+  steelId      Int
+  wide         Float?
+  length       Float?
+  thickness    Float?
+  amount       Int
+  detail       String?
+  actualWeight Float?
+  total        Float
+  OrderPO      OrderPO   @relation(fields: [orderPOId], references: [id], onDelete: Cascade)
+  SteelType    SteelType @relation(fields: [steelId], references: [id])
 
   @@index([orderPOId])
   @@index([steelId])
