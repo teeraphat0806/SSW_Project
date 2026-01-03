@@ -10,6 +10,7 @@ export const mockEmployees: Employee[] = [
     startDate: "2023-01-15",
     bankAccount: "123-456-7890",
     bankName: "กสิกรไทย",
+    taxid: "1234567890123",
     currentSalary: 37000,
     social_security: "1234567890123",
     // user / userId ไม่ต้องใส่ก็ได้ เพราะเป็น optional
@@ -23,6 +24,7 @@ export const mockEmployees: Employee[] = [
     startDate: "2022-08-01",
     bankAccount: "987-654-3210",
     bankName: "ไทยพาณิชย์",
+    taxid: "2345678901234",
     currentSalary: 32000,
     social_security: "2345678901234",
   },
@@ -35,6 +37,7 @@ export const mockEmployees: Employee[] = [
     startDate: "2021-03-01",
     bankAccount: "555-123-4567",
     bankName: "กรุงเทพ",
+    taxid: "3456789012345",
     currentSalary: 48000,
     social_security: "3456789012345",
   },
