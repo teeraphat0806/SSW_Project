@@ -94,6 +94,8 @@ type ApiReceipt = {
   credit: number;
   selesName: string | null;
   vat: number;
+  fax: string;
+  tax: string;
   totalTextThai: string;
   customer: {
     id: number;
@@ -164,6 +166,8 @@ export async function GET(
       deliveryDate: receipt.deliveryDate,
       credit: receipt.credit,
       vat: receipt.vat,
+      fax: customer.faxNumber,
+      tax: customer.taxNumber,
       totalTextThai: ThaiBaht(grandTotal.toString()),
       selesName: receipt.salesName,
       customer: {
