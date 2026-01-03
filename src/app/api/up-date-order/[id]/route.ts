@@ -10,7 +10,8 @@ type statusType =
   | "weighing"
   | "ready"
   | "shipped"
-  | "completed";
+  | "completed"
+  | "canceled";
 
 type ApiJobOrder = {
   id: number;
@@ -119,6 +120,7 @@ const StatusSchema = z.enum([
   "ready",
   "shipped",
   "completed",
+  "canceled",
 ]);
 
 const SteelLineSchema = z.object({

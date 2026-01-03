@@ -6,6 +6,7 @@ export interface Employee {
   startDate: string;
   bankAccount: string;
   bankName: string;
+  taxid: string;
   currentSalary: number;
   social_security: string;
   staffName: string;

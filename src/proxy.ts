@@ -42,6 +42,10 @@ export async function proxy(request: NextRequest) {
       prefix: "/up-date-order",
       allowedRoles: ["superadmin", "clerk", "supervisor"],
     },
+    {
+      prefix: "/map",
+      allowedRoles: [], // ไม่อนุญาตให้ใครเข้าได้เลย
+    },
   ];
 
   const matchedRoute = protectedRoutes.find(({ prefix }) =>
