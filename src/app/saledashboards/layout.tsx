@@ -14,7 +14,9 @@ export default function SaleDashboardLayout({
 }) {
   return (
     <Layout>
-      <ThemeProvider attribute="class">{children}</ThemeProvider>;
+      <ThemeProvider attribute="class">
+        <div className="bg-muted min-h-screen md:pl-20">{children}</div>
+      </ThemeProvider>
     </Layout>
   );
 }

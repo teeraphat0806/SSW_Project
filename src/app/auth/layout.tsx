@@ -3,8 +3,8 @@ import "../globals.css";
 import { AuthProvider } from "@/contexts/Authcontext";
 
 export const metadata = {
-  title: "My App",
-  description: "My App Description",
+  title: "SSW Steel Center",
+  description: "SSW Steel Center - Steel Management System",
 };
 
 export default function AuthLayout({
@@ -15,9 +15,7 @@ export default function AuthLayout({
   return (
     <html lang="en">
       <body>
-        <AuthProvider>
-          {children}
-        </AuthProvider>
+        <AuthProvider>{children}</AuthProvider>
       </body>
     </html>
   );
