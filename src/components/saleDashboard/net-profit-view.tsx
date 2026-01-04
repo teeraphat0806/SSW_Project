@@ -67,8 +67,8 @@ export function NetProfitView({ year }: NetProfitViewProps) {
                 }${summary.momChange.toFixed(1)}%`
               : "-"
           }
-          variant={summary.momChange >= 0 ? "success" : "danger"}
-          icon={summary.momChange >= 0 ? TrendingUp : TrendingDown}
+          variant={(summary.momChange ?? 0) >= 0 ? "success" : "danger"}
+          icon={(summary.momChange ?? 0) >= 0 ? TrendingUp : TrendingDown}
         />
         <KPIStatCard
           title="การเปลี่ยนแปลง YoY"
@@ -81,8 +81,8 @@ export function NetProfitView({ year }: NetProfitViewProps) {
                 }${summary.yoyChange.toFixed(1)}%`
               : "-"
           }
-          variant={summary.yoyChange >= 0 ? "success" : "danger"}
-          icon={summary.yoyChange >= 0 ? TrendingUp : TrendingDown}
+          variant={(summary.yoyChange ?? 0) >= 0 ? "success" : "danger"}
+          icon={(summary.yoyChange ?? 0) >= 0 ? TrendingUp : TrendingDown}
         />
       </div>
 
