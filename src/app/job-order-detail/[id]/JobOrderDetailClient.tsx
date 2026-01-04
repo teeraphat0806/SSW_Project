@@ -465,7 +465,7 @@ const JobOrderDetailPage = ({ id }: { id: string }) => {
               className="h-9 gap-2 text-white"
               onClick={() => router.push("/up-date-order/" + id)}
             >
-              <Edit className="h-4 w-4" /> Edit Order
+              <Edit className="h-4 w-4" /> แก้ไขออเดอร์
             </Button>
           </div>
         </div>
@@ -568,7 +568,12 @@ const JobOrderDetailPage = ({ id }: { id: string }) => {
                 {/* Production */}
                 <TabsContent value="Production" className="mt-2">
                   <ProductionTab
-                    status={(jobOrder?.status || "pending") as Exclude<JobOrder["status"], "canceled">}
+                    status={
+                      (jobOrder?.status || "pending") as Exclude<
+                        JobOrder["status"],
+                        "canceled"
+                      >
+                    }
                     onUpdateStatus={handleStatusUpdate}
                     getStatusColor={getStatusColor}
                   />
@@ -577,7 +582,12 @@ const JobOrderDetailPage = ({ id }: { id: string }) => {
                 {/* Delivery */}
                 <TabsContent value="Delivery" className="mt-0">
                   <DeliveryTab
-                    status={(jobOrder?.status || "pending") as Exclude<JobOrder["status"], "canceled">}
+                    status={
+                      (jobOrder?.status || "pending") as Exclude<
+                        JobOrder["status"],
+                        "canceled"
+                      >
+                    }
                     // ✅ แก้ตรงนี้: เช็คว่ามี jobOrder ก่อนค่อยแปลงวันที่ ถ้าไม่มีให้ส่ง string ว่างหรือ "-"
                     deliveryDate={
                       jobOrder?.deliveryDate

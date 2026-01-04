@@ -33,7 +33,7 @@ export function QuickAction({
   const actions: ActionItem[] = [
     {
       key: "edit",
-      label: "Edit Order",
+      label: "แก้ไขออเดอร์",
       icon: Edit,
       run: () => router.push(`/up-date-order/${orderId}`),
     },
