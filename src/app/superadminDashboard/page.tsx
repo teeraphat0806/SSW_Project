@@ -1,17 +1,41 @@
-'use client'
-import React, { useState, useEffect } from 'react';
-import { UserRole, UserProfile } from '../../contexts/Authcontext';
-import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
-import { Button } from '../../components/ui/button';
-import { Input } from '../../components/ui/input';
-import { Label } from '../../components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../components/ui/table';
-import { Badge } from '../../components/ui/badge';
-import { Shield, Users, Edit, Trash2, LogOut, } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../../components/ui/dialog';
-import { ToastContainer, toast } from 'react-toastify';
-import {  signOut } from 'next-auth/react'
+"use client";
+import React, { useState, useEffect } from "react";
+import { UserRole, UserProfile } from "../../contexts/Authcontext";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "../../components/ui/card";
+import { Button } from "../../components/ui/button";
+import { Input } from "../../components/ui/input";
+import { Label } from "../../components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../../components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "../../components/ui/table";
+import { Badge } from "../../components/ui/badge";
+import { Shield, Users, Edit, Trash2, LogOut } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "../../components/ui/dialog";
+import { ToastContainer, toast } from "react-toastify";
+import { signOut } from "next-auth/react";
 const roleColors: Record<UserRole, string> = {
   superadmin: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200",
   guest: "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200",
@@ -24,11 +48,22 @@ const roleColors: Record<UserRole, string> = {
     "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200",
 };
 
+const roleLabels: Record<UserRole | "all", string> = {
+  superadmin: "ผู้ดูแลระบบสูงสุด",
+  guest: "ผู้เยี่ยมชม",
+  clerk: "เสมียน",
+  supervisor: "หัวหน้างาน",
+  cutter: "ช่างตัด",
+  delivery: "พนักงานส่งของ",
+  all: "ทั้งหมด",
+};
+
 export default function SuperadminDashboard() {
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingUser, setEditingUser] = useState<UserProfile | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [selectedRole, setSelectedRole] = useState<UserRole | "all">("all");
 
   const fetchUsers = async () => {
     try {
@@ -61,33 +96,7 @@ export default function SuperadminDashboard() {
       if (error) throw error;
 
       await fetchUsers();
-      toast.success(`เปลี่ยนตำแหน่งเป็น ${newRole} สำเร็จ`, {
-        position: "bottom-right",
-      });
-    } catch (error) {
-      toast.error(`ขออภัย มีข้อผิดพลาด: ${error}`, {
-        position: "bottom-right",
-      });
-    }
-  };
-
-  const handleDeleteUser = async (userId: number) => {
-    if (!confirm("คุณแน่ใจแล้วใช่ไหมที่จะลบ ผู้ใช้งาน? ไม่สามารถย้อนกลับได้")) {
-      return;
-    }
-
-    try {
-      const res = await fetch(`/api/auth/user/${userId}`, {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
-      const { error } = await res.json();
-      if (error) throw error;
-
-      await fetchUsers();
-      toast.success("ลบ ผู้ใช้งานสำเร็จ", {
+      toast.success(`เปลี่ยนตำแหน่งเป็น ${roleLabels[newRole]} สำเร็จ`, {
         position: "bottom-right",
       });
     } catch (error) {
@@ -108,6 +117,23 @@ export default function SuperadminDashboard() {
 
   const stats = getUserStats();
 
+  const getFilteredAndSortedUsers = () => {
+    let filteredUsers = users;
+
+    // กรองตาม role ที่เลือก
+    if (selectedRole !== "all") {
+      filteredUsers = users.filter((user) => user.role === selectedRole);
+    }
+
+    // เรียงลำดับจากสร้างใหม่ล่าสุดก่อน
+    return filteredUsers.sort(
+      (a, b) =>
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
+  };
+
+  const filteredUsers = getFilteredAndSortedUsers();
+
   return (
     <div className="min-h-screen ">
       <div className="container mx-auto p-6">
@@ -118,7 +144,7 @@ export default function SuperadminDashboard() {
               <Shield className="h-5 w-5 text-red-600 dark:text-red-400" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold">Superadmin Dashboard</h1>
+              <h1 className="text-2xl font-bold">แดชบอร์ดผู้ดูแลระบบสูงสุด</h1>
               <p className="text-muted-foreground">ระบบควบคุม การให้สิทธิ์</p>
             </div>
           </div>
@@ -140,7 +166,9 @@ export default function SuperadminDashboard() {
                 <div className="text-2xl font-bold mb-1">
                   {stats[role as UserRole] || 0}
                 </div>
-                <Badge className={colorClass}>{role}</Badge>
+                <Badge className={colorClass}>
+                  {roleLabels[role as UserRole]}
+                </Badge>
               </CardContent>
             </Card>
           ))}
@@ -149,10 +177,33 @@ export default function SuperadminDashboard() {
         {/* Users Table */}
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <Users className="h-5 w-5" />
-              <span>User Management</span>
-            </CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center space-x-2">
+                <Users className="h-5 w-5" />
+                <span>การจัดการผู้ใช้งาน</span>
+              </CardTitle>
+              <div className="flex items-center space-x-2">
+                <Label className="text-sm font-medium">กรองตามตำแหน่ง:</Label>
+                <Select
+                  value={selectedRole}
+                  onValueChange={(value) =>
+                    setSelectedRole(value as UserRole | "all")
+                  }
+                >
+                  <SelectTrigger className="w-[180px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">{roleLabels.all}</SelectItem>
+                    {Object.keys(roleColors).map((role) => (
+                      <SelectItem key={role} value={role}>
+                        {roleLabels[role as UserRole]}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
           </CardHeader>
           <CardContent>
             {loading ? (
@@ -171,13 +222,13 @@ export default function SuperadminDashboard() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {users.map((user) => (
+                  {filteredUsers.map((user) => (
                     <TableRow key={user.id}>
                       <TableCell>{user.name || "N/A"}</TableCell>
                       <TableCell>{user.email}</TableCell>
                       <TableCell>
                         <Badge className={roleColors[user.role]}>
-                          {user.role}
+                          {roleLabels[user.role]}
                         </Badge>
                       </TableCell>
                       <TableCell>
@@ -230,12 +281,16 @@ export default function SuperadminDashboard() {
                                       }}
                                     >
                                       <SelectTrigger>
-                                        <SelectValue />
+                                        <SelectValue
+                                          placeholder={
+                                            roleLabels[editingUser.role]
+                                          }
+                                        />
                                       </SelectTrigger>
                                       <SelectContent>
                                         {Object.keys(roleColors).map((role) => (
                                           <SelectItem key={role} value={role}>
-                                            {role}
+                                            {roleLabels[role as UserRole]}
                                           </SelectItem>
                                         ))}
                                       </SelectContent>
@@ -245,14 +300,6 @@ export default function SuperadminDashboard() {
                               )}
                             </DialogContent>
                           </Dialog>
-                          <Button
-                            variant="destructive"
-                            size="sm"
-                            className="hover:bg-red-600 hover:text-white hover:cursor-pointer hover:scale-110 transition-all"
-                            onClick={() => handleDeleteUser(Number(user.id))}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
                         </div>
                       </TableCell>
                     </TableRow>

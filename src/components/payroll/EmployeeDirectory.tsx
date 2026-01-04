@@ -41,6 +41,42 @@ const POSITION_ROLES = {
 
 type PositionRole = keyof typeof POSITION_ROLES;
 
+// Thai banks list
+const THAI_BANKS = [
+  { code: "BBL", name: "ธนาคารกรุงเทพ" },
+  { code: "KBANK", name: "ธนาคารกสิกรไทย" },
+  { code: "KTB", name: "ธนาคารกรุงไทย" },
+  { code: "BAY", name: "ธนาคารกรุงเทพ (ยูฟ่า)" },
+  { code: "BEC", name: "ธนาคารเบสิค" },
+  { code: "CIMB", name: "ธนาคารซีไอเอ็มบี ไทย" },
+  { code: "TMRW", name: "ธนาคาร TMRW" },
+  { code: "UOB", name: "ธนาคารยูโอบี" },
+  { code: "SCB", name: "ธนาคารไทยพาณิชย์" },
+  { code: "TTB", name: "ธนาคารทหารไทย" },
+  { code: "GSB", name: "ธนาคารอิสลามแห่งประเทศไทย" },
+  { code: "GSB", name: "ธนาคารออมสิน" },
+  { code: "ISBT", name: "ธนาคารอิสลามแห่งประเทศไทย" },
+  { code: "LHBANK", name: "ธนาคารลาดหญ้า" },
+  { code: "AYUDHYA", name: "ธนาคารพัฒนาวิสาหกิจขนาดกลางและขนาดย่อม" },
+  { code: "TBANK", name: "ธนาคารไทยร่วมทุน" },
+  { code: "TBANK", name: "ธนาคารไทยเวธนะ" },
+  { code: "TCAP", name: "ธนาคารซูมิโตโม มิตซูย ทrust" },
+  { code: "ICBC", name: "ธนาคารอิศบร" },
+  { code: "BCHT", name: "ธนาคารจีนแรนดส์" },
+  { code: "JPYUAB", name: "ธนาคารยูเอเอ็บ" },
+  { code: "RBS", name: "ธนาคารรอยัล แบงก์ ออฟ สกอตแลนด์" },
+  { code: "AKBANK", name: "ธนาคารหาจัก" },
+  { code: "MIZUHO", name: "ธนาคารมิซูโฮ" },
+  { code: "MUFG", name: "ธนาคารมูฟจิ" },
+  { code: "SUMITOMO", name: "ธนาคารซูมิโตโม มิตซูย ทรัสต์" },
+  { code: "DBS", name: "ธนาคารดีบีเอส" },
+  { code: "BOA", name: "ธนาคารบางกรรมการของอเมริกา" },
+  { code: "ANZ", name: "ธนาคารเอเอ็นแซด" },
+  { code: "CITI", name: "ธนาคารซิตี้แบงก์" },
+  { code: "HSBC", name: "ธนาคารเอชเอสบีซี" },
+  { code: "KDB", name: "ธนาคารเคดีบี" },
+] as const;
+
 interface EmployeeDirectoryProps {
   employees: Employee[];
 }
@@ -293,51 +329,89 @@ export function EmployeeDirectory({ employees }: EmployeeDirectoryProps) {
               </div>
               <div>
                 <Label>ธนาคาร</Label>
-                <Input
+                <Select
                   value={editData.bankName || ""}
-                  onChange={(e) =>
-                    setEditData({ ...editData, bankName: e.target.value })
+                  onValueChange={(value) =>
+                    setEditData({ ...editData, bankName: value })
                   }
-                  className="mt-1"
-                />
+                >
+                  <SelectTrigger className="mt-1">
+                    <SelectValue placeholder="เลือกธนาคาร" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {THAI_BANKS.map((bank) => (
+                      <SelectItem key={bank.code} value={bank.name}>
+                        {bank.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div>
                 <Label>เลขบัญชี</Label>
                 <Input
                   value={editData.bankAccount || ""}
-                  onChange={(e) =>
-                    setEditData({ ...editData, bankAccount: e.target.value })
-                  }
+                  onChange={(e) => {
+                    const value = e.target.value
+                      .replace(/\D/g, "")
+                      .slice(0, 15);
+                    setEditData({ ...editData, bankAccount: value });
+                  }}
                   className="mt-1"
+                  placeholder="กรุณาป้อน 10-15 หลัก หรือ ปล่อยว่างได้"
+                  maxLength={15}
                 />
+                <p className="text-xs text-muted-foreground mt-1">
+                  {editData.bankAccount
+                    ? `${editData.bankAccount.length}/15 (ต้องมี 10-15 หลัก)`
+                    : "ไม่บังคับ (10-15 หลัก)"}
+                </p>
               </div>
               <div>
                 <Label>เลขประจำตัวผู้เสียภาษี</Label>
                 <Input
                   value={editData.taxid || ""}
-                  onChange={(e) =>
+                  onChange={(e) => {
+                    const value = e.target.value
+                      .replace(/\D/g, "")
+                      .slice(0, 13);
                     setEditData({
                       ...editData,
-                      taxid: e.target.value,
-                    })
-                  }
+                      taxid: value,
+                    });
+                  }}
                   className="mt-1"
-                  placeholder="เช่น 1234567890123"
+                  placeholder="กรุณาป้อน 13 หลัก"
+                  maxLength={13}
                 />
+                <p className="text-xs text-muted-foreground mt-1">
+                  {editData.taxid
+                    ? `${editData.taxid.length}/13`
+                    : "ต้องเป็น 13 หลัก"}
+                </p>
               </div>
               <div>
                 <Label>เลขที่ประจำตัวสังคม</Label>
                 <Input
                   value={editData.social_security || ""}
-                  onChange={(e) =>
+                  onChange={(e) => {
+                    const value = e.target.value
+                      .replace(/\D/g, "")
+                      .slice(0, 13);
                     setEditData({
                       ...editData,
-                      social_security: e.target.value,
-                    })
-                  }
+                      social_security: value,
+                    });
+                  }}
                   className="mt-1"
-                  placeholder="เช่น 1-2345-12345-12-0"
+                  placeholder="กรุณาป้อน 13 หลัก"
+                  maxLength={13}
                 />
+                <p className="text-xs text-muted-foreground mt-1">
+                  {editData.social_security
+                    ? `${editData.social_security.length}/13`
+                    : "ต้องเป็น 13 หลัก"}
+                </p>
               </div>
               <div className="col-span-2">
                 <Label>วันที่เข้าทำงาน</Label>
@@ -348,14 +422,25 @@ export function EmployeeDirectory({ employees }: EmployeeDirectoryProps) {
                       ? new Date(editData.startDate).toISOString().split("T")[0]
                       : ""
                   }
-                  onChange={(e) =>
-                    setEditData({
-                      ...editData,
-                      startDate: new Date(e.target.value).toISOString(),
-                    })
-                  }
+                  onChange={(e) => {
+                    const selectedDate = new Date(e.target.value);
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+
+                    // Only allow past dates and today
+                    if (selectedDate <= today) {
+                      setEditData({
+                        ...editData,
+                        startDate: new Date(e.target.value).toISOString(),
+                      });
+                    }
+                  }}
+                  max={new Date().toISOString().split("T")[0]}
                   className="mt-1"
                 />
+                <p className="text-xs text-muted-foreground mt-1">
+                  เลือกได้เฉพาะวันในอดีต หรือ วันนี้เท่านั้น
+                </p>
               </div>
             </div>
           )}

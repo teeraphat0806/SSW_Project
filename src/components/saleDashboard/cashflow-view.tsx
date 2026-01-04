@@ -21,6 +21,7 @@ import {
   getMonthName,
 } from "@/lib/saleDashboard/analytics-utils";
 import { KPIStatCard } from "./kpi-stat-card";
+import { DollarSign, TrendingUp, TrendingDown, Award } from "lucide-react";
 import type { ExpenseCategory } from "@/types/expenseCategory";
 import { useSaleAnalytics } from "@/hooks/saleDashboard/useSaleAnalytics";
 
@@ -48,6 +49,9 @@ export function CashflowView({ year }: CashflowViewProps) {
     [year, selectedMonth, monthCashflowDetail]
   );
 
+  // Convert AD year to Buddhist Era (BE) for display
+  const buddhistYear = year + 543;
+
   const expenseCategoryMap = useMemo(
     () =>
       new Map(
@@ -74,23 +78,33 @@ export function CashflowView({ year }: CashflowViewProps) {
           title="เงินไหลเข้ารวม"
           value={summary.totalInflow}
           format="currency"
+          variant="success"
+          icon={TrendingUp}
         />
         <KPIStatCard
           title="เงินไหลออกรวม"
           value={summary.totalOutflow}
           format="currency"
+          variant="danger"
+          icon={TrendingDown}
         />
         <KPIStatCard
           title="กระแสเงินสดสุทธิ"
           value={summary.netCashflow}
           format="currency"
           subtitle={summary.netCashflow >= 0 ? "บวก" : "ลบ"}
+          variant={
+            summary.netCashflow >= 0 ? "gradient-green" : "gradient-blue"
+          }
+          icon={DollarSign}
         />
         <KPIStatCard
           title="เดือนที่ดีที่สุด"
           value={summary.bestMonth.amount}
           format="currency"
           subtitle={summary.bestMonth.monthName}
+          variant="gradient-orange"
+          icon={Award}
         />
       </div>
 
@@ -170,7 +184,7 @@ export function CashflowView({ year }: CashflowViewProps) {
           <DialogHeader>
             <DialogTitle>
               รายละเอียดกระแสเงินสด -{" "}
-              {selectedMonth ? getMonthName(selectedMonth) : ""} {year}
+              {selectedMonth ? getMonthName(selectedMonth) : ""} {buddhistYear}
             </DialogTitle>
           </DialogHeader>
           {monthDetail && (
