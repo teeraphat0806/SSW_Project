@@ -7,5 +7,10 @@ export default function SuperAdminDashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return <Layout>{children}</Layout>;
+  return (
+    <Layout>
+      {" "}
+      <div className="bg-muted min-h-screen md:pl-20">{children}</div>
+    </Layout>
+  );
 }
