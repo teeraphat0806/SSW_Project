@@ -10,10 +10,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { TrendingUp, TrendingDown } from "lucide-react";
-import {
-  formatCurrency,
-} from "@/lib/saleDashboard/analytics-utils";
+import { TrendingUp, TrendingDown, DollarSign, Percent } from "lucide-react";
+import { formatCurrency } from "@/lib/saleDashboard/analytics-utils";
 import { KPIStatCard } from "./kpi-stat-card";
 import { useSaleAnalytics } from "@/hooks/saleDashboard/useSaleAnalytics";
 
@@ -22,10 +20,17 @@ interface NetProfitViewProps {
 }
 
 export function NetProfitView({ year }: NetProfitViewProps) {
-  const { netProfitByMonth, netProfitSummary, profitInsight, loading, error } = useSaleAnalytics();
-  
-  const monthlyData = useMemo(() => netProfitByMonth(year), [year, netProfitByMonth]);
-  const summary = useMemo(() => netProfitSummary(year), [year, netProfitSummary]);
+  const { netProfitByMonth, netProfitSummary, profitInsight, loading, error } =
+    useSaleAnalytics();
+
+  const monthlyData = useMemo(
+    () => netProfitByMonth(year),
+    [year, netProfitByMonth]
+  );
+  const summary = useMemo(
+    () => netProfitSummary(year),
+    [year, netProfitSummary]
+  );
   const insight = useMemo(() => profitInsight(year), [year, profitInsight]);
 
   const currentMonth = new Date().getMonth() + 1;
@@ -39,12 +44,17 @@ export function NetProfitView({ year }: NetProfitViewProps) {
           value={summary.yearlyNetProfit}
           format="currency"
           subtitle={summary.profitMargin >= 0 ? "กำไร" : "ขาดทุน"}
+          colorCode={summary.yearlyNetProfit >= 0 ? "profit" : "loss"}
+          variant={summary.yearlyNetProfit >= 0 ? "success" : "danger"}
+          icon={DollarSign}
         />
         <KPIStatCard
           title="อัตรากำไรสุทธิ"
           value={summary.profitMargin}
           format="number"
           subtitle="%"
+          variant="info"
+          icon={Percent}
         />
         <KPIStatCard
           title="การเปลี่ยนแปลง MoM"
@@ -57,6 +67,8 @@ export function NetProfitView({ year }: NetProfitViewProps) {
                 }${summary.momChange.toFixed(1)}%`
               : "-"
           }
+          variant={(summary.momChange ?? 0) >= 0 ? "success" : "danger"}
+          icon={(summary.momChange ?? 0) >= 0 ? TrendingUp : TrendingDown}
         />
         <KPIStatCard
           title="การเปลี่ยนแปลง YoY"
@@ -69,6 +81,8 @@ export function NetProfitView({ year }: NetProfitViewProps) {
                 }${summary.yoyChange.toFixed(1)}%`
               : "-"
           }
+          variant={(summary.yoyChange ?? 0) >= 0 ? "success" : "danger"}
+          icon={(summary.yoyChange ?? 0) >= 0 ? TrendingUp : TrendingDown}
         />
       </div>
 

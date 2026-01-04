@@ -87,13 +87,6 @@ export default function DashboardPage() {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-zinc-200 dark:border-zinc-800 mt-12 print:hidden">
-        <div className="p-4 md:p-8">
-          <p className="text-center text-sm text-zinc-500 dark:text-zinc-400">
-            ระบบแดชบอร์ดวิเคราะห์ธุรกิจ © {new Date().getFullYear()}
-          </p>
-        </div>
-      </footer>
     </div>
   );
 }
