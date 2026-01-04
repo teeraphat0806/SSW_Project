@@ -520,10 +520,14 @@ const JobOrderDetailPage = ({ id }: { id: string }) => {
                 <div className="border-b bg-muted/10 px-6 pt-2 dark:border-zinc-800">
                   <TabsList className="flex mb-3 h-auto w-full justify-start gap-8 bg-transparent p-0">
                     {[
-                      { id: "StaffInfo", label: "Staff Info", icon: User2 },
-                      { id: "Customer", label: "Customer", icon: Building2 },
-                      { id: "Production", label: "Production", icon: Factory },
-                      { id: "Delivery", label: "Delivery", icon: Truck },
+                      { id: "StaffInfo", label: "ข้อมูลพนักงาน", icon: User2 },
+                      {
+                        id: "Customer",
+                        label: "ลูกค้า",
+                        icon: Building2,
+                      },
+                      { id: "Production", label: "การผลิต", icon: Factory },
+                      { id: "Delivery", label: "การจัดส่ง", icon: Truck },
                     ].map((tab) => (
                       <TabsTrigger
                         key={tab.id}
