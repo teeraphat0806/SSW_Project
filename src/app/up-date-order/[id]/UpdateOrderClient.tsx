@@ -463,7 +463,7 @@ const UpdateOrderPage = ({ id }: { id: string }) => {
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => router.push("/dashboard")}
+              onClick={() => router.back()}
               className="text-muted-foreground hover:text-foreground hover:bg-accent"
               disabled={saving}
             >

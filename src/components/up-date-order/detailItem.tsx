@@ -56,7 +56,7 @@ type Props<T extends JobWithSteel> = {
   className?: string;
 };
 
-const shapeText = (s: "square" | "line") => (s === "line" ? "line" : "square");
+const shapeText = (s: "square" | "line") => (s === "line" ? "เพลา" : "แผ่น");
 
 function SteelSearchSelect({
   value,
@@ -296,6 +296,26 @@ export default function DetailItem<T extends JobWithSteel>({
                     isLine ? "grid-cols-2" : "grid-cols-3"
                   )}
                 >
+                  <div>
+                    <label className="mb-1 block text-center text-sm text-zinc-500 dark:text-zinc-400">
+                      หนา
+                    </label>
+                    <div className="relative">
+                      <Input
+                        type="number"
+                        className="h-9 border-zinc-200 bg-white pr-6 text-center focus-visible:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
+                        value={it.thickness ?? 0}
+                        onChange={(e) =>
+                          patchSteelItem(idx, {
+                            thickness: Math.max(0, Number(e.target.value || 0)),
+                          })
+                        }
+                      />
+                      <span className="absolute right-2 top-1/2 -translate-y-1/2 text-sm text-zinc-400 dark:text-zinc-500">
+                        mm
+                      </span>
+                    </div>
+                  </div>
                   {!isLine && (
                     <div>
                       <label className="mb-1 block text-center text-sm text-zinc-500 dark:text-zinc-400">
@@ -313,11 +333,12 @@ export default function DetailItem<T extends JobWithSteel>({
                           }
                         />
                         <span className="absolute right-2 top-1/2 -translate-y-1/2 text-sm text-zinc-400 dark:text-zinc-500">
-                          cm
+                          mm
                         </span>
                       </div>
                     </div>
                   )}
+
                   <div>
                     <label className="mb-1 block text-center text-sm text-zinc-500 dark:text-zinc-400">
                       ยาว
@@ -334,28 +355,7 @@ export default function DetailItem<T extends JobWithSteel>({
                         }
                       />
                       <span className="absolute right-2 top-1/2 -translate-y-1/2 text-sm text-zinc-400 dark:text-zinc-500">
-                        cm
-                      </span>
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="mb-1 block text-center text-sm text-zinc-500 dark:text-zinc-400">
-                      หนา
-                    </label>
-                    <div className="relative">
-                      <Input
-                        type="number"
-                        className="h-9 border-zinc-200 bg-white pr-6 text-center focus-visible:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
-                        value={it.thickness ?? 0}
-                        onChange={(e) =>
-                          patchSteelItem(idx, {
-                            thickness: Math.max(0, Number(e.target.value || 0)),
-                          })
-                        }
-                      />
-                      <span className="absolute right-2 top-1/2 -translate-y-1/2 text-sm text-zinc-400 dark:text-zinc-500">
-                        cm
+                        mm
                       </span>
                     </div>
                   </div>

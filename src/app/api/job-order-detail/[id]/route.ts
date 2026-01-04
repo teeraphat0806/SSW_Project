@@ -139,9 +139,9 @@ const ALLOWED_ROLES_BY_STATUS: Record<string, string[]> = {
   cutting: ["superadmin", "supervisor", "clerk"],
   weighing: ["superadmin", "supervisor", "clerk", "delivery"],
   ready: ["superadmin", "supervisor", "clerk", "delivery"],
-  shipped: ["superadmin", "clerk", "delivery"],
-  completed: ["superadmin", "clerk", "delivery"],
-  canceled: ["superadmin", "supervisor", "clerk"],
+  shipped: ["superadmin", "clerk", "delivery", "supervisor"],
+  completed: ["superadmin", "clerk", "delivery", "supervisor"],
+  canceled: ["superadmin", "supervisor", "clerk", "delivery"],
 };
 
 const STATUS_OPTIONS = Object.keys(ALLOWED_ROLES_BY_STATUS);

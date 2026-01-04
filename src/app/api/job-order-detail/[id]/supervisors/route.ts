@@ -10,9 +10,9 @@ const BodySchema = z.object({
 
 export async function PATCH(
   req: NextRequest,
-  context: { params: Promise<{ id: string }> } 
+  context: { params: Promise<{ id: string }> }
 ) {
-  const authResult = await requireAuth(["superadmin", "clerk"]);
+  const authResult = await requireAuth(["superadmin", "clerk", "supervisor"]);
 
   if ("response" in authResult) {
     return authResult.response;
@@ -62,9 +62,9 @@ export async function PATCH(
 
 export async function DELETE(
   req: NextRequest,
-   context: { params: Promise<{ id: string }> } 
+  context: { params: Promise<{ id: string }> }
 ) {
-  const authResult = await requireAuth(["superadmin", "clerk"]);
+  const authResult = await requireAuth(["superadmin", "clerk", "supervisor"]);
 
   if ("response" in authResult) {
     return authResult.response;
@@ -105,7 +105,7 @@ export async function DELETE(
 }
 
 export async function GET() {
-  const authResult = await requireAuth(["superadmin", "clerk"]);
+  const authResult = await requireAuth(["superadmin", "clerk", "supervisor"]);
 
   if ("response" in authResult) {
     return authResult.response;

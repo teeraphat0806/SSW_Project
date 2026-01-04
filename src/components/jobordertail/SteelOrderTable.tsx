@@ -55,14 +55,12 @@ const calculateWeightDetails = (item: SteelItem) => {
 
   if (width > 0) {
     // เหล็กแผ่น (Plate)
-    const volumeCm3 = width * length * thickness;
-    weightPerPiece = cm3ToM3(volumeCm3) * density;
+    const volume = width * length * thickness;
+    weightPerPiece = volume * density * 0.1; //weightPerPiece = cm3ToM3(volumeCm3) * density;
   } else {
     // เหล็กเส้น/กลม (Round Bar) -> thickness คือ diameter
-    const r = thickness / 2;
-    const areaCm2 = Math.PI * r * r;
-    const volumeCm3 = areaCm2 * length;
-    weightPerPiece = cm3ToM3(volumeCm3) * density;
+    const volume = length * length * thickness;
+    weightPerPiece = volume * density * 0.1;
   }
 
   const totalWeight = weightPerPiece * amount;
@@ -98,88 +96,160 @@ export default function SteelTable({ steel = [] }: SteelTableProps) {
   );
 
   return (
-    <Card className="overflow-hidden rounded-lg shadow-md w-full">
-      <CardHeader className="bg-background border-b px-6 py-4">
-        <div className="flex items-center gap-2">
-          <FileText className="h-5 w-5 text-primary" />
-          <CardTitle className="text-base font-semibold">รายการเหล็ก</CardTitle>
+    <Card className="overflow-hidden rounded-xl shadow-md border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 transition-colors duration-300">
+      {/* Header Section */}
+      <CardHeader className="bg-zinc-50/60 dark:bg-zinc-900/60 border-b border-zinc-100 dark:border-zinc-800 px-6 py-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            {/* Icon Box: ปรับให้ดู Minimal แบบ Industrial */}
+            <div className="p-2.5 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700/50">
+              <FileText className="h-5 w-5" />
+            </div>
+            <div>
+              <CardTitle className="text-lg font-bold text-zinc-900 dark:text-zinc-100 tracking-tight">
+                รายการเหล็ก
+              </CardTitle>
+              <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5 font-medium">
+                สรุปรายการและคำนวณราคา
+              </p>
+            </div>
+          </div>
+          {/* Action Button Area */}
         </div>
       </CardHeader>
 
       <CardContent className="p-0">
         <div className="w-full text-sm text-left">
-          {/* Table Header */}
-          <div className="bg-muted/50 px-6 py-3 font-medium text-muted-foreground grid grid-cols-4 gap-4">
-            <span className="font-bold">ประเภทเหล็ก (ขนาด)</span>
-            <span className="font-bold text-center">น้ำหนักรวม (Kg)</span>
-            <span className="font-bold text-center">ราคา/กก.</span>
-            <span className="text-right font-bold">ราคารวม</span>
+          {/* Table Header: ปรับ Grid เป็น 4-3-2-1-2 เพื่อสัดส่วนที่สวยงาม */}
+          <div className="bg-zinc-50 dark:bg-zinc-900/80 px-6 py-3 border-b border-zinc-200 dark:border-zinc-800 grid grid-cols-12 gap-4 items-center">
+            <span className="col-span-3 font-bold text-zinc-700 dark:text-zinc-300">
+              ประเภทเหล็ก
+            </span>
+            <span className="col-span-3 font-bold text-zinc-700 dark:text-zinc-300">
+              ขนาด <span>(มม.)</span>
+            </span>
+            <span className="col-span-2 text-right font-bold text-zinc-700 dark:text-zinc-300">
+              น้ำหนัก (Kg)
+            </span>
+            <span className="col-span-2 text-right font-bold text-zinc-700 dark:text-zinc-400">
+              ราคา/กก.
+            </span>
+            <span className="col-span-2 text-right font-bold text-zinc-700 dark:text-zinc-400">
+              ราคารวม
+            </span>
           </div>
 
           {/* Table Body */}
-          {processedItems.length === 0 ? (
-            <div className="p-6 text-center text-muted-foreground">
-              ไม่พบรายการเหล็ก
-            </div>
-          ) : (
-            processedItems.map((item, idx) => (
-              <div
-                key={idx}
-                className="px-6 py-4 border-b last:border-0 grid grid-cols-4 gap-4 bg-background items-center hover:bg-muted/30 transition-colors"
-              >
-                {/* Col 1: Detail */}
-                <div className="flex flex-col">
-                  <span className="font-medium text-foreground">
-                    {item.original.steelType}
-                  </span>
-                  <div className="text-xs text-muted-foreground mt-1">
-                    <span>
-                      {item.dimensions.width > 0
-                        ? `${item.dimensions.width} x `
-                        : ""}
-                      {item.dimensions.length} x {item.dimensions.thickness}
+          <div className="divide-y divide-zinc-100 dark:divide-zinc-800/60">
+            {processedItems.length === 0 ? (
+              <div className="py-16 flex flex-col items-center justify-center text-zinc-400 dark:text-zinc-600 gap-3">
+                <div className="w-14 h-14 rounded-full bg-zinc-50 dark:bg-zinc-900 flex items-center justify-center border border-zinc-100 dark:border-zinc-800">
+                  <FileText className="h-6 w-6 opacity-30" />
+                </div>
+                <span className="font-medium">ไม่พบรายการเหล็ก</span>
+              </div>
+            ) : (
+              processedItems.map((item, idx) => (
+                <div
+                  key={idx}
+                  className="group px-6 py-4 grid grid-cols-12 gap-4 items-center hover:bg-zinc-50 dark:hover:bg-zinc-900/40 transition-colors duration-200"
+                >
+                  {/* Col 1: Detail (Span 3) */}
+                  <div className="col-span-3 flex flex-col justify-center pr-2 gap-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      {/* ชื่อเหล็ก */}
+                      <span className="font-semibold text-zinc-800 dark:text-zinc-200 text-sm group-hover:text-black dark:group-hover:text-white transition-colors">
+                        {item.original.steelType}
+                      </span>
+
+                      {/* Badge: จำนวน (Monochrome Style) */}
+                      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700  font-bold text-zinc-600 dark:text-zinc-400">
+                        <span className="text-zinc-500 dark:text-zinc-400">
+                          x
+                        </span>{" "}
+                        {safeNum(item.original.amount)}
+                      </span>
+
+                      {/* Badge: Type (Manual=Amber, Formula=Zinc) */}
+                      <span
+                        className={` px-1.5 py-0.5 rounded border font-medium bg-zinc-100 border-zinc-200 text-zinc-500 dark:bg-zinc-900 dark:border-zinc-800 dark:text-zinc-500`}
+                      >
+                        {item.isManual ? "ระบุเอง" : "สูตร"}
+                      </span>
+                    </div>
+
+                    {item.original.detail && (
+                      <span className="text-xs text-zinc-400 dark:text-zinc-500 italic truncate pl-0.5">
+                        {item.original.detail}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Col 2: Dimensions (Span 3) */}
+                  <div className="col-span-3 flex items-center font-mono text-sm text-zinc-500 dark:text-zinc-400">
+                    <span className="font-bold text-zinc-700 dark:text-zinc-300">
+                      {item.dimensions.thickness}
                     </span>
-                    <span className="mx-2">|</span>
-                    <span>x{safeNum(item.original.amount)} ชิ้น</span>
-                    <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded-full bg-slate-100 border dark:bg-slate-700 text-slate-600 dark:text-slate-300">
-                      {item.isManual ? "นน.ระบุเอง" : "คำนวณสูตร"}
+                    <span className="text-zinc-500 dark:text-zinc-500 mx-1.5">
+                      ×
+                    </span>
+
+                    {item.dimensions.width > 0 && (
+                      <>
+                        <span className="font-bold text-zinc-700 dark:text-zinc-300">
+                          {item.dimensions.width}
+                        </span>
+                        <span className=" text-zinc-500 dark:text-zinc-500  mx-1.5">
+                          ×
+                        </span>
+                      </>
+                    )}
+
+                    <span className="font-bold text-zinc-700 dark:text-zinc-300">
+                      {item.dimensions.length}
                     </span>
                   </div>
-                  {/* แสดง detail เพิ่มเติมถ้ามี */}
-                  {item.original.detail && (
-                    <span className="text-xs text-slate-400 mt-0.5 italic">
-                      ({item.original.detail})
-                    </span>
-                  )}
-                </div>
 
-                {/* Col 2: Weight */}
-                <div className="text-center">{fmt(item.weight)}</div>
+                  {/* Col 3: Weight (Span 2) */}
+                  <div className="col-span-2 text-right font-bold text-zinc-700 dark:text-zinc-300">
+                    {fmt(item.weight)}
+                  </div>
 
-                {/* Col 3: Price/Unit */}
-                <div className="text-center text-muted-foreground">
-                  {fmt(item.original.price)}
-                </div>
+                  {/* Col 4: Price/Unit (Span 2) */}
+                  <div className="col-span-2 text-right font-bold text-zinc-700 dark:text-zinc-400">
+                    {fmt(item.original.price)}
+                  </div>
 
-                {/* Col 4: Total Price */}
-                <div className="text-right font-mono font-medium">
-                  {fmt(item.totalPrice)}
+                  {/* Col 5: Total Price (Span 2) */}
+                  <div className="col-span-2 text-right font-mono font-bold text-zinc-800 dark:text-zinc-200 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
+                    {fmt(item.totalPrice)}
+                  </div>
                 </div>
-              </div>
-            ))
-          )}
+              ))
+            )}
+          </div>
 
           {/* Table Footer */}
           {processedItems.length > 0 && (
-            <div className="px-6 py-4 grid grid-cols-4 gap-4 bg-muted/20 border-t items-center">
-              <span className="font-bold text-primary">รวมทั้งหมด</span>
-              <span className="font-bold text-center underline decoration-dotted">
-                {fmt(summary.totalWeight)}
-              </span>
-              <span className="text-center text-muted-foreground">-</span>
-              <span className="font-bold text-green-600 text-right text-base">
-                {fmt(summary.grandTotal)} บาท
-              </span>
+            <div className="bg-zinc-50/50 dark:bg-zinc-950 px-6 py-4 border-t border-zinc-200 dark:border-zinc-800 grid grid-cols-12 gap-4 items-center">
+              <div className="col-span-6 text-left font-bold text-zinc-600 dark:text-zinc-400 ">
+                น้ำหนักรวม
+              </div>
+              <div className="col-span-2 text-right">
+                <span className="font-mono font-bold text-zinc-600 dark:text-zinc-400 border-b border-zinc-300 dark:border-zinc-700 border-dotted pb-0.5">
+                  {fmt(summary.totalWeight)}
+                </span>
+              </div>
+
+              <div className="col-span-2 text-left">
+                <span className=" text-zinc-500 ml-1">Kg</span>
+              </div>
+
+              <div className="col-span-2 flex items-baseline justify-end gap-2">
+                <span className="font-mono text-lg font-bold text-emerald-600 dark:text-emerald-400">
+                  {fmt(summary.grandTotal)}
+                </span>
+              </div>
             </div>
           )}
         </div>

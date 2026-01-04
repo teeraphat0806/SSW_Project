@@ -59,13 +59,11 @@ function calcComputedWeightKg(params: {
 
   if (params.shape === "square") {
     if (width <= 0) return 0;
-    const volumeCm3 = width * length * thickness;
-    weightPerPieceKg = cm3ToM3(volumeCm3) * density;
+    const volume = width * length * thickness;
+    weightPerPieceKg = volume * density * 0.1;
   } else {
-    const r = thickness / 2;
-    const areaCm2 = Math.PI * r * r;
-    const volumeCm3 = areaCm2 * length;
-    weightPerPieceKg = cm3ToM3(volumeCm3) * density;
+    const volume = length * length * thickness;
+    weightPerPieceKg = volume * density * 0.1;
   }
 
   return weightPerPieceKg * amount; // ✅ น้ำหนักรวมทั้งรายการ (kg)
