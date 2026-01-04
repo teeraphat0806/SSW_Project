@@ -72,10 +72,18 @@ export async function POST(req: NextRequest) {
   console.log(session);
 
   // เรียก API /user/filter/?name={session.user.name}
-  
+  const origin = req.nextUrl.origin;
+  const userName = session?.user?.name ?? "";
+
+  if (!userName) {
+    return NextResponse.json(
+      { error: "Missing user name for creator lookup" },
+      { status: 400 }
+    );
+  }
 
   const res = await fetch(
-    `api/user/filter?name=${encodeURIComponent(session.user.name!)}`,
+    `${origin}/api/user/filter?name=${encodeURIComponent(userName)}`,
     {
       method: "GET",
       headers: { "Content-Type": "application/json" },
@@ -91,6 +99,13 @@ export async function POST(req: NextRequest) {
 
   const users = await res.json();
   const creatorId = users[0]?.id;
+
+  if (!creatorId) {
+    return NextResponse.json(
+      { error: "Creator user not found" },
+      { status: 404 }
+    );
+  }
 
   const body = await req.json();
   const dateNow = new Date();

@@ -44,6 +44,10 @@ import {
   TrendingDown,
   PiggyBank,
   BarChart3,
+  DollarSign,
+  FileText,
+  Briefcase,
+  ListChecks,
 } from "lucide-react";
 import {
   ResponsiveContainer,
@@ -839,48 +843,73 @@ export default function PayrollPage() {
 
         {/* ========= ADJUSTMENT ========= */}
         <TabsContent value="adjustment" className="space-y-4 md:space-y-6">
+          {/* Step Indicator */}
+          <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg p-4 md:p-5">
+            <div className="flex items-center gap-3">
+              <Badge className="rounded-full bg-blue-600">1</Badge>
+              <div>
+                <p className="font-semibold text-sm">
+                  ขั้นตอนที่ 1: เลือกประเภท
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  ปรับเงินเดือนหรือรายได้อื่น
+                </p>
+              </div>
+              <Select
+                value={adjustmentType}
+                onValueChange={(v: "salary" | "other") => setAdjustmentType(v)}
+              >
+                <SelectTrigger className="w-56 ml-auto">
+                  <SelectValue placeholder="เลือกประเภท" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="salary">
+                    <div className="flex items-center gap-2">
+                      <DollarSign className="h-4 w-4" /> ปรับเงินเดือน
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="other">➕ ปรับรายได้อื่น</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
             {/* Left column: Form */}
-            <Card className="md:col-span-2">
-              <CardHeader className="pb-2">
+            <Card className="md:col-span-2 shadow-md border-l-4 border-l-blue-600">
+              <CardHeader className="bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 border-b pb-3">
                 <div className="flex items-center justify-between">
-                  <CardTitle className="text-base md:text-lg">
-                    {adjustmentType === "salary"
-                      ? "ฟอร์มปรับเงินเดือน"
-                      : "ฟอร์มปรับรายได้อื่น"}
-                  </CardTitle>
+                  <div className="space-y-1">
+                    <CardTitle className="text-base md:text-lg flex items-center gap-2">
+                      <FileText className="h-5 w-5 text-blue-600" />
+                      {adjustmentType === "salary"
+                        ? "ฟอร์มปรับเงินเดือน"
+                        : "ฟอร์มปรับรายได้อื่น"}
+                    </CardTitle>
+                    <p className="text-xs text-muted-foreground">
+                      ขั้นตอนที่ 2-3: เลือกพนักงานและจำนวนเงิน
+                    </p>
+                  </div>
                   <Badge variant="secondary" className="rounded-full">
-                    {adjustmentType === "salary"
-                      ? "ปรับเงินเดือน"
-                      : "รายได้อื่น"}
+                    {adjustmentType === "salary" ? (
+                      <div className="flex items-center gap-1">
+                        <Briefcase className="h-3 w-3" /> เงินเดือน
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-1">
+                        <BarChart3 className="h-3 w-3" /> รายได้
+                      </div>
+                    )}
                   </Badge>
                 </div>
               </CardHeader>
-              <CardContent className="space-y-3 md:space-y-4">
+              <CardContent className="space-y-3 md:space-y-4 pt-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
-                  <div className="space-y-2">
-                    <Label>เลือกประเภทที่ต้องการปรับ</Label>
-                    <Select
-                      value={adjustmentType}
-                      onValueChange={(v: "salary" | "other") =>
-                        setAdjustmentType(v)
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="เลือกประเภท" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="salary">ปรับเงินเดือน</SelectItem>
-                        <SelectItem value="other">
-                          ปรับรายได้อื่น (เช่น OT, มาสาย)
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
                   {adjustmentType === "other" && (
-                    <div className="space-y-2">
-                      <Label>เลือกรายการรายได้อื่น</Label>
+                    <div className="space-y-2 p-3 md:p-4 bg-amber-50 dark:bg-amber-950/20 rounded-lg border-2 border-amber-200 dark:border-amber-700 md:col-span-2">
+                      <Label className="text-sm font-semibold text-amber-900 dark:text-amber-100 flex items-center gap-2">
+                        <ListChecks className="h-4 w-4" /> เลือกรายการรายได้อื่น
+                      </Label>
                       <div className="flex gap-2">
                         <Select
                           defaultValue={otherIncomeTypes[0]?.name ?? "OT"}
@@ -970,6 +999,8 @@ export default function PayrollPage() {
 
                 <SalaryAdjustmentForm
                   employees={employees}
+                  adjustmentType={adjustmentType}
+                  onEmployeeChange={(staffId) => setLatestEmployeeOnly(staffId)}
                   onAdjustmentSubmit={(payload) => {
                     if (adjustmentType === "other") {
                       const el = document.getElementById(

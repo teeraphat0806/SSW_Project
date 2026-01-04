@@ -63,6 +63,9 @@ export function MonthDetailModal({
     return getCustomerBreakdownForMonth(year, month);
   }, [year, month]);
 
+  // Convert AD year to Buddhist Era (BE) for display
+  const buddhistYear = year + 543;
+
   const [customerSortBy, setCustomerSortBy] = useState<
     "sales-desc" | "sales-asc" | "count-desc" | "count-asc"
   >("sales-desc");
@@ -103,7 +106,7 @@ export function MonthDetailModal({
         >
           <DialogHeader>
             <DialogTitle>
-              รายละเอียดคำสั่งซื้อ - {getMonthName(month)} {year}
+              รายละเอียดคำสั่งซื้อ - {getMonthName(month)} {buddhistYear}
             </DialogTitle>
           </DialogHeader>
 

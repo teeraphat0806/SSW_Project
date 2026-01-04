@@ -114,6 +114,22 @@ export async function DELETE(
   }
 
   try {
+    // Check if there are existing StaffIncome records using this type
+    const relatedIncomes = await prisma.staffIncome.findMany({
+      where: { typeId: idNum },
+    });
+
+    if (relatedIncomes.length > 0) {
+      return NextResponse.json(
+        {
+          error: `ไม่สามารถลบประเภทรายการนี้ได้ เนื่องจากมีรายการรายได้ ${relatedIncomes.length} รายการที่ใช้ประเภทนี้อยู่`,
+          relatedCount: relatedIncomes.length,
+        },
+        { status: 400 }
+      );
+    }
+
+    // If no related records, proceed with deletion
     await prisma.typeStaffIncome.delete({ where: { id: idNum } });
     return new NextResponse(null, { status: 204 }); // No Content
   } catch (error) {

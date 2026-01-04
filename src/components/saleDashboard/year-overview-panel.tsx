@@ -14,7 +14,14 @@ import {
 import { KPIStatCard } from "./kpi-stat-card";
 import { formatCurrency } from "@/lib/saleDashboard/analytics-utils";
 import { useSaleAnalytics } from "@/hooks/saleDashboard/useSaleAnalytics";
-import { TrendingUp, TrendingDown } from "lucide-react";
+import {
+  TrendingUp,
+  TrendingDown,
+  DollarSign,
+  Receipt,
+  ShoppingCart,
+  Package,
+} from "lucide-react";
 
 interface YearOverviewPanelProps {
   year: number;
@@ -59,11 +66,13 @@ export function YearOverviewPanel({
   }, [monthlyData, sortMode]);
 
   const maxSales = Math.max(...monthlyData.map((m) => m.totalSales), 1);
+  // Convert AD year to Buddhist Era (BE) for display
+  const buddhistYear = year + 543;
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold">ภาพรวมทั้งปี {year}</h2>
+        <h2 className="text-2xl font-bold">ภาพรวมทั้งปี {buddhistYear}</h2>
       </div>
 
       {/* Year KPI Cards */}
@@ -72,18 +81,30 @@ export function YearOverviewPanel({
           title="ยอดขายรวมทั้งปี"
           value={sales.totalSales}
           format="currency"
+          variant="gradient-blue"
+          icon={DollarSign}
         />
-        <KPIStatCard title="VAT รวม" value={sales.totalVAT} format="currency" />
+        <KPIStatCard
+          title="VAT รวม"
+          value={sales.totalVAT}
+          format="currency"
+          variant="gradient-green"
+          icon={Receipt}
+        />
         <KPIStatCard
           title="ยอดเฉลี่ยต่อคำสั่งซื้อ"
           value={sales.averageOrderValue}
           format="currency"
+          variant="gradient-purple"
+          icon={ShoppingCart}
         />
         <KPIStatCard
           title="คำสั่งซื้อทั้งหมด"
           value={sales.totalOrders}
           format="number"
           subtitle={`เสร็จสิ้น: ${completedOrders} | รอดำเนินการ: ${pendingOrders}`}
+          variant="gradient-orange"
+          icon={Package}
         />
       </div>
 

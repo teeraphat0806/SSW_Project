@@ -26,7 +26,13 @@ import {
   formatCurrency,
 } from "@/lib/saleDashboard/analytics-utils";
 import { useSaleAnalytics } from "@/hooks/saleDashboard/useSaleAnalytics";
-import { Printer } from "lucide-react";
+import {
+  Printer,
+  DollarSign,
+  ShoppingCart,
+  TrendingUp,
+  CheckCircle,
+} from "lucide-react";
 
 interface MonthDashboardPanelProps {
   year: number;
@@ -130,12 +136,12 @@ export function MonthDashboardPanel({
     };
     return labels[status] || status;
   };
-
+  const buddhistYear = year + 543;
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <h2 className="text-2xl font-bold">
-          รายละเอียดเดือน {getMonthName(selectedMonth)} {year}
+          รายละเอียดเดือน {getMonthName(selectedMonth)} {buddhistYear}
         </h2>
         <div className="flex gap-2">
           <Select
@@ -169,22 +175,30 @@ export function MonthDashboardPanel({
           title="ยอดขายเดือนนี้"
           value={sales.totalSales}
           format="currency"
+          variant="gradient-blue"
+          icon={DollarSign}
         />
         <KPIStatCard
           title="คำสั่งซื้อทั้งหมด"
           value={sales.totalOrders}
           format="number"
+          variant="gradient-purple"
+          icon={ShoppingCart}
         />
         <KPIStatCard
           title="ยอดเฉลี่ยต่อคำสั่งซื้อ"
           value={sales.avgOrderValue}
           format="currency"
+          variant="gradient-green"
+          icon={TrendingUp}
         />
         <KPIStatCard
           title="สถานะ"
           value={sales.completedOrders}
           format="number"
           subtitle={`เสร็จสิ้น: ${sales.completedOrders} | รอ: ${sales.pendingOrders}`}
+          variant="gradient-orange"
+          icon={CheckCircle}
         />
       </div>
 
