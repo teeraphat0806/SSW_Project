@@ -33,31 +33,31 @@ export function QuickAction({
   const actions: ActionItem[] = [
     {
       key: "edit",
-      label: "Edit Order",
+      label: "แก้ไขออเดอร์ (Edit Order)",
       icon: Edit,
       run: () => router.push(`/up-date-order/${orderId}`),
     },
     {
       key: "print",
-      label: "สร้างใบสั่งซื้อ (receipt) ",
+      label: "พิมพ์ใบสั่งซื้อ (Receipt) ",
       icon: Printer,
       run: () => router.push(`/receipt-invoice/${billid}`),
     },
-    {
-      key: "email",
-      label: "Email Customer",
-      icon: Mail,
-      run: async () => {
-        const res = await fetch(`/api/orders/${orderId}/email`, {
-          method: "POST",
-        });
-        if (!res.ok) throw new Error("Send email failed");
-        toast({
-          title: "Email sent",
-          description: "Customer has been notified.",
-        });
-      },
-    },
+    // {
+    //   key: "email",
+    //   label: "Email Customer",
+    //   icon: Mail,
+    //   run: async () => {
+    //     const res = await fetch(`/api/orders/${orderId}/email`, {
+    //       method: "POST",
+    //     });
+    //     if (!res.ok) throw new Error("Send email failed");
+    //     toast({
+    //       title: "Email sent",
+    //       description: "Customer has been notified.",
+    //     });
+    //   },
+    // },
     {
       key: "pofile",
       label: "แสดงใบสั่งซื้อ (PO File)",

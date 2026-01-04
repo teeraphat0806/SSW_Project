@@ -465,7 +465,7 @@ const JobOrderDetailPage = ({ id }: { id: string }) => {
               className="h-9 gap-2 text-white"
               onClick={() => router.push("/up-date-order/" + id)}
             >
-              <Edit className="h-4 w-4" /> Edit Order
+              <Edit className="h-4 w-4" /> แก้ไขออเดอร์
             </Button>
           </div>
         </div>
@@ -520,10 +520,14 @@ const JobOrderDetailPage = ({ id }: { id: string }) => {
                 <div className="border-b bg-muted/10 px-6 pt-2 dark:border-zinc-800">
                   <TabsList className="flex mb-3 h-auto w-full justify-start gap-8 bg-transparent p-0">
                     {[
-                      { id: "StaffInfo", label: "Staff Info", icon: User2 },
-                      { id: "Customer", label: "Customer", icon: Building2 },
-                      { id: "Production", label: "Production", icon: Factory },
-                      { id: "Delivery", label: "Delivery", icon: Truck },
+                      { id: "StaffInfo", label: "ข้อมูลพนักงาน", icon: User2 },
+                      {
+                        id: "Customer",
+                        label: "ลูกค้า",
+                        icon: Building2,
+                      },
+                      { id: "Production", label: "การผลิต", icon: Factory },
+                      { id: "Delivery", label: "การจัดส่ง", icon: Truck },
                     ].map((tab) => (
                       <TabsTrigger
                         key={tab.id}
@@ -568,7 +572,12 @@ const JobOrderDetailPage = ({ id }: { id: string }) => {
                 {/* Production */}
                 <TabsContent value="Production" className="mt-2">
                   <ProductionTab
-                    status={(jobOrder?.status || "pending") as Exclude<JobOrder["status"], "canceled">}
+                    status={
+                      (jobOrder?.status || "pending") as Exclude<
+                        JobOrder["status"],
+                        "canceled"
+                      >
+                    }
                     onUpdateStatus={handleStatusUpdate}
                     getStatusColor={getStatusColor}
                   />
@@ -577,7 +586,12 @@ const JobOrderDetailPage = ({ id }: { id: string }) => {
                 {/* Delivery */}
                 <TabsContent value="Delivery" className="mt-0">
                   <DeliveryTab
-                    status={(jobOrder?.status || "pending") as Exclude<JobOrder["status"], "canceled">}
+                    status={
+                      (jobOrder?.status || "pending") as Exclude<
+                        JobOrder["status"],
+                        "canceled"
+                      >
+                    }
                     // ✅ แก้ตรงนี้: เช็คว่ามี jobOrder ก่อนค่อยแปลงวันที่ ถ้าไม่มีให้ส่ง string ว่างหรือ "-"
                     deliveryDate={
                       jobOrder?.deliveryDate

@@ -534,7 +534,7 @@ const NewJobOrder = () => {
                       <div className="space-y-2">
                         <div className="flex justify-between text-sm">
                           <span className="text-muted-foreground">
-                            Total Items:
+                            จำนวนชิ้นทั้งหมด:
                           </span>
                           <span className="font-medium">
                             {steelItems.reduce(
@@ -547,7 +547,7 @@ const NewJobOrder = () => {
 
                         <div className="flex justify-between text-sm">
                           <span className="text-muted-foreground">
-                            Steel Types:
+                            ประเภทเหล็กทั้งหมด:
                           </span>
                           <span className="font-medium">
                             {
@@ -561,7 +561,7 @@ const NewJobOrder = () => {
                         </div>
                         <div className="flex justify-between text-sm">
                           <span className="text-muted-foreground">
-                            Deadline:
+                            กำหนดส่ง:
                           </span>
                           {headOrder.deliveryDate}
                         </div>

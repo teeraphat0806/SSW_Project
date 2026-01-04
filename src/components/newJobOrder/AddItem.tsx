@@ -311,7 +311,7 @@ export default function AddItem({
                 {/* 5. หนา: square + line */}
                 {(item.shape === "square" || item.shape === "line") && (
                   <div>
-                    <Label>หนา (ซม.)</Label>
+                    <Label>หนากลม (ซม.)</Label>
                     <Input
                       type="number"
                       min="0.1"
