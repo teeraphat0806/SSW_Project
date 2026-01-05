@@ -267,7 +267,7 @@ export default function AddItem({
                 {/* 3. กว้าง: สำหรับ shape = square เท่านั้น */}
                 {item.shape === "square" && (
                   <div>
-                    <Label>กว้าง (ซม.)</Label>
+                    <Label>กว้าง (มม.)</Label>
                     <Input
                       type="number"
                       min="0.1"
@@ -290,7 +290,7 @@ export default function AddItem({
                 {/* 4. ยาว: square + line */}
                 {(item.shape === "square" || item.shape === "line") && (
                   <div>
-                    <Label>ยาว (ซม.)</Label>
+                    <Label>ยาว (มม.)</Label>
                     <Input
                       type="number"
                       min="0.1"
@@ -311,7 +311,7 @@ export default function AddItem({
                 {/* 5. หนา: square + line */}
                 {(item.shape === "square" || item.shape === "line") && (
                   <div>
-                    <Label>หนากลม (ซม.)</Label>
+                    <Label>หนากลม (มม.)</Label>
                     <Input
                       type="number"
                       min="0.1"

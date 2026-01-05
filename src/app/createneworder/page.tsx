@@ -380,6 +380,10 @@ const NewJobOrder = () => {
     if (!UploadFile.length) return "กรุณาอัปโหลดไฟล์ใบ PO";
     if (!headOrder.poNumber.trim()) return "กรุณากรอกหมายเลข PO";
     if (!headOrder.deliveryDate) return "กรุณากรอกวันที่ต้องการสินค้า";
+    if (!headOrder.yourRef.trim()) return "กรุณากรอกช่อง Your Ref";
+
+    if (steelItems.length === 0)
+      return "กรุณาเพิ่มรายการเหล็กอย่างน้อย 1 รายการ";
     for (const item of steelItems) {
       if (!item.steelType) return "กรุณาเลือกประเภทเหล็ก";
       if (item.quantity <= 0) return "จำนวนชิ้นต้องมากกว่า 0";

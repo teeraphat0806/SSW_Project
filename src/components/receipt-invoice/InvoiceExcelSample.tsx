@@ -25,7 +25,7 @@ type Inv71LikeInvoiceProps = {
   taxId: string;
 
   // ส่วนเอกสารขวาบน
-  youRef: string; // HS00127879
+  invoiceNo: number; // 1003
   date: string; // 14/08/68
   credit: string; // 30 วัน
   selesName: string; // J.Sirikran
@@ -47,7 +47,7 @@ export const InvoiceExcelSample: React.FC<Inv71LikeInvoiceProps> = ({
   tel,
   fax,
   taxId,
-  youRef,
+  invoiceNo,
   date,
   credit,
   selesName,
@@ -77,7 +77,7 @@ export const InvoiceExcelSample: React.FC<Inv71LikeInvoiceProps> = ({
         bg-white
         px-4 
         py-3 
-        text-[11px]
+        text-sm
         text-black
         print:w-[21cm]
       "
@@ -86,7 +86,7 @@ export const InvoiceExcelSample: React.FC<Inv71LikeInvoiceProps> = ({
       <div className="mt-20" />
       <div className="flex justify-between gap-4">
         {/* ซ้าย: ข้อมูลบริษัท */}
-        <div className="space-y-[1px]">
+        <div className="space-y-[1px] max-w-[10cm]">
           <div className="font-bold">{companyName}</div>
           <div>{addressLine1}</div>
           <div>{addressLine2}</div>
@@ -97,11 +97,11 @@ export const InvoiceExcelSample: React.FC<Inv71LikeInvoiceProps> = ({
         </div>
 
         {/* ขวา: HS เลขที่ / วันที่ / เครดิต / ผู้จัดทำ */}
-        <div className="min-w-[170px] text-[11px] space-y-[2px]">
+        <div className="min-w-[170px] text-sm space-y-[2px]">
           <div className="flex justify-between">
             <span></span>
             {/* <span>เลขที่</span> */}
-            <span className="">{youRef}</span>
+            <span className="">HS{invoiceNo}</span>
           </div>
           <div className="flex justify-between">
             <span></span>
@@ -122,10 +122,10 @@ export const InvoiceExcelSample: React.FC<Inv71LikeInvoiceProps> = ({
       </div>
 
       {/* ระยะห่างเล็กน้อยก่อนหัวคอลัมน์ */}
-      <div className="mt-20" />
+      <div className="mt-25" />
 
       {/* หัวคอลัมน์แบบ Excel (ไม่มีกรอบ) */}
-      <table className="w-full text-[11px]">
+      <table className="w-full text-sm">
         {/* กำหนดความกว้างแต่ละคอลัมน์ให้ฟีลเหมือน Excel */}
         <colgroup>
           <col className="w-[35px]" /> {/* ลำดับ (ไม่โชว์หัว) */}
@@ -189,15 +189,21 @@ export const InvoiceExcelSample: React.FC<Inv71LikeInvoiceProps> = ({
               <td className="pt-1 pr-1 text-left">{item.amount}</td>
 
               <td className="pt-1 pr-1 text-left">
-                {formatNumber(item.weight)}
+                {item.weight == null || item.weight === 0
+                  ? ""
+                  : formatNumber(item.weight)}
               </td>
 
               <td className="pt-1 pr-1 text-left">
-                {formatNumber(item.price)}
+                {item.weight == null || item.weight === 0
+                  ? ""
+                  : formatNumber(item.price)}
               </td>
 
               <td className="pt-1 pr-1 text-left">
-                {formatNumber(item.total)}
+                {item.weight == null || item.weight === 0
+                  ? ""
+                  : formatNumber(item.total)}
               </td>
             </tr>
           ))}
@@ -205,31 +211,40 @@ export const InvoiceExcelSample: React.FC<Inv71LikeInvoiceProps> = ({
       </table>
 
       {/* เว้นบรรทัดก่อนโซนรวมยอด */}
-      <div className="mt-170" />
+      <div className="mt-165" />
 
       {/* รวมเงิน, ฐานภาษี, VAT, รวมทั้งสิ้น (จัดขวาเหมือนในใบ) */}
       <div className="space-y-[2px]">
         <div className="flex justify-between">
           <span className="flex-1" />
-          <span className="w-[160px] text-right">{subtotal}</span>
+          <span className="w-[160px] text-right">
+            {items[0].weight == null || items[0].weight === 0 ? "" : subtotal}
+          </span>
         </div>
 
         <div className="flex justify-between">
           <span className="flex-1" />
-          <span className="w-[160px] text-right">{formatNumber(vat)}</span>
+          <span className="w-[160px] text-right">
+            {items[0].weight == null || items[0].weight === 0
+              ? ""
+              : formatNumber(vat)}
+          </span>
         </div>
       </div>
 
       {/* แถว: ข้อความตัวหนังสือ & รวมทั้งสิ้น */}
       <div className="mt-2 flex">
-        <div className="flex-1">{totalTextThai}</div>
+        <div className="flex-1">
+          {items[0].weight == null || items[0].weight === 0
+            ? ""
+            : totalTextThai}
+        </div>
         <div className="w-[160px] text-right font-semibold">
-          {formatNumber(total)}
+          {items[0].weight == null || items[0].weight === 0
+            ? ""
+            : formatNumber(total)}
         </div>
       </div>
-
-      {/* แถว: ยอดสะสม (บรรทัดล่างสุด) */}
-      {/* {accumulateTextThai && <div className="mt-1">{accumulateTextThai}</div>} */}
     </div>
   );
 };

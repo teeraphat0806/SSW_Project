@@ -87,7 +87,7 @@ function ThaiBaht(numberStr: string) {
 
 type ApiReceipt = {
   id: number;
-  yourRef: string;
+  invoiceNo: number;
   subtotal: number | null;
   grandTotal: number | null;
   deliveryDate: Date;
@@ -158,7 +158,7 @@ export async function GET(
     const grandTotal = receipt.grandTotal ?? 0;
     const apiReceipt: ApiReceipt = {
       id: receipt.id,
-      yourRef: receipt.yourRef,
+      invoiceNo: receipt.invoiceNo,
       subtotal: receipt.subtotal,
       grandTotal: receipt.grandTotal,
       deliveryDate: receipt.deliveryDate,
