@@ -47,7 +47,9 @@ export default function CustomerForm({
       <CardContent className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
           <div>
-            <Label htmlFor="customerName">ชื่อบริษัท *</Label>
+            <Label htmlFor="customerName">
+              ชื่อบริษัท <span className="text-red-500">*</span>
+            </Label>
             <Input
               id="customerName"
               value={formData.customerName}
@@ -57,7 +59,9 @@ export default function CustomerForm({
             />
           </div>
           <div>
-            <Label htmlFor="code">เลข Code *</Label>
+            <Label htmlFor="code">
+              เลข Code <span className="text-red-500">*</span>
+            </Label>
             <Input
               id="code"
               value={formData.code}
@@ -67,7 +71,9 @@ export default function CustomerForm({
             />
           </div>
           <div>
-            <Label htmlFor="customerEmail">Email</Label>
+            <Label htmlFor="customerEmail">
+              Email <span className="text-red-500">*</span>
+            </Label>
             <Input
               id="customerEmail"
               type="email"
@@ -78,7 +84,9 @@ export default function CustomerForm({
             />
           </div>
           <div>
-            <Label htmlFor="customerPhone">เบอร์โทร</Label>
+            <Label htmlFor="customerPhone">
+              เบอร์โทร<span className="text-red-500">*</span>
+            </Label>
             <Input
               id="customerPhone"
               value={formData.customerPhone}
@@ -88,19 +96,10 @@ export default function CustomerForm({
             />
           </div>
 
-          {/* <div>
-            <Label htmlFor="deliveryDate">วันที่ต้องจัดส่ง</Label>
-            <Input
-              id="deliveryDate"
-              type="date"
-              value={formData.deliveryDate}
-              onChange={(e) => updateFormData("deliveryDate", e.target.value)}
-              className="mt-1"
-            />
-          </div> */}
-
           <div>
-            <Label htmlFor="customerPhone">Tax</Label>
+            <Label htmlFor="taxNumber">
+              Tax <span className="text-red-500">*</span>
+            </Label>
             <Input
               id="taxNumber"
               value={formData.taxNumber}
@@ -110,7 +109,9 @@ export default function CustomerForm({
             />
           </div>
           <div>
-            <Label htmlFor="customerPhone">Fax</Label>
+            <Label htmlFor="faxNumber">
+              Fax<span className="text-red-500">*</span>
+            </Label>
             <Input
               id="faxNumber"
               value={formData.faxNumber}
@@ -122,7 +123,9 @@ export default function CustomerForm({
         </div>
 
         <div>
-          <Label htmlFor="deliveryAddress">ที่อยู่</Label>
+          <Label htmlFor="deliveryAddress">
+            ที่อยู่<span className="text-red-500">*</span>
+          </Label>
           <Textarea
             id="deliveryAddress"
             value={formData.deliveryAddress}
