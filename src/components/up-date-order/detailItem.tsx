@@ -166,7 +166,7 @@ export default function DetailItem<T extends JobWithSteel>({
       </section>
     );
   }
-
+  const MAX_ITEMS = 15;
   // ✅ เพิ่มเหล็ก
   const addSteelItem = () => {
     setJob((prev) => {
@@ -193,6 +193,13 @@ export default function DetailItem<T extends JobWithSteel>({
         ],
       };
     });
+  };
+  const addSteelItemLimited = () => {
+    if (steelOptions.length >= MAX_ITEMS) {
+      alert(`เพิ่มได้สูงสุด ${MAX_ITEMS} รายการเท่านั้น`);
+      return;
+    }
+    addSteelItem();
   };
 
   // ✅ ลบเหล็ก
@@ -231,9 +238,9 @@ export default function DetailItem<T extends JobWithSteel>({
         </h2>
 
         <Button
-          onClick={addSteelItem}
+          onClick={addSteelItemLimited}
           size="sm"
-          disabled={steelOptions.length === 0}
+          disabled={steelOptions.length === 0 || job.steel.length >= MAX_ITEMS}
           className="bg-zinc-900 text-white shadow-sm hover:bg-zinc-800 dark:bg-blue-600 dark:hover:bg-blue-500 dark:shadow-none"
         >
           <Plus className="mr-1.5 h-4 w-4" />
@@ -241,6 +248,11 @@ export default function DetailItem<T extends JobWithSteel>({
         </Button>
       </div>
 
+      {job.steel.length >= MAX_ITEMS && (
+        <p className="text-sm text-zinc-500 dark:text-zinc-400">
+          เพิ่มได้สูงสุด {MAX_ITEMS} รายการ (ตอนนี้ {job.steel.length} รายการ)
+        </p>
+      )}
       {(job.steel ?? []).map((it, idx) => {
         const isLine = it.shape === "line";
         return (
@@ -390,10 +402,10 @@ export default function DetailItem<T extends JobWithSteel>({
                         <Input
                           type="number"
                           className="h-9 border-zinc-200 bg-white pr-8 text-right font-mono text-sm focus-visible:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
-                          value={it.weight ?? 0}
+                          value={it.weight ?? 1}
                           onChange={(e) =>
                             patchSteelItem(idx, {
-                              weight: Math.max(0, Number(e.target.value || 0)),
+                              weight: Math.max(1, Number(e.target.value || 1)),
                             })
                           }
                         />
@@ -430,6 +442,7 @@ export default function DetailItem<T extends JobWithSteel>({
                       variant="ghost"
                       size="icon"
                       onClick={() => removeSteelItem(idx)}
+                      disabled={job.steel.length <= 1}
                       className="h-9 w-9 text-zinc-400 hover:bg-red-50 hover:text-red-600 dark:text-zinc-500 dark:hover:bg-red-900/20 dark:hover:text-red-400"
                     >
                       <Trash2 className="h-5 w-5" />
@@ -441,11 +454,13 @@ export default function DetailItem<T extends JobWithSteel>({
           </div>
         );
       })}
-
+      <p className="text-sm text-zinc-500 dark:text-zinc-400">
+        เพิ่มได้สูงสุด {MAX_ITEMS} รายการ (ตอนนี้ {job.steel.length} รายการ)
+      </p>
       <button
         type="button"
-        onClick={addSteelItem}
-        disabled={steelOptions.length === 0}
+        onClick={addSteelItemLimited}
+        disabled={steelOptions.length === 0 || job.steel.length >= MAX_ITEMS}
         className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-zinc-300 p-4 text-sm font-medium text-zinc-500 transition-all duration-200 hover:border-blue-500 hover:bg-blue-50 hover:text-blue-600 disabled:cursor-not-allowed disabled:opacity-60 dark:border-zinc-700 dark:text-zinc-400 dark:hover:border-blue-500 dark:hover:bg-blue-900/20 dark:hover:text-blue-400"
       >
         <Plus className="h-4 w-4" /> เพิ่มรายการใหม่

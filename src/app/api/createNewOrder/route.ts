@@ -143,6 +143,23 @@ export async function POST(req: NextRequest) {
         { status: 400 }
       );
     }
+    for (let i = 0; i < parsed.data.orderPOs.length; i++) {
+      const products = parsed.data.orderPOs[i].products;
+
+      if (products.length === 0) {
+        return NextResponse.json(
+          { error: `PO ลำดับที่ ${i + 1} ต้องมีสินค้าอย่างน้อย 1 รายการ` },
+          { status: 400 }
+        );
+      }
+
+      if (products.length > 15) {
+        return NextResponse.json(
+          { error: `PO ลำดับที่ ${i + 1} เพิ่มสินค้าได้ไม่เกิน 15 รายการ` },
+          { status: 400 }
+        );
+      }
+    }
 
     const data = parsed.data;
 

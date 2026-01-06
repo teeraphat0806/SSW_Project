@@ -21,11 +21,21 @@ type ActionItem = {
 export function QuickAction({
   billid,
   orderId,
+  status,
   keyPo,
 }: {
   billid: string | number;
   orderId: string | number;
-  keyPo: string;
+  keyPo?: string;
+
+  status:
+    | "pending"
+    | "cutting"
+    | "weighing"
+    | "ready"
+    | "shipped"
+    | "completed"
+    | "canceled";
 }) {
   const router = useRouter();
   const [loadingKey, setLoadingKey] = React.useState<ActionKey | null>(null);
@@ -34,12 +44,14 @@ export function QuickAction({
     {
       key: "edit",
       label: "แก้ไขออเดอร์ (Edit Order)",
+      disabled: status === "canceled",
       icon: Edit,
       run: () => router.push(`/up-date-order/${orderId}`),
     },
     {
       key: "print",
       label: "พิมพ์ใบสั่งซื้อ (Receipt) ",
+      disabled: status === "canceled",
       icon: Printer,
       run: () => router.push(`/receipt-invoice/${billid}`),
     },
@@ -63,10 +75,12 @@ export function QuickAction({
       label: "แสดงใบสั่งซื้อ (PO File)",
       icon: FileText,
       run: () => {
+        if (!keyPo) return; // กันกรณี keyPo เป็น undefined
         console.log("Open PO File:", keyPo);
         window.open(`/api/upload/po/openPo/${keyPo}`, "_blank");
         toast({ title: "เปิดใบสั่งซื้อแล้ว" });
       },
+      disabled: status === "canceled" || !keyPo,
     },
   ];
 

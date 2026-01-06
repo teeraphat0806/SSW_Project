@@ -299,6 +299,12 @@ export async function PATCH(
           )
         );
 
+        if (patch.steel.length === 0) {
+          throw new Error("ต้องมีรายการเหล็กอย่างน้อย 1 รายการ");
+        }
+        if (patch.steel.length > 15) {
+          throw new Error("เพิ่มสินค้าได้ไม่เกิน 15 รายการ");
+        }
         const steelTypes = await tx.steelType.findMany({
           where: { codeSteel: { in: codes } },
           select: {

@@ -69,7 +69,8 @@ type ApiJobOrder = {
     | "weighing"
     | "ready"
     | "shipped"
-    | "completed";
+    | "completed"
+    | "canceled";
 };
 
 type Joborder = {
@@ -100,7 +101,8 @@ type Joborder = {
     | "weighing"
     | "ready"
     | "shipped"
-    | "completed";
+    | "completed"
+    | "canceled";
 };
 
 const toJoborder = (api: ApiJobOrder): Joborder => ({
@@ -406,6 +408,7 @@ const UpdateOrderPage = ({ id }: { id: string }) => {
       </div>
     );
   }
+
   if (error || !job) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-background to-steel/20 flex items-center justify-center">
@@ -414,6 +417,11 @@ const UpdateOrderPage = ({ id }: { id: string }) => {
         </div>
       </div>
     );
+  }
+
+  if(job.status==="canceled"){
+    router.replace("/notFound");
+    return null;
   }
 
   const status: OrderStatus = toThaiStatus(job.status);

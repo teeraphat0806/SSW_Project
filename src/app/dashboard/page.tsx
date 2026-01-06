@@ -56,6 +56,27 @@ interface ApiResponse {
   pagination: Pagination;
 }
 
+const toThaiStatus = (s: JobStatus): string => {
+  switch (s) {
+    case "pending":
+      return "รอตัด";
+    case "cutting":
+      return "กำลังตัด";
+    case "weighing":
+      return "ชั่งน้ำหนัก";
+    case "ready":
+      return "ตัดเสร็จสิ้น";
+    case "shipped":
+      return "กำลังส่ง";
+    case "completed":
+      return "ส่งสำเร็จ";
+    case "canceled":
+      return "ยกเลิก";
+    default:
+      return "รอตัด";
+  }
+};
+
 export default function Dashboard() {
   const [loading, setLoading] = useState(false);
   const [orders, setOrders] = useState<Order[]>([]);
@@ -363,22 +384,22 @@ export default function Dashboard() {
             <thead>
               <tr className="bg-zinc-50/80 dark:bg-zinc-900/50 border-b border-zinc-200 dark:border-zinc-700">
                 <th className="py-4 px-6 text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
-                  PO Number
+                  เลขที่ใบสั่งซื้อ (PO Number)
                 </th>
                 <th className="py-4 px-6 text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
-                  Customer
+                  ลูกค้า
                 </th>
                 <th className="py-4 px-6 text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider text-center">
-                  Status
+                  สถานะ
                 </th>
                 <th className="py-4 px-6 text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider text-right">
-                  Total
+                  รวม
                 </th>
                 <th className="py-4 px-6 text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider text-right">
-                  Created
+                  วันที่สร้าง
                 </th>
                 <th className="py-4 px-6 text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider text-center">
-                  Action
+                  การดำเนินการ
                 </th>
               </tr>
             </thead>
@@ -418,7 +439,7 @@ export default function Dashboard() {
                           order.status
                         )}`}
                       >
-                        {order.status.toUpperCase()}
+                        {toThaiStatus(order.status)}
                       </span>
                     </td>
 
