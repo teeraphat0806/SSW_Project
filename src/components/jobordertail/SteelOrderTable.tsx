@@ -122,11 +122,15 @@ export default function SteelTable({ steel = [] }: SteelTableProps) {
         <div className="w-full text-sm text-left">
           {/* Table Header: ปรับ Grid เป็น 4-3-2-1-2 เพื่อสัดส่วนที่สวยงาม */}
           <div className="bg-zinc-50 dark:bg-zinc-900/80 px-6 py-3 border-b border-zinc-200 dark:border-zinc-800 grid grid-cols-12 gap-4 items-center">
-            <span className="col-span-3 font-bold text-zinc-700 dark:text-zinc-300">
+            <span className="col-span-2 font-bold text-zinc-700 dark:text-zinc-300">
               ประเภทเหล็ก
             </span>
-            <span className="col-span-3 font-bold text-zinc-700 dark:text-zinc-300">
+            <span className="col-span-2 font-bold text-zinc-700 dark:text-zinc-300">
               ขนาด <span>(มม.)</span>
+            </span>
+
+            <span className="col-span-2 text-center font-bold text-zinc-700 dark:text-zinc-300">
+              จำนวน <span>(ชิ้น)</span>
             </span>
             <span className="col-span-2 text-right font-bold text-zinc-700 dark:text-zinc-300">
               น้ำหนัก (Kg)
@@ -154,20 +158,12 @@ export default function SteelTable({ steel = [] }: SteelTableProps) {
                   key={idx}
                   className="group px-6 py-4 grid grid-cols-12 gap-4 items-center hover:bg-zinc-50 dark:hover:bg-zinc-900/40 transition-colors duration-200"
                 >
-                  {/* Col 1: Detail (Span 3) */}
-                  <div className="col-span-3 flex flex-col justify-center pr-2 gap-1">
+                  {/* Col 1: Detail (Span 2) */}
+                  <div className="col-span-2 flex flex-col justify-center pr-2 gap-1">
                     <div className="flex flex-wrap items-center gap-2">
                       {/* ชื่อเหล็ก */}
                       <span className="font-semibold text-zinc-800 dark:text-zinc-200 text-sm group-hover:text-black dark:group-hover:text-white transition-colors">
                         {item.original.steelType}
-                      </span>
-
-                      {/* Badge: จำนวน (Monochrome Style) */}
-                      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700  font-bold text-zinc-600 dark:text-zinc-400">
-                        <span className="text-zinc-500 dark:text-zinc-400">
-                          x
-                        </span>{" "}
-                        {safeNum(item.original.amount)}
                       </span>
 
                       {/* Badge: Type (Manual=Amber, Formula=Zinc) */}
@@ -185,8 +181,8 @@ export default function SteelTable({ steel = [] }: SteelTableProps) {
                     )}
                   </div>
 
-                  {/* Col 2: Dimensions (Span 3) */}
-                  <div className="col-span-3 flex items-center font-mono text-sm text-zinc-500 dark:text-zinc-400">
+                  {/* Col 2: Dimensions (Span 2) */}
+                  <div className="col-span-2 flex items-center font-mono text-sm text-zinc-500 dark:text-zinc-400">
                     <span className="font-bold text-zinc-700 dark:text-zinc-300">
                       {item.dimensions.thickness}
                     </span>
@@ -210,17 +206,22 @@ export default function SteelTable({ steel = [] }: SteelTableProps) {
                     </span>
                   </div>
 
-                  {/* Col 3: Weight (Span 2) */}
+                  {/* Col 3: Amount (Span 2) */}
+                  <div className=" col-span-2 text-center font-bold text-zinc-700 dark:text-zinc-300">
+                    x{safeNum(item.original.amount)}
+                  </div>
+
+                  {/* Col 4: Weight (Span 2) */}
                   <div className="col-span-2 text-right font-bold text-zinc-700 dark:text-zinc-300">
                     {fmt(item.weight)}
                   </div>
 
-                  {/* Col 4: Price/Unit (Span 2) */}
+                  {/* Col 5: Price/Unit (Span 2) */}
                   <div className="col-span-2 text-right font-bold text-zinc-700 dark:text-zinc-400">
                     {fmt(item.original.price)}
                   </div>
 
-                  {/* Col 5: Total Price (Span 2) */}
+                  {/* Col 6: Total Price (Span 2) */}
                   <div className="col-span-2 text-right font-mono font-bold text-zinc-800 dark:text-zinc-200 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
                     {fmt(item.totalPrice)}
                   </div>
