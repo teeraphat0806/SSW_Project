@@ -15,7 +15,7 @@ type statusType =
 
 type ApiJobOrder = {
   id: number;
-  poNumber: string;
+  poNumber: string | null;
   customerId: number;
   customerName: string;
   customerEmail: string;
@@ -80,7 +80,7 @@ export async function GET(
 
     const responseData: ApiJobOrder = {
       id: poId,
-      poNumber: jobOrder.poNumber,
+      poNumber: jobOrder.poNumber || null,
       customerId: customer.id,
       customerName: customer.name,
       customerEmail: customer.email,
@@ -424,7 +424,7 @@ export async function PATCH(
 
       const responseData: ApiJobOrder = {
         id: order.id,
-        poNumber: order.poNumber,
+        poNumber: order.poNumber ?? null,
         customerId: customer.id,
         customerName: customer.name,
         customerEmail: customer.email,

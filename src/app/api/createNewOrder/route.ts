@@ -81,9 +81,6 @@ function calcLine(params: {
   const amount = safeNum(params.amount);
   const manualWeight = safeNum(params.weight);
 
-  // ✅ เงื่อนไขที่คุณต้องการ:
-  // - ถ้ามีน้ำหนักจริง -> total = weight * amount * price
-  // - ถ้าไม่มี -> คำนวณน้ำหนักรวมจากมิติ (ซึ่งมันรวม amount อยู่แล้ว) แล้ว total = computedWeight * price
   if (manualWeight > 0) {
     const totalWeightKg = manualWeight * amount;
     const total = round2(totalWeightKg * price);
@@ -118,6 +115,7 @@ type SteelFromDB = {
   density: number;
   shape: "square" | "line"; // ตรงกับ enum ของ Prisma
 };
+
 export async function POST(req: NextRequest) {
   const authResult = await requireAuth([
     "superadmin",
@@ -131,9 +129,12 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json();
+
     const parsed = CreateNewOrderSchema.safeParse(body);
 
     if (!parsed.success) {
+      console.log("Zod issues:", parsed.error.issues);
+
       const formattedErrors = parsed.error.issues.map((err) => ({
         path: err.path.join("."),
         message: err.message,
@@ -148,14 +149,14 @@ export async function POST(req: NextRequest) {
 
       if (products.length === 0) {
         return NextResponse.json(
-          { error: `PO ลำดับที่ ${i + 1} ต้องมีสินค้าอย่างน้อย 1 รายการ` },
+          { error: ` ต้องมีสินค้าอย่างน้อย 1 รายการ` },
           { status: 400 }
         );
       }
 
       if (products.length > 15) {
         return NextResponse.json(
-          { error: `PO ลำดับที่ ${i + 1} เพิ่มสินค้าได้ไม่เกิน 15 รายการ` },
+          { error: `เพิ่มสินค้าได้ไม่เกิน 15 รายการ` },
           { status: 400 }
         );
       }
@@ -215,7 +216,6 @@ export async function POST(req: NextRequest) {
 
                 const line = calcLine({
                   amount: p.amount,
-                  weight: p.weight ?? null,
                   width: p.wide ?? null,
                   length: p.length,
                   thickness: p.thickness,
@@ -242,11 +242,11 @@ export async function POST(req: NextRequest) {
                 Product: {
                   create: computed.map(({ st, p, line }) => ({
                     SteelType: { connect: { id: st.id } },
-                    wide: p.wide ?? null,
                     length: p.length,
                     thickness: p.thickness,
                     amount: p.amount,
                     detail: p.detail ?? null,
+                    cuttingMethod: p.cuttingMethod ?? "normal",
                     // ✅ total ปัด 2 ตำแหน่งก่อนลง
                     total: line.total,
                   })),

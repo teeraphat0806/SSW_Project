@@ -37,7 +37,7 @@ export type SteelItemType = {
   width: number | null;
   length: number;
   thickness: number;
-
+  cuttingMethod?: "normal" | "FB" | "steelDisc";
   notes: string;
 };
 
@@ -48,7 +48,7 @@ export type SteelTypeOption = {
 };
 
 export type HeadOrderType = {
-  poNumber: string;
+  poNumber: string | null;
   yourRef: string;
   deliveryDate: string;
 };
@@ -68,6 +68,7 @@ type AddItemProps = {
   searchItem: string;
   setsearchItem: React.Dispatch<React.SetStateAction<string>>;
   loadingSteel: boolean;
+  pofilelength: number;
 };
 
 export default function AddItem({
@@ -81,6 +82,7 @@ export default function AddItem({
   searchItem,
   setsearchItem,
   loadingSteel,
+  pofilelength,
 }: AddItemProps) {
   const today = new Date().toISOString().split("T")[0];
   const MAX_ITEMS = 15;
@@ -133,26 +135,38 @@ export default function AddItem({
         <CardContent className="pt-6 pb-8">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {/* 1. PO Number */}
-            <div className="space-y-2 group">
-              <Label
-                htmlFor="poNumber"
-                className="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 group-focus-within:text-blue-600 dark:group-focus-within:text-blue-400 transition-colors"
-              >
-                เลขที่ใบ PO <span className="text-red-500">*</span>
-              </Label>
-              <div className="relative transition-all duration-200 ease-in-out transform group-focus-within:-translate-y-0.5">
-                <Hash className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400 group-focus-within:text-blue-500 transition-colors" />
-                <Input
-                  id="poNumber"
-                  placeholder="ระบุเลข PO (เช่น PO-2025001)"
-                  value={headOrder.poNumber}
-                  onChange={(e) =>
-                    setheadOrder({ ...headOrder, poNumber: e.target.value })
-                  }
-                  className="pl-10 h-11 bg-zinc-50/50 dark:bg-zinc-950/50 border-zinc-200 dark:border-zinc-800 focus:bg-white dark:focus:bg-zinc-950 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
-                />
+
+            {pofilelength > 0 && (
+              <div className="space-y-2 group">
+                <Label
+                  htmlFor="poNumber"
+                  className="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 group-focus-within:text-blue-600 dark:group-focus-within:text-blue-400 transition-colors"
+                >
+                  เลขที่ใบ PO <span className="text-red-500">*</span>
+                </Label>
+                <div className="relative transition-all duration-200 ease-in-out transform group-focus-within:-translate-y-0.5">
+                  <Hash className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400 group-focus-within:text-blue-500 transition-colors" />
+                  <Input
+                    id="poNumber"
+                    placeholder="ระบุเลข PO (เช่น PO-2025001)"
+                    value={headOrder.poNumber ?? ""}
+                    onChange={(e) => {
+                      const targetValue = e.target.value;
+
+                      if (pofilelength > 0) {
+                        setheadOrder({ ...headOrder, poNumber: targetValue });
+                      }
+                      setheadOrder({
+                        ...headOrder,
+                        poNumber:
+                          targetValue.trim() === "" ? null : targetValue,
+                      });
+                    }}
+                    className="pl-10 h-11 bg-zinc-50/50 dark:bg-zinc-950/50 border-zinc-200 dark:border-zinc-800 focus:bg-white dark:focus:bg-zinc-950 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                  />
+                </div>
               </div>
-            </div>
+            )}
 
             {/* 2. Your Ref */}
             <div className="space-y-2 group">
@@ -253,7 +267,6 @@ export default function AddItem({
                 key={item.id}
                 className="group relative rounded-xl border border-zinc-200 bg-white shadow-sm transition-all hover:shadow-md dark:border-zinc-800 dark:bg-zinc-900"
               >
-                {/* index bubble แบบเดียวกับด้านบน */}
                 <div className="absolute -left-2 top-4 z-10 hidden h-6 w-6 items-center justify-center rounded-full bg-zinc-800 text-sm font-bold text-white shadow-sm dark:bg-blue-600 lg:flex">
                   {idx + 1}
                 </div>
@@ -261,7 +274,7 @@ export default function AddItem({
                 <div className="p-4 lg:flex lg:items-center lg:gap-4 lg:p-1">
                   <div className="grid flex-1 grid-cols-1 items-start gap-4 md:grid-cols-2 lg:grid-cols-12 lg:items-center">
                     {/* Steel Type */}
-                    <div className="lg:col-span-3 lg:pl-4">
+                    <div className="lg:col-span-2 lg:pl-4">
                       <label className="mb-1 block text-sm text-zinc-500 dark:text-zinc-400">
                         ประเภทเหล็ก
                       </label>
@@ -312,11 +325,11 @@ export default function AddItem({
                             steelTypes.map((type) => (
                               <SelectItem key={type.id} value={type.name}>
                                 <span className="font-medium">{type.name}</span>
-                                <span className="text-xs text-muted-foreground ml-2">
+                                <span className="text-md text-muted-foreground ml-2">
                                   {type.shape === "square"
-                                    ? "(แผ่น/สี่เหลี่ยม)"
+                                    ? "(แผ่น)"
                                     : type.shape === "line"
-                                    ? "(เส้น)"
+                                    ? "(เพลา)"
                                     : ""}
                                 </span>
                               </SelectItem>
@@ -434,8 +447,55 @@ export default function AddItem({
                       />
                     </div>
 
+                    {/* Cutting Method (FB / steelDisc) */}
+                    <div className="lg:col-span-2">
+                      <label className="mb-1 block text-center text-sm text-zinc-500 dark:text-zinc-400">
+                        วิธีตัด
+                      </label>
+
+                      <div className="flex items-center justify-center gap-3">
+                        <label className="flex items-center gap-2 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-700 transition-colors hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:bg-zinc-800/40">
+                          <input
+                            type="checkbox"
+                            className="h-4 w-4 accent-blue-500"
+                            checked={(item.cuttingMethod ?? "normal") === "FB"}
+                            disabled={isLine}
+                            onChange={(e) => {
+                              // ถ้าติ๊ก = FB, ถ้าเอาติ๊กออก = normal
+                              updateSteelItem(
+                                item.id,
+                                "cuttingMethod",
+                                e.target.checked ? "FB" : "normal"
+                              );
+                            }}
+                          />
+                          F/B
+                        </label>
+
+                        <label className="flex items-center gap-2 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-700 transition-colors hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:bg-zinc-800/40">
+                          <input
+                            type="checkbox"
+                            className="h-4 w-4 accent-blue-500"
+                            checked={
+                              (item.cuttingMethod ?? "normal") === "steelDisc"
+                            }
+                            disabled={isLine}
+                            onChange={(e) => {
+                              // ถ้าติ๊ก = steelDisc, ถ้าเอาติ๊กออก = normal
+                              updateSteelItem(
+                                item.id,
+                                "cuttingMethod",
+                                e.target.checked ? "steelDisc" : "normal"
+                              );
+                            }}
+                          />
+                          แผ่นกลม
+                        </label>
+                      </div>
+                    </div>
+
                     {/* Note + Delete  */}
-                    <div className="lg:col-span-4">
+                    <div className="lg:col-span-3">
                       <label className="mb-1 block text-left text-sm text-zinc-500 dark:text-zinc-400">
                         หมายเหตุ
                       </label>
@@ -460,6 +520,7 @@ export default function AddItem({
                             <Trash2 className="h-5 w-5" />
                           </Button>
                         )}
+
                       </div>
                     </div>
                   </div>

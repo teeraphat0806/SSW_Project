@@ -64,6 +64,11 @@ export default function CustomerForm({
             </Label>
             <Input
               id="code"
+              type="text" // 1. เปลี่ยนเป็น text เพื่อรับเลข 0 นำหน้า
+              inputMode="numeric"
+              pattern="[0-9]*" // 2. เพิ่ม pattern เพื่อจำกัดให้กรอกเฉพาะตัวเลข
+              minLength={13}
+              maxLength={13} 
               value={formData.code}
               onChange={(e) => updateFormData("code", e.target.value)}
               placeholder="1001"
@@ -89,6 +94,10 @@ export default function CustomerForm({
             </Label>
             <Input
               id="customerPhone"
+              type="tel"
+              pattern="[0-9]*"
+              minLength={10}
+              maxLength={10}
               value={formData.customerPhone}
               onChange={(e) => updateFormData("customerPhone", e.target.value)}
               placeholder="0699857458"
@@ -102,9 +111,14 @@ export default function CustomerForm({
             </Label>
             <Input
               id="taxNumber"
+              type="text"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              minLength={13}
+              maxLength={13}
               value={formData.taxNumber}
               onChange={(e) => updateFormData("taxNumber", e.target.value)}
-              placeholder="3101234567890"
+              placeholder="1234567891234"
               className="mt-1"
             />
           </div>
@@ -114,6 +128,11 @@ export default function CustomerForm({
             </Label>
             <Input
               id="faxNumber"
+              type="text"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              minLength={7}
+              maxLength={12}
               value={formData.faxNumber}
               onChange={(e) => updateFormData("faxNumber", e.target.value)}
               placeholder="3101234567890"

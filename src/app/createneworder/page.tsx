@@ -38,6 +38,7 @@ type SteelItem = {
   length: number;
   thickness: number;
   notes: string;
+  cuttingMethod?: "normal" | "FB" | "steelDisc";
 };
 
 type SteelType = {
@@ -79,9 +80,12 @@ const NewJobOrder = () => {
     string | number | null
   >(null);
   // เก็บ ID ลูกค้าที่เลือกจาก SelectCustomer
-  const [headOrder, setheadOrder] = useState({
-    //เก็บข้อมูล PO
-    poNumber: "",
+  const [headOrder, setheadOrder] = useState<{
+    poNumber: string | null;
+    deliveryDate: string;
+    yourRef: string;
+  }>({
+    poNumber: null,
     deliveryDate: "",
     yourRef: "",
   });
@@ -94,8 +98,9 @@ const NewJobOrder = () => {
       shape: "",
       quantity: 1,
       width: null,
-      length: 0,
-      thickness: 0,
+      length: 1,
+      thickness: 1,
+      cuttingMethod: "normal",
       notes: "",
     },
   ]);
@@ -208,13 +213,13 @@ const NewJobOrder = () => {
     customerId,
   }: {
     files: File[];
-    poNumber: string;
+    poNumber: string | null;
     customerId: string | number;
   }) {
     if (!files?.length) return [];
 
     const form = new FormData();
-    form.append("poNumber", poNumber);
+    form.append("poNumber", poNumber ?? "");
     form.append("customerId", String(customerId)); // สำคัญ: แปลงเป็น string
     files.forEach((f) => form.append("files", f));
 
@@ -282,7 +287,7 @@ const NewJobOrder = () => {
 
       const poKeys = await UploadFiles({
         files: UploadFile,
-        poNumber: headOrder.poNumber,
+        poNumber: headOrder.poNumber || null,
 
         customerId: customerId || "",
       });
@@ -407,8 +412,9 @@ const NewJobOrder = () => {
       if (!formData.taxNumber.trim()) return "กรุณากรอกเลข Tax";
       if (!formData.faxNumber.trim()) return "กรุณากรอกเลข Fax";
     }
-    if (!UploadFile.length) return "กรุณาอัปโหลดไฟล์ใบ PO";
-    if (!headOrder.poNumber.trim()) return "กรุณากรอกหมายเลข PO";
+
+    if (!headOrder.poNumber?.trim() && UploadFile.length > 0)
+      return "ออเดอร์นี้มีไฟล์แนบ กรุณากรอกหมายเลข PO";
     if (!headOrder.deliveryDate) return "กรุณากรอกวันที่ต้องการสินค้า";
     if (!headOrder.yourRef.trim()) return "กรุณากรอกช่อง Your Ref";
 
@@ -609,6 +615,7 @@ const NewJobOrder = () => {
                     searchItem={searchItem}
                     setsearchItem={setsearchItem}
                     loadingSteel={loadingSteel}
+                    pofilelength={UploadFile.length}
                   />
                 </div>
 
@@ -679,7 +686,7 @@ const NewJobOrder = () => {
                       <div className="space-y-3">
                         <Button
                           type="submit"
-                          disabled={isSubmitting || totalQuantity === 0}
+                          disabled={isSubmitting || totalTypes === 0}
                           className="w-full h-12 text-base font-semibold shadow-md shadow-blue-500/20 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 transition-all duration-300 active:scale-[0.98]"
                         >
                           {" "}
