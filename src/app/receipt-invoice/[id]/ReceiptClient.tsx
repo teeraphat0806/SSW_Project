@@ -26,6 +26,8 @@ type ApiReceipt = {
     amount: number;
     weight: number;
     price: number;
+    cuttingMethod?: "normal" | "FB" | "steelDisc";
+    job?: number | null;
     total: number;
   }[];
 };
@@ -71,7 +73,7 @@ export default function ReceiptClient({ id }: { id: string }) {
           thickness: s.thickness,
           width: s.width ?? 0,
           length: s.length,
-          job: "-", // API ไม่มี job → ใส่ default
+          job: s.job?.toString() ?? "-", // API ไม่มี job → ใส่ default
           amount: s.amount,
           weight: s.weight,
           price: s.price,

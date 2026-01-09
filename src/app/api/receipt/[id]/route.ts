@@ -112,6 +112,8 @@ type ApiReceipt = {
     price: number;
     weight: number | null;
     total: number;
+    job?: number | null;
+    cuttingMethod?: "normal" | "FB" | "steelDisc";
   }[];
 };
 
@@ -183,6 +185,8 @@ export async function GET(
           thickness: p.thickness,
           price: p.SteelType.price,
           weight: p.actualWeight,
+          job: p.job,
+          cuttingMethod: p.cuttingMethod,
           total: p.total,
         }))
       ),

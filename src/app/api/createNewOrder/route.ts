@@ -246,6 +246,7 @@ export async function POST(req: NextRequest) {
                     thickness: p.thickness,
                     amount: p.amount,
                     detail: p.detail ?? null,
+                    job: p.job ?? null,
                     cuttingMethod: p.cuttingMethod ?? "normal",
                     // ✅ total ปัด 2 ตำแหน่งก่อนลง
                     total: line.total,
