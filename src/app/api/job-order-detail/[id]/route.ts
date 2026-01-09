@@ -8,7 +8,7 @@ import { se } from "date-fns/locale";
 type ApiJobOrder = {
   id: number;
   billid: number;
-  poNumber: string;
+  poNumber: string | null;
   customerId: string;
   customerName: string;
   customerEmail: string;

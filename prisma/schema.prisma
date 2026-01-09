@@ -88,7 +88,7 @@ model Bill {
 
 model OrderPO {
   id                Int       @id @default(autoincrement())
-  poNumber          String    @unique
+  poNumber          String?    @unique
   customerId        Int?
   billId            Int?
   status            JobStatus @default(pending)
@@ -121,6 +121,9 @@ model Product {
   detail           String?
   actualWeight     Float?
   total            Float
+  cuttingMethod    CuttingMethod @default(normal)
+  job              Int? 
+
 
   OrderPO   OrderPO   @relation(fields: [orderPOId], references: [id], onDelete: Cascade)
   SteelType SteelType @relation(fields: [steelId], references: [id], onDelete: Restrict)
@@ -248,6 +251,12 @@ enum JobStatus {
 enum ShapeSteel {
   square
   line
+}
+
+enum CuttingMethod{
+  normal
+  FB
+  steelDisc
 }
 
 enum StockStatus {
