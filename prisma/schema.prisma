@@ -122,6 +122,7 @@ model Product {
   actualWeight     Float?
   total            Float
   cuttingMethod    CuttingMethod @default(normal)
+  job              Int? 
 
 
   OrderPO   OrderPO   @relation(fields: [orderPOId], references: [id], onDelete: Cascade)

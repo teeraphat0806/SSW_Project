@@ -62,6 +62,7 @@ type ApiJobOrder = {
     detail?: string | null;
     weight?: number | null;
     shape: "square" | "line";
+    cuttingMethod: "normal" | "FB" | "steelDisc";
   }[];
   status:
     | "pending"
