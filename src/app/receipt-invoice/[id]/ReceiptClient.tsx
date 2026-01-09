@@ -1,10 +1,10 @@
 "use client";
 
 import * as React from "react";
-import { InvoiceExcelSample } from "@/components/testpage/InvoiceExcelSample";
+import { InvoiceExcelSample } from "@/components/receipt-invoice/InvoiceExcelSample";
 
 type ApiReceipt = {
-  yourRef: string;
+  invoiceNo: number;
   subtotal: number;
   vat: number;
   grandTotal: number;
@@ -45,7 +45,7 @@ export default function ReceiptClient({ id }: { id: string }) {
   if (!data) return <div>Loading...</div>;
 
   return (
-    <div className="min-h-screen bg-muted/40 px-4 py-6 print:bg-white">
+    <div className="min-h-screen bg-muted/40 px-4 py-6 print:p-0 print:m-0 print:bg-white print:absolute print:top-0 print:left-0 print:w-full print:z-50">
       <div className="mb-4 flex items-center justify-between print:hidden">
         <h1 className="text-lg font-semibold">ตัวอย่างใบรับเงิน (Receipt)</h1>
         <button
@@ -62,7 +62,7 @@ export default function ReceiptClient({ id }: { id: string }) {
         tel={data.customer.tel}
         fax={data.customer.faxNumber}
         taxId={data.customer.taxNumber}
-        youRef={data.yourRef}
+        invoiceNo={data.invoiceNo}
         date={new Date().toLocaleDateString("th-TH")}
         credit={data.credit}
         selesName={data.selesName}

@@ -35,12 +35,22 @@ import th from "zod/v4/locales/th.cjs";
 import { se } from "date-fns/locale";
 
 import SteelOrderTable from "@/components/jobordertail/SteelOrderTable";
+import { CancelOrderButton } from "@/components/jobordertail/cancelOrderButton";
 
 type StaffMember = {
   id: number;
   name: string;
   role: "supervisor" | "cutter" | string;
 };
+
+type JobStatus =
+  | "pending"
+  | "cutting"
+  | "weighing"
+  | "ready"
+  | "shipped"
+  | "completed"
+  | "canceled";
 
 type ApiJobOrder = {
   id: number;
@@ -69,7 +79,7 @@ type ApiJobOrder = {
     shape: string;
   }[];
 
-  status: string;
+  status: JobStatus;
   createdAt: string;
   updatedAt: string;
   deliveryDate: string;
@@ -105,14 +115,7 @@ interface JobOrder {
     density: number;
     shape: string;
   }>;
-  status:
-    | "pending"
-    | "cutting"
-    | "weighing"
-    | "ready"
-    | "shipped"
-    | "completed"
-    | "canceled";
+  status: JobStatus;
   createdAt: Date;
   deliveryDate: Date;
   updatedAt: Date;
@@ -247,7 +250,6 @@ const JobOrderDetailPage = ({ id }: { id: string }) => {
         return "bg-muted text-muted-foreground";
     }
   };
-
   // ✅ ฟังก์ชันอัปเดตสถานะผ่าน API
 
   const handleStatusUpdate = async (newStatus: JobOrder["status"]) => {
@@ -333,12 +335,6 @@ const JobOrderDetailPage = ({ id }: { id: string }) => {
       return;
     }
 
-    // ยืนยันก่อนยกเลิก
-    const ok = window.confirm(
-      `คุณต้องการยกเลิกออเดอร์ #${jobOrder.id} ใช่หรือไม่?\n\nเมื่อยกเลิกแล้วจะไม่สามารถเปลี่ยนสถานะต่อได้`
-    );
-    if (!ok) return;
-
     setIsUpdating(true);
     try {
       const response = await fetch(`/api/job-order-detail/${jobOrder.id}`, {
@@ -375,6 +371,27 @@ const JobOrderDetailPage = ({ id }: { id: string }) => {
       });
     } finally {
       setIsUpdating(false);
+    }
+  };
+
+  const toThaiStatus = (s: JobStatus): string => {
+    switch (s) {
+      case "pending":
+        return "รอตัด";
+      case "cutting":
+        return "กำลังตัด";
+      case "weighing":
+        return "ชั่งน้ำหนัก";
+      case "ready":
+        return "ตัดเสร็จสิ้น";
+      case "shipped":
+        return "กำลังส่ง";
+      case "completed":
+        return "ส่งสำเร็จ";
+      case "canceled":
+        return "ยกเลิก";
+      default:
+        return "รอตัด";
     }
   };
 
@@ -432,13 +449,7 @@ const JobOrderDetailPage = ({ id }: { id: string }) => {
                   variant="outline"
                   className={getStatusColor(jobOrder?.status || "pending")}
                 >
-                  {jobOrder?.status?.toUpperCase() || "N/A"}
-                </Badge>
-                <Badge
-                  variant="secondary"
-                  className="bg-amber-100 text-amber-700 border-amber-200"
-                >
-                  ด่วน
+                  {toThaiStatus(jobOrder?.status || "pending")}
                 </Badge>
               </div>
               <p className="mt-1 text-sm text-muted-foreground">
@@ -449,24 +460,22 @@ const JobOrderDetailPage = ({ id }: { id: string }) => {
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            <Button
-              variant="destructive"
-              size="sm"
-              className="h-9 gap-2"
-              onClick={handleCancelOrder}
-              disabled={isUpdating || jobOrder?.status === "canceled"}
-            >
-              <AlertCircle className="h-4 w-4" />
-              {jobOrder?.status === "canceled" ? "ยกเลิกแล้ว" : "ยกเลิกออเดอร์"}
-            </Button>
-
-            <Button
-              size="sm"
-              className="h-9 gap-2 text-white"
-              onClick={() => router.push("/up-date-order/" + id)}
-            >
-              <Edit className="h-4 w-4" /> แก้ไขออเดอร์
-            </Button>
+            <CancelOrderButton
+              jobOrder={jobOrder}
+              isUpdating={isUpdating}
+              onConfirm={handleCancelOrder}
+            />
+            {jobOrder?.status === "canceled" ? (
+              <></>
+            ) : (
+              <Button
+                size="sm"
+                className="h-9 gap-2 text-white"
+                onClick={() => router.push("/up-date-order/" + id)}
+              >
+                <Edit className="h-4 w-4" /> แก้ไขออเดอร์
+              </Button>
+            )}
           </div>
         </div>
 
@@ -618,7 +627,8 @@ const JobOrderDetailPage = ({ id }: { id: string }) => {
             <div className="mt-3 grid gap-2">
               <QuickAction
                 orderId={id}
-                keyPo={jobOrder?.keyPo || ""}
+                status={jobOrder?.status || "pending"}
+                keyPo={jobOrder?.keyPo}
                 billid={jobOrder?.billid || ""}
               />
             </div>

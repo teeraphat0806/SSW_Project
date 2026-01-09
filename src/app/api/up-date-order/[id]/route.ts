@@ -15,7 +15,7 @@ type statusType =
 
 type ApiJobOrder = {
   id: number;
-  poNumber: string;
+  poNumber: string | null;
   customerId: number;
   customerName: string;
   customerEmail: string;
@@ -80,7 +80,7 @@ export async function GET(
 
     const responseData: ApiJobOrder = {
       id: poId,
-      poNumber: jobOrder.poNumber,
+      poNumber: jobOrder.poNumber || null,
       customerId: customer.id,
       customerName: customer.name,
       customerEmail: customer.email,
@@ -299,6 +299,12 @@ export async function PATCH(
           )
         );
 
+        if (patch.steel.length === 0) {
+          throw new Error("ต้องมีรายการเหล็กอย่างน้อย 1 รายการ");
+        }
+        if (patch.steel.length > 15) {
+          throw new Error("เพิ่มสินค้าได้ไม่เกิน 15 รายการ");
+        }
         const steelTypes = await tx.steelType.findMany({
           where: { codeSteel: { in: codes } },
           select: {
@@ -418,7 +424,7 @@ export async function PATCH(
 
       const responseData: ApiJobOrder = {
         id: order.id,
-        poNumber: order.poNumber,
+        poNumber: order.poNumber ?? null,
         customerId: customer.id,
         customerName: customer.name,
         customerEmail: customer.email,

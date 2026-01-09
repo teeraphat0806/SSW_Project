@@ -59,13 +59,11 @@ function calcComputedWeightKg(params: {
 
   if (params.shape === "square") {
     if (width <= 0) return 0;
-    const volumeCm3 = width * length * thickness;
-    weightPerPieceKg = cm3ToM3(volumeCm3) * density;
+    const volume = width * length * thickness;
+    weightPerPieceKg = volume * density * 0.1;
   } else {
-    const r = thickness / 2;
-    const areaCm2 = Math.PI * r * r;
-    const volumeCm3 = areaCm2 * length;
-    weightPerPieceKg = cm3ToM3(volumeCm3) * density;
+    const volume = length * length * thickness;
+    weightPerPieceKg = volume * density * 0.1;
   }
 
   return weightPerPieceKg * amount; // ✅ น้ำหนักรวมทั้งรายการ (kg)
@@ -83,9 +81,6 @@ function calcLine(params: {
   const amount = safeNum(params.amount);
   const manualWeight = safeNum(params.weight);
 
-  // ✅ เงื่อนไขที่คุณต้องการ:
-  // - ถ้ามีน้ำหนักจริง -> total = weight * amount * price
-  // - ถ้าไม่มี -> คำนวณน้ำหนักรวมจากมิติ (ซึ่งมันรวม amount อยู่แล้ว) แล้ว total = computedWeight * price
   if (manualWeight > 0) {
     const totalWeightKg = manualWeight * amount;
     const total = round2(totalWeightKg * price);
@@ -120,6 +115,7 @@ type SteelFromDB = {
   density: number;
   shape: "square" | "line"; // ตรงกับ enum ของ Prisma
 };
+
 export async function POST(req: NextRequest) {
   const authResult = await requireAuth([
     "superadmin",
@@ -133,9 +129,12 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json();
+
     const parsed = CreateNewOrderSchema.safeParse(body);
 
     if (!parsed.success) {
+      console.log("Zod issues:", parsed.error.issues);
+
       const formattedErrors = parsed.error.issues.map((err) => ({
         path: err.path.join("."),
         message: err.message,
@@ -144,6 +143,23 @@ export async function POST(req: NextRequest) {
         { error: "Invalid input", details: formattedErrors },
         { status: 400 }
       );
+    }
+    for (let i = 0; i < parsed.data.orderPOs.length; i++) {
+      const products = parsed.data.orderPOs[i].products;
+
+      if (products.length === 0) {
+        return NextResponse.json(
+          { error: ` ต้องมีสินค้าอย่างน้อย 1 รายการ` },
+          { status: 400 }
+        );
+      }
+
+      if (products.length > 15) {
+        return NextResponse.json(
+          { error: `เพิ่มสินค้าได้ไม่เกิน 15 รายการ` },
+          { status: 400 }
+        );
+      }
     }
 
     const data = parsed.data;
@@ -200,7 +216,6 @@ export async function POST(req: NextRequest) {
 
                 const line = calcLine({
                   amount: p.amount,
-                  weight: p.weight ?? null,
                   width: p.wide ?? null,
                   length: p.length,
                   thickness: p.thickness,
@@ -227,11 +242,11 @@ export async function POST(req: NextRequest) {
                 Product: {
                   create: computed.map(({ st, p, line }) => ({
                     SteelType: { connect: { id: st.id } },
-                    wide: p.wide ?? null,
                     length: p.length,
                     thickness: p.thickness,
                     amount: p.amount,
                     detail: p.detail ?? null,
+                    cuttingMethod: p.cuttingMethod ?? "normal",
                     // ✅ total ปัด 2 ตำแหน่งก่อนลง
                     total: line.total,
                   })),

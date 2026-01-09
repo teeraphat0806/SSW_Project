@@ -10,11 +10,24 @@ import CustomerForm from "@/components/newJobOrder/CustomerForm";
 import CustomerInfoBox from "@/components/newJobOrder/CustomerInfoBox";
 import AddItem from "@/components/newJobOrder/AddItem";
 import "../globals.css";
-import { ArrowLeft, FileText, Save, X } from "lucide-react";
+import {
+  ArrowLeft,
+  Calendar,
+  ClipboardCheck,
+  FileText,
+  Layers,
+  Package,
+  Save,
+  UploadCloud,
+  User,
+  UserPlus,
+  X,
+} from "lucide-react";
 import SelectCustomer from "@/components/SelectCustomer";
 //import { se } from "date-fns/locale";
 
 import type { CustomerFormData } from "@/components/newJobOrder/CustomerForm";
+import { cn } from "@/lib/utils";
 
 type SteelItem = {
   id: string;
@@ -25,13 +38,24 @@ type SteelItem = {
   length: number;
   thickness: number;
   notes: string;
-  hasNotes: boolean;
+  cuttingMethod?: "normal" | "FB" | "steelDisc";
 };
 
 type SteelType = {
   id: string;
   name: string; // ใช้แสดงใน Select
   shape: "line" | "square" | string;
+};
+
+// ฟังก์ชันช่วยแปลงวันที่ให้สวยงาม (ใส่ไว้ใน utils หรือประกาศในไฟล์)
+const formatDate = (dateString: string) => {
+  if (!dateString) return "-";
+  const date = new Date(dateString);
+  return date.toLocaleDateString("th-TH", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
 };
 
 const NewJobOrder = () => {
@@ -56,9 +80,12 @@ const NewJobOrder = () => {
     string | number | null
   >(null);
   // เก็บ ID ลูกค้าที่เลือกจาก SelectCustomer
-  const [headOrder, setheadOrder] = useState({
-    //เก็บข้อมูล PO
-    poNumber: "",
+  const [headOrder, setheadOrder] = useState<{
+    poNumber: string | null;
+    deliveryDate: string;
+    yourRef: string;
+  }>({
+    poNumber: null,
     deliveryDate: "",
     yourRef: "",
   });
@@ -71,12 +98,21 @@ const NewJobOrder = () => {
       shape: "",
       quantity: 1,
       width: null,
-      length: 0,
-      thickness: 0,
+      length: 1,
+      thickness: 1,
+      cuttingMethod: "normal",
       notes: "",
-      hasNotes: false,
     },
   ]);
+  const totalQuantity = steelItems.reduce(
+    (sum: number, item: any) => sum + item.quantity,
+    0
+  );
+  const totalTypes = new Set(
+    steelItems
+      .filter((item: any) => item.steelType)
+      .map((item: any) => item.steelType)
+  ).size;
 
   useEffect(() => {
     let ignore = false;
@@ -177,13 +213,13 @@ const NewJobOrder = () => {
     customerId,
   }: {
     files: File[];
-    poNumber: string;
+    poNumber: string | null;
     customerId: string | number;
   }) {
     if (!files?.length) return [];
 
     const form = new FormData();
-    form.append("poNumber", poNumber);
+    form.append("poNumber", poNumber ?? "");
     form.append("customerId", String(customerId)); // สำคัญ: แปลงเป็น string
     files.forEach((f) => form.append("files", f));
 
@@ -251,7 +287,7 @@ const NewJobOrder = () => {
 
       const poKeys = await UploadFiles({
         files: UploadFile,
-        poNumber: headOrder.poNumber,
+        poNumber: headOrder.poNumber || null,
 
         customerId: customerId || "",
       });
@@ -355,7 +391,6 @@ const NewJobOrder = () => {
       length: 0,
       thickness: 0,
       notes: "",
-      hasNotes: false,
     };
     setSteelItems((prev) => [...prev, newItem]);
   };
@@ -377,13 +412,20 @@ const NewJobOrder = () => {
       if (!formData.taxNumber.trim()) return "กรุณากรอกเลข Tax";
       if (!formData.faxNumber.trim()) return "กรุณากรอกเลข Fax";
     }
-    if (!UploadFile.length) return "กรุณาอัปโหลดไฟล์ใบ PO";
-    if (!headOrder.poNumber.trim()) return "กรุณากรอกหมายเลข PO";
+
+    if (!headOrder.poNumber?.trim() && UploadFile.length > 0)
+      return "ออเดอร์นี้มีไฟล์แนบ กรุณากรอกหมายเลข PO";
     if (!headOrder.deliveryDate) return "กรุณากรอกวันที่ต้องการสินค้า";
+    if (!headOrder.yourRef.trim()) return "กรุณากรอกช่อง Your Ref";
+
+    if (steelItems.length === 0)
+      return "กรุณาเพิ่มรายการเหล็กอย่างน้อย 1 รายการ";
     for (const item of steelItems) {
       if (!item.steelType) return "กรุณาเลือกประเภทเหล็ก";
       if (item.quantity <= 0) return "จำนวนชิ้นต้องมากกว่า 0";
     }
+    if (steelItems.length > 15)
+      return "ไม่สามารถเพิ่มรายการเหล็กเกิน 15 รายการ";
     return null;
   };
 
@@ -413,81 +455,132 @@ const NewJobOrder = () => {
             กรอกข้อมูลออเดอร์ใหม่สำหรับการตัดเหล็ก
           </p>
         </div>
-        <div className="mb-3 flex items-center gap-3">
-          {showForm ? (
-            <></>
-          ) : (
-            <SelectCustomer
-              open={open}
-              setOpen={setOpen}
-              selectedCustomerId={selectedCustomerId}
-              setSelectedCustomer={setSelectedCustomerId}
-              customers={customers}
-              search={searchCustoer}
-              setSearch={setsearchCustoer}
-              loading={loading}
-            />
-          )}
+        <div className="space-y-2">
+          {/* --- Zone 1: Toolbar (Customer Select & Actions) --- */}
+          <div className="flex flex-col gap-3 p-1">
+            {/* Action Row: Customer + Buttons (LEFT ALIGNED) */}
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+              {/* Customer Selection / Form Status */}
+              <div className="min-w-[220px]">
+                {showForm ? (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground animate-in fade-in">
+                    <span className="bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 p-1.5 rounded-md">
+                      <UserPlus className="w-4 h-4" />
+                    </span>
+                    กำลังเพิ่มข้อมูลลูกค้าใหม่...
+                  </div>
+                ) : (
+                  <SelectCustomer
+                    open={open}
+                    setOpen={setOpen}
+                    selectedCustomerId={selectedCustomerId}
+                    setSelectedCustomer={setSelectedCustomerId}
+                    customers={customers}
+                    search={searchCustoer}
+                    setSearch={setsearchCustoer}
+                    loading={loading}
+                  />
+                )}
+              </div>
 
-          <button
-            onClick={toggleForm}
-            className="rounded-md bg-blue-500 px-4 py-1.5 text-sm text-white transition hover:bg-blue-600"
-          >
-            {showForm ? "แสดงข้อมูล" : "เพิ่มข้อมูล"}
-          </button>
+              {/* Buttons Group */}
+              <div className="flex items-center gap-2">
+                {/* Toggle Form Button */}
+                <button
+                  onClick={toggleForm}
+                  className={cn(
+                    "flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 border",
+                    showForm
+                      ? "bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-400 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700"
+                      : "bg-blue-50 text-blue-600 border-blue-100 hover:bg-blue-400 dark:bg-blue-900/20 dark:text-white dark:border-blue-900/50"
+                  )}
+                >
+                  {showForm ? (
+                    <User className="w-4 h-4" />
+                  ) : (
+                    <UserPlus className="w-4 h-4" />
+                  )}
+                  {showForm ? "เลือกรายชื่อเดิม" : "เพิ่มลูกค้าใหม่"}
+                </button>
 
-          <label className="cursor-pointer rounded-md bg-gray-100 px-4 py-1.5 text-sm text-gray-700 border border-gray-300 hover:bg-gray-200 transition">
-            อัปโหลดไฟล์
-            <input
-              type="file"
-              multiple
-              className="hidden"
-              onChange={handleFileChange}
-            />
-          </label>
+                {/* Upload Button */}
+                <label className="cursor-pointer group flex items-center gap-2 px-3 py-2 text-sm font-medium text-slate-700 dark:text-slate-200 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded-lg hover:bg-slate-50 dark:hover:bg-zinc-800 transition-all shadow-sm">
+                  <UploadCloud className="w-4 h-4 text-slate-400 group-hover:text-blue-500 transition-colors" />
+                  <span>แนบไฟล์</span>
+                  <input
+                    type="file"
+                    multiple
+                    className="hidden"
+                    onChange={handleFileChange}
+                  />
+                </label>
+              </div>
+            </div>
+          </div>
 
-          <div className="flex flex-wrap gap-3">
-            {UploadFile.map((file, index) => (
-              <div
-                key={index}
-                className="flex items-center justify-between p-1 border rounded bg-aa hover:bg-gray-100 transition"
-              >
-                <div className="flex items-center gap-3 text-sm  text-foreground">
-                  {/* คลิกชื่อไฟล์เพื่อดู */}
-                  {file.type.startsWith("image/") && (
+          {/* --- Zone 2: File Preview Grid --- */}
+          {UploadFile.length > 0 && (
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+              {UploadFile.map((file: File, index: number) => {
+                const isImage = file.type.startsWith("image/");
+                const fileUrl = URL.createObjectURL(file);
+
+                return (
+                  <div
+                    key={index}
+                    className="group relative flex items-center gap-3 p-2 border border-slate-200 dark:border-zinc-800 rounded-xl bg-white dark:bg-zinc-900 shadow-sm hover:shadow-md transition-all duration-200"
+                  >
+                    {/* File Icon / Image Preview */}
                     <a
-                      href={URL.createObjectURL(file)}
+                      href={fileUrl}
                       target="_blank"
                       rel="noopener noreferrer"
+                      className="flex-shrink-0"
                     >
-                      <img
-                        src={URL.createObjectURL(file)}
-                        alt="preview"
-                        className="h-10 w-10 object-cover rounded border"
-                      />
+                      {isImage ? (
+                        <div className="w-10 h-10 rounded-lg overflow-hidden border border-slate-100 dark:border-zinc-800">
+                          <img
+                            src={fileUrl}
+                            alt="preview"
+                            className="w-full h-full object-cover transition-transform group-hover:scale-110"
+                          />
+                        </div>
+                      ) : (
+                        <div className="w-10 h-10 rounded-lg bg-slate-100 dark:bg-zinc-800 flex items-center justify-center text-slate-500 dark:text-slate-400">
+                          <FileText className="w-5 h-5" />
+                        </div>
+                      )}
                     </a>
-                  )}
-                  <a
-                    href={URL.createObjectURL(file)}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="hover:underline break-all"
-                  >
-                    {file.name}
-                  </a>
-                </div>
 
-                {/* ปุ่มลบไฟล์ */}
-                <button
-                  onClick={() => handRemoveFile(index)}
-                  className="text-red-500 hover:text-red-700"
-                  aria-label="ลบไฟล์"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-            ))}
-          </div>
+                    {/* File Name */}
+                    <div className="flex-1 min-w-0">
+                      <a
+                        href={fileUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="block text-xs font-medium text-slate-700 dark:text-slate-200 truncate hover:text-blue-500 transition-colors"
+                        title={file.name}
+                      >
+                        {file.name}
+                      </a>
+                      <p className="text-[10px] text-slate-400 dark:text-slate-500 uppercase mt-0.5">
+                        {file.name.split(".").pop() || "FILE"}
+                      </p>
+                    </div>
+
+                    {/* Delete Button (Absolute) */}
+                    <button
+                      onClick={() => handRemoveFile(index)}
+                      className="absolute -top-2 -right-2 bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-slate-400 hover:text-red-500 rounded-full p-1 opacity-0 group-hover:opacity-100 transition-all shadow-sm hover:scale-110 z-10"
+                      aria-label="ลบไฟล์"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-8">
@@ -522,83 +615,99 @@ const NewJobOrder = () => {
                     searchItem={searchItem}
                     setsearchItem={setsearchItem}
                     loadingSteel={loadingSteel}
+                    pofilelength={UploadFile.length}
                   />
                 </div>
 
                 <div>
-                  <Card className="shadow-steel">
-                    <CardHeader>
-                      <CardTitle>Order Summary</CardTitle>
+                  <Card className="border border-zinc-200 dark:border-zinc-800 shadow-lg shadow-black/5 overflow-hidden sticky top-4">
+                    {/* Header */}
+                    <CardHeader className="bg-zinc-50 dark:bg-zinc-900/60 border-b border-zinc-100 dark:border-zinc-800 pb-4">
+                      <CardTitle className="flex items-center gap-2 text-lg text-zinc-800 dark:text-zinc-100">
+                        <ClipboardCheck className="w-5 h-5 text-zinc-600 dark:text-zinc-300" />
+                        สรุปรายการสั่งผลิต
+                      </CardTitle>
                     </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div className="space-y-2">
-                        <div className="flex justify-between text-sm">
-                          <span className="text-muted-foreground">
-                            จำนวนชิ้นทั้งหมด:
-                          </span>
-                          <span className="font-medium">
-                            {steelItems.reduce(
-                              (sum, item) => sum + item.quantity,
-                              0
-                            )}{" "}
-                            pieces
+
+                    <CardContent className="pt-6 space-y-6">
+                      {/* Stats */}
+                      <div className="space-y-4">
+                        {/* Total Quantity */}
+                        <div className="flex items-center justify-between p-3 rounded-lg bg-zinc-100/60 dark:bg-zinc-800/40 border border-zinc-200 dark:border-zinc-700">
+                          <div className="flex items-center gap-3">
+                            <div className="p-2 bg-white dark:bg-zinc-900 rounded-md shadow-sm text-zinc-700 dark:text-zinc-300">
+                              <Package className="w-4 h-4" />
+                            </div>
+                            <span className="text-sm font-medium text-zinc-600 dark:text-zinc-300">
+                              จำนวนทั้งหมด
+                            </span>
+                          </div>
+
+                          <span className="text-lg font-bold text-zinc-900 dark:text-zinc-100 font-mono">
+                            {totalQuantity.toLocaleString()}
+                            <span className="ml-1 text-xs font-normal text-zinc-500">
+                              ชิ้น
+                            </span>
                           </span>
                         </div>
 
-                        <div className="flex justify-between text-sm">
-                          <span className="text-muted-foreground">
-                            ประเภทเหล็กทั้งหมด:
-                          </span>
-                          <span className="font-medium">
-                            {
-                              new Set(
-                                steelItems
-                                  .filter((item) => item.steelType)
-                                  .map((item) => item.steelType)
-                              ).size
-                            }
-                          </span>
-                        </div>
-                        <div className="flex justify-between text-sm">
-                          <span className="text-muted-foreground">
-                            กำหนดส่ง:
-                          </span>
-                          {headOrder.deliveryDate}
+                        {/* Details */}
+                        <div className="px-1 space-y-3">
+                          {/* Steel Types */}
+                          <div className="flex items-center justify-between text-sm">
+                            <div className="flex items-center gap-2 text-zinc-500 dark:text-zinc-400">
+                              <Layers className="w-4 h-4" />
+                              <span>ประเภทเหล็ก</span>
+                            </div>
+                            <span className="font-semibold text-zinc-700 dark:text-zinc-200">
+                              {totalTypes}
+                              <span className="ml-1 text-xs font-normal text-zinc-400">
+                                รายการ
+                              </span>
+                            </span>
+                          </div>
+
+                          {/* Delivery Date */}
+                          <div className="flex items-center justify-between text-sm">
+                            <div className="flex items-center gap-2 text-zinc-500 dark:text-zinc-400">
+                              <Calendar className="w-4 h-4" />
+                              <span>กำหนดส่งสินค้า</span>
+                            </div>
+                            <span className="font-semibold text-zinc-700 dark:text-zinc-200">
+                              {formatDate(headOrder.deliveryDate)}
+                            </span>
+                          </div>
                         </div>
                       </div>
-                      <Separator />
-                      <div>
-                        {/* Action Buttons */}
-                        <div className="space-y-3 mt-6">
-                          <Button
-                            type="submit"
-                            disabled={isSubmitting}
-                            className="w-full"
-                            size="lg"
-                          >
-                            {isSubmitting ? (
-                              <>
-                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current mr-2" />
-                                Creating Order...
-                              </>
-                            ) : (
-                              <>
-                                <Save className="mr-2 h-4 w-4" />
-                                Create Job Order
-                              </>
-                            )}
-                          </Button>
 
-                          <Button
-                            type="button"
-                            variant="outline"
-                            onClick={() => router.push("/dashboard")}
-                            className="w-full "
-                            disabled={isSubmitting}
-                          >
-                            Cancel
-                          </Button>
-                        </div>
+                      <Separator className="bg-zinc-200 dark:bg-zinc-800" />
+
+                      {/* CTA */}
+                      <div className="space-y-3">
+                        <Button
+                          type="submit"
+                          disabled={isSubmitting || totalTypes === 0}
+                          className="w-full h-12 text-base font-semibold shadow-md shadow-blue-500/20 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 transition-all duration-300 active:scale-[0.98]"
+                        >
+                          {" "}
+                          {isSubmitting ? (
+                            <div className="flex items-center gap-2">
+                              {" "}
+                              <div className="animate-spin rounded-full h-4 w-4 border-2 border-white/30 border-t-white" />{" "}
+                              <span>กำลังบันทึก...</span>{" "}
+                            </div>
+                          ) : (
+                            <div className="flex items-center justify-center gap-2 text-white">
+                              {" "}
+                              <Save className="w-5 h-5" />{" "}
+                              <span>ยืนยันสร้างออเดอร์</span>{" "}
+                            </div>
+                          )}{" "}
+                        </Button>
+
+                        <p className="text-xs text-center text-zinc-400 dark:text-zinc-500">
+                          กรุณาตรวจสอบความถูกต้องก่อนยืนยัน
+                        </p>
                       </div>
                     </CardContent>
                   </Card>

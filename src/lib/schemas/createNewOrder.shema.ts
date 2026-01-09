@@ -10,21 +10,19 @@ export const CreateNewOrderSchema = z.object({
   vat: z.number(),
   orderPOs: z.array(
     z.object({
-      poNumber: z.string(),
+      poNumber: z.string().nullable().optional(),
       customerId: z.number().int().positive().optional(),
-
       vat: z.number(),
-      urlPo: z.array(z.string()),
+      urlPo: z.array(z.string()).optional(),
       date: z.coerce.date().optional(),
       products: z.array(
         z.object({
           steelType: z.string(),
-          weight: z.number().nullable().optional(),
           wide: z.number().nullable(),
           length: z.number(),
           thickness: z.number(),
-          amount: z.number(),
-
+          amount: z.number().int().positive(),
+          cuttingMethod: z.enum(["normal", "FB", "steelDisc"]).optional(),
           detail: z.string().optional(),
         })
       ),
