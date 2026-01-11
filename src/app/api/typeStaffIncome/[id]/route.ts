@@ -62,14 +62,17 @@ export async function PATCH(
   const body = await req.json().catch(() => ({}));
   const parsed = TypeStaffIncomeSchema.partial().safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ error: "Invalid data format" }, { status: 400 });
+    return NextResponse.json(
+      { error: "Invalid data format", details: parsed.error.format() },
+      { status: 400 }
+    );
   }
 
   // กรอง undefined ออก เพื่อไม่ overwrite ค่าเดิมด้วย undefined
   const data = Object.fromEntries(
     Object.entries(parsed.data).filter(([, v]) => v !== undefined)
   );
-
+  console.log("Updating typeStaffIncome with data:", data);
   if (Object.keys(data).length === 0) {
     return NextResponse.json({ error: "Nothing to update" }, { status: 400 });
   }

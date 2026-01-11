@@ -5,6 +5,6 @@ export interface TypeStaffIncome {
   amount: number;
   name: string;
   types: string;
-
   incomes?: StaffIncome[];
+  onDelete?: boolean;
 }
