@@ -349,6 +349,12 @@ export default function Auth() {
                         email && !emailValid ? "border-red-500 border" : ""
                       }`}
                     />
+                    {!email && (
+                      <p className="text-xs text-yellow-400 flex items-center gap-1">
+                        <AlertCircle className="h-3 w-3" />
+                        กรุณากรอก Email
+                      </p>
+                    )}
                     {email && !emailValid && (
                       <p className="text-xs text-red-400 flex items-center gap-1">
                         <AlertCircle className="h-3 w-3" />
@@ -369,6 +375,12 @@ export default function Auth() {
                       required
                       className="bg-slate-900/60 border-white/10 text-white placeholder:text-slate-500"
                     />
+                    {!password && (
+                      <p className="text-xs text-yellow-400 flex items-center gap-1">
+                        <AlertCircle className="h-3 w-3" />
+                        กรุณากรอก Password
+                      </p>
+                    )}
                   </div>
                   <Button
                     type="submit"
