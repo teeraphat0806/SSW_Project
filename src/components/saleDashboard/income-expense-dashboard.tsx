@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
+import dynamic from "next/dynamic";
 import { KPIStatCard } from "./kpi-stat-card";
 import { CashflowView } from "./cashflow-view";
 import { NetProfitView } from "./net-profit-view";
@@ -24,21 +25,55 @@ import {
   Wallet,
 } from "lucide-react";
 
+// Dynamic import for chart to avoid hydration issues
+const ResponsiveContainer = dynamic(
+  () => import("recharts").then((mod) => mod.ResponsiveContainer),
+  { ssr: false }
+);
+const BarChart = dynamic(() => import("recharts").then((mod) => mod.BarChart), {
+  ssr: false,
+});
+const Bar = dynamic(() => import("recharts").then((mod) => mod.Bar), {
+  ssr: false,
+});
+const XAxis = dynamic(() => import("recharts").then((mod) => mod.XAxis), {
+  ssr: false,
+});
+const YAxis = dynamic(() => import("recharts").then((mod) => mod.YAxis), {
+  ssr: false,
+});
+const CartesianGrid = dynamic(
+  () => import("recharts").then((mod) => mod.CartesianGrid),
+  { ssr: false }
+);
+const Tooltip = dynamic(() => import("recharts").then((mod) => mod.Tooltip), {
+  ssr: false,
+});
+const Legend = dynamic(() => import("recharts").then((mod) => mod.Legend), {
+  ssr: false,
+});
+
 interface IncomeExpenseDashboardProps {
   year: number;
 }
 
 export function IncomeExpenseDashboard({ year }: IncomeExpenseDashboardProps) {
   const [activeTab, setActiveTab] = useState("overview");
+  const [isClient, setIsClient] = useState(false);
   const {
     incomeExpenseByYear,
     expensesByCategoryAndYear,
     incomesByTypeAndYear,
     recentExpenses,
     recentIncomes,
+    monthlySalesByYear,
     loading,
     error,
   } = useSaleAnalytics();
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   const incomeExpenseData = useMemo(
     () => incomeExpenseByYear(year),
@@ -60,9 +95,50 @@ export function IncomeExpenseDashboard({ year }: IncomeExpenseDashboardProps) {
     () => recentIncomes(year, 10),
     [year, recentIncomes]
   );
+  const monthlySales = useMemo(
+    () => monthlySalesByYear(year),
+    [year, monthlySalesByYear]
+  );
 
   const largestExpenseCategory =
     expensesByCategory.length > 0 ? expensesByCategory[0].categoryName : "-";
+
+  // Prepare monthly income/expense data for all 12 months using actual sales data
+  const monthlyData = useMemo(() => {
+    if (!isClient) return [];
+
+    const months = [
+      { month: 1, monthName: "มกราคม" },
+      { month: 2, monthName: "กุมภาพันธ์" },
+      { month: 3, monthName: "มีนาคม" },
+      { month: 4, monthName: "เมษายน" },
+      { month: 5, monthName: "พฤษภาคม" },
+      { month: 6, monthName: "มิถุนายน" },
+      { month: 7, monthName: "กรกฎาคม" },
+      { month: 8, monthName: "สิงหาคม" },
+      { month: 9, monthName: "กันยายน" },
+      { month: 10, monthName: "ตุลาคม" },
+      { month: 11, monthName: "พฤศจิกายน" },
+      { month: 12, monthName: "ธันวาคม" },
+    ];
+
+    return months.map((m) => {
+      // Find actual sales data for this month
+      const monthSalesData = monthlySales.find((s) => s.month === m.month);
+      const monthlyIncomeEstimate =
+        monthSalesData?.totalSales || incomeExpenseData.totalIncome / 12;
+      const monthlyExpenseEstimate = incomeExpenseData.totalExpense / 12;
+      const monthlySalaryEstimate = incomeExpenseData.totalSalary / 12;
+
+      return {
+        month: m.month,
+        monthName: m.monthName,
+        รายได้: monthlyIncomeEstimate,
+        เงินเดือน: monthlySalaryEstimate,
+        ค่าใช้จ่าย: monthlyExpenseEstimate,
+      };
+    });
+  }, [isClient, year, monthlySales, incomeExpenseData]);
 
   return (
     <div className="space-y-6">
@@ -199,160 +275,117 @@ export function IncomeExpenseDashboard({ year }: IncomeExpenseDashboardProps) {
               </div>
             </div>
 
-            {/* Stacked Comparison Bar */}
+            {/* Stacked Comparison Bar Chart */}
             <div className="space-y-4">
-              <div>
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-sm font-semibold">รายได้ (100%)</span>
-                  <span className="text-sm font-semibold">
-                    {formatCurrency(incomeExpenseData.totalIncome)}
-                  </span>
-                </div>
-                <div className="w-full bg-muted rounded-full h-8 overflow-hidden">
-                  <div
-                    className="bg-green-500 h-full flex items-center justify-end pr-3 text-white text-xs font-bold"
-                    style={{ width: "100%" }}
+              {isClient && monthlyData.length > 0 ? (
+                <ResponsiveContainer width="100%" height={400}>
+                  <BarChart
+                    data={monthlyData}
+                    margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
                   >
-                    100%
-                  </div>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis
+                      dataKey="monthName"
+                      angle={-45}
+                      textAnchor="end"
+                      height={100}
+                    />
+                    <YAxis
+                      label={{
+                        value: "จำนวนเงิน",
+                        angle: -90,
+                        position: "insideLeft",
+                      }}
+                    />
+                    <Tooltip
+                      formatter={(value: any) => formatCurrency(value)}
+                      contentStyle={{
+                        backgroundColor: "rgba(0, 0, 0, 0.8)",
+                        border: "1px solid rgba(255, 255, 255, 0.1)",
+                        borderRadius: "8px",
+                        color: "#fff",
+                      }}
+                    />
+                    <Legend wrapperStyle={{ paddingTop: "20px" }} />
+                    <Bar
+                      dataKey="รายได้"
+                      fill="#22c55e"
+                      name="รายได้"
+                      stackId="a"
+                    />
+                    <Bar
+                      dataKey="เงินเดือน"
+                      fill="#3b82f6"
+                      name="เงินเดือน"
+                      stackId="b"
+                    />
+                    <Bar
+                      dataKey="ค่าใช้จ่าย"
+                      fill="#ef4444"
+                      name="ค่าใช้จ่าย"
+                      stackId="b"
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="h-96 flex items-center justify-center bg-muted rounded-lg">
+                  <p className="text-muted-foreground">ไม่พบข้อมูลรายได้</p>
                 </div>
-              </div>
+              )}
 
-              <div>
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-sm font-semibold">
-                    ค่าใช้จ่ายรวม (เงินเดือน + ค่าอื่น)
-                  </span>
-                  <span className="text-sm font-semibold">
-                    {formatCurrency(
-                      incomeExpenseData.totalSalary +
-                        incomeExpenseData.totalExpense
-                    )}
-                  </span>
-                </div>
-                <div className="w-full bg-muted rounded-full h-8 overflow-hidden">
-                  {incomeExpenseData.totalIncome > 0 ? (
-                    <div className="flex h-full">
-                      <div
-                        className="bg-blue-500 flex items-center justify-center text-white text-xs font-bold"
-                        style={{
-                          width: `${Math.min(
-                            (incomeExpenseData.totalSalary /
-                              incomeExpenseData.totalIncome) *
-                              100,
-                            100
-                          )}%`,
-                        }}
-                        title={`เงินเดือน: ${(
-                          (incomeExpenseData.totalSalary /
-                            incomeExpenseData.totalIncome) *
-                          100
-                        ).toFixed(1)}%`}
-                      >
-                        {Math.round(
-                          (incomeExpenseData.totalSalary /
-                            incomeExpenseData.totalIncome) *
-                            100
-                        ) > 5 &&
-                          `${Math.round(
-                            (incomeExpenseData.totalSalary /
-                              incomeExpenseData.totalIncome) *
-                              100
-                          )}%`}
-                      </div>
-                      <div
-                        className="bg-red-500 flex items-center justify-center text-white text-xs font-bold"
-                        style={{
-                          width: `${Math.min(
-                            (incomeExpenseData.totalExpense /
-                              incomeExpenseData.totalIncome) *
-                              100,
-                            100
-                          )}%`,
-                        }}
-                        title={`ค่าใช้จ่าย: ${(
-                          (incomeExpenseData.totalExpense /
-                            incomeExpenseData.totalIncome) *
-                          100
-                        ).toFixed(1)}%`}
-                      >
-                        {Math.round(
-                          (incomeExpenseData.totalExpense /
-                            incomeExpenseData.totalIncome) *
-                            100
-                        ) > 5 &&
-                          `${Math.round(
-                            (incomeExpenseData.totalExpense /
-                              incomeExpenseData.totalIncome) *
-                              100
-                          )}%`}
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="h-full bg-gray-300" />
+              {/* Summary Statistics */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+                <div className="bg-green-50 dark:bg-green-950/30 rounded-lg p-4 border border-green-200 dark:border-green-800">
+                  <p className="text-xs font-medium text-green-700 dark:text-green-300 mb-1">
+                    รายได้ (100%)
+                  </p>
+                  <p className="text-lg font-bold text-green-600 dark:text-green-400">
+                    {formatCurrency(incomeExpenseData.totalIncome)}
+                  </p>
+                  {incomeExpenseData.totalIncome > 0 && (
+                    <p className="text-xs text-green-600 dark:text-green-300 mt-2">
+                      100% ของรายได้ทั้งหมด
+                    </p>
                   )}
                 </div>
-                <div className="flex gap-4 mt-2 text-xs">
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 bg-blue-500 rounded"></div>
-                    <span>
-                      เงินเดือน: {formatCurrency(incomeExpenseData.totalSalary)}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 bg-red-500 rounded"></div>
-                    <span>
-                      ค่าใช้จ่าย:{" "}
-                      {formatCurrency(incomeExpenseData.totalExpense)}
-                    </span>
-                  </div>
-                </div>
-              </div>
 
-              <div>
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-sm font-semibold">กำไรสุทธิ</span>
-                  <span
-                    className={`text-sm font-semibold ${
-                      incomeExpenseData.netIncome >= 0
-                        ? "text-green-600 dark:text-green-400"
-                        : "text-red-600 dark:text-red-400"
-                    }`}
-                  >
-                    {incomeExpenseData.netIncome >= 0 ? "+" : ""}
-                    {formatCurrency(incomeExpenseData.netIncome)}
-                  </span>
-                </div>
-                {incomeExpenseData.totalIncome > 0 ? (
-                  <div className="w-full bg-muted rounded-full h-8 overflow-hidden">
-                    <div
-                      className={`h-full flex items-center justify-end pr-3 text-white text-xs font-bold ${
-                        incomeExpenseData.netIncome >= 0
-                          ? "bg-green-500"
-                          : "bg-red-500"
-                      }`}
-                      style={{
-                        width: `${Math.min(
-                          Math.abs(
-                            (incomeExpenseData.netIncome /
-                              incomeExpenseData.totalIncome) *
-                              100
-                          ),
-                          100
-                        )}%`,
-                      }}
-                    >
-                      {Math.abs(
-                        (incomeExpenseData.netIncome /
+                <div className="bg-blue-50 dark:bg-blue-950/30 rounded-lg p-4 border border-blue-200 dark:border-blue-800">
+                  <p className="text-xs font-medium text-blue-700 dark:text-blue-300 mb-1">
+                    เงินเดือน
+                  </p>
+                  <p className="text-lg font-bold text-blue-600 dark:text-blue-400">
+                    {formatCurrency(incomeExpenseData.totalSalary)}
+                  </p>
+                  {incomeExpenseData.totalIncome > 0 && (
+                    <p className="text-xs text-blue-600 dark:text-blue-300 mt-2">
+                      {(
+                        (incomeExpenseData.totalSalary /
                           incomeExpenseData.totalIncome) *
-                          100
+                        100
                       ).toFixed(1)}
-                      %
-                    </div>
-                  </div>
-                ) : (
-                  <div className="w-full bg-muted rounded-full h-8" />
-                )}
+                      % ของรายได้
+                    </p>
+                  )}
+                </div>
+
+                <div className="bg-red-50 dark:bg-red-950/30 rounded-lg p-4 border border-red-200 dark:border-red-800">
+                  <p className="text-xs font-medium text-red-700 dark:text-red-300 mb-1">
+                    ค่าใช้จ่ายอื่น
+                  </p>
+                  <p className="text-lg font-bold text-red-600 dark:text-red-400">
+                    {formatCurrency(incomeExpenseData.totalExpense)}
+                  </p>
+                  {incomeExpenseData.totalIncome > 0 && (
+                    <p className="text-xs text-red-600 dark:text-red-300 mt-2">
+                      {(
+                        (incomeExpenseData.totalExpense /
+                          incomeExpenseData.totalIncome) *
+                        100
+                      ).toFixed(1)}
+                      % ของรายได้
+                    </p>
+                  )}
+                </div>
               </div>
             </div>
           </Card>

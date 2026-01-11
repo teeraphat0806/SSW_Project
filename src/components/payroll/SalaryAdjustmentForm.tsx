@@ -107,13 +107,13 @@ export const SalaryAdjustmentForm = ({
                   <SelectItem
                     key={employee.id}
                     value={String(employee.id)}
-                    className="bg-background text-muted-foreground hover:bg-blue-50 cursor-pointer"
+                    className="bg-background text-muted-foreground hover:bg-blue-500 cursor-pointer group"
                   >
                     <div className="flex flex-col">
-                      <span className="font-medium">
+                      <span className="font-medium group-hover:text-white">
                         {employee.name} ({employee.code})
                       </span>
-                      <span className="text-xs text-gray-500">
+                      <span className="text-xs text-gray-500 group-hover:text-white">
                         เงินเดือนปัจจุบัน: ฿
                         {employee.currentSalary.toLocaleString()}
                       </span>
