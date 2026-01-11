@@ -158,11 +158,12 @@ model StaffIncome {
 }
 
 model TypeStaffIncome {
-  id      Int           @id @default(autoincrement())
-  amount  Float
-  name    String
-  types   String
-  incomes StaffIncome[]
+  id       Int           @id @default(autoincrement())
+  amount   Float
+  name     String
+  types    String
+  onDelete Boolean?      @default(false)
+  incomes  StaffIncome[]
 }
 
 model SteelType {
