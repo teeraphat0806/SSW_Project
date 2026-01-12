@@ -1,4 +1,3 @@
-
 import { NextResponse, NextRequest } from "next/server";
 import prisma from "@/lib/prisma";
 import { TypeStaffIncomeSchema } from "../../../lib/schemas/typeStaffIncome.schema";
@@ -17,7 +16,9 @@ export async function GET(req: NextRequest) {
   const { session } = authResult;
   console.log(session);
   try {
-    const result = await prisma.typeStaffIncome.findMany({});
+    const result = await prisma.typeStaffIncome.findMany({
+      where: { onDelete: false },
+    });
 
     return NextResponse.json(result, { status: 200 });
   } catch (error) {
@@ -28,7 +29,7 @@ export async function GET(req: NextRequest) {
   }
 }
 export async function POST(req: NextRequest) {
- const authResult = await requireAuth([
+  const authResult = await requireAuth([
     "superadmin",
     "supervisor",
     "clerk",

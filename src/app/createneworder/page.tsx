@@ -356,7 +356,7 @@ const NewJobOrder = () => {
     } catch (error) {
       console.error("Error create New Order", error);
       const message = error instanceof Error ? error : new Error(String(error));
-      toast.error(`สร้างออเดอรืใหม่ไม่สำเร็จ: ${message}`, {
+      toast.error(`สร้างออเดอร์ใหม่ไม่สำเร็จ: ${message}`, {
         position: "bottom-right",
       });
     } finally {

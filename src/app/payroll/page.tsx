@@ -395,14 +395,16 @@ export default function PayrollPage() {
   }, [adjustments, otherIncomeTypes, adjustmentType, latestEmployeeOnly]);
 
   /* Handlers */
-  const handleSalaryAdjustment = (
+  const handleSalaryAdjustment = async (
     adjustment: Omit<SalaryAdjustment, "id" | "date" | "type">
   ) => {
+    const amountNum = Number(adjustment.amount) || 0;
     const newAdjustment: SalaryAdjustment = {
       ...adjustment,
+      amount: amountNum,
       id: Date.now().toString(),
       date: new Date().toISOString(),
-      type: adjustment.amount >= 0 ? "increase" : "decrease",
+      type: amountNum >= 0 ? "increase" : "decrease",
     };
     if (adjustmentType === "other") {
       fetch("/api/staffIncome", {
@@ -411,9 +413,9 @@ export default function PayrollPage() {
         credentials: "include",
         body: JSON.stringify({
           staffId: Number(newAdjustment?.staffId), // "1" -> 1
-          amount: Number(newAdjustment?.amount), // amount -> Price
+          amount: amountNum,
           detail: newAdjustment?.detail,
-          name: "OT-005",
+          nameIncome: newAdjustment?.detail || "OT-005",
         }),
       })
         .then(async (res) => {
@@ -433,66 +435,75 @@ export default function PayrollPage() {
         });
     }
     if (adjustmentType === "salary") {
-      fetch(`/api/staff/${newAdjustment.staffId}`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include", // ให้ browser แนบ cookie session อัตโนมัติ
-        body: JSON.stringify({
-          currentSalary: Number(newAdjustment.amount),
-        }),
-      })
-        .then(async (res) => {
-          const text = await res.text();
-          if (!res.ok) throw new Error(`${res.status} ${text}`);
-          return JSON.parse(text);
-        })
-        .then(() => {
-          toast.success(`อัพเดตรายได้พนักงานสำเร็จ`, {
-            position: "bottom-right",
-          });
-        })
+      try {
+        const salaryRes = await fetch(`/api/staff/${newAdjustment.staffId}`, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          credentials: "include",
+        });
+        const salaryText = await salaryRes.text();
+        if (!salaryRes.ok) throw new Error(`${salaryRes.status} ${salaryText}`);
+        const salaryData = JSON.parse(salaryText);
+        const currentSalary = Number(salaryData.currentSalary) || 0;
+        const updatedSalary = currentSalary + amountNum;
 
-        .catch((err) => {
-          toast.error(`พบข้อผิดพลาด อัพเดตรายได้พนักงานไม่สำเร็จ: ${err}`, {
-            position: "bottom-right",
-          });
+        const patchRes = await fetch(`/api/staff/${newAdjustment.staffId}`, {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          credentials: "include", // ให้ browser แนบ cookie session อัตโนมัติ
+          body: JSON.stringify({
+            currentSalary: updatedSalary,
+          }),
         });
-      fetch("/api/staffSalary", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include", // ให้ browser ส่ง cookie next-auth.session-token อัตโนมัติ
-        body: JSON.stringify({
-          staffId: Number(newAdjustment.staffId), // แปลง staffId → staffId
-          amount: newAdjustment.amount,
-          detail: newAdjustment.detail,
-        }),
-      })
-        .then(async (res) => {
-          const text = await res.text();
-          if (!res.ok) throw new Error(`${res.status} ${text}`);
-          return JSON.parse(text);
-        })
-        .then(() => {
-          toast.success(`อัพเดตรายได้พนักงานสำเร็จ`, {
-            position: "bottom-right",
-          });
-        })
-        .catch((err) => {
-          toast.error(`พบข้อผิดพลาด: ${err}`, {
-            position: "bottom-right",
-          });
+        const patchText = await patchRes.text();
+        if (!patchRes.ok) throw new Error(`${patchRes.status} ${patchText}`);
+        JSON.parse(patchText);
+
+        toast.success(`อัพเดตรายได้พนักงานสำเร็จ`, {
+          position: "bottom-right",
         });
+      } catch (err) {
+        toast.error(`พบข้อผิดพลาด อัพเดตรายได้พนักงานไม่สำเร็จ: ${err}`, {
+          position: "bottom-right",
+        });
+        return;
+      }
+
+      try {
+        const res = await fetch("/api/staffSalary", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          credentials: "include", // ให้ browser ส่ง cookie next-auth.session-token อัตโนมัติ
+          body: JSON.stringify({
+            staffId: Number(newAdjustment.staffId), // แปลง staffId → staffId
+            amount: Math.max(0, amountNum),
+            detail: newAdjustment.detail,
+          }),
+        });
+        const text = await res.text();
+        if (!res.ok) throw new Error(`${res.status} ${text}`);
+        JSON.parse(text);
+        toast.success(`อัพเดตรายได้พนักงานสำเร็จ`, {
+          position: "bottom-right",
+        });
+      } catch (err) {
+        toast.error(`พบข้อผิดพลาด: ${err}`, {
+          position: "bottom-right",
+        });
+      }
     }
     setEmployees((prev) =>
       prev.map((emp) =>
         emp.id === Number(adjustment.staffId)
           ? {
               ...emp,
-              currentSalary: emp.currentSalary + adjustment.amount,
+              currentSalary: emp.currentSalary + amountNum,
             }
           : emp
       )
@@ -576,16 +587,17 @@ export default function PayrollPage() {
   // API remove
   const removeOtherIncomeType = async (id: string) => {
     const res = await fetch(`/api/typeStaffIncome/${id}`, {
-      method: "DELETE",
+      method: "PATCH",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
+      body: JSON.stringify({ onDelete: true }),
     });
     if (res.ok)
       toast.success("ลบรายได้พนักงานสำเร็จ", {
         position: "bottom-right",
       });
     if (!res.ok) {
-      toast.error("กรุณา รีโหลดหน้าใหม่", { position: "bottom-right" });
+      toast.error(`${await res.text()}`, { position: "bottom-right" });
     }
     return true;
   };
