@@ -17,20 +17,8 @@ import {
   Scissors,
   Scale,
   CheckCircle2,
-  ClipboardCheck,
   Truck,
   PackageCheck,
-  Plus,
-  ListChecks,
-  Trash2,
-  Phone,
-  FileText,
-  Mail,
-  Printer,
-  MapPin,
-  User,
-  Building2,
-  Calculator,
 } from "lucide-react";
 import { Button } from "../../../components/ui/button";
 import { de } from "zod/v4/locales";
@@ -38,6 +26,8 @@ import DetailCustomer from "@/components/up-date-order/detailCustomer";
 import DetailItem from "@/components/up-date-order/detailItem";
 import Summary from "@/components/up-date-order/summary";
 import Stepper from "@/components/up-date-order/stepper";
+import { LoadingScreen } from "@/components/Loading";
+import { toast } from "react-toastify";
 // ✅ ไม่ได้ใช้ เอาออกได้ (ถ้าจะใช้ค่อยใส่กลับ)
 // import { ca, th } from "date-fns/locale";
 
@@ -62,7 +52,8 @@ type ApiJobOrder = {
     detail?: string | null;
     weight?: number | null;
     shape: "square" | "line";
-    cuttingMethod: "normal" | "FB" | "steelDisc";
+    job?: number | null;
+    cuttingMethod?: "normal" | "FB" | "steelDisc";
   }[];
   status:
     | "pending"
@@ -95,6 +86,8 @@ type Joborder = {
     detail?: string | null;
     weight?: number | null;
     shape: "square" | "line";
+    job?: number | null;
+    cuttingMethod?: "normal" | "FB" | "steelDisc";
   }[];
   status:
     | "pending"
@@ -126,6 +119,8 @@ const toJoborder = (api: ApiJobOrder): Joborder => ({
     thickness: s.thickness,
     detail: s.detail ?? null,
     weight: s.weight ?? null,
+    job: s.job ?? null,
+    cuttingMethod: s.cuttingMethod ?? "normal",
     shape: s.shape,
   })),
   status: api.status,
@@ -205,25 +200,6 @@ const toThaiStatus = (s: Joborder["status"]): OrderStatus => {
   }
 };
 
-const toApiStatus = (s: OrderStatus): Joborder["status"] => {
-  switch (s) {
-    case "รอตัด":
-      return "pending";
-    case "กำลังตัด":
-      return "cutting";
-    case "ชั่งน้ำหนัก":
-      return "weighing";
-    case "ตัดเสร็จสิ้น":
-      return "ready";
-    case "กำลังส่ง":
-      return "shipped";
-    case "ส่งสำเร็จ":
-      return "completed";
-    default:
-      return "pending";
-  }
-};
-
 type PatchPayload = {
   status?: Joborder["status"];
   customerId?: string;
@@ -236,6 +212,8 @@ type PatchPayload = {
     thickness: number;
     weight?: number | null;
     detail?: string | null;
+    job?: number | null;
+    cuttingMethod?: "normal" | "FB" | "steelDisc";
   }[];
 };
 
@@ -252,6 +230,8 @@ function buildPatchPayload(job: Joborder): PatchPayload {
       thickness: Number(l.thickness),
       weight: l.weight ?? null,
       detail: l.detail ?? null,
+      job: l.job ?? null,
+      cuttingMethod: l.cuttingMethod ?? "normal",
     })),
   };
 }
@@ -273,10 +253,19 @@ const UpdateOrderPage = ({ id }: { id: string }) => {
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
 
+  const [useJob, setUseJob] = useState(false);
+
   // sync ref ให้ fetchSteel มองเห็น job ล่าสุดเสมอ
   useEffect(() => {
     jobRef.current = job;
   }, [job]);
+
+  const hasAnyJob = (job?.steel ?? []).some((s) => s.job != null);
+  useEffect(() => {
+    if (hasAnyJob) setUseJob(true);
+  }, [hasAnyJob]);
+
+  const hasMissingJob = useJob && (job?.steel ?? []).some((s) => s.job == null);
 
   const fetchSteel = async (name: string, cancelledRef?: () => boolean) => {
     setLoadingSteel(true);
@@ -347,23 +336,68 @@ const UpdateOrderPage = ({ id }: { id: string }) => {
     };
   }, [id]);
 
+  // const clearAllJobs = () => {
+  //   setJob((prev) => {
+  //     if (!prev) return prev;
+  //     return {
+  //       ...prev,
+  //       steel: (prev.steel ?? []).map((s) => ({ ...s, job: null })),
+  //     };
+  //   });
+  // };
+  const validateForm = () => {
+    if (!job) return "ไม่พบข้อมูลคำสั่งซื้อ";
+    if (itemCount === 0) return "กรุณาเพิ่มรายการเหล็กอย่างน้อย 1 รายการ";
+    if (itemCount > 15)
+      return "ไม่สามารถบันทึกคำสั่งซื้อที่มีรายการเหล็กเกิน 15 รายการได้";
+    if (hasMissingJob) return "กรุณากรอกหมายเลขงาน (Job No.) ให้ครบทุกบรรทัด";
+  };
+
   const onSave = async () => {
-    if (!job) return;
+    const validationError = validateForm();
+    if (validationError) {
+      toast.error(`ขออภัย มีข้อผิดพลาด: ${validationError}`, {
+        position: "bottom-right",
+      });
+      return;
+    }
+
+    // ✅ Guard เพื่อ TS + runtime
+    if (!job) {
+      toast.error("ขออภัย มีข้อผิดพลาด: ไม่พบข้อมูลคำสั่งซื้อ", {
+        position: "bottom-right",
+      });
+      return;
+    }
+
+    const jobSnap = job; // ✅ จากนี้ไม่ต้อง job! แล้ว
+    const snapshot = jobSnap;
 
     setSaving(true);
     setSaveError(null);
 
-    // ✅ optimistic UI: เก็บ snapshot เผื่อ rollback
-    const snapshot = job;
-
     try {
-      const payload = buildPatchPayload(job);
+      const jobForSend = !useJob
+        ? {
+            ...jobSnap,
+            steel: (jobSnap.steel ?? []).map((s) => ({ ...s, job: null })),
+          }
+        : jobSnap;
 
-      // ✅ กัน payload ที่ codeSteel ว่าง
+      const payload = buildPatchPayload(jobForSend);
+
       const badLine = payload.steel?.find((x) => !x.codeSteel?.trim());
-      if (badLine) throw new Error("กรุณาเลือกชนิดเหล็กให้ครบทุกบรรทัด");
-      console.log("payload: " + JSON.stringify(payload));
-      const res = await fetch(`/api/up-date-order/${job.id}`, {
+      if (badLine) {
+        toast.error(
+          "ขออภัย มีข้อผิดพลาด: กรุณาเลือกประเภทเหล็กให้ครบทุกบรรทัด",
+          {
+            position: "bottom-right",
+          }
+        );
+        return;
+      }
+
+      const res = await fetch(`/api/up-date-order/${jobSnap.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         cache: "no-store",
@@ -373,12 +407,21 @@ const UpdateOrderPage = ({ id }: { id: string }) => {
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error || "Save failed");
 
-      // ✅ ให้ API ส่งกลับ order แบบ include Customer + Product + SteelType
-      // แล้ว map กลับมาเป็น Joborder เพื่อให้ state ตรงเสมอ
       const mapped = toJoborder(data as ApiJobOrder);
-      setJob(mapped); // ✅ หน้าเปลี่ยนทันที
+      setJob(mapped);
+
+      if (!useJob) {
+        setJob((prev) =>
+          prev
+            ? {
+                ...prev,
+                steel: (prev.steel ?? []).map((s) => ({ ...s, job: null })),
+              }
+            : prev
+        );
+      }
     } catch (e) {
-      setJob(snapshot); // (optional) rollback
+      setJob(snapshot);
       setSaveError(e instanceof Error ? e.message : "Save failed");
     } finally {
       setSaving(false);
@@ -400,14 +443,7 @@ const UpdateOrderPage = ({ id }: { id: string }) => {
     };
   }, [steelQuery]);
   if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-background to-steel/20 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading job order details...</p>
-        </div>
-      </div>
-    );
+    return <LoadingScreen message="กำลังโหลดรายละเอียดออเดอร์..." />;
   }
 
   if (error || !job) {
@@ -420,7 +456,7 @@ const UpdateOrderPage = ({ id }: { id: string }) => {
     );
   }
 
-  if(job.status==="canceled"){
+  if (job.status === "canceled") {
     router.replace("/notFound");
     return null;
   }
@@ -532,6 +568,8 @@ const UpdateOrderPage = ({ id }: { id: string }) => {
           setJob={setJob}
           steelOptions={steelOptions}
           weightEnabled={weightEnabled}
+          useJob={useJob}
+          setUseJob={setUseJob}
         />
 
         {/* ---------- สรุป (อ่านจาก job.steel) ---------- */}

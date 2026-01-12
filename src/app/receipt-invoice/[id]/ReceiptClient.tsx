@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { InvoiceExcelSample } from "@/components/receipt-invoice/InvoiceExcelSample";
+import { LoadingScreen } from "@/components/Loading";
 
 type ApiReceipt = {
   invoiceNo: number;
@@ -44,7 +45,12 @@ export default function ReceiptClient({ id }: { id: string }) {
       .catch(console.error);
   }, [id]);
 
-  if (!data) return <div>Loading...</div>;
+  if (!data)
+    return (
+      <div>
+        <LoadingScreen message="กำลังโหลดใบเสร็จ..." />
+      </div>
+    );
 
   return (
     <div className="min-h-screen bg-muted/40 px-4 py-6 print:p-0 print:m-0 print:bg-white print:absolute print:top-0 print:left-0 print:w-full print:z-50">

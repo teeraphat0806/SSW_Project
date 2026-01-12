@@ -15,10 +15,8 @@ import {
   CalendarDays,
   User2,
   Hash,
-  Printer,
   Edit,
   Building2,
-  AlertCircle,
   Factory,
   Truck,
 } from "lucide-react";
@@ -27,15 +25,11 @@ import { StaffInfoCard } from "@/components/jobordertail/StaffInfoCard";
 import { CustomerTab } from "@/components/jobordertail/CustomerTab";
 import { ProductionTab } from "@/components/jobordertail/ProductionTab";
 import { DeliveryTab } from "@/components/jobordertail/DeliveryTab";
-// Consolidate Card imports to use the local UI component for consistent styling
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Icon } from "leaflet";
-import { set } from "zod";
-import th from "zod/v4/locales/th.cjs";
-import { se } from "date-fns/locale";
-
 import SteelOrderTable from "@/components/jobordertail/SteelOrderTable";
 import { CancelOrderButton } from "@/components/jobordertail/cancelOrderButton";
+
+import { LoadingScreen } from "@/components/Loading";
 
 type StaffMember = {
   id: number;
@@ -397,14 +391,7 @@ const JobOrderDetailPage = ({ id }: { id: string }) => {
 
   // Loading state
   if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-background to-steel/20 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading job order details...</p>
-        </div>
-      </div>
-    );
+    return <LoadingScreen message="กำลังโหลดรายละเอียดออเดอร์..." />;
   }
 
   return (
