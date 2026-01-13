@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { InvoiceExcelSample } from "@/components/receipt-invoice/InvoiceExcelSample";
+import { LoadingScreen } from "@/components/Loading";
 
 type ApiReceipt = {
   invoiceNo: number;
@@ -26,6 +27,8 @@ type ApiReceipt = {
     amount: number;
     weight: number;
     price: number;
+    cuttingMethod?: "normal" | "FB" | "steelDisc";
+    job?: number | null;
     total: number;
   }[];
 };
@@ -42,7 +45,12 @@ export default function ReceiptClient({ id }: { id: string }) {
       .catch(console.error);
   }, [id]);
 
-  if (!data) return <div>Loading...</div>;
+  if (!data)
+    return (
+      <div>
+        <LoadingScreen message="กำลังโหลดใบเสร็จ..." />
+      </div>
+    );
 
   return (
     <div className="min-h-screen bg-muted/40 px-4 py-6 print:p-0 print:m-0 print:bg-white print:absolute print:top-0 print:left-0 print:w-full print:z-50">
@@ -71,7 +79,7 @@ export default function ReceiptClient({ id }: { id: string }) {
           thickness: s.thickness,
           width: s.width ?? 0,
           length: s.length,
-          job: "-", // API ไม่มี job → ใส่ default
+          job: s.job?.toString() ?? "-", // API ไม่มี job → ใส่ default
           amount: s.amount,
           weight: s.weight,
           price: s.price,

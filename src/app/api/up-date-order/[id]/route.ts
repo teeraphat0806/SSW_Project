@@ -34,6 +34,8 @@ type ApiJobOrder = {
     detail?: string | null;
     weight?: number | null;
     shape: "square" | "line";
+    job: number | null;
+    cuttingMethod: "normal" | "FB" | "steelDisc";
   }[];
   status: statusType;
 };
@@ -98,6 +100,8 @@ export async function GET(
         thickness: item.thickness ?? 0,
         detail: item.detail ?? undefined,
         weight: item.actualWeight ?? undefined,
+        job: item.job ?? null,
+        cuttingMethod: item.cuttingMethod ?? "normal",
         shape: item.SteelType.shape,
       })),
       status: jobOrder.status,
@@ -131,6 +135,8 @@ const SteelLineSchema = z.object({
   thickness: z.number().nonnegative(),
   weight: z.number().nonnegative().nullable().optional(),
   detail: z.string().nullable().optional(),
+  cuttingMethod: z.enum(["normal", "FB", "steelDisc"]).optional(),
+  job: z.number().int().nullable().optional(),
 });
 
 const PatchSchema = z.object({
@@ -349,11 +355,11 @@ export async function PATCH(
               thickness: l.thickness ?? null,
               amount: l.amount,
               detail: l.detail ?? null,
-
-              // เก็บ actualWeight เฉพาะที่ user กรอกจริง (คงความหมาย "actual")
               actualWeight: l.weight ?? null,
+              job: l.job ?? null,
+              cuttingMethod: l.cuttingMethod ?? "normal",
 
-              // ✅ total คำนวณตามเงื่อนไขใหม่
+              // total คำนวณตามเงื่อนไขใหม่
               total,
             };
           }),
@@ -443,10 +449,12 @@ export async function PATCH(
           detail: p.detail ?? null,
           weight: p.actualWeight ?? null,
           shape: p.SteelType.shape,
+          job: p.job ?? null,
+          cuttingMethod: p.cuttingMethod ?? "normal",
         })),
         status: order.status,
       };
-
+      console.log("Updated order:", responseData);
       return responseData;
     });
 

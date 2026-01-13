@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { use, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -28,6 +28,7 @@ import SelectCustomer from "@/components/SelectCustomer";
 
 import type { CustomerFormData } from "@/components/newJobOrder/CustomerForm";
 import { cn } from "@/lib/utils";
+import { CuttingMethod } from "@prisma/client";
 
 type SteelItem = {
   id: string;
@@ -39,6 +40,7 @@ type SteelItem = {
   thickness: number;
   notes: string;
   cuttingMethod?: "normal" | "FB" | "steelDisc";
+  job?: number | null;
 };
 
 type SteelType = {
@@ -65,6 +67,7 @@ const NewJobOrder = () => {
   const [showForm, setShowForm] = useState(false); //แสดงหรือซ่อนข้อมุลลูกค้า
   const toggleForm = () => setShowForm(!showForm); //ฟังก์ชั่นแสดงฟอร์มลูกค้า
   const [open, setOpen] = useState(false); //เปิดหรือปิด SelectCustomer
+  const [useJob, setUseJob] = useState(false);
   // ลูกค้า
   const [customers, setCustomers] = useState<{ id: string; name: string }[]>(
     []
@@ -86,7 +89,7 @@ const NewJobOrder = () => {
     yourRef: string;
   }>({
     poNumber: null,
-    deliveryDate: "",
+    deliveryDate: new Date().toISOString().split("T")[0],
     yourRef: "",
   });
 
@@ -314,6 +317,8 @@ const NewJobOrder = () => {
                 thickness: item.thickness,
                 total: 200,
                 detail: item.notes || "",
+                CuttingMethod: item.cuttingMethod || "normal",
+                job: item.job || null,
               };
             }),
           },
@@ -351,7 +356,7 @@ const NewJobOrder = () => {
     } catch (error) {
       console.error("Error create New Order", error);
       const message = error instanceof Error ? error : new Error(String(error));
-      toast.error(`สร้างออเดอรืใหม่ไม่สำเร็จ: ${message}`, {
+      toast.error(`สร้างออเดอร์ใหม่ไม่สำเร็จ: ${message}`, {
         position: "bottom-right",
       });
     } finally {
@@ -391,6 +396,8 @@ const NewJobOrder = () => {
       length: 0,
       thickness: 0,
       notes: "",
+      cuttingMethod: "normal",
+      job: null,
     };
     setSteelItems((prev) => [...prev, newItem]);
   };
@@ -417,7 +424,9 @@ const NewJobOrder = () => {
       return "ออเดอร์นี้มีไฟล์แนบ กรุณากรอกหมายเลข PO";
     if (!headOrder.deliveryDate) return "กรุณากรอกวันที่ต้องการสินค้า";
     if (!headOrder.yourRef.trim()) return "กรุณากรอกช่อง Your Ref";
-
+    if (useJob == true && steelItems.some((item) => !item.job)) {
+      return "กรุณากรอกหมายเลข Job ในรายการเหล็กที่เลือก";
+    }
     if (steelItems.length === 0)
       return "กรุณาเพิ่มรายการเหล็กอย่างน้อย 1 รายการ";
     for (const item of steelItems) {
@@ -426,6 +435,8 @@ const NewJobOrder = () => {
     }
     if (steelItems.length > 15)
       return "ไม่สามารถเพิ่มรายการเหล็กเกิน 15 รายการ";
+    if (steelItems.some((item) => item.length <= 0 || item.thickness <= 0 || (item.shape === "square" && (item.width === null || item.width <= 0)))) 
+      return "ขนาดของเหล็กต้องมากกว่า 0";
     return null;
   };
 
@@ -616,6 +627,8 @@ const NewJobOrder = () => {
                     setsearchItem={setsearchItem}
                     loadingSteel={loadingSteel}
                     pofilelength={UploadFile.length}
+                    useJob={useJob}
+                    setUseJob={setUseJob}
                   />
                 </div>
 

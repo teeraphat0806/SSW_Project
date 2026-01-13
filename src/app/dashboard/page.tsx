@@ -414,7 +414,9 @@ export default function Dashboard() {
                     <td className="py-4 px-6">
                       <div className="flex flex-col">
                         <span className="font-mono text-sm font-medium text-zinc-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-                          {order.poNumber}
+                          {order.poNumber
+                            ? order.poNumber
+                            : "ไม่มีเลขที่ใบสั่งซื้อ"}
                         </span>
                         <span className="text-xs text-zinc-400">
                           ID: {order.id}
