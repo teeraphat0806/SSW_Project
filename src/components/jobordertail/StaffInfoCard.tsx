@@ -16,7 +16,8 @@ import {
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-
+import { toast } from "react-toastify";
+import { useConfirm } from "@/components/providers/confirm-dialog-provider";
 // --- Types ---
 export type StaffMember = {
   id: number;
@@ -63,6 +64,8 @@ export function StaffInfoCard({
   // Local State for Immediate Updates (Optimistic UI)
   const [localSupervisors, setLocalSupervisors] = useState<StaffMember[]>([]);
   const [localTechs, setLocalTechs] = useState<StaffMember[]>([]);
+
+  const confirm = useConfirm();
 
   // Sync props to local state when props change (Parent Refresh)
   useEffect(() => {
@@ -131,10 +134,16 @@ export function StaffInfoCard({
       );
 
       if (!res.ok) {
+        toast.error("ไม่สามารถเพิ่มพนักงานได้ กรุณาลองใหม่อีกครั้ง", {
+          position: "bottom-right",
+        });
         throw new Error(`Failed to add staff: ${res.statusText}`);
       }
 
       // Success: อัปเดต Local State ทันทีเพื่อให้เห็นผลเลย
+      toast.success("เพิ่มพนักงานเรียบร้อยแล้ว", {
+        position: "bottom-right",
+      });
       const addedStaff = availableStaff.find((s) => s.id === staffId);
       if (addedStaff) {
         if (modalType === "supervisor") {
@@ -159,7 +168,14 @@ export function StaffInfoCard({
     staffId: number,
     type: "supervisor" | "cutter"
   ) => {
-    if (!confirm("ต้องการลบรายชื่อนี้ออกจากงานใช่หรือไม่?")) return;
+    const isConfirmed = await confirm({
+      title: "ต้องการลบรายชื่อนี้ออกจากงานใช่หรือไม่?",
+      description: "หากลบแล้วข้อมูลจะไม่สามารถนำมาชำระบิลได้ ข้อมูลจะหายไปถาวร",
+      variant: "destructive", // ใส่เพื่อให้ปุ่มเป็นสีแดง (optional)
+      confirmText: "ลบข้อมูล",
+      cancelText: "ไม่ลบ",
+    });
+    if (!isConfirmed) return;
 
     const endpoint = type === "cutter" ? "cutter" : "supervisors";
 
@@ -173,7 +189,15 @@ export function StaffInfoCard({
         }
       );
 
-      if (!res.ok) throw new Error("Failed to remove staff");
+      if (!res.ok) {
+        toast.error("ไม่สามารถลบพนักงานได้ กรุณาลองใหม่อีกครั้ง", {
+          position: "bottom-right",
+        });
+        throw new Error("Failed to remove staff");
+      }
+      toast.success("ลบพนักงานเรียบร้อยแล้ว", {
+        position: "bottom-right",
+      });
 
       // Success: ลบออกจาก Local State ทันที
       if (type === "supervisor") {
