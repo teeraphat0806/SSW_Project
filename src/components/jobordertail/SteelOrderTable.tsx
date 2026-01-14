@@ -13,6 +13,8 @@ export type SteelItem = {
   weight: number; // ถ้าส่งมาเป็น 0 ระบบจะคำนวณให้, ถ้ามีค่า > 0 จะใช้ค่านั้นเลย
   detail?: string;
   density: number;
+  job?: number;
+  cuttingMethod: "normal" | "FB" | "steelDisc";
   shape: string;
 };
 
@@ -28,8 +30,6 @@ const fmt = (n: number) =>
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   });
-
-const cm3ToM3 = (cm3: number) => cm3 / 1_000_000;
 
 const calculateWeightDetails = (item: SteelItem) => {
   const amount = safeNum(item.amount);
@@ -118,8 +118,8 @@ export default function SteelTable({ steel = [] }: SteelTableProps) {
         </div>
       </CardHeader>
 
-      <CardContent className="p-0">
-        <div className="w-full text-sm text-left">
+      <CardContent className="p-0 overflow-x-auto">
+        <div className="w-full text-sm text-left min-w-[800px]">
           {/* Table Header: ปรับ Grid เป็น 4-3-2-1-2 เพื่อสัดส่วนที่สวยงาม */}
           <div className="bg-zinc-50 dark:bg-zinc-900/80 px-6 py-3 border-b border-zinc-200 dark:border-zinc-800 grid grid-cols-12 gap-4 items-center">
             <span className="col-span-2 font-bold text-zinc-700 dark:text-zinc-300">
@@ -129,8 +129,11 @@ export default function SteelTable({ steel = [] }: SteelTableProps) {
               ขนาด <span>(มม.)</span>
             </span>
 
-            <span className="col-span-2 text-center font-bold text-zinc-700 dark:text-zinc-300">
+            <span className="col-span-1 text-center font-bold text-zinc-700 dark:text-zinc-300">
               จำนวน <span>(ชิ้น)</span>
+            </span>
+            <span className="col-span-1 text-center font-bold text-zinc-700 dark:text-zinc-300">
+              JOB
             </span>
             <span className="col-span-2 text-right font-bold text-zinc-700 dark:text-zinc-300">
               น้ำหนัก (Kg)
@@ -166,7 +169,16 @@ export default function SteelTable({ steel = [] }: SteelTableProps) {
                         {item.original.steelType}
                       </span>
 
-                      {/* Badge: Type (Manual=Amber, Formula=Zinc) */}
+                      {item.original.cuttingMethod !== "normal" && (
+                        <span
+                          className={` px-1.5 py-0.5 rounded border font-medium bg-zinc-100 border-zinc-200 text-zinc-500 dark:bg-zinc-900 dark:border-zinc-800 dark:text-zinc-500`}
+                        >
+                          {item.original.cuttingMethod == "FB"
+                            ? "F/B"
+                            : "แบนกลม"}
+                        </span>
+                      )}
+
                       <span
                         className={` px-1.5 py-0.5 rounded border font-medium bg-zinc-100 border-zinc-200 text-zinc-500 dark:bg-zinc-900 dark:border-zinc-800 dark:text-zinc-500`}
                       >
@@ -206,9 +218,13 @@ export default function SteelTable({ steel = [] }: SteelTableProps) {
                     </span>
                   </div>
 
-                  {/* Col 3: Amount (Span 2) */}
-                  <div className=" col-span-2 text-center font-bold text-zinc-700 dark:text-zinc-300">
+                  {/* Col 3: Amount (Span 1) */}
+                  <div className=" col-span-1 text-center font-bold text-zinc-700 dark:text-zinc-300">
                     x{safeNum(item.original.amount)}
+                  </div>
+
+                  <div className=" col-span-1 text-center font-bold text-zinc-700 dark:text-zinc-300">
+                    {item.original.job ? item.original.job : "-"}
                   </div>
 
                   {/* Col 4: Weight (Span 2) */}

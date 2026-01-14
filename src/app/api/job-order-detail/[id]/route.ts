@@ -15,7 +15,7 @@ type ApiJobOrder = {
   customerPhone: string;
   customercode: string;
   deliveryAddress: string;
-  key: string;
+  key: string[];
   staff: {
     id: number;
     name: string;
@@ -32,9 +32,18 @@ type ApiJobOrder = {
     density: number;
     detail?: string;
     shape: string;
+    job?: number;
+    cuttingMethod: "normal" | "FB" | "steelDisc";
   }[];
   updatedAt: Date;
-  status: string;
+  status:
+    | "pending"
+    | "cutting"
+    | "weighing"
+    | "ready"
+    | "shipped"
+    | "completed"
+    | "canceled";
   createdAt: Date;
   deliveryDate: Date;
 };
@@ -97,7 +106,7 @@ export async function GET(
       customerPhone: customer.tel,
       customercode: customer.code,
       deliveryAddress: customer.address,
-      key: jobOrder.urlPo[0],
+      key: jobOrder.urlPo.length ? jobOrder.urlPo : [],
       staff:
         jobOrder.Staff?.map((s) => ({
           id: s.id,
@@ -114,7 +123,8 @@ export async function GET(
         density: p.SteelType.density,
         detail: p.detail ?? undefined,
         shape: p.SteelType.shape,
-        // actualWeight เป็น optional → ถ้าไม่มีใช้ calculatedWeight ถ้าไม่มีอีกให้ 0
+        cuttingMethod: p.cuttingMethod,
+        job: p.job ?? undefined,
         weight: p.actualWeight ?? 0,
       })),
       status: jobOrder.status,
