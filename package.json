@@ -10,7 +10,7 @@
     "build": "next build --webpack",
     "start": "next start",
     "lint": "next lint",
-    "postinstall": "patch-package"
+    "postinstall": "prisma generate && patch-package"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
