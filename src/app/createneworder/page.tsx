@@ -435,6 +435,8 @@ const NewJobOrder = () => {
     }
     if (steelItems.length > 15)
       return "ไม่สามารถเพิ่มรายการเหล็กเกิน 15 รายการ";
+    if (steelItems.some((item) => item.length <= 0 || item.thickness <= 0 || (item.shape === "square" && (item.width === null || item.width <= 0)))) 
+      return "ขนาดของเหล็กต้องมากกว่า 0";
     return null;
   };
 

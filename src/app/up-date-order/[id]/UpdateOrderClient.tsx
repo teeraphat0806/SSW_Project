@@ -28,8 +28,6 @@ import Summary from "@/components/up-date-order/summary";
 import Stepper from "@/components/up-date-order/stepper";
 import { LoadingScreen } from "@/components/Loading";
 import { toast } from "react-toastify";
-// ✅ ไม่ได้ใช้ เอาออกได้ (ถ้าจะใช้ค่อยใส่กลับ)
-// import { ca, th } from "date-fns/locale";
 
 type ApiJobOrder = {
   id: number;
@@ -351,6 +349,16 @@ const UpdateOrderPage = ({ id }: { id: string }) => {
     if (itemCount > 15)
       return "ไม่สามารถบันทึกคำสั่งซื้อที่มีรายการเหล็กเกิน 15 รายการได้";
     if (hasMissingJob) return "กรุณากรอกหมายเลขงาน (Job No.) ให้ครบทุกบรรทัด";
+
+    if (
+      job.steel.some(
+        (s) =>
+          s.length <= 0 ||
+          s.thickness <= 0 ||
+          (s.shape == "square" && (s.width == null || s.width <= 0))
+      )
+    )
+      return "ขนาดของเหล็กต้องมากกว่า 0";
   };
 
   const onSave = async () => {
@@ -406,7 +414,9 @@ const UpdateOrderPage = ({ id }: { id: string }) => {
 
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error || "Save failed");
-
+      toast.success("บันทึกคำสั่งซื้อเรียบร้อยแล้ว", {
+        position: "bottom-right",
+      });
       const mapped = toJoborder(data as ApiJobOrder);
       setJob(mapped);
 

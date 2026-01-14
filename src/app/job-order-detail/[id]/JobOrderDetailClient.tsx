@@ -3,8 +3,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-// Update the import path below if your use-toast file is located elsewhere
-import { toast } from "@/components/ui/use-toast";
+
 
 import { Badge } from "@/components/ui/badge";
 
@@ -30,6 +29,7 @@ import SteelOrderTable from "@/components/jobordertail/SteelOrderTable";
 import { CancelOrderButton } from "@/components/jobordertail/cancelOrderButton";
 
 import { LoadingScreen } from "@/components/Loading";
+import { toast } from "react-toastify";
 
 type StaffMember = {
   id: number;
@@ -254,11 +254,14 @@ const JobOrderDetailPage = ({ id }: { id: string }) => {
         jobOrder.steel.length > 0 &&
         jobOrder.steel.every((s) => (s.weight ?? 0) > 0);
       if (!ok) {
-        toast({
-          title: "ยังไปขั้นตอนถัดไปไม่ได้",
-          description: "ต้องกรอกน้ำหนักเหล็กก่อน แล้วจึงเปลี่ยนเป็น READY ได้",
-          variant: "default",
-        });
+        toast.error(
+          "ยังไปขั้นตอนถัดไปไม่ได้: ต้องกรอกน้ำหนักเหล็กก่อน แล้วจึงเปลี่ยนเป็น READY ได้",
+          {
+            position: "bottom-right",
+          }
+        );
+        console.log("Cannot change to READY: Weight missing");
+
         return;
       }
     }
@@ -276,11 +279,14 @@ const JobOrderDetailPage = ({ id }: { id: string }) => {
       if (!response.ok) {
         // 1. เช็คสิทธิ์การเข้าถึงก่อน (401/403) ป้องกันกรณี Response body ไม่ใช่ JSON
         if (response.status === 401 || response.status === 403) {
-          toast({
-            title: "ไม่มีสิทธิ์เข้าถึง (Access Denied)",
-            description: "คุณไม่มีสิทธิ์ในการแก้ไขสถานะนี้",
-            variant: "destructive",
-          });
+          toast.error(
+            "ไม่มีสิทธิ์เข้าถึง (Access Denied): คุณไม่มีสิทธิ์ในการแก้ไขสถานะนี้",
+            {
+              position: "bottom-right",
+            }
+          );
+          console.error("Access Denied: No permission to update status");
+
           return; // สำคัญ: ไม่ throw
         }
 
@@ -291,12 +297,13 @@ const JobOrderDetailPage = ({ id }: { id: string }) => {
 
       // Success: อัปเดต Local State
       setJobOrder((prev) => (prev ? { ...prev, status: newStatus } : null));
-
-      toast({
-        title: "Status Updated",
-        description: `เปลี่ยนสถานะเป็น ${newStatus.toUpperCase()} เรียบร้อยแล้ว`,
-        variant: "default",
-      });
+      toast.success(
+        `เปลี่ยนสถานะเป็น ${toThaiStatus(newStatus)} เรียบร้อยแล้ว`,
+        {
+          position: "bottom-right",
+        }
+      );
+      console.log("Status updated successfully");
     } catch (error: any) {
       console.error("Update Error:", error);
 
@@ -304,14 +311,15 @@ const JobOrderDetailPage = ({ id }: { id: string }) => {
       const isPermissionError =
         error.message === "คุณไม่มีสิทธิ์ในการแก้ไขสถานะนี้";
 
-      toast({
-        title: isPermissionError
+      toast.error(
+        isPermissionError
           ? "ไม่มีสิทธิ์เข้าถึง (Access Denied)"
-          : "การดำเนินการล้มเหลว",
-        description:
-          error.message || "ไม่สามารถอัปเดตสถานะได้ กรุณาลองใหม่อีกครั้ง",
-        variant: "destructive",
-      });
+          : "การดำเนินการล้มเหลว: " +
+              (error.message || "ไม่สามารถอัปเดตสถานะได้ กรุณาลองใหม่อีกครั้ง"),
+        {
+          position: "bottom-right",
+        }
+      );
     } finally {
       setIsUpdating(false);
     }
@@ -321,11 +329,11 @@ const JobOrderDetailPage = ({ id }: { id: string }) => {
 
     // ถ้ายกเลิกแล้ว ไม่ต้องทำซ้ำ
     if (jobOrder.status === "canceled") {
-      toast({
-        title: "ออเดอร์ถูกยกเลิกแล้ว",
-        description: "ไม่สามารถยกเลิกซ้ำได้",
-        variant: "default",
+      toast.error("ออเดอร์ถูกยกเลิกแล้ว ไม่สามารถยกเลิกซ้ำได้", {
+        position: "bottom-right",
       });
+      console.log("Order already canceled");
+
       return;
     }
 
@@ -339,11 +347,14 @@ const JobOrderDetailPage = ({ id }: { id: string }) => {
 
       if (!response.ok) {
         if (response.status === 401 || response.status === 403) {
-          toast({
-            title: "ไม่มีสิทธิ์เข้าถึง",
-            description: "คุณไม่มีสิทธิ์ยกเลิกออเดอร์นี้",
-            variant: "destructive",
-          });
+          toast.error(
+            "ไม่มีสิทธิ์เข้าถึง (Access Denied): คุณไม่มีสิทธิ์ยกเลิกออเดอร์นี้",
+            {
+              position: "bottom-right",
+            }
+          );
+          console.error("Access Denied: No permission to cancel this order");
+
           return;
         }
         const errorData = await response.json().catch(() => ({}));
@@ -351,18 +362,18 @@ const JobOrderDetailPage = ({ id }: { id: string }) => {
       }
 
       setJobOrder((prev) => (prev ? { ...prev, status: "canceled" } : null));
-
-      toast({
-        title: "ยกเลิกออเดอร์สำเร็จ",
-        description: `ออเดอร์ #${jobOrder.id} ถูกยกเลิกแล้ว`,
-        variant: "default",
+      toast.success(`ยกเลิกออเดอร์ #${jobOrder.id} สำเร็จ`, {
+        position: "bottom-right",
       });
+      console.log("Order canceled successfully");
     } catch (error: any) {
-      toast({
-        title: "ยกเลิกล้มเหลว",
-        description: error.message || "ไม่สามารถยกเลิกออเดอร์ได้",
-        variant: "destructive",
-      });
+      toast.error(
+        "ยกเลิกล้มเหลว: " + (error.message || "ไม่สามารถยกเลิกออเดอร์ได้"),
+        {
+          position: "bottom-right",
+        }
+      );
+      console.error("Cancel Error:", error);
     } finally {
       setIsUpdating(false);
     }

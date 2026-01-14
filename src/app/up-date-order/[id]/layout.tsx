@@ -3,7 +3,7 @@ import "../../globals.css";
 import Layout from "@/components/Layout";
 import { Theme } from "@radix-ui/themes";
 import { ThemeProvider } from "next-themes";
-import { Toaster } from "@/components/ui/toaster";
+import { ToastContainer } from "react-toastify";
 
 export const metadata = {
   title: "My App",
@@ -20,7 +20,7 @@ export default function UpdateOrderLayout({
       <div className="bg-muted min-h-screen md:pl-20 ">
         <ThemeProvider attribute="class">
           {children}
-          <Toaster />
+          <ToastContainer />
         </ThemeProvider>
       </div>
     </Layout>
