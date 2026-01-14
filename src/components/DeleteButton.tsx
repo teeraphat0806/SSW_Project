@@ -7,7 +7,10 @@ interface DeleteConfirmButtonProps {
   label: string;
 }
 
-export default function DeleteConfirmButton({ onConfirm, label }: DeleteConfirmButtonProps) {
+export default function DeleteConfirmButton({
+  onConfirm,
+  label,
+}: DeleteConfirmButtonProps) {
   const [submitting, setSubmitting] = useState(false);
 
   const handleConfirm = async (e: React.MouseEvent<HTMLButtonElement>) => {
@@ -29,7 +32,7 @@ export default function DeleteConfirmButton({ onConfirm, label }: DeleteConfirmB
     <AlertDialog.Root>
       <AlertDialog.Trigger asChild>
         <button
-          className="p-2 rounded-full hover:bg-red-100 text-red-600 hover:cursor-pointer hover:scale-110 transition-all"
+          className="p-2 rounded-full hover:text-red-600  hover:cursor-pointer hover:scale-110 transition-all"
           aria-label="Delete"
         >
           <Trash2 size={20} />

@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
+import dynamic from "next/dynamic";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -23,6 +24,34 @@ import {
   Package,
 } from "lucide-react";
 
+// Dynamic import for chart to avoid hydration issues
+const ResponsiveContainer = dynamic(
+  () => import("recharts").then((mod) => mod.ResponsiveContainer),
+  { ssr: false }
+);
+const BarChart = dynamic(() => import("recharts").then((mod) => mod.BarChart), {
+  ssr: false,
+});
+const Bar = dynamic(() => import("recharts").then((mod) => mod.Bar), {
+  ssr: false,
+});
+const XAxis = dynamic(() => import("recharts").then((mod) => mod.XAxis), {
+  ssr: false,
+});
+const YAxis = dynamic(() => import("recharts").then((mod) => mod.YAxis), {
+  ssr: false,
+});
+const CartesianGrid = dynamic(
+  () => import("recharts").then((mod) => mod.CartesianGrid),
+  { ssr: false }
+);
+const Tooltip = dynamic(() => import("recharts").then((mod) => mod.Tooltip), {
+  ssr: false,
+});
+const Legend = dynamic(() => import("recharts").then((mod) => mod.Legend), {
+  ssr: false,
+});
+
 interface YearOverviewPanelProps {
   year: number;
   onMonthSelect?: (month: number) => void;
@@ -35,8 +64,13 @@ export function YearOverviewPanel({
   onMonthSelect,
 }: YearOverviewPanelProps) {
   const [sortMode, setSortMode] = useState<SortMode>("month");
+  const [isClient, setIsClient] = useState(false);
   const { yearlySales, orderStatusByYear, monthlySalesByYear, loading, error } =
     useSaleAnalytics();
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   const sales = useMemo(() => yearlySales(year), [year, yearlySales]);
   const orderStatus = useMemo(
@@ -47,6 +81,25 @@ export function YearOverviewPanel({
     () => monthlySalesByYear(year),
     [year, monthlySalesByYear]
   );
+
+  // Calculate actual totals from monthly sales data (from bills only, excludes OT and other income)
+  const yearlyRevenue = useMemo(() => {
+    const totalSales = monthlyData.reduce((sum, m) => sum + m.totalSales, 0);
+    const totalOrders = monthlyData.reduce((sum, m) => sum + m.totalOrders, 0);
+    const totalVAT = monthlyData.reduce((sum, m) => sum + m.totalVAT, 0);
+    const totalDiscount = monthlyData.reduce(
+      (sum, m) => sum + m.totalDiscount,
+      0
+    );
+
+    return {
+      totalSales,
+      totalOrders,
+      totalVAT,
+      totalDiscount,
+      averageOrderValue: totalOrders > 0 ? totalSales / totalOrders : 0,
+    };
+  }, [monthlyData]);
 
   const completedOrders =
     orderStatus.find((s) => s.status === "เสร็จสมบูรณ์")?.count || 0;
@@ -78,29 +131,29 @@ export function YearOverviewPanel({
       {/* Year KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <KPIStatCard
-          title="ยอดขายรวมทั้งปี"
-          value={sales.totalSales}
+          title="รายได้รวม (ยอดขายทั้งปี)"
+          value={yearlyRevenue.totalSales}
           format="currency"
           variant="gradient-blue"
           icon={DollarSign}
         />
         <KPIStatCard
           title="VAT รวม"
-          value={sales.totalVAT}
+          value={yearlyRevenue.totalVAT}
           format="currency"
           variant="gradient-green"
           icon={Receipt}
         />
         <KPIStatCard
           title="ยอดเฉลี่ยต่อคำสั่งซื้อ"
-          value={sales.averageOrderValue}
+          value={yearlyRevenue.averageOrderValue}
           format="currency"
           variant="gradient-purple"
           icon={ShoppingCart}
         />
         <KPIStatCard
           title="คำสั่งซื้อทั้งหมด"
-          value={sales.totalOrders}
+          value={yearlyRevenue.totalOrders}
           format="number"
           subtitle={`เสร็จสิ้น: ${completedOrders} | รอดำเนินการ: ${pendingOrders}`}
           variant="gradient-orange"
@@ -155,8 +208,59 @@ export function YearOverviewPanel({
           </div>
         </div>
 
+        {/* Monthly Sales Chart - Histogram */}
+        <div className="w-full">
+          {isClient && sortedMonthlyData.length > 0 ? (
+            <ResponsiveContainer width="100%" height={400}>
+              <BarChart
+                data={sortedMonthlyData.map((month) => ({
+                  month: month.monthName,
+                  ยอดขาย: month.totalSales,
+                  จำนวนคำสั่ง: month.totalOrders,
+                }))}
+                margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis
+                  dataKey="month"
+                  angle={-45}
+                  textAnchor="end"
+                  height={100}
+                />
+                <YAxis
+                  label={{
+                    value: "ยอดขาย",
+                    angle: -90,
+                    position: "insideLeft",
+                  }}
+                />
+                <Tooltip
+                  formatter={(value: any) => formatCurrency(value)}
+                  contentStyle={{
+                    backgroundColor: "rgba(0, 0, 0, 0.8)",
+                    border: "1px solid rgba(255, 255, 255, 0.1)",
+                    borderRadius: "8px",
+                    color: "#fff",
+                  }}
+                />
+                <Legend wrapperStyle={{ paddingTop: "20px" }} />
+                <Bar
+                  dataKey="ยอดขาย"
+                  fill="#3b82f6"
+                  name="ยอดขายรายเดือน"
+                  radius={[8, 8, 0, 0]}
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="h-96 flex items-center justify-center bg-muted rounded-lg">
+              <p className="text-muted-foreground">ไม่พบข้อมูลยอดขาย</p>
+            </div>
+          )}
+        </div>
+
         {/* Visual bars for mobile */}
-        <div className="space-y-2 md:hidden">
+        <div className="space-y-2 md:hidden mt-6">
           {sortedMonthlyData.map((month) => (
             <div
               key={month.month}
