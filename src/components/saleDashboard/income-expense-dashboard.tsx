@@ -61,6 +61,7 @@ export function IncomeExpenseDashboard({ year }: IncomeExpenseDashboardProps) {
   const [activeTab, setActiveTab] = useState("overview");
   const [isClient, setIsClient] = useState(false);
   const {
+    yearlySales,
     incomeExpenseByYear,
     expensesByCategoryAndYear,
     incomesByTypeAndYear,
@@ -74,6 +75,8 @@ export function IncomeExpenseDashboard({ year }: IncomeExpenseDashboardProps) {
   useEffect(() => {
     setIsClient(true);
   }, []);
+
+  const salesData = useMemo(() => yearlySales(year), [year, yearlySales]);
 
   const incomeExpenseData = useMemo(
     () => incomeExpenseByYear(year),
@@ -126,7 +129,7 @@ export function IncomeExpenseDashboard({ year }: IncomeExpenseDashboardProps) {
       // Find actual sales data for this month
       const monthSalesData = monthlySales.find((s) => s.month === m.month);
       const monthlyIncomeEstimate =
-        monthSalesData?.totalSales || incomeExpenseData.totalIncome / 12;
+        monthSalesData?.totalSales || salesData.totalSales / 12;
       const monthlyExpenseEstimate = incomeExpenseData.totalExpense / 12;
       const monthlySalaryEstimate = incomeExpenseData.totalSalary / 12;
 
@@ -138,7 +141,7 @@ export function IncomeExpenseDashboard({ year }: IncomeExpenseDashboardProps) {
         ค่าใช้จ่าย: monthlyExpenseEstimate,
       };
     });
-  }, [isClient, year, monthlySales, incomeExpenseData]);
+  }, [isClient, year, monthlySales, salesData, incomeExpenseData]);
 
   return (
     <div className="space-y-6">
@@ -153,8 +156,8 @@ export function IncomeExpenseDashboard({ year }: IncomeExpenseDashboardProps) {
           {/* KPI Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <KPIStatCard
-              title="รายได้รวม"
-              value={incomeExpenseData.totalIncome}
+              title="ยอดขายรวม"
+              value={salesData.totalSales}
               format="currency"
               variant="success"
               icon={DollarSign}
@@ -168,13 +171,43 @@ export function IncomeExpenseDashboard({ year }: IncomeExpenseDashboardProps) {
             />
             <KPIStatCard
               title="กำไรสุทธิ"
-              value={incomeExpenseData.netIncome}
+              value={
+                salesData.totalSales -
+                incomeExpenseData.totalExpense -
+                incomeExpenseData.totalSalary
+              }
               format="currency"
-              subtitle={incomeExpenseData.netIncome >= 0 ? "กำไร" : "ขาดทุน"}
-              colorCode={incomeExpenseData.netIncome >= 0 ? "profit" : "loss"}
-              variant={incomeExpenseData.netIncome >= 0 ? "success" : "danger"}
+              subtitle={
+                salesData.totalSales -
+                  incomeExpenseData.totalExpense -
+                  incomeExpenseData.totalSalary >=
+                0
+                  ? "กำไร"
+                  : "ขาดทุน"
+              }
+              colorCode={
+                salesData.totalSales -
+                  incomeExpenseData.totalExpense -
+                  incomeExpenseData.totalSalary >=
+                0
+                  ? "profit"
+                  : "loss"
+              }
+              variant={
+                salesData.totalSales -
+                  incomeExpenseData.totalExpense -
+                  incomeExpenseData.totalSalary >=
+                0
+                  ? "success"
+                  : "danger"
+              }
               icon={
-                incomeExpenseData.netIncome >= 0 ? TrendingUp : TrendingDown
+                salesData.totalSales -
+                  incomeExpenseData.totalExpense -
+                  incomeExpenseData.totalSalary >=
+                0
+                  ? TrendingUp
+                  : TrendingDown
               }
             />
             <KPIStatCard
@@ -197,43 +230,71 @@ export function IncomeExpenseDashboard({ year }: IncomeExpenseDashboardProps) {
             <div className="grid grid-cols-3 gap-4 mb-6">
               <div
                 className={`rounded-lg p-4 ${
-                  incomeExpenseData.netIncome >= 0
+                  salesData.totalSales -
+                    incomeExpenseData.totalExpense -
+                    incomeExpenseData.totalSalary >=
+                  0
                     ? "bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950 dark:to-green-900"
                     : "bg-gradient-to-br from-red-50 to-red-100 dark:from-red-950 dark:to-red-900"
                 }`}
               >
                 <p
                   className={`text-xs font-medium mb-1 ${
-                    incomeExpenseData.netIncome >= 0
+                    salesData.totalSales -
+                      incomeExpenseData.totalExpense -
+                      incomeExpenseData.totalSalary >=
+                    0
                       ? "text-green-700 dark:text-green-300"
                       : "text-red-700 dark:text-red-300"
                   }`}
                 >
-                  {incomeExpenseData.netIncome >= 0 ? "กำไรสูง" : "ขาดทุน"}
+                  {salesData.totalSales -
+                    incomeExpenseData.totalExpense -
+                    incomeExpenseData.totalSalary >=
+                  0
+                    ? "กำไรสูง"
+                    : "ขาดทุน"}
                 </p>
                 <p
                   className={`text-lg font-bold ${
-                    incomeExpenseData.netIncome >= 0
+                    salesData.totalSales -
+                      incomeExpenseData.totalExpense -
+                      incomeExpenseData.totalSalary >=
+                    0
                       ? "text-green-600 dark:text-green-400"
                       : "text-red-600 dark:text-red-400"
                   }`}
                 >
-                  {incomeExpenseData.netIncome >= 0 ? "+" : ""}
-                  {formatCurrency(incomeExpenseData.netIncome)}
+                  {salesData.totalSales -
+                    incomeExpenseData.totalExpense -
+                    incomeExpenseData.totalSalary >=
+                  0
+                    ? "+"
+                    : ""}
+                  {formatCurrency(
+                    salesData.totalSales -
+                      incomeExpenseData.totalExpense -
+                      incomeExpenseData.totalSalary
+                  )}
                 </p>
                 <p
                   className={`text-xs mt-1 ${
-                    incomeExpenseData.netIncome >= 0
+                    salesData.totalSales -
+                      incomeExpenseData.totalExpense -
+                      incomeExpenseData.totalSalary >=
+                    0
                       ? "text-green-600 dark:text-green-300"
                       : "text-red-600 dark:text-red-300"
                   }`}
                 >
-                  {incomeExpenseData.totalIncome > 0
+                  {salesData.totalSales > 0
                     ? `${(
-                        (incomeExpenseData.netIncome /
-                          incomeExpenseData.totalIncome) *
+                        ((salesData.totalSales -
+                          incomeExpenseData.totalExpense -
+                          incomeExpenseData.totalSalary) /
+                          salesData.totalSales) *
                         100
-                      ).toFixed(1)}% ของรายได้`
+                      ).toFixed(1)}% ของยอดขาย`
                     : "-"}
                 </p>
               </div>
@@ -243,10 +304,9 @@ export function IncomeExpenseDashboard({ year }: IncomeExpenseDashboardProps) {
                   อัตราค่าจ้าง
                 </p>
                 <p className="text-lg font-bold text-blue-600 dark:text-blue-400">
-                  {incomeExpenseData.totalIncome > 0
+                  {salesData.totalSales > 0
                     ? `${(
-                        (incomeExpenseData.totalSalary /
-                          incomeExpenseData.totalIncome) *
+                        (incomeExpenseData.totalSalary / salesData.totalSales) *
                         100
                       ).toFixed(1)}%`
                     : "-"}
@@ -261,10 +321,10 @@ export function IncomeExpenseDashboard({ year }: IncomeExpenseDashboardProps) {
                   อัตราค่าใช้จ่าย
                 </p>
                 <p className="text-lg font-bold text-red-600 dark:text-red-400">
-                  {incomeExpenseData.totalIncome > 0
+                  {salesData.totalSales > 0
                     ? `${(
                         (incomeExpenseData.totalExpense /
-                          incomeExpenseData.totalIncome) *
+                          salesData.totalSales) *
                         100
                       ).toFixed(1)}%`
                     : "-"}
@@ -337,14 +397,14 @@ export function IncomeExpenseDashboard({ year }: IncomeExpenseDashboardProps) {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
                 <div className="bg-green-50 dark:bg-green-950/30 rounded-lg p-4 border border-green-200 dark:border-green-800">
                   <p className="text-xs font-medium text-green-700 dark:text-green-300 mb-1">
-                    รายได้ (100%)
+                    ยอดขาย (100%)
                   </p>
                   <p className="text-lg font-bold text-green-600 dark:text-green-400">
-                    {formatCurrency(incomeExpenseData.totalIncome)}
+                    {formatCurrency(salesData.totalSales)}
                   </p>
-                  {incomeExpenseData.totalIncome > 0 && (
+                  {salesData.totalSales > 0 && (
                     <p className="text-xs text-green-600 dark:text-green-300 mt-2">
-                      100% ของรายได้ทั้งหมด
+                      100% ของยอดขายทั้งหมด
                     </p>
                   )}
                 </div>
@@ -356,14 +416,13 @@ export function IncomeExpenseDashboard({ year }: IncomeExpenseDashboardProps) {
                   <p className="text-lg font-bold text-blue-600 dark:text-blue-400">
                     {formatCurrency(incomeExpenseData.totalSalary)}
                   </p>
-                  {incomeExpenseData.totalIncome > 0 && (
+                  {salesData.totalSales > 0 && (
                     <p className="text-xs text-blue-600 dark:text-blue-300 mt-2">
                       {(
-                        (incomeExpenseData.totalSalary /
-                          incomeExpenseData.totalIncome) *
+                        (incomeExpenseData.totalSalary / salesData.totalSales) *
                         100
                       ).toFixed(1)}
-                      % ของรายได้
+                      % ของยอดขาย
                     </p>
                   )}
                 </div>
@@ -375,14 +434,14 @@ export function IncomeExpenseDashboard({ year }: IncomeExpenseDashboardProps) {
                   <p className="text-lg font-bold text-red-600 dark:text-red-400">
                     {formatCurrency(incomeExpenseData.totalExpense)}
                   </p>
-                  {incomeExpenseData.totalIncome > 0 && (
+                  {salesData.totalSales > 0 && (
                     <p className="text-xs text-red-600 dark:text-red-300 mt-2">
                       {(
                         (incomeExpenseData.totalExpense /
-                          incomeExpenseData.totalIncome) *
+                          salesData.totalSales) *
                         100
                       ).toFixed(1)}
-                      % ของรายได้
+                      % ของยอดขาย
                     </p>
                   )}
                 </div>
@@ -462,7 +521,9 @@ export function IncomeExpenseDashboard({ year }: IncomeExpenseDashboardProps) {
 
           {/* Income by Type */}
           <Card className="p-6">
-            <h3 className="text-lg font-semibold mb-4">รายได้ตามประเภท</h3>
+            <h3 className="text-lg font-semibold mb-4">
+              รายได้พนักงานตามประเภท
+            </h3>
             <div className="border rounded-lg overflow-hidden">
               <Table>
                 <TableHeader>
@@ -576,7 +637,7 @@ export function IncomeExpenseDashboard({ year }: IncomeExpenseDashboardProps) {
 
           {/* Recent Incomes */}
           <Card className="p-6">
-            <h3 className="text-lg font-semibold mb-4">รายได้ล่าสุด</h3>
+            <h3 className="text-lg font-semibold mb-4">รายได้พนักงานล่าสุด</h3>
             <div className="border rounded-lg overflow-hidden">
               <Table>
                 <TableHeader>
