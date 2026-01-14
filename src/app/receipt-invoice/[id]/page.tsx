@@ -1,10 +1,20 @@
 import ReceiptClient from "./ReceiptClient";
+import ReceiptCutter from "./ReceiptCutter";
 
-export default async function Page({
-  params,
-}: {
+interface PageProps {
   params: Promise<{ id: string }>;
-}) {
-  const { id } = await params; // ✅ await ก่อนใช้
+  searchParams: Promise<{ cutterKey?: string }>;
+}
+
+export default async function Page({ params, searchParams }: PageProps) {
+  const { id } = await params;
+  const { cutterKey } = await searchParams;
+
+  // Convert cutterKey string to boolean
+  const isCutterMode = cutterKey === "true";
+
+  if (isCutterMode) {
+    return <ReceiptCutter id={id} />;
+  }
   return <ReceiptClient id={id} />;
 }

@@ -15,7 +15,7 @@ import {
   DropdownMenuSeparator,
 } from "../../components/ui/dropdown-menu";
 
-type ActionKey = "edit" | "print" | "pofile";
+type ActionKey = "edit" | "print" | "pofile" | "printcutter";
 
 type ActionItem = {
   key: ActionKey;
@@ -71,7 +71,14 @@ export function QuickAction({
       label: "พิมพ์ใบสั่งซื้อ (Receipt)",
       disabled: isCanceled,
       icon: Printer,
-      run: () => router.push(`/receipt-invoice/${billid}`),
+      run: () => router.push(`/receipt-invoice/${billid}?cutterKey=false`),
+    },
+    {
+      key: "printcutter",
+      label: "พิมพ์ให้คนตัด (Cutter Slip)",
+      disabled: isCanceled,
+      icon: Printer,
+      run: () => router.push(`/receipt-invoice/${billid}?cutterKey=true`),
     },
     // NOTE: pofile จะ render แยกเป็น dropdown ด้านล่าง (เพราะต้องรองรับหลายไฟล์)
   ];
