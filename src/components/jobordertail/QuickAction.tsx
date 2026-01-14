@@ -80,6 +80,7 @@ export function QuickAction({
       icon: Printer,
       run: () => router.push(`/receipt-invoice/${billid}?cutterKey=true`),
     },
+
     // NOTE: pofile จะ render แยกเป็น dropdown ด้านล่าง (เพราะต้องรองรับหลายไฟล์)
   ];
 
