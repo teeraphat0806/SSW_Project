@@ -4,7 +4,6 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-
 import { Badge } from "@/components/ui/badge";
 
 import {
@@ -56,7 +55,7 @@ type ApiJobOrder = {
   customerPhone: string | null;
   deliveryAddress: string | null;
   customercode: string | null;
-  key: string;
+  key: string[];
 
   staff: { id: number; name: string; role: "supervisor" | "cutter" | null }[];
 
@@ -71,6 +70,8 @@ type ApiJobOrder = {
     density: number | null;
     detail?: string | null;
     shape: string;
+    job?: number | null;
+    cuttingMethod: "normal" | "FB" | "steelDisc" | null;
   }[];
 
   status: JobStatus;
@@ -91,7 +92,7 @@ interface JobOrder {
   customerPhone: string;
   deliveryAddress: string;
   customercode: string;
-  keyPo: string;
+  keyPo: string[];
   staff: Array<{
     id: number;
     name: string;
@@ -107,6 +108,8 @@ interface JobOrder {
     weight: number;
     detail?: string;
     density: number;
+    job?: number;
+    cuttingMethod: "normal" | "FB" | "steelDisc";
     shape: string;
   }>;
   status: JobStatus;
@@ -131,7 +134,7 @@ const tojobOrder = (api: ApiJobOrder): JobOrder => {
     customerPhone: api.customerPhone ?? "",
     deliveryAddress: api.deliveryAddress ?? "",
     customercode: api.customercode ?? "",
-    keyPo: api.key ?? "",
+    keyPo: api.key ?? [],
 
     staff: (api.staff || []).map((s) => ({
       id: s.id,
@@ -152,6 +155,8 @@ const tojobOrder = (api: ApiJobOrder): JobOrder => {
       weight: s.weight ?? 0,
       density: s.density ?? 0,
       detail: s.detail ?? undefined,
+      job: s.job ?? undefined,
+      cuttingMethod: s.cuttingMethod || "normal",
       shape: s.shape,
     })),
 
@@ -521,10 +526,10 @@ const JobOrderDetailPage = ({ id }: { id: string }) => {
             {/* Tabs Card */}
             <Card className="rounded-lg shadow-md ">
               {/* Tabs Header */}
-              <Tabs defaultValue="StaffInfo" className="w-full">
+              <Tabs defaultValue="StaffInfo" className="w-full  ">
                 {/* mt-6 grid grid-cols-1 gap-6 xl:grid-cols-12 */}
                 {/* 1. Header Section: เพิ่มพื้นหลังจางๆ และเส้นขอบ */}
-                <div className="border-b bg-muted/10 px-6 pt-2 dark:border-zinc-800">
+                <div className=" border-b bg-muted/10 px-6 pt-2 dark:border-zinc-800 overflow-x-auto">
                   <TabsList className="flex mb-3 h-auto w-full justify-start gap-8 bg-transparent p-0">
                     {[
                       { id: "StaffInfo", label: "ข้อมูลพนักงาน", icon: User2 },
