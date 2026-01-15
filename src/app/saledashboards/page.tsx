@@ -4,14 +4,18 @@ import { useState, useMemo } from "react";
 import { YearSelector } from "@/components/saleDashboard/year-selector";
 import { SalesDashboard } from "@/components/saleDashboard/sales-dashboard";
 import { IncomeExpenseDashboard } from "@/components/saleDashboard/income-expense-dashboard";
+import { PrintOptionsDialog } from "@/components/saleDashboard/print-options-dialog";
 import { useSaleAnalytics } from "@/hooks/saleDashboard/useSaleAnalytics";
+import { useCustomers } from "@/hooks/saleDashboard/useSaleDashboardData";
 
 type DashboardMode = "sales" | "income-expense";
 
 export default function DashboardPage() {
   const { years, loading } = useSaleAnalytics();
+  const { customers } = useCustomers();
   const [selectedYear, setSelectedYear] = useState(years[0] || 2024);
   const [mode, setMode] = useState<DashboardMode>("sales");
+  const [isPrintDialogOpen, setIsPrintDialogOpen] = useState(false);
 
   if (loading) {
     return (
@@ -38,7 +42,14 @@ export default function DashboardPage() {
                 ระบบวิเคราะห์ข้อมูลธุรกิจ
               </p>
             </div>
+
             <div className="flex items-center gap-4">
+              <button
+                onClick={() => setIsPrintDialogOpen(true)}
+                className="w-full md:w-auto px-3 md:px-4 py-2 text-sm md:text-base bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700 transition text-center"
+              >
+                พิมพ์ใบวางบิล/ใบเสร็จรับเงิน
+              </button>
               <YearSelector
                 years={years}
                 selectedYear={selectedYear}
@@ -87,6 +98,14 @@ export default function DashboardPage() {
       </main>
 
       {/* Footer */}
+
+      {/* Print Options Dialog */}
+      <PrintOptionsDialog
+        open={isPrintDialogOpen}
+        onOpenChange={setIsPrintDialogOpen}
+        customers={customers}
+        year={selectedYear}
+      />
     </div>
   );
 }
