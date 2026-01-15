@@ -35,6 +35,20 @@ function PrintContent() {
     return customer?.name || "ไม่ระบุ";
   })();
 
+  const customerInfo = (() => {
+    if (customerId === "all") return undefined;
+    const customer = customers.find(
+      (c) => c.id === Number.parseInt(customerId)
+    );
+    if (!customer) return undefined;
+    return {
+      name: customer.name,
+      address: (customer as any).address,
+      phone: (customer as any).tel,
+      taxId: (customer as any).taxNumber,
+    };
+  })();
+
   const monthlyData =
     type === "monthly" && !loading
       ? getMonthlyPrintData({
@@ -84,7 +98,7 @@ function PrintContent() {
   }
 
   return (
-    <div className="min-h-screen bg-white text-black print:pl-0 pl-6 md:pl-12 lg:pl-64">
+    <div className="min-h-screen bg-white text-black print:pl-0 pl-2 md:pl-3 lg:pl-3">
       {/* Print Button (only in preview mode, hidden when printing) */}
       {isPreview && (
         <div className="print:hidden sticky top-0 bg-white border-b border-gray-300 p-4 flex justify-between items-center shadow-sm z-10">
@@ -97,6 +111,7 @@ function PrintContent() {
       )}
 
       {/* Print Content using Component */}
+
       <ReceiptPrintComponent
         year={year}
         type={type as "monthly" | "yearly"}
@@ -104,6 +119,7 @@ function PrintContent() {
         customerName={customerName}
         monthlyData={monthlyData}
         yearlyData={yearlyData}
+        customerInfo={customerInfo}
       />
 
       {/* Print Styles */}
@@ -148,6 +164,15 @@ function PrintContent() {
             page-break-after: auto;
             page-break-before: auto;
             page-break-inside: auto;
+          }
+
+          .page-break {
+            page-break-after: always;
+            page-break-inside: avoid;
+          }
+
+          .page-break-after {
+            page-break-after: always;
           }
         }
       `}</style>

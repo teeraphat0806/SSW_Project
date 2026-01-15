@@ -12,7 +12,15 @@ interface ReceiptPrintComponentProps {
   customerName: string;
   monthlyData: MonthlyPrintData | null;
   yearlyData: YearlyPrintData | null;
+  customerInfo?: {
+    name: string;
+    address?: string;
+    phone?: string;
+    taxId?: string;
+  };
 }
+
+const ROWS_PER_PAGE = 15; // Adjust based on A4 page height
 
 export function ReceiptPrintComponent({
   year,
@@ -21,6 +29,7 @@ export function ReceiptPrintComponent({
   customerName,
   monthlyData,
   yearlyData,
+  customerInfo,
 }: ReceiptPrintComponentProps) {
   const getThaiMonthName = (m: number): string => {
     const months = [
@@ -40,22 +49,49 @@ export function ReceiptPrintComponent({
     return months[m - 1] || "";
   };
 
-  return (
-    <div className="max-w-[210mm] mx-auto p-8 bg-white text-[16px] print-page">
-      {/* Header */}
-      <div className="text-center mb-6 border-b-2 border-black pb-4">
-        <h1 className="text-3xl font-bold mb-3">ใบเสร็จรับเงิน</h1>
-        <h2 className="text-2xl font-semibold mb-3">
-          {type === "monthly"
-            ? `${getThaiMonthName(month)} ${year}`
-            : `ประจำปี ${year}`}
-        </h2>
-        <div className="text-lg text-gray-700 space-y-1">
-          <p>พิมพ์วันที่: {formatDate(new Date())}</p>
-          <p>ลูกค้า: {customerName}</p>
-        </div>
-      </div>
+  // Function to paginate rows
+  const paginateRows = (rows: any[]) => {
+    const pages = [];
+    for (let i = 0; i < rows.length; i += ROWS_PER_PAGE) {
+      pages.push(rows.slice(i, i + ROWS_PER_PAGE));
+    }
+    return pages.length > 0 ? pages : [[]];
+  };
 
+  // Function to calculate page subtotal
+  const calculatePageSubtotal = (pageRows: any[]) => {
+    return pageRows.reduce((sum, row) => sum + (row.salesAmount || 0), 0);
+  };
+
+  const getYearlyTotalPages = (data: YearlyPrintData | null) => {
+    if (!data) return 1;
+    let totalRows = 0;
+    data.months.forEach((monthData) => {
+      totalRows += monthData.rows.length;
+    });
+    return totalRows > 0 ? Math.ceil(totalRows / ROWS_PER_PAGE) : 1;
+  };
+
+  const monthlyTotalPages =
+    type === "monthly" && monthlyData
+      ? Math.ceil((monthlyData.rows.length || 0) / ROWS_PER_PAGE) || 1
+      : 1;
+
+  const yearlyTotalPages =
+    type === "yearly" && yearlyData ? getYearlyTotalPages(yearlyData) : 1;
+
+  // Generate today's date in Thai format
+  const today = new Date();
+  const thaiYear = today.getFullYear() + 543;
+  const thaiDate = `${today.getDate().toString().padStart(2, "0")}/${(
+    today.getMonth() + 1
+  )
+    .toString()
+    .padStart(2, "0")}/${thaiYear.toString().slice(-2)}`;
+  const receiptNumber = "25681720"; // Mock receipt number
+
+  return (
+    <div className="max-w-[210mm] mx-auto bg-white text-[18px]">
       {/* Monthly Report */}
       {type === "monthly" && monthlyData && (
         <>
@@ -65,61 +101,108 @@ export function ReceiptPrintComponent({
             </div>
           ) : (
             <>
-              <table className="w-full border-collapse border border-black mb-6 text-lg leading-6">
-                <thead>
-                  <tr className="bg-gray-100">
-                    <th className="border border-black px-3 py-1.5 text-center w-16">
-                      ลำดับ
-                    </th>
-                    <th className="border border-black px-3 py-1.5 text-left w-28">
-                      วันที่รับเงิน
-                    </th>
-                    <th className="border border-black px-3 py-1.5 text-left w-32">
-                      เลขที่ Invoice
-                    </th>
-                    <th className="border border-black px-3 py-1.5 text-left">
-                      รายละเอียด
-                    </th>
-                    <th className="border border-black px-3 py-1.5 text-right w-32">
-                      จำนวนเงิน (฿)
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {monthlyData.rows.map((row) => (
-                    <tr key={row.rowNumber}>
-                      <td className="border border-black px-3 py-1.5 text-center">
-                        {row.rowNumber}
-                      </td>
-                      <td className="border border-black px-3 py-1.5">
-                        {formatDate(row.saleDate)}
-                      </td>
-                      <td className="border border-black px-3 py-1.5">
-                        {row.invoiceNo}
-                      </td>
-                      <td className="border border-black px-3 py-1.5">
-                        {row.customerName}
-                      </td>
-                      <td className="border border-black px-3 py-1.5 text-right font-mono">
-                        {formatCurrency(row.salesAmount)}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-                <tfoot>
-                  <tr className="bg-gray-100 font-bold">
-                    <td
-                      colSpan={4}
-                      className="border border-black px-3 py-1.5 text-right"
-                    >
-                      รวมทั้งหมด ({monthlyData.totalOrders} รายการ)
-                    </td>
-                    <td className="border border-black px-3 py-1.5 text-right font-mono">
-                      {formatCurrency(monthlyData.totalSales)}
-                    </td>
-                  </tr>
-                </tfoot>
-              </table>
+              {paginateRows(monthlyData.rows).map(
+                (pageRows, pageIndex, pages) => (
+                  <div
+                    key={pageIndex}
+                    className="page-break p-6 flex flex-col min-h-screen"
+                    style={{
+                      pageBreakAfter:
+                        pageIndex < pages.length - 1 ? "always" : "auto",
+                    }}
+                  >
+                    {/* Header - Customer Info and Page on each page */}
+                    <div className="flex justify-between items-start mb-6">
+                      {/* Left: Customer Information */}
+                      <div className="text-left text-[16px] leading-snug flex-1">
+                        <p className="font-semibold text-[18px]">
+                          {customerInfo?.name || customerName}
+                        </p>
+                        {customerInfo?.address && <p>{customerInfo.address}</p>}
+                        {customerInfo?.phone && (
+                          <p>โทร. {customerInfo.phone}</p>
+                        )}
+                        {customerInfo?.taxId && (
+                          <p>เลขประจำตัวผู้เสียภาษี {customerInfo.taxId}</p>
+                        )}
+                      </div>
+
+                      {/* Right: Page Number */}
+                      <div className="flex flex-col">
+                        <div className="text-right text-[16px] leading-snug">
+                          <p className="mt-1">
+                            Page {pageIndex + 1}/{pages.length}
+                          </p>
+                        </div>
+                        {/* Receipt Number and Date at bottom */}
+                        <div className="flex flex-col gap-5 justify-between text-[16px] mt-4 pt-3 ">
+                          <span>{receiptNumber}</span>
+                          <span>{thaiDate}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex-1">
+                      <table className="w-full mb-4 mt-5 text-[16px] leading-relaxed">
+                        <thead>
+                          <tr>
+                            <th className="px-2 py-1 text-center w-12"></th>
+                            <th className="px-2 py-1 text-left w-24"></th>
+                            <th className="px-2 py-1 text-left w-20"></th>
+                            <th className="px-2 py-1 text-right"></th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {pageRows.map((row) => (
+                            <tr key={row.rowNumber}>
+                              <td className="px-2 py-1 text-center">
+                                {row.rowNumber}
+                              </td>
+                              <td className="px-2 py-1">HS{row.invoiceNo}</td>
+                              <td className="px-2 py-1">
+                                {String(
+                                  new Date(row.saleDate).toLocaleDateString(
+                                    "en-GB"
+                                  )
+                                )}
+                              </td>
+                              <td className="px-2 py-1 text-right font-mono">
+                                {formatCurrency(row.salesAmount)}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+
+                      {/* Page Subtotal */}
+                    </div>
+
+                    {/* Page Footer: Continue or Total fixed at bottom */}
+                    <div className="mt-auto pt-4">
+                      {pageIndex < pages.length - 1 && (
+                        <div className="text-right font-semibold text-[16px]">
+                          Continue...
+                        </div>
+                      )}
+                      {pageIndex === pages.length - 1 && (
+                        <div className="flex justify-end">
+                          <div className="pt-2">
+                            <div className="flex justify-between text-[16px] font-semibold">
+                              <span>
+                                รวมทั้งหมด ({monthlyData.totalOrders}{" "}
+                                รายการ)&nbsp;&nbsp;&nbsp;&nbsp;
+                              </span>
+                              <span className="font-mono">
+                                {formatCurrency(monthlyData.totalSales)}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )
+              )}
             </>
           )}
         </>
@@ -134,90 +217,179 @@ export function ReceiptPrintComponent({
             </div>
           ) : (
             <>
-              {yearlyData.months.map((monthData) => {
-                if (monthData.rows.length === 0) return null;
+              {(() => {
+                // Flatten all rows across months for pagination
+                let allRows: any[] = [];
+                let pageMap: {
+                  pageIndex: number;
+                  monthIndex: number;
+                  rowInMonth: number;
+                }[] = [];
+                let currentPageIndex = 0;
+                let currentPageCount = 0;
 
-                return (
-                  <div
-                    key={monthData.month}
-                    className="mb-8 break-inside-avoid"
-                  >
-                    {/* Month Header */}
-                    <h2 className="text-2xl font-bold mb-3 bg-gray-200 px-3 py-2 border-l-4 border-black">
-                      {monthData.monthName} {year}
-                    </h2>
+                yearlyData.months.forEach((monthData, monthIndex) => {
+                  monthData.rows.forEach((row, rowIndex) => {
+                    pageMap.push({
+                      pageIndex: currentPageIndex,
+                      monthIndex,
+                      rowInMonth: rowIndex,
+                    });
+                    currentPageCount++;
+                    if (currentPageCount >= ROWS_PER_PAGE) {
+                      currentPageIndex++;
+                      currentPageCount = 0;
+                    }
+                  });
+                });
 
-                    <table className="w-full border-collapse border border-black mb-4 text-lg leading-6">
-                      <thead>
-                        <tr className="bg-gray-100">
-                          <th className="border border-black px-3 py-1.5 text-center w-16">
-                            ลำดับ
-                          </th>
-                          <th className="border border-black px-3 py-1.5 text-left w-28">
-                            วันที่รับเงิน
-                          </th>
-                          <th className="border border-black px-3 py-1.5 text-left w-32">
-                            เลขที่ Invoice
-                          </th>
-                          <th className="border border-black px-3 py-1.5 text-left">
-                            รายละเอียด
-                          </th>
-                          <th className="border border-black px-3 py-1.5 text-right w-32">
-                            จำนวนเงิน (฿)
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {monthData.rows.map((row) => (
-                          <tr key={row.rowNumber}>
-                            <td className="border border-black px-3 py-1.5 text-center">
-                              {row.rowNumber}
-                            </td>
-                            <td className="border border-black px-3 py-1.5">
-                              {formatDate(row.saleDate)}
-                            </td>
-                            <td className="border border-black px-3 py-1.5">
-                              {row.invoiceNo}
-                            </td>
-                            <td className="border border-black px-3 py-1.5">
-                              {row.customerName}
-                            </td>
-                            <td className="border border-black px-3 py-1.5 text-right font-mono">
-                              {formatCurrency(row.salesAmount)}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                      <tfoot>
-                        <tr className="bg-gray-100 font-semibold">
-                          <td
-                            colSpan={4}
-                            className="border border-black px-3 py-1.5 text-right"
-                          >
-                            รวม {monthData.monthName} ({monthData.orderCount}{" "}
-                            รายการ)
-                          </td>
-                          <td className="border border-black px-3 py-1.5 text-right font-mono">
-                            {formatCurrency(monthData.subtotal)}
-                          </td>
-                        </tr>
-                      </tfoot>
-                    </table>
-                  </div>
-                );
-              })}
+                const totalPages = currentPageIndex + 1;
 
-              {/* Yearly Total */}
-              <div className="mt-8 border-t-4 border-black pt-4">
-                <div className="flex justify-between items-center text-2xl font-bold bg-gray-100 px-4 py-3 border border-black">
-                  <span>
-                    รวมทั้งปี {year} ({yearlyData.yearlyOrderCount} รายการ)
-                  </span>
-                  <span className="font-mono">
-                    {formatCurrency(yearlyData.yearlyTotal)}
-                  </span>
-                </div>
-              </div>
+                return Array.from({ length: totalPages }).map((_, pageNum) => {
+                  const pageRowIndices = pageMap
+                    .filter((item) => item.pageIndex === pageNum)
+                    .map((item) => ({
+                      monthIndex: item.monthIndex,
+                      rowInMonth: item.rowInMonth,
+                    }));
+
+                  const groupedByMonth = pageRowIndices.reduce((acc, item) => {
+                    if (!acc[item.monthIndex]) acc[item.monthIndex] = [];
+                    acc[item.monthIndex].push(
+                      yearlyData.months[item.monthIndex].rows[item.rowInMonth]
+                    );
+                    return acc;
+                  }, {} as { [key: number]: any[] });
+
+                  return (
+                    <div
+                      key={pageNum}
+                      className="page-break p-6 flex flex-col min-h-screen"
+                      style={{
+                        pageBreakAfter:
+                          pageNum < totalPages - 1 ? "always" : "auto",
+                      }}
+                    >
+                      {/* Header - Customer Info and Page on each page */}
+                      <div className="flex justify-between items-start mb-6">
+                        {/* Left: Customer Information */}
+                        <div className="text-left text-[16px] leading-snug flex-1">
+                          <p className="font-semibold text-[18px]">
+                            {customerInfo?.name || customerName}
+                          </p>
+                          {customerInfo?.address && (
+                            <p>{customerInfo.address}</p>
+                          )}
+                          {customerInfo?.phone && (
+                            <p>โทร. {customerInfo.phone}</p>
+                          )}
+                          {customerInfo?.taxId && (
+                            <p>เลขประจำตัวผู้เสียภาษี {customerInfo.taxId}</p>
+                          )}
+                        </div>
+
+                        {/* Right: Page Number */}
+                        <div className="text-right text-[16px] leading-snug">
+                          <p className="mt-1">
+                            Page {pageNum + 1}/{totalPages}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex-1">
+                        {Object.entries(groupedByMonth).map(
+                          ([monthIndex, rows]) => {
+                            const monthData =
+                              yearlyData.months[parseInt(monthIndex)];
+                            return (
+                              <div key={monthIndex}>
+                                {pageNum === pageMap[0]?.pageIndex ||
+                                pageMap.some(
+                                  (p) =>
+                                    p.pageIndex === pageNum &&
+                                    p.rowInMonth === 0
+                                ) ? (
+                                  <h2 className="text-[17px] font-semibold mb-2">
+                                    {monthData.monthName} {year}
+                                  </h2>
+                                ) : null}
+                                <table className="w-full mb-3 text-[16px] leading-relaxed">
+                                  <thead>
+                                    <tr>
+                                      <th className="px-2 py-1 text-center w-12"></th>
+                                      <th className="px-2 py-1 text-left w-24"></th>
+                                      <th className="px-2 py-1 text-left w-20"></th>
+                                      <th className="px-2 py-1 text-right"></th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {rows.map((row) => (
+                                      <tr key={row.rowNumber}>
+                                        <td className="px-2 py-1 text-center">
+                                          {row.rowNumber}
+                                        </td>
+                                        <td className="px-2 py-1">
+                                          {row.invoiceNo}
+                                        </td>
+                                        <td className="px-2 py-1">
+                                          {formatDate(row.saleDate)}
+                                        </td>
+                                        <td className="px-2 py-1 text-right font-mono">
+                                          {formatCurrency(row.salesAmount)}
+                                        </td>
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </table>
+                              </div>
+                            );
+                          }
+                        )}
+
+                        {/* Page Subtotal */}
+                        <div className="flex justify-between text-[16px] font-semibold pb-2 mb-2">
+                          <span>รวมหน้า {pageNum + 1}</span>
+                          <span className="font-mono">
+                            {formatCurrency(
+                              Object.values(groupedByMonth)
+                                .flat()
+                                .reduce(
+                                  (sum, row) => sum + (row.salesAmount || 0),
+                                  0
+                                )
+                            )}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Page Footer: Continue or Year Total fixed at bottom */}
+                      <div className="mt-auto pt-4">
+                        {pageNum < totalPages - 1 && (
+                          <div className="text-right font-semibold text-[16px]">
+                            Continue...
+                          </div>
+                        )}
+                        {pageNum === totalPages - 1 && (
+                          <div className="flex justify-end">
+                            <div className="pt-2">
+                              <div className="flex justify-between text-[16px] font-semibold">
+                                <span>
+                                  รวมทั้งปี {year} (
+                                  {yearlyData.yearlyOrderCount}{" "}
+                                  รายการ)&nbsp;&nbsp;&nbsp;&nbsp;
+                                </span>
+                                <span className="font-mono">
+                                  {formatCurrency(yearlyData.yearlyTotal)}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                });
+              })()}
             </>
           )}
         </>

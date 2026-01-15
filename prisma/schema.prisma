@@ -33,10 +33,10 @@ model Staff {
   Bill_Bill_deliveredByToStaff Bill[]            @relation("Bill_deliveredByToStaff")
   Bill_Bill_salesNameToStaff   Bill[]            @relation("Bill_salesNameToStaff")
   ExpenseCategory              ExpenseCategory[]
+  OrderPOStaff                 OrderPOStaff[]
   user                         User?             @relation("UserStaff", fields: [userId], references: [id])
   StaffIncome                  StaffIncome[]
   StaffSalary                  StaffSalary[]
-  OrderPO                      OrderPO[]         @relation("OrderPOToStaff")
 }
 
 model Customer {
@@ -85,20 +85,20 @@ model Bill {
 }
 
 model OrderPO {
-  id          Int       @id @default(autoincrement())
-  poNumber    String?   @unique
-  customerId  Int?
-  billId      Int?
-  status      JobStatus @default(pending)
-  total       Float
-  completedAt DateTime?
-  urlPo       String[]
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  bill        Bill?     @relation(fields: [billId], references: [id])
-  Customer    Customer? @relation(fields: [customerId], references: [id])
-  Product     Product[]
-  Staff       Staff[]   @relation("OrderPOToStaff")
+  id           Int            @id @default(autoincrement())
+  poNumber     String?        @unique
+  customerId   Int?
+  billId       Int?
+  status       JobStatus      @default(pending)
+  total        Float
+  completedAt  DateTime?
+  urlPo        String[]
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  bill         Bill?          @relation(fields: [billId], references: [id])
+  Customer     Customer?      @relation(fields: [customerId], references: [id])
+  OrderPOStaff OrderPOStaff[]
+  Product      Product[]
 
   @@index([status])
   @@index([createdAt])
@@ -215,6 +215,19 @@ model ExpenseCategory {
   Staff       Staff     @relation(fields: [staffId], references: [id])
 }
 
+model OrderPOStaff {
+  orderPOId  Int
+  staffId    Int
+  role       OrderStaffRole
+  assignedAt DateTime       @default(now())
+  OrderPO    OrderPO        @relation(fields: [orderPOId], references: [id], onDelete: Cascade)
+  Staff      Staff          @relation(fields: [staffId], references: [id])
+
+  @@id([orderPOId, staffId, role])
+  @@index([orderPOId, role])
+  @@index([staffId])
+}
+
 enum Role {
   superadmin
   guest
@@ -249,4 +262,9 @@ enum CuttingMethod {
 enum StockStatus {
   available
   withdrawn
+}
+
+enum OrderStaffRole {
+  supervisor
+  cutter
 }
