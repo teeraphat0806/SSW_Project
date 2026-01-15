@@ -1,5 +1,6 @@
 // src/app/api/job-order-detail/[id]/staff/route.ts
 import { requireAuth } from "@/lib/permissions";
+import type { Role } from "@/lib/permissions";
 import prisma from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
@@ -19,6 +20,12 @@ function toUserRole(role: z.infer<typeof RoleEnum>) {
   return role === "supervisor" ? "supervisor" : "cutter";
 }
 
+function allowedRoles(role: z.infer<typeof RoleEnum>): Role[] {
+  return role === "supervisor"
+    ? ["superadmin", "clerk", "supervisor"]
+    : ["superadmin", "clerk", "cutter"];
+}
+
 type staffApi = {
   id: number;
   name: string;
@@ -26,10 +33,6 @@ type staffApi = {
 };
 
 export async function GET(req: NextRequest) {
-  const authResult = await requireAuth(["superadmin", "clerk", "supervisor"]);
-
-  if ("response" in authResult) return authResult.response;
-
   const url = new URL(req.url);
   const parsedQ = QuerySchema.safeParse({
     role: url.searchParams.get("role"),
@@ -42,6 +45,9 @@ export async function GET(req: NextRequest) {
   }
 
   const userRole = toUserRole(parsedQ.data.role);
+  const authResult = await requireAuth(allowedRoles(parsedQ.data.role));
+  if ("response" in authResult) return authResult.response;
+
   try {
     const staff = await prisma.staff.findMany({
       where: { user: { role: userRole } },
@@ -73,8 +79,8 @@ export async function PATCH(
   req: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
-  const authResult = await requireAuth(["superadmin", "clerk", "supervisor"]);
-  if ("response" in authResult) return authResult.response;
+  // const authResult = await requireAuth(["superadmin", "clerk", "supervisor"]);
+  // if ("response" in authResult) return authResult.response;
 
   const { id } = await context.params;
   const poId = Number(id);
@@ -90,6 +96,9 @@ export async function PATCH(
     );
   }
   const { staffId, role } = parsed.data;
+
+  const authResult = await requireAuth(allowedRoles(role));
+  if ("response" in authResult) return authResult.response;
 
   try {
     const staff = await prisma.staff.findUnique({
@@ -126,8 +135,6 @@ export async function DELETE(
   req: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
-  const authResult = await requireAuth(["superadmin", "clerk", "supervisor"]);
-  if ("response" in authResult) return authResult.response;
   const { id } = await context.params;
   const poId = Number(id);
   if (Number.isNaN(poId)) {
@@ -144,6 +151,9 @@ export async function DELETE(
   }
 
   const { staffId, role } = parsed.data;
+
+  const authResult = await requireAuth(allowedRoles(role));
+  if ("response" in authResult) return authResult.response;
 
   try {
     await prisma.orderPOStaff.deleteMany({

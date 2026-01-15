@@ -10,6 +10,8 @@ export const ROLES = [
   "clerk",
   "cutter",
   "delivery",
+  "accountant",
+  "guest",
 ] as const;
 
 export type Role = (typeof ROLES)[number];
@@ -29,10 +31,10 @@ export type RequireAuthResult = RequireAuthSuccess | RequireAuthFailure;
 
 // helper แยก logic แปลง role ให้เป็น Role เสมอ
 function normalizeRole(rawRole: string | null | undefined): Role {
-  if (rawRole === "superadmin" || rawRole === "supervisor") return "supervisor";
-  if (rawRole === "cutter") return "cutter";
-  if (rawRole === "delivery") return "delivery";
-  return "clerk";
+  if (rawRole && ROLES.includes(rawRole as Role)) {
+    return rawRole as Role;
+  }
+  return "guest";
 }
 
 export async function requireAuth(
