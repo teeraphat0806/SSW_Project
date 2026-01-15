@@ -15,7 +15,6 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { toast } from "react-toastify";
 import { useConfirm } from "@/components/providers/confirm-dialog-provider";
 // --- Types ---
@@ -42,6 +41,11 @@ function uniqueStaffById(arr?: StaffMember[]): StaffMember[] {
   });
   return Array.from(map.values());
 }
+
+type ModalType = "supervisor" | "cutter";
+
+const apiRoleFromModal = (t: ModalType) =>
+  t === "supervisor" ? "supervisor" : "cutter";
 
 // --- Main Component ---
 export function StaffInfoCard({
@@ -79,16 +83,16 @@ export function StaffInfoCard({
   // --- API Functions ---
 
   // 1. GET: ดึงรายชื่อพนักงานทั้งหมด (เพื่อนำมากรองและเลือกเพิ่ม)
-  const fetchAvailableStaff = async (type: "supervisor" | "cutter") => {
+  const fetchAvailableStaff = async (type: ModalType) => {
     setIsLoading(true);
     setAvailableStaff([]);
     setSearchTerm("");
 
-    const endpoint = type === "cutter" ? "cutter" : "supervisors";
+    const role = apiRoleFromModal(type);
 
     try {
       const res = await fetch(
-        `/api/job-order-detail/${jobOrderId}/${endpoint}`
+        `/api/job-order-detail/${jobOrderId}/staff?role=${role}`
       );
 
       if (!res.ok) {
@@ -100,7 +104,7 @@ export function StaffInfoCard({
       // Map API response (nested user object) to StaffMember type
       const data: StaffMember[] = Array.isArray(rawData)
         ? rawData.map((item: any) => ({
-            id: item.user?.id || item.id, // ใช้ ID จาก user หรือ root
+            id: item.id,
             name: item.user?.name || item.name || "ไม่ระบุชื่อ", // ดึงชื่อจาก user.name
             role: item.user?.role || item.role || type,
           }))
@@ -118,20 +122,17 @@ export function StaffInfoCard({
   const handleAddStaff = async (staffId: number) => {
     if (!modalType || isSubmitting) return;
 
-    const endpoint = modalType === "cutter" ? "cutter" : "supervisors";
+    const role = apiRoleFromModal(modalType);
     setIsSubmitting(true);
 
     try {
-      const res = await fetch(
-        `/api/job-order-detail/${jobOrderId}/${endpoint}`,
-        {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ staffId }), // ส่ง staffId ที่จะเพิ่ม
-        }
-      );
+      const res = await fetch(`/api/job-order-detail/${jobOrderId}/staff`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ staffId, role }),
+      });
 
       if (!res.ok) {
         toast.error("ไม่สามารถเพิ่มพนักงานได้ กรุณาลองใหม่อีกครั้ง", {
@@ -164,30 +165,24 @@ export function StaffInfoCard({
   };
 
   // 3. DELETE: ลบพนักงาน
-  const handleRemoveStaff = async (
-    staffId: number,
-    type: "supervisor" | "cutter"
-  ) => {
+  const handleRemoveStaff = async (staffId: number, type: ModalType) => {
     const isConfirmed = await confirm({
-      title: "ต้องการลบรายชื่อนี้ออกจากงานใช่หรือไม่?",
-      description: "หากลบแล้วข้อมูลจะไม่สามารถนำมาชำระบิลได้ ข้อมูลจะหายไปถาวร",
+      title: "ต้องการลบรายชื่อนี้ออกจากงานใช่หรือไม่?", // หัวข้อ
+      description: "หากลบแล้วข้อมูลพนักงานจะถูกลบออกจากงานนี้ทันที", // คำอธิบาย
       variant: "destructive", // ใส่เพื่อให้ปุ่มเป็นสีแดง (optional)
-      confirmText: "ลบข้อมูล",
-      cancelText: "ไม่ลบ",
+      confirmText: "ลบข้อมูล", // ข้อความปุ่มยืนยัน
+      cancelText: "ไม่ลบ", // ข้อความปุ่มยกเลิก
     });
     if (!isConfirmed) return;
 
-    const endpoint = type === "cutter" ? "cutter" : "supervisors";
+    const role = apiRoleFromModal(type);
 
     try {
-      const res = await fetch(
-        `/api/job-order-detail/${jobOrderId}/${endpoint}`,
-        {
-          method: "DELETE",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ staffId }),
-        }
-      );
+      const res = await fetch(`/api/job-order-detail/${jobOrderId}/staff`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ staffId, role }),
+      });
 
       if (!res.ok) {
         toast.error("ไม่สามารถลบพนักงานได้ กรุณาลองใหม่อีกครั้ง", {

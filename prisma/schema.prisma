@@ -36,7 +36,7 @@ model Staff {
   user                         User?             @relation("UserStaff", fields: [userId], references: [id])
   StaffIncome                  StaffIncome[]
   StaffSalary                  StaffSalary[]
-  OrderPO                      OrderPO[]         @relation("OrderPOToStaff")
+  orderLinks                   OrderPOStaff[]
 }
 
 model Customer {
@@ -98,13 +98,27 @@ model OrderPO {
   bill        Bill?     @relation(fields: [billId], references: [id])
   Customer    Customer? @relation(fields: [customerId], references: [id])
   Product     Product[]
-  Staff       Staff[]   @relation("OrderPOToStaff")
+  staffLinks  OrderPOStaff[]
 
   @@index([status])
   @@index([createdAt])
   @@index([customerId, status])
   @@index([billId])
   @@index([customerId])
+}
+
+model OrderPOStaff {
+  orderPOId Int
+  staffId   Int
+  role      OrderStaffRole
+  assignedAt DateTime @default(now())
+
+  orderPO OrderPO @relation(fields: [orderPOId],references:[id], onDelete:Cascade)
+  staff     Staff   @relation(fields: [staffId], references: [id])
+
+  @@id([orderPOId, staffId, role])
+  @@index([staffId])
+  @@index([orderPOId, role])
 }
 
 model Product {
@@ -249,4 +263,9 @@ enum CuttingMethod {
 enum StockStatus {
   available
   withdrawn
+}
+
+enum OrderStaffRole {
+  supervisor  
+  cutter       
 }
