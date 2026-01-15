@@ -5,6 +5,7 @@ import { formatCurrency, formatDate } from "./analytics-utils";
 export interface PrintRowData {
   rowNumber: number;
   saleDate: Date;
+  invoiceNo: string;
   customerName: string;
   salesAmount: number;
 }
@@ -108,6 +109,10 @@ export function getMonthlyPrintData(params: {
     return {
       rowNumber: 0,
       saleDate: date,
+      invoiceNo:
+        bill.invoiceNo !== undefined && bill.invoiceNo !== null
+          ? String(bill.invoiceNo)
+          : "-",
       customerName: customer?.name || "-",
       salesAmount: Number(bill.grandTotal ?? bill.subtotal ?? 0),
     };
@@ -169,6 +174,10 @@ export function getYearlyPrintData(params: {
       return {
         rowNumber: 0,
         saleDate: date,
+        invoiceNo:
+          bill.invoiceNo !== undefined && bill.invoiceNo !== null
+            ? String(bill.invoiceNo)
+            : "-",
         customerName: customer?.name || "-",
         salesAmount: Number(bill.grandTotal ?? bill.subtotal ?? 0),
       };
