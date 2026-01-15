@@ -85,9 +85,9 @@ function PrintContent() {
 
   return (
     <div className="min-h-screen bg-background text-black print:bg-white print:pl-0">
-      {isPreview && (
+      {
         <div className="print:hidden sticky top-0 z-20 bg-background/90 backdrop-blur border-b border-border shadow-sm">
-          <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
+          <div className="mt-14 md:mt-0 lg:mt-0 max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
             <div>
               <p className="text-xs uppercase tracking-wide text-slate-500">
                 Preview
@@ -106,7 +106,7 @@ function PrintContent() {
             </Button>
           </div>
         </div>
-      )}
+      }
 
       <div className="max-w-6xl mx-auto px-2 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6 print:py-0 print:px-0">
         <div className="bg-background shadow-lg rounded-xl border border-border overflow-x-auto print:shadow-none print:border-0 print:rounded-none print:overflow-visible">

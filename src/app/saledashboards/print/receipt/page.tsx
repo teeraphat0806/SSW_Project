@@ -91,24 +91,37 @@ function PrintContent() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-white text-black flex items-center justify-center">
-        <p className="text-lg">กำลังโหลดข้อมูล...</p>
+      <div className="min-h-screen bg-background text-black flex items-center justify-center">
+        <p className="text-lg text-foreground">กำลังโหลดข้อมูล...</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-white text-black print:pl-0 pl-2 md:pl-3 lg:pl-3">
+    <div className="min-h-screen bg-background text-black print:bg-white print:pl-0">
       {/* Print Button (only in preview mode, hidden when printing) */}
-      {isPreview && (
-        <div className="print:hidden sticky top-0 bg-white border-b border-gray-300 p-4 flex justify-between items-center shadow-sm z-10">
-          <h1 className="text-lg font-semibold">ตัวอย่างใบเสร็จรับเงิน</h1>
-          <Button onClick={handlePrint} disabled={isPrinting}>
-            <Printer className="w-4 h-4 mr-2" />
-            {isPrinting ? "กำลังพิมพ์..." : "พิมพ์ใบเสร็จรับเงิน"}
-          </Button>
+      {
+        <div className="print:hidden sticky top-0 z-20 bg-background/90 backdrop-blur border-b border-border shadow-sm">
+          <div className="mt-14 md:mt-0 lg:mt-0 max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
+            <div>
+              <p className="text-xs uppercase tracking-wide text-slate-500">
+                Preview
+              </p>
+              <h1 className="text-lg font-semibold text-foreground">
+                ตัวอย่างใบเสร็จรับเงิน
+              </h1>
+            </div>
+            <Button
+              onClick={handlePrint}
+              disabled={isPrinting}
+              className="gap-2"
+            >
+              <Printer className="w-4 h-4" />
+              {isPrinting ? "กำลังพิมพ์..." : "พิมพ์ใบเสร็จรับเงิน"}
+            </Button>
+          </div>
         </div>
-      )}
+      }
 
       {/* Print Content using Component */}
 
