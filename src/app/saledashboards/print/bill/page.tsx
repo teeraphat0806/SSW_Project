@@ -5,6 +5,10 @@ import { useSearchParams } from "next/navigation";
 import {
   getMonthlyPrintData,
   getYearlyPrintData,
+  getMonthlyPrintDataByCustomer,
+  getYearlyPrintDataByCustomerAndMonth,
+  getYearlyPrintDataByMonth,
+  type BillData,
 } from "@/lib/saleDashboard/print-utils";
 import {
   useBills,
@@ -27,35 +31,69 @@ function PrintContent() {
   const customerId = searchParams.get("customer") || "all";
   const isPreview = searchParams.get("preview") === "true";
 
-  const customerName = (() => {
-    if (customerId === "all") return "ทั้งหมด";
-    const customer = customers.find(
-      (c) => c.id === Number.parseInt(customerId)
-    );
-    return customer?.name || "ไม่ระบุ";
-  })();
+  const billsData: BillData[] = (() => {
+    if (loading) return [];
 
-  const monthlyData =
-    type === "monthly" && !loading
-      ? getMonthlyPrintData({
-          bills,
-          customers,
+    // กรณี 1: ทั้งปี ลูกค้าเจ้าเดียว - แยกบิลตามเดือน
+    if (type === "yearly" && customerId !== "all") {
+      return getYearlyPrintDataByMonth({
+        bills,
+        customers,
+        year,
+        customerId,
+        sortOrder: "date-desc",
+      });
+    }
+
+    // กรณี 2: ทั้งปี ทุกคน - แยกบิลตามเดือนและแยกลูกค้า
+    if (type === "yearly" && customerId === "all") {
+      return getYearlyPrintDataByCustomerAndMonth({
+        bills,
+        customers,
+        year,
+        sortOrder: "date-desc",
+      });
+    }
+
+    // กรณี 3: ลูกค้าทุกคนรายเดือน - แยกบิลของลูกค้าแต่ละคน
+    if (type === "monthly" && customerId === "all") {
+      return getMonthlyPrintDataByCustomer({
+        bills,
+        customers,
+        year,
+        month,
+        sortOrder: "date-desc",
+      });
+    }
+
+    // กรณี 4: รายเดือน ลูกค้าเจ้าเดียว - บิลเดียว (แบบเดิม)
+    if (type === "monthly" && customerId !== "all") {
+      const customer = customers.find(
+        (c) => c.id === Number.parseInt(customerId)
+      );
+      const monthlyData = getMonthlyPrintData({
+        bills,
+        customers,
+        year,
+        month,
+        customerId,
+        sortOrder: "date-desc",
+      });
+
+      return [
+        {
+          customerName: customer?.name || "ไม่ระบุ",
+          customerId: Number.parseInt(customerId),
+          type: "monthly" as const,
           year,
           month,
-          customerId,
-          sortOrder: "date-desc",
-        })
-      : null;
-  const yearlyData =
-    type === "yearly" && !loading
-      ? getYearlyPrintData({
-          bills,
-          customers,
-          year,
-          customerId,
-          sortOrder: "date-desc",
-        })
-      : null;
+          data: monthlyData,
+        },
+      ];
+    }
+
+    return [];
+  })();
 
   const handlePrint = () => {
     setIsPrinting(true);
@@ -93,7 +131,7 @@ function PrintContent() {
                 Preview
               </p>
               <h1 className="text-lg font-semibold text-foreground">
-                ตัวอย่างใบวางบิล
+                ตัวอย่างใบวางบิล ({billsData.length} ใบ)
               </h1>
             </div>
             <Button
@@ -113,12 +151,7 @@ function PrintContent() {
           <div className="flex justify-center print:p-0">
             <div className="scale-[0.5] sm:scale-[0.7] md:scale-100 origin-top print:scale-100">
               <BillPrintComponent
-                year={year}
-                type={type as "monthly" | "yearly"}
-                month={month}
-                customerName={customerName}
-                monthlyData={monthlyData}
-                yearlyData={yearlyData}
+                billsData={billsData}
                 showPrintButton={false}
                 onPrint={handlePrint}
               />

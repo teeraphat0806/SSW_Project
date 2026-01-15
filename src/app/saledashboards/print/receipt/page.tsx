@@ -5,6 +5,10 @@ import { useSearchParams } from "next/navigation";
 import {
   getMonthlyPrintData,
   getYearlyPrintData,
+  getMonthlyReceiptDataByCustomer,
+  getYearlyReceiptDataByCustomerAndMonth,
+  getYearlyReceiptDataByMonth,
+  type ReceiptData,
 } from "@/lib/saleDashboard/print-utils";
 import {
   useBills,
@@ -27,49 +31,77 @@ function PrintContent() {
   const customerId = searchParams.get("customer") || "all";
   const isPreview = searchParams.get("preview") === "true";
 
-  const customerName = (() => {
-    if (customerId === "all") return "ทั้งหมด";
-    const customer = customers.find(
-      (c) => c.id === Number.parseInt(customerId)
-    );
-    return customer?.name || "ไม่ระบุ";
-  })();
+  const receiptsData: ReceiptData[] = (() => {
+    if (loading) return [];
 
-  const customerInfo = (() => {
-    if (customerId === "all") return undefined;
-    const customer = customers.find(
-      (c) => c.id === Number.parseInt(customerId)
-    );
-    if (!customer) return undefined;
-    return {
-      name: customer.name,
-      address: (customer as any).address,
-      phone: (customer as any).tel,
-      taxId: (customer as any).taxNumber,
-    };
-  })();
+    // กรณี 1: ทั้งปี ลูกค้าเจ้าเดียว - แยกใบเสร็จตามเดือน
+    if (type === "yearly" && customerId !== "all") {
+      return getYearlyReceiptDataByMonth({
+        bills,
+        customers,
+        year,
+        customerId,
+        sortOrder: "date-desc",
+      });
+    }
 
-  const monthlyData =
-    type === "monthly" && !loading
-      ? getMonthlyPrintData({
-          bills,
-          customers,
+    // กรณี 2: ทั้งปี ทุกคน - แยกใบเสร็จตามเดือนและแยกลูกค้า
+    if (type === "yearly" && customerId === "all") {
+      return getYearlyReceiptDataByCustomerAndMonth({
+        bills,
+        customers,
+        year,
+        sortOrder: "date-desc",
+      });
+    }
+
+    // กรณี 3: ลูกค้าทุกคนรายเดือน - แยกใบเสร็จของลูกค้าแต่ละคน
+    if (type === "monthly" && customerId === "all") {
+      return getMonthlyReceiptDataByCustomer({
+        bills,
+        customers,
+        year,
+        month,
+        sortOrder: "date-desc",
+      });
+    }
+
+    // กรณี 4: รายเดือน ลูกค้าเจ้าเดียว - ใบเสร็จเดียว (แบบเดิม)
+    if (type === "monthly" && customerId !== "all") {
+      const customer = customers.find(
+        (c) => c.id === Number.parseInt(customerId)
+      );
+      const monthlyData = getMonthlyPrintData({
+        bills,
+        customers,
+        year,
+        month,
+        customerId,
+        sortOrder: "date-desc",
+      });
+
+      return [
+        {
+          customerName: customer?.name || "ไม่ระบุ",
+          customerId: Number.parseInt(customerId),
+          customerInfo: customer
+            ? {
+                name: customer.name,
+                address: (customer as any).address,
+                phone: (customer as any).tel,
+                taxId: (customer as any).taxNumber,
+              }
+            : undefined,
+          type: "monthly" as const,
           year,
           month,
-          customerId,
-          sortOrder: "date-desc",
-        })
-      : null;
-  const yearlyData =
-    type === "yearly" && !loading
-      ? getYearlyPrintData({
-          bills,
-          customers,
-          year,
-          customerId,
-          sortOrder: "date-desc",
-        })
-      : null;
+          data: monthlyData,
+        },
+      ];
+    }
+
+    return [];
+  })();
 
   const handlePrint = () => {
     setIsPrinting(true);
@@ -108,7 +140,7 @@ function PrintContent() {
                 Preview
               </p>
               <h1 className="text-lg font-semibold text-foreground">
-                ตัวอย่างใบเสร็จรับเงิน
+                ตัวอย่างใบเสร็จรับเงิน ({receiptsData.length} ใบ)
               </h1>
             </div>
             <Button
@@ -125,15 +157,7 @@ function PrintContent() {
 
       {/* Print Content using Component */}
 
-      <ReceiptPrintComponent
-        year={year}
-        type={type as "monthly" | "yearly"}
-        month={month}
-        customerName={customerName}
-        monthlyData={monthlyData}
-        yearlyData={yearlyData}
-        customerInfo={customerInfo}
-      />
+      <ReceiptPrintComponent receiptsData={receiptsData} />
 
       {/* Print Styles */}
       <style jsx global>{`
