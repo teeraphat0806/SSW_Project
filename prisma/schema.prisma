@@ -87,18 +87,18 @@ model Bill {
 }
 
 model OrderPO {
-  id          Int            @id @default(autoincrement())
-  poNumber    String?        @unique
+  id          Int       @id @default(autoincrement())
+  poNumber    String?   @unique
   customerId  Int?
   billId      Int?
-  status      JobStatus      @default(pending)
+  status      JobStatus @default(pending)
   total       Float
   completedAt DateTime?
   urlPo       String[]
-  createdAt   DateTime       @default(now())
-  updatedAt   DateTime       @updatedAt
-  bill        Bill?          @relation(fields: [billId], references: [id])
-  Customer    Customer?      @relation(fields: [customerId], references: [id])
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  bill        Bill?     @relation(fields: [billId], references: [id])
+  Customer    Customer? @relation(fields: [customerId], references: [id])
   Product     Product[]
   staffLinks  OrderPOStaff[]
 
@@ -107,6 +107,20 @@ model OrderPO {
   @@index([customerId, status])
   @@index([billId])
   @@index([customerId])
+}
+
+model OrderPOStaff {
+  orderPOId Int
+  staffId   Int
+  role      OrderStaffRole
+  assignedAt DateTime @default(now())
+
+  orderPO OrderPO @relation(fields: [orderPOId],references:[id], onDelete:Cascade)
+  staff     Staff   @relation(fields: [staffId], references: [id])
+
+  @@id([orderPOId, staffId, role])
+  @@index([staffId])
+  @@index([orderPOId, role])
 }
 
 model Product {
@@ -251,4 +265,9 @@ enum CuttingMethod {
 enum StockStatus {
   available
   withdrawn
+}
+
+enum OrderStaffRole {
+  supervisor  
+  cutter       
 }
