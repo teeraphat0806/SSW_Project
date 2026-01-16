@@ -6,6 +6,7 @@ import {
   Users,
   LogOut,
   MessageCircle,
+  UserRound,
 } from "lucide-react";
 import { useSession, signOut } from "next-auth/react";
 import * as Avatar from "@radix-ui/react-avatar";
@@ -46,11 +47,17 @@ export default function Sidebar() {
           </h1>
         </div>
         {/* Menu */}
-        <nav className="flex flex-col space-y-1 px-2">
+        <nav className="flex flex-col space-y-1 px-2 ">
           <SidebarItem
             icon={<Home size={20} />}
             label="แดชบอร์ด"
             href="/dashboard"
+            expanded={expanded}
+          />
+          <SidebarItem
+            icon={<UserRound size={20} />}
+            label="ลูกค้า"
+            href="/customer-Dashboard"
             expanded={expanded}
           />
           <SidebarItem
@@ -71,6 +78,7 @@ export default function Sidebar() {
             href="/chatbot"
             expanded={expanded}
           />
+
           <ThemeToggle />
         </nav>
       </div>

@@ -1,3 +1,4 @@
+// src/app/api/customer/name/[name]/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/permissions";
 import prisma from "../../../../../lib/prisma";
