@@ -16,6 +16,7 @@ import {
   Clock,
   Package,
 } from "lucide-react";
+import { date } from "zod";
 
 type JobStatus =
   | "pending"
@@ -185,6 +186,23 @@ export default function Dashboard() {
       minute: "2-digit",
     });
 
+  const formatDateOnly = (dateString?: string) => {
+    if (!dateString) return "-";
+    return new Date(dateString).toLocaleDateString("th-TH", {
+      day: "2-digit",
+      month: "long",
+      year: "numeric",
+    });
+  };
+
+  const formatMonthYear = (dateString?: string) => {
+    if (!dateString) return "";
+    return new Date(dateString).toLocaleDateString("th-TH", {
+      month: "long",
+      year: "numeric",
+    });
+  };
+
   const getStatusStyle = (status: string) => {
     switch (status) {
       case "ready":
@@ -255,7 +273,7 @@ export default function Dashboard() {
               {summary.completedToday}
             </h3>
             <p className="text-xs text-zinc-400 mt-1">
-              ({summary.todayBangkok ?? "วันนี้"} เวลาไทย)
+              วันนี้ {formatDateOnly(summary.todayBangkok)}
             </p>
           </div>
           <div className="w-12 h-12 rounded-full bg-emerald-50 dark:bg-emerald-500/10 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
@@ -273,7 +291,7 @@ export default function Dashboard() {
               {summary.ordersThisMonth}
             </h3>
             <p className="text-xs text-zinc-400 mt-1">
-              เดือน {summary.monthBangkok ?? ""}
+              เดือน {formatMonthYear(summary.monthBangkok) ?? "นี้"}
             </p>
           </div>
           <div className="w-12 h-12 rounded-full bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center text-blue-600 dark:text-blue-400">
@@ -347,6 +365,7 @@ export default function Dashboard() {
               <input
                 type="date"
                 className="w-full px-3 py-2.5 bg-zinc-50 dark:bg-zinc-950/50 border border-zinc-200 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all"
+                max={new Date().toISOString().split("T")[0]}
                 value={dateFrom}
                 onChange={(e) => setDateFrom(e.target.value)}
               />
@@ -358,6 +377,8 @@ export default function Dashboard() {
               <input
                 type="date"
                 className="w-full px-3 py-2.5 bg-zinc-50 dark:bg-zinc-950/50 border border-zinc-200 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all"
+                min={dateFrom}
+                max={new Date().toISOString().split("T")[0]}
                 value={dateTo}
                 onChange={(e) => setDateTo(e.target.value)}
               />

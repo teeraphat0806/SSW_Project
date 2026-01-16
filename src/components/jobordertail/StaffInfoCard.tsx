@@ -235,10 +235,11 @@ export function StaffInfoCard({
       {/* --- Main Card --- */}
       <div
         className={cn(
-          "overflow-hidden rounded-xl border bg-card shadow-sm dark:bg-zinc-900/50 dark:border-zinc-800",
+          "overflow-hidden rounded-xl  shadow-sm dark:bg-zinc-900/50 dark:border-zinc-800",
           className
         )}
       >
+        
         {/* Header */}
         <div className="border-b bg-muted/40 px-6 py-4 dark:bg-zinc-900/80 dark:border-zinc-800">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">

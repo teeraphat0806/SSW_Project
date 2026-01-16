@@ -9,6 +9,7 @@ import {
   LogOut,
   X,
   MessageCircle,
+  UserRound,
 } from "lucide-react";
 import Link from "next/link";
 import { signOut, useSession } from "next-auth/react";
@@ -68,6 +69,11 @@ export default function NavbarWithSidebar() {
             href="/dashboard"
           />
           <SidebarItem
+            icon={<UserRound size={20} />}
+            label="ลูกค้า"
+            href="/customer-Dashboard"
+          />
+          <SidebarItem
             icon={<ClipboardList size={20} />}
             label="ยอดขาย"
             href="/saledashboards"
@@ -82,6 +88,7 @@ export default function NavbarWithSidebar() {
             label="คุยกับบอท"
             href="/chatbot"
           />
+
           <ThemeToggle />
         </nav>
 
