@@ -53,6 +53,9 @@ export async function POST(req: NextRequest) {
     const result = await prisma.bill.create({
       data: parsed.data, // ✅ ใช้ข้อมูลที่ผ่านการตรวจสอบแล้ว
     });
+
+    
+    
     return NextResponse.json(result, { status: 201 });
   } catch (error) {
     console.error("Database error:", error);
