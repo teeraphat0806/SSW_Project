@@ -1,9 +1,13 @@
+// src/app/api/job-order-detail/[id]/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { requireAuth } from "@/lib/permissions";
-import { OrderPOSchema } from "@/lib/schemas/orderPO.schema";
-import { includes } from "zod";
-import { se } from "date-fns/locale";
+
+type ApiStaffMember = {
+  id: number;
+  name: string;
+  role: "supervisor" | "cutter";
+};
 
 type ApiJobOrder = {
   id: number;
@@ -16,11 +20,8 @@ type ApiJobOrder = {
   customercode: string;
   deliveryAddress: string;
   key: string[];
-  staff: {
-    id: number;
-    name: string;
-    role: string;
-  }[];
+  supervisors: ApiStaffMember[];
+  technicians: ApiStaffMember[];
   steel: {
     steelType: string;
     amount: number;
@@ -52,6 +53,9 @@ export async function GET(
   req: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
+  const authResult = await requireAuth(["superadmin", "clerk", "supervisor"]);
+  if ("response" in authResult) return authResult.response;
+
   const { id } = await context.params;
   const poId = Number(id);
 
@@ -70,14 +74,8 @@ export async function GET(
           },
         },
         Customer: true,
-        OrderPOStaff: {
-          include: {
-            Staff: {
-              include: {
-                user: true,
-              },
-            },
-          },
+        staffLinks: {
+          include: { staff: { include: { user: true } } },
         },
       },
     });
@@ -89,14 +87,23 @@ export async function GET(
       );
     }
 
-    // 🔴 ถ้าไม่มี Customer หรือ bill ถือว่าข้อมูล order เสีย / ไม่สมบูรณ์
+    // 🔴 ถ้าไม่มี Customer หรือ Bill ถือว่าข้อมูล order เสีย / ไม่สมบูรณ์
     if (!jobOrder.Customer || !jobOrder.bill) {
       return NextResponse.json(
-        { error: "Order is missing Customer or bill relation" },
+        { error: "Order is missing Customer or Bill relation" },
         { status: 500 }
       );
     }
+    const links = jobOrder.staffLinks ?? [];
 
+    const allStaff: ApiStaffMember[] = links.map((x) => ({
+      id: x.staff.id,
+      name: x.staff.user?.name ?? x.staff.code,
+      role: x.role, // ✅ role ในงาน (SUPERVISOR/CUTTER)
+    }));
+
+    const supervisors = allStaff.filter((s) => s.role === "supervisor");
+    const technicians = allStaff.filter((s) => s.role === "cutter");
     const customer = jobOrder.Customer;
     const bill = jobOrder.bill;
 
@@ -111,12 +118,8 @@ export async function GET(
       customercode: customer.code,
       deliveryAddress: customer.address,
       key: jobOrder.urlPo.length ? jobOrder.urlPo : [],
-      staff:
-        jobOrder.OrderPOStaff?.map((ops) => ({
-          id: ops.Staff.id,
-          name: ops.Staff.user?.name ?? ops.Staff.code,
-          role: ops.Staff.user?.role ?? "unknown",
-        })) ?? [],
+      supervisors: supervisors ?? [],
+      technicians: technicians ?? [],
       steel: jobOrder.Product.map((p) => ({
         steelType: p.SteelType.codeSteel, // SteelType เป็น non-null ตาม schema
         amount: p.amount,

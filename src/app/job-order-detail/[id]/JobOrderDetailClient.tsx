@@ -33,7 +33,7 @@ import { toast } from "react-toastify";
 type StaffMember = {
   id: number;
   name: string;
-  role: "supervisor" | "cutter" | string;
+  role: "supervisor" | "cutter";
 };
 
 type JobStatus =
@@ -48,7 +48,7 @@ type JobStatus =
 type ApiJobOrder = {
   id: number;
   billid: number;
-  poNumber: string;
+  poNumber: string | null;
   customerId: string | null;
   customerName: string | null;
   customerEmail: string | null;
@@ -56,8 +56,8 @@ type ApiJobOrder = {
   deliveryAddress: string | null;
   customercode: string | null;
   key: string[];
-
-  staff: { id: number; name: string; role: "supervisor" | "cutter" | null }[];
+  supervisors: StaffMember[];
+  technicians: StaffMember[];
 
   steel: {
     steelType: string;
@@ -85,19 +85,16 @@ type ApiJobOrder = {
 interface JobOrder {
   id: string;
   billid: number;
-  poNumber: string;
+  poNumber: string | null;
   customerId: string;
   customerName: string;
   customerEmail: string;
   customerPhone: string;
   deliveryAddress: string;
   customercode: string;
-  keyPo: string[];
-  staff: Array<{
-    id: number;
-    name: string;
-    role: "supervisor" | "cutter" | string;
-  }>;
+  key: string[];
+  supervisors: StaffMember[];
+  technicians: StaffMember[];
   steel: Array<{
     steelType: string;
     amount: number;
@@ -125,7 +122,7 @@ interface JobOrder {
 const tojobOrder = (api: ApiJobOrder): JobOrder => {
   return {
     id: api.id.toString(),
-    poNumber: api.poNumber,
+    poNumber: api.poNumber ?? null,
     billid: api.billid,
     // ✅ ใช้ ?? "" เพื่อแปลง null เป็น empty string
     customerId: api.customerId ?? "",
@@ -134,14 +131,9 @@ const tojobOrder = (api: ApiJobOrder): JobOrder => {
     customerPhone: api.customerPhone ?? "",
     deliveryAddress: api.deliveryAddress ?? "",
     customercode: api.customercode ?? "",
-    keyPo: api.key ?? [],
-
-    staff: (api.staff || []).map((s) => ({
-      id: s.id,
-      name: s.name,
-      // ✅ แปลง null role ให้เป็น string default
-      role: s.role ?? "staff",
-    })),
+    key: api.key ?? [],
+    supervisors: api.supervisors,
+    technicians: api.technicians,
 
     steel: (api.steel || []).map((s) => ({
       steelType: s.steelType,
@@ -156,7 +148,8 @@ const tojobOrder = (api: ApiJobOrder): JobOrder => {
       density: s.density ?? 0,
       detail: s.detail ?? undefined,
       job: s.job ?? undefined,
-      cuttingMethod: s.cuttingMethod || "normal",
+      cuttingMethod: (s.cuttingMethod ??
+        "normal") as JobOrder["steel"][number]["cuttingMethod"],
       shape: s.shape,
     })),
 
@@ -196,11 +189,6 @@ const JobOrderDetailPage = ({ id }: { id: string }) => {
   const [isUpdating, setIsUpdating] = useState(false);
 
   const router = useRouter();
-
-  const supervisors: StaffMember[] =
-    jobOrder?.staff.filter((s) => s.role === "supervisor") ?? [];
-  const technicians: StaffMember[] =
-    jobOrder?.staff.filter((s) => s.role === "cutter") ?? [];
 
   useEffect(() => {
     const fetchJobOrder = async () => {
@@ -513,7 +501,7 @@ const JobOrderDetailPage = ({ id }: { id: string }) => {
                   />
                   <InfoStat
                     label="ผู้รับผิดชอบ (ตัด)"
-                    value={supervisors[0]?.name || "N/A"}
+                    value={jobOrder?.supervisors[0]?.name || "N/A"}
                     icon={User2}
                   />
                 </div>
@@ -562,8 +550,8 @@ const JobOrderDetailPage = ({ id }: { id: string }) => {
                 <TabsContent value="StaffInfo" className="mt-1">
                   <StaffInfoCard
                     jobOrderId={id}
-                    supervisorName={supervisors}
-                    technicians={technicians}
+                    supervisorName={jobOrder?.supervisors}
+                    technicians={jobOrder?.technicians}
                   />
                 </TabsContent>
 
@@ -631,7 +619,7 @@ const JobOrderDetailPage = ({ id }: { id: string }) => {
               <QuickAction
                 orderId={id}
                 status={jobOrder?.status || "pending"}
-                keyPo={jobOrder?.keyPo}
+                keyPo={jobOrder?.key || []}
                 billid={jobOrder?.billid || ""}
               />
             </div>
