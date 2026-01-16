@@ -40,10 +40,11 @@ export async function PATCH(
     return NextResponse.json({ error: "Staff not found" }, { status: 404 });
 
   try {
-    await prisma.orderPO.update({
-      where: { id: poId },
+    await prisma.orderPOStaff.create({
       data: {
-        Staff: { connect: { id: staffId } },
+        orderPOId: poId,
+        staffId: staffId,
+        role: "supervisor",
       },
     });
 
@@ -85,10 +86,13 @@ export async function DELETE(
     );
   }
   try {
-    await prisma.orderPO.update({
-      where: { id: poId },
-      data: {
-        Staff: { disconnect: { id: parsed.data.staffId } },
+    await prisma.orderPOStaff.delete({
+      where: {
+        orderPOId_staffId_role: {
+          orderPOId: poId,
+          staffId: parsed.data.staffId,
+          role: "supervisor",
+        },
       },
     });
     return NextResponse.json(

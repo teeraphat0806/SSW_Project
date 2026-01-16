@@ -258,6 +258,7 @@ export function getMonthlyPrintDataByCustomer(params: {
   // Group by customer
   for (const entry of filteredBills) {
     const customerId = entry.bill.customerId;
+    if (customerId === null || customerId === undefined) continue;
     if (!billsByCustomer.has(customerId)) {
       billsByCustomer.set(customerId, []);
     }
@@ -331,6 +332,7 @@ export function getYearlyPrintDataByCustomerAndMonth(params: {
   // Group by customer and month
   for (const entry of filteredBills) {
     const customerId = entry.bill.customerId;
+    if (customerId === null || customerId === undefined) continue;
     const month = entry.date.getMonth() + 1;
     const key = `${customerId}-${month}`;
 
@@ -526,6 +528,7 @@ export function getMonthlyReceiptDataByCustomer(params: {
   // Group by customer
   for (const entry of filteredBills) {
     const customerId = entry.bill.customerId;
+    if (customerId === null || customerId === undefined) continue;
     if (!billsByCustomer.has(customerId)) {
       billsByCustomer.set(customerId, []);
     }
@@ -607,6 +610,7 @@ export function getYearlyReceiptDataByCustomerAndMonth(params: {
   // Group by customer and month
   for (const entry of filteredBills) {
     const customerId = entry.bill.customerId;
+    if (customerId === null || customerId === undefined) continue;
     const month = entry.date.getMonth() + 1;
     const key = `${customerId}-${month}`;
 

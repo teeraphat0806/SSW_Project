@@ -70,9 +70,13 @@ export async function GET(
           },
         },
         Customer: true,
-        Staff: {
+        OrderPOStaff: {
           include: {
-            user: true,
+            Staff: {
+              include: {
+                user: true,
+              },
+            },
           },
         },
       },
@@ -85,10 +89,10 @@ export async function GET(
       );
     }
 
-    // 🔴 ถ้าไม่มี Customer หรือ Bill ถือว่าข้อมูล order เสีย / ไม่สมบูรณ์
+    // 🔴 ถ้าไม่มี Customer หรือ bill ถือว่าข้อมูล order เสีย / ไม่สมบูรณ์
     if (!jobOrder.Customer || !jobOrder.bill) {
       return NextResponse.json(
-        { error: "Order is missing Customer or Bill relation" },
+        { error: "Order is missing Customer or bill relation" },
         { status: 500 }
       );
     }
@@ -108,10 +112,10 @@ export async function GET(
       deliveryAddress: customer.address,
       key: jobOrder.urlPo.length ? jobOrder.urlPo : [],
       staff:
-        jobOrder.Staff?.map((s) => ({
-          id: s.id,
-          name: s.user?.name ?? s.code,
-          role: s.user?.role ?? "unknown",
+        jobOrder.OrderPOStaff?.map((ops) => ({
+          id: ops.Staff.id,
+          name: ops.Staff.user?.name ?? ops.Staff.code,
+          role: ops.Staff.user?.role ?? "unknown",
         })) ?? [],
       steel: jobOrder.Product.map((p) => ({
         steelType: p.SteelType.codeSteel, // SteelType เป็น non-null ตาม schema
