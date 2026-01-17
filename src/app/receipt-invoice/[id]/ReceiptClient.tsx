@@ -84,6 +84,7 @@ export default function ReceiptClient({ id }: { id: string }) {
           weight: s.weight,
           price: s.price,
           total: s.total,
+          cuttingMethod: s.cuttingMethod,
         }))}
         subtotal={data.subtotal}
         vat={data.vat}

@@ -523,7 +523,7 @@ export default function AddItem({
                                 <CheckIcon className="w-3 h-3 text-white" />
                               )}
                             </div>
-                            F/B
+                            F/P
                           </button>
 
                           <button

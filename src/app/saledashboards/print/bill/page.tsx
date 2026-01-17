@@ -146,17 +146,13 @@ function PrintContent() {
         </div>
       }
 
-      <div className="max-w-6xl mx-auto px-2 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6 print:py-0 print:px-0">
-        <div className="bg-background shadow-lg rounded-xl border border-border overflow-x-auto print:shadow-none print:border-0 print:rounded-none print:overflow-visible">
-          <div className="flex justify-center print:p-0">
-            <div className="scale-[0.5] sm:scale-[0.7] md:scale-100 origin-top print:scale-100">
-              <BillPrintComponent
-                billsData={billsData}
-                showPrintButton={false}
-                onPrint={handlePrint}
-              />
-            </div>
-          </div>
+      <div className="print:py-0 print:px-0 print:mx-0">
+        <div className="print:shadow-none print:border-0 print:rounded-none">
+          <BillPrintComponent
+            billsData={billsData}
+            showPrintButton={false}
+            onPrint={handlePrint}
+          />
         </div>
       </div>
 
@@ -165,10 +161,12 @@ function PrintContent() {
         @media print {
           @page {
             size: A4;
-            margin: 10mm;
+            margin: 0;
           }
 
           body {
+            margin: 0 !important;
+            padding: 0 !important;
             print-color-adjust: exact;
             -webkit-print-color-adjust: exact;
           }
