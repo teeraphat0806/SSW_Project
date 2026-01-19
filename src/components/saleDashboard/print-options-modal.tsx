@@ -181,7 +181,7 @@ export function PrintOptionsModal({
           {error && <p className="text-sm text-destructive">{error}</p>}
 
           {/* Action Buttons */}
-          <div className="flex gap-3 pt-4">
+          <div className="flex flex-col sm:flex-row gap-3 pt-4">
             <Button
               variant="outline"
               onClick={handlePreview}

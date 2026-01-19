@@ -118,7 +118,7 @@ function PrintContent() {
   };
 
   return (
-    <div className="min-h-screen bg-white text-black">
+    <div className="min-h-screen bg-white text-black print:pl-0 pl-2 md:pl-2 lg:pl-2">
       {/* Print Button (only in preview mode, hidden when printing) */}
       {isPreview && (
         <div className="print:hidden sticky top-0 bg-white border-b border-gray-300 p-4 flex justify-between items-center shadow-sm z-10">
@@ -131,15 +131,15 @@ function PrintContent() {
       )}
 
       {/* Print Content */}
-      <div className="max-w-[210mm] mx-auto p-8 bg-white">
+      <div className="max-w-[210mm] mx-auto p-8 bg-white text-[16px] print-page">
         {/* Header */}
         <div className="text-center mb-6 border-b-2 border-black pb-4">
-          <h1 className="text-2xl font-bold mb-2">
+          <h1 className="text-3xl font-bold mb-3">
             {type === "monthly"
               ? `รายงานการขายรายเดือน ${getThaiMonthName(month)} ${year}`
               : `รายงานการขายประจำปี ${year}`}
           </h1>
-          <div className="text-sm text-gray-700 space-y-1">
+          <div className="text-lg text-gray-700 space-y-1">
             <p>พิมพ์วันที่: {formatDate(new Date())}</p>
             <p>ลูกค้า: {customerName}</p>
             <p>เรียงลำดับ: {getSortLabel(sortOrder)}</p>
@@ -155,19 +155,22 @@ function PrintContent() {
               </div>
             ) : (
               <>
-                <table className="w-full border-collapse border border-black mb-6">
+                <table className="w-full border-collapse border border-black mb-6 text-lg leading-6">
                   <thead>
                     <tr className="bg-gray-100">
-                      <th className="border border-black px-3 py-2 text-center w-16">
+                      <th className="border border-black px-3 py-1.5 text-center w-16">
                         ลำดับ
                       </th>
-                      <th className="border border-black px-3 py-2 text-left w-28">
+                      <th className="border border-black px-3 py-1.5 text-left w-28">
                         วันที่ขาย
                       </th>
-                      <th className="border border-black px-3 py-2 text-left">
+                      <th className="border border-black px-3 py-1.5 text-left w-32">
+                        เลขที่ Invoice
+                      </th>
+                      <th className="border border-black px-3 py-1.5 text-left">
                         ชื่อลูกค้า
                       </th>
-                      <th className="border border-black px-3 py-2 text-right w-32">
+                      <th className="border border-black px-3 py-1.5 text-right w-32">
                         ยอดขาย (฿)
                       </th>
                     </tr>
@@ -175,16 +178,19 @@ function PrintContent() {
                   <tbody>
                     {monthlyData.rows.map((row) => (
                       <tr key={row.rowNumber}>
-                        <td className="border border-black px-3 py-2 text-center">
+                        <td className="border border-black px-3 py-1.5 text-center">
                           {row.rowNumber}
                         </td>
-                        <td className="border border-black px-3 py-2">
+                        <td className="border border-black px-3 py-1.5">
                           {formatDate(row.saleDate)}
                         </td>
-                        <td className="border border-black px-3 py-2">
+                        <td className="border border-black px-3 py-1.5">
+                          {row.invoiceNo}
+                        </td>
+                        <td className="border border-black px-3 py-1.5">
                           {row.customerName}
                         </td>
-                        <td className="border border-black px-3 py-2 text-right font-mono">
+                        <td className="border border-black px-3 py-1.5 text-right font-mono">
                           {formatCurrency(row.salesAmount)}
                         </td>
                       </tr>
@@ -193,12 +199,12 @@ function PrintContent() {
                   <tfoot>
                     <tr className="bg-gray-100 font-bold">
                       <td
-                        colSpan={3}
-                        className="border border-black px-3 py-2 text-right"
+                        colSpan={4}
+                        className="border border-black px-3 py-1.5 text-right"
                       >
                         รวมทั้งหมด ({monthlyData.totalOrders} คำสั่งซื้อ)
                       </td>
-                      <td className="border border-black px-3 py-2 text-right font-mono">
+                      <td className="border border-black px-3 py-1.5 text-right font-mono">
                         {formatCurrency(monthlyData.totalSales)}
                       </td>
                     </tr>
@@ -227,23 +233,26 @@ function PrintContent() {
                       className="mb-8 break-inside-avoid"
                     >
                       {/* Month Header */}
-                      <h2 className="text-lg font-bold mb-2 bg-gray-200 px-3 py-2 border-l-4 border-black">
+                      <h2 className="text-2xl font-bold mb-3 bg-gray-200 px-3 py-2 border-l-4 border-black">
                         {monthData.monthName} {year}
                       </h2>
 
-                      <table className="w-full border-collapse border border-black mb-4">
+                      <table className="w-full border-collapse border border-black mb-4 text-lg leading-6">
                         <thead>
                           <tr className="bg-gray-100">
-                            <th className="border border-black px-3 py-2 text-center w-16">
+                            <th className="border border-black px-3 py-1.5 text-center w-16">
                               ลำดับ
                             </th>
-                            <th className="border border-black px-3 py-2 text-left w-28">
+                            <th className="border border-black px-3 py-1.5 text-left w-28">
                               วันที่ขาย
                             </th>
-                            <th className="border border-black px-3 py-2 text-left">
+                            <th className="border border-black px-3 py-1.5 text-left w-32">
+                              เลขที่ Invoice
+                            </th>
+                            <th className="border border-black px-3 py-1.5 text-left">
                               ชื่อลูกค้า
                             </th>
-                            <th className="border border-black px-3 py-2 text-right w-32">
+                            <th className="border border-black px-3 py-1.5 text-right w-32">
                               ยอดขาย (฿)
                             </th>
                           </tr>
@@ -251,16 +260,19 @@ function PrintContent() {
                         <tbody>
                           {monthData.rows.map((row) => (
                             <tr key={row.rowNumber}>
-                              <td className="border border-black px-3 py-2 text-center">
+                              <td className="border border-black px-3 py-1.5 text-center">
                                 {row.rowNumber}
                               </td>
-                              <td className="border border-black px-3 py-2">
+                              <td className="border border-black px-3 py-1.5">
                                 {formatDate(row.saleDate)}
                               </td>
-                              <td className="border border-black px-3 py-2">
+                              <td className="border border-black px-3 py-1.5">
+                                {row.invoiceNo}
+                              </td>
+                              <td className="border border-black px-3 py-1.5">
                                 {row.customerName}
                               </td>
-                              <td className="border border-black px-3 py-2 text-right font-mono">
+                              <td className="border border-black px-3 py-1.5 text-right font-mono">
                                 {formatCurrency(row.salesAmount)}
                               </td>
                             </tr>
@@ -269,13 +281,13 @@ function PrintContent() {
                         <tfoot>
                           <tr className="bg-gray-100 font-semibold">
                             <td
-                              colSpan={3}
-                              className="border border-black px-3 py-2 text-right"
+                              colSpan={4}
+                              className="border border-black px-3 py-1.5 text-right"
                             >
                               รวม {monthData.monthName} ({monthData.orderCount}{" "}
                               คำสั่งซื้อ)
                             </td>
-                            <td className="border border-black px-3 py-2 text-right font-mono">
+                            <td className="border border-black px-3 py-1.5 text-right font-mono">
                               {formatCurrency(monthData.subtotal)}
                             </td>
                           </tr>
@@ -287,7 +299,7 @@ function PrintContent() {
 
                 {/* Yearly Total */}
                 <div className="mt-8 border-t-4 border-black pt-4">
-                  <div className="flex justify-between items-center text-xl font-bold bg-gray-100 px-4 py-3 border border-black">
+                  <div className="flex justify-between items-center text-2xl font-bold bg-gray-100 px-4 py-3 border border-black">
                     <span>
                       รวมทั้งปี {year} ({yearlyData.yearlyOrderCount}{" "}
                       คำสั่งซื้อ)
@@ -308,7 +320,7 @@ function PrintContent() {
         @media print {
           @page {
             size: A4;
-            margin: 15mm;
+            margin: 10mm;
           }
 
           body {
@@ -339,6 +351,12 @@ function PrintContent() {
 
           .break-inside-avoid {
             page-break-inside: avoid;
+          }
+
+          .print-page {
+            page-break-after: auto;
+            page-break-before: auto;
+            page-break-inside: auto;
           }
         }
       `}</style>

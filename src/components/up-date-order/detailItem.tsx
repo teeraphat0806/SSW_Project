@@ -557,7 +557,7 @@ export default function DetailItem<T extends JobWithSteel>({
                               <CheckIcon className="h-3 w-3 text-white" />
                             )}
                           </div>
-                          F/B
+                          F/P
                         </button>
 
                         <button

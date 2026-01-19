@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -51,6 +51,11 @@ export function MonthDashboardPanel({
   initialMonth = 1,
 }: MonthDashboardPanelProps) {
   const [selectedMonth, setSelectedMonth] = useState(initialMonth);
+
+  // Update selectedMonth when initialMonth prop changes
+  useEffect(() => {
+    setSelectedMonth(initialMonth);
+  }, [initialMonth]);
   const [customerSortMode, setCustomerSortMode] =
     useState<CustomerSortMode>("sales-high");
   const [orderSortMode, setOrderSortMode] = useState<OrderSortMode>("latest");
