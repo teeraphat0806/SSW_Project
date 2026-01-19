@@ -44,9 +44,8 @@ type ApiResponse = {
 const SORT_OPTIONS = [
   { label: "บิลมากที่สุด", value: "billCount-desc" },
   { label: "บิลน้อยที่สุด", value: "billCount-asc" },
-  { label: "มาใหม่ล่าสุด", value: "createdAt-desc" },
-  { label: "เก่าที่สุด", value: "createdAt-asc" },
-  { label: "อัปเดตล่าสุด", value: "updatedAt-desc" },
+  { label: "เพิ่มใหม่สุด", value: "createdAt-desc" },
+  { label: "เพิ่มเก่าที่สุด", value: "createdAt-asc" },
   { label: "ชื่อ ก-ฮ", value: "name-asc" },
 ];
 
