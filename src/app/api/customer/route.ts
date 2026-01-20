@@ -24,17 +24,12 @@ export async function GET(req: NextRequest) {
   } catch (error) {
     return NextResponse.json(
       { error: "Failed to fetch customers: " + error },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
 export async function POST(req: NextRequest) {
-  const authResult = await requireAuth([
-    "superadmin",
-    "supervisor",
-    "clerk",
-    "delivery",
-  ]);
+  const authResult = await requireAuth(["superadmin", "supervisor", "clerk"]);
 
   if ("response" in authResult) {
     return authResult.response;
@@ -46,21 +41,22 @@ export async function POST(req: NextRequest) {
   const parsed = CustomerSchema.safeParse(body); // ✅ ตรวจสอบ schema
 
   if (!parsed.success) {
+    console.error("Validation error:", parsed.error);
     return NextResponse.json(
       { error: "Invalid data format", details: parsed.error.flatten() },
-      { status: 400 }
+      { status: 400 },
     );
   }
   try {
     const result = await prisma.customer.create({
-      data: parsed.data, 
+      data: parsed.data,
     });
     return NextResponse.json(result, { status: 201 });
   } catch (error) {
     console.error("Database error:", error);
     return NextResponse.json(
       { error: "Failed to create Customer" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

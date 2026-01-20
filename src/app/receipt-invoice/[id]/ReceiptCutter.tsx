@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { InvoiceExcelSample } from "@/components/receipt-invoice/InvoiceExcelSample";
+import { InvoiceExcelCutter } from "@/components/receipt-invoice/InvoiceExcelCutter";
 import { LoadingScreen } from "@/components/Loading";
 
 type ApiReceipt = {
@@ -63,7 +63,7 @@ export default function ReceiptCutter({ id }: { id: string }) {
           Print
         </button>
       </div>
-      <InvoiceExcelSample
+      <InvoiceExcelCutter
         companyName={data.customer.name}
         addressLine1={data.customer.address}
         addressLine2="" // ถ้าจะแยกค่อย split เพิ่ม

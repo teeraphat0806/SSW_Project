@@ -12,6 +12,10 @@ import {
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
+import AddCustomerModal from "@/components/customer-Dashboard/AddCustomerModel";
+import { useConfirm } from "@/components/providers/confirm-dialog-provider";
+import { toast } from "react-toastify";
+import CustomerViewEditModal from "@/components/customer-Dashboard/CustomerViewEditModal";
 
 type Customer = {
   id: number;
@@ -44,9 +48,8 @@ type ApiResponse = {
 const SORT_OPTIONS = [
   { label: "บิลมากที่สุด", value: "billCount-desc" },
   { label: "บิลน้อยที่สุด", value: "billCount-asc" },
-  { label: "มาใหม่ล่าสุด", value: "createdAt-desc" },
-  { label: "เก่าที่สุด", value: "createdAt-asc" },
-  { label: "อัปเดตล่าสุด", value: "updatedAt-desc" },
+  { label: "เพิ่มใหม่สุด", value: "createdAt-desc" },
+  { label: "เพิ่มเก่าที่สุด", value: "createdAt-asc" },
   { label: "ชื่อ ก-ฮ", value: "name-asc" },
 ];
 
@@ -55,6 +58,11 @@ export default function CustomerDashboard() {
 
   const [data, setData] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(false);
+  const [openAdd, setOpenAdd] = useState(false);
+  const [openCustomerModal, setOpenCustomerModal] = useState(false);
+  const [selectedCustomerId, setSelectedCustomerId] = useState<number | null>(
+    null,
+  );
 
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
@@ -66,6 +74,7 @@ export default function CustomerDashboard() {
     total: 0,
     totalPages: 1,
   });
+  const confirm = useConfirm();
 
   // ใช้ ref เก็บ controller เพื่อยกเลิก request เก่า
   const abortRef = useRef<AbortController | null>(null);
@@ -105,7 +114,7 @@ export default function CustomerDashboard() {
           pageSize: PAGE_SIZE,
           total: 0,
           totalPages: 1,
-        }
+        },
       );
     } catch (err: any) {
       // ถ้ายกเลิก request ไม่ต้องโชว์ error
@@ -163,6 +172,44 @@ export default function CustomerDashboard() {
     );
   };
 
+  const handleDelete = async ({ customerId }: { customerId: number }) => {
+    const isConfirmed = await confirm({
+      title: "ต้องการลบรายชื่อลูกค้านี้ออกจากระบบใช่หรือไม่?",
+      description:
+        "หากลบแล้วรายชื่อลูกค้าจะถูกลบออกจากระบบทันที (ลบไม่ได้ถ้ามีบิลหรือคำสั่งซื้อ)",
+      variant: "destructive",
+      confirmText: "ลบข้อมูล",
+      cancelText: "ไม่ลบ",
+    });
+    if (!isConfirmed) return;
+
+    try {
+      const res = await fetch(`/api/customer/${customerId}`, {
+        method: "DELETE",
+      });
+      const body = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        toast.error(body?.error ?? `ลบไม่สำเร็จ (${res.status})`, {
+          position: "bottom-right",
+        });
+        return;
+      }
+
+      toast.success("ลบลูกค้าสำเร็จ", { position: "bottom-right" });
+
+      // รีเฟรชตาราง (ยกเลิก request เก่าก่อนกันทับกัน)
+      abortRef.current?.abort();
+      const controller = new AbortController();
+      abortRef.current = controller;
+      fetchCustomers(controller.signal);
+    } catch {
+      toast.error("การลบลูกค้าไม่สำเร็จ: กรุณาลองใหม่อีกครั้ง", {
+        position: "bottom-right",
+      });
+    }
+  };
+
   const totalCustomers = pagination.total;
   const totalPages = pagination.totalPages;
 
@@ -186,13 +233,26 @@ export default function CustomerDashboard() {
               <span className="font-semibold">{totalCustomers}</span>
               <span className="text-sm"> รายการ</span>
             </div>
-
-            <button className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg shadow-sm transition-all">
+            {/* flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl font-medium shadow-lg shadow-blue-500/20 transition-all hover:scale-105 active:scale-95 */}
+            <button
+              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg shadow-sm transition-all hover:scale-105 active:scale-95"
+              onClick={() => setOpenAdd(true)}
+            >
               <Plus size={18} />
               <span>เพิ่มลูกค้า</span>
             </button>
           </div>
         </div>
+
+        <AddCustomerModal
+          open={openAdd}
+          onClose={() => setOpenAdd(false)}
+          onCreated={() => {
+            // หลังสร้างสำเร็จ ให้รีเฟรชตาราง
+            // วิธีง่ายสุด: เรียก fetchCustomers() ของคุณ
+            fetchCustomers();
+          }}
+        />
 
         {/* Filters */}
         <div className="bg-white dark:bg-zinc-950/50 p-4 rounded-xl shadow-sm border border-zinc-100 dark:border-zinc-800 flex flex-col md:flex-row gap-4 justify-between items-center transition-colors">
@@ -316,36 +376,26 @@ export default function CustomerDashboard() {
                           <div className="flex items-center justify-end gap-1 opacity-100">
                             <button
                               className="p-2 text-zinc-500 dark:text-zinc-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/30 rounded-full transition-all"
-                              title="ดูรายละเอียด"
-                              onClick={() =>
-                                console.log("View customer", customer.id)
-                              }
+                              title="ดู/แก้ไข"
+                              onClick={() => {
+                                setSelectedCustomerId(customer.id);
+                                setOpenCustomerModal(true);
+                              }}
                             >
                               <Eye size={18} />
                             </button>
-
-                            <button
-                              className="p-2 text-zinc-500 dark:text-zinc-400 hover:text-orange-600 dark:hover:text-orange-400 hover:bg-orange-100 dark:hover:bg-orange-900/30 rounded-full transition-all"
-                              title="แก้ไข"
-                              onClick={() =>
-                                console.log("Edit customer", customer.id)
-                              }
-                            >
-                              <Edit size={18} />
-                            </button>
-
                             {canDelete ? (
                               <button
                                 className="p-2 text-red-500 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-full transition-all"
                                 title="ลบลูกค้า"
                                 onClick={() =>
-                                  console.log("Delete customer", customer.id)
+                                  handleDelete({ customerId: customer.id })
                                 }
                               >
                                 <Trash2 size={18} />
                               </button>
                             ) : (
-                              <div className="w-[34px]" />
+                              <div />
                             )}
                           </div>
                         </td>
@@ -381,6 +431,18 @@ export default function CustomerDashboard() {
               </button>
             </div>
           </div>
+          <CustomerViewEditModal
+            open={openCustomerModal}
+            customerId={selectedCustomerId}
+            onClose={() => {
+              setOpenCustomerModal(false);
+              setSelectedCustomerId(null);
+            }}
+            onUpdated={() => {
+              // รีเฟรชตารางหลังแก้ไข
+              fetchCustomers();
+            }}
+          />
         </div>
       </div>
     </div>

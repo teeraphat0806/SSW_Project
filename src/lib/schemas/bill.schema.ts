@@ -14,4 +14,6 @@ export const BillSchema = z.object({
   vat: z.number(),
   dateReceive: z.coerce.date().optional().nullable(),
   deliveryDate: z.coerce.date(),
+  codeCustomer: z.string(),
+  salesNameId: z.number().int(),
 });

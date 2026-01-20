@@ -14,7 +14,7 @@ function clamp(number: number, min: number, max: number) {
   return Math.max(min, Math.min(max, number));
 }
 
-type SortKey = "name" | "createdAt" | "updatedAt" | "billCount";
+type SortKey = "name" | "createdAt" | "billCount";
 
 // asc คน้อยไปมาก desc มากไปน้อย
 type SortOrder = "asc" | "desc";
@@ -28,7 +28,7 @@ function parseSort(sortRaw: string | null): { key: SortKey; dir: SortOrder } {
   const key = (k as SortKey) || fallback.key;
   const dir = d === "asc" ? "asc" : d === "desc" ? "desc" : fallback.dir;
 
-  const allow: SortKey[] = ["name", "createdAt", "updatedAt", "billCount"];
+  const allow: SortKey[] = ["name", "createdAt", "billCount"];
   if (!allow.includes(key)) return fallback;
 
   return { key, dir };

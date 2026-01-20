@@ -13,6 +13,7 @@ type InvoiceItem = {
   weight: number; // 233.00
   price: number; // 34.00
   total: number; // 7922.00
+  cuttingMethod?: "normal" | "FB" | "steelDisc";
 };
 
 type Inv71LikeInvoiceProps = {
@@ -68,185 +69,226 @@ export const InvoiceExcelSample: React.FC<Inv71LikeInvoiceProps> = ({
   console.log("items in InvoiceExcelSample:", items);
 
   return (
-    <div
-      id="inv71-print-area"
-      className="
+    <>
+      <style
+        dangerouslySetInnerHTML={{
+          __html: `
+          @media print {
+            @page {
+              margin: 0;
+              size: A4;
+            }
+            body {
+              margin: 0 !important;
+              padding: 0 !important;
+            }
+          }
+        `,
+        }}
+      />
+      <div
+        id="inv71-print-area"
+        className="
         mx-auto 
         w-full 
         max-w-[21cm]
+        min-h-[29.7cm]
         bg-white
         px-4 
         py-3 
+        pb-8
         text-md
         text-black
         print:w-[21cm]
+        print:min-h-[29.7cm]
+        flex
+        flex-col
       "
-    >
-      {/* แถวแรก: ซ้ายบริษัท, ขวาเลขที่/วันที่/เครดิต/ผู้จัดทำ */}
-      <div className="mt-20" />
-      <div className="flex justify-between gap-4">
-        {/* ซ้าย: ข้อมูลบริษัท */}
-        <div className="space-y-[1px] max-w-[10cm]">
-          <div className="font-bold">{companyName}</div>
-          <div className="mt-1">{addressLine1}</div>
-          <div>{addressLine2}</div>
-          <div className="mt-1">
-            Tel. {tel} &nbsp;&nbsp;&nbsp; Fax : {fax}
+      >
+        {/* แถวแรก: ซ้ายบริษัท, ขวาเลขที่/วันที่/เครดิต/ผู้จัดทำ */}
+        <div className="mt-20" />
+        <div className="flex justify-between gap-4">
+          {/* ซ้าย: ข้อมูลบริษัท */}
+          <div className="space-y-[1px] max-w-[10cm]">
+            <div className="font-bold">{companyName}</div>
+            <div className="mt-1">{addressLine1}</div>
+            <div>{addressLine2}</div>
+            <div className="mt-1">
+              Tel. {tel} &nbsp;&nbsp;&nbsp; Fax : {fax}
+            </div>
+            <div className="mt-1">เลขประจำตัวผู้เสียภาษี {taxId}</div>
           </div>
-          <div className="mt-1">เลขประจำตัวผู้เสียภาษี {taxId}</div>
+
+          {/* ขวา: HS เลขที่ / วันที่ / เครดิต / ผู้จัดทำ */}
+          <div className="min-w-[170px] text-md space-y-[2px] ">
+            <div className="flex justify-between">
+              <span></span>
+              {/* <span>เลขที่</span> */}
+              <span className="">HS{invoiceNo}</span>
+            </div>
+            <div className="flex justify-between">
+              <span></span>
+              {/* <span>วันที่</span> */}
+              <span className="mt-1">{date}</span>
+            </div>
+            <div className="flex justify-between">
+              <span></span>
+              {/* <span>เครดิต</span> */}
+              <span className="mt-1">{credit}</span>
+            </div>
+            <div className="flex justify-between">
+              <span></span>
+              {/* <span>ผู้จัดทำ</span> */}
+              <span className="mt-1">{selesName}</span>
+            </div>
+          </div>
         </div>
 
-        {/* ขวา: HS เลขที่ / วันที่ / เครดิต / ผู้จัดทำ */}
-        <div className="min-w-[170px] text-md space-y-[2px] ">
-          <div className="flex justify-between">
-            <span></span>
-            {/* <span>เลขที่</span> */}
-            <span className="">HS{invoiceNo}</span>
-          </div>
-          <div className="flex justify-between">
-            <span></span>
-            {/* <span>วันที่</span> */}
-            <span className="mt-1">{date}</span>
-          </div>
-          <div className="flex justify-between">
-            <span></span>
-            {/* <span>เครดิต</span> */}
-            <span className="mt-1">{credit}</span>
-          </div>
-          <div className="flex justify-between">
-            <span></span>
-            {/* <span>ผู้จัดทำ</span> */}
-            <span className="mt-1">{selesName}</span>
-          </div>
-        </div>
-      </div>
+        {/* ระยะห่างเล็กน้อยก่อนหัวคอลัมน์ */}
+        <div className="mt-25" />
 
-      {/* ระยะห่างเล็กน้อยก่อนหัวคอลัมน์ */}
-      <div className="mt-25" />
+        {/* หัวคอลัมน์แบบ Excel (ไม่มีกรอบ) */}
+        <table className="w-full text-md">
+          {/* กำหนดความกว้างแต่ละคอลัมน์ให้ฟีลเหมือน Excel */}
+          <colgroup>
+            <col className="w-[35px]" /> {/* ลำดับ (ไม่โชว์หัว) */}
+            <col className="w-[120px]" /> {/* เกรดเหล็ก */}
+            <col className="w-[210px]" /> {/* หนา x กว้าง x ยาว */}
+            <col className="w-[50px]" /> {/* JOB */}
+            <col className="w-[60px]" /> {/* จำนวน */}
+            <col className="w-[80px]" /> {/* น้ำหนัก */}
+            <col className="w-[80px]" /> {/* ราคา */}
+            <col className="w-[100px]" /> {/* จำนวนเงิน */}
+          </colgroup>
 
-      {/* หัวคอลัมน์แบบ Excel (ไม่มีกรอบ) */}
-      <table className="w-full text-md">
-        {/* กำหนดความกว้างแต่ละคอลัมน์ให้ฟีลเหมือน Excel */}
-        <colgroup>
-          <col className="w-[35px]" /> {/* ลำดับ (ไม่โชว์หัว) */}
-          <col className="w-[120px]" /> {/* เกรดเหล็ก */}
-          <col className="w-[210px]" /> {/* หนา x กว้าง x ยาว */}
-          <col className="w-[50px]" /> {/* JOB */}
-          <col className="w-[60px]" /> {/* จำนวน */}
-          <col className="w-[80px]" /> {/* น้ำหนัก */}
-          <col className="w-[80px]" /> {/* ราคา */}
-          <col className="w-[100px]" /> {/* จำนวนเงิน */}
-        </colgroup>
-
-        {/* หัวคอลัมน์ มีเส้นใต้ ไม่มีกรอบรอบตาราง */}
-        <thead>
-          <tr className="text-center">
-            {/* ลำดับ: มีคอลัมน์แต่ไม่โชว์ข้อความ */}
-            <th className="pb-1 font-normal text-left">
-              <span className="underline opacity-0">ลำดับ</span>
-            </th>
-            <th className="pb-1 font-normal text-left">
-              <span className="underline">เกรดเหล็ก</span>
-            </th>
-            <th className="pb-1 font-normal text-left">
-              <span className="underline">หนา x กว้าง x ยาว</span>
-            </th>
-            <th className="pb-1 font-normal text-left">
-              <span className="underline">JOB</span>
-            </th>
-            <th className="pb-1 font-normal text-left">
-              <span className="underline">จำนวน</span>
-            </th>
-            <th className="pb-1 font-normal text-left">
-              <span className="underline">น้ำหนัก</span>
-            </th>
-            <th className="pb-1 font-normal text-left">
-              <span className="underline">ราคา</span>
-            </th>
-            <th className="pb-1 font-normal text-left">
-              <span className="underline">จำนวนเงิน</span>
-            </th>
-          </tr>
-        </thead>
-
-        {/* เนื้อหารายการ ต่อจากหัวคอลัมน์ลงมาเลย */}
-        <tbody>
-          {items.map((item, idx) => (
-            <tr key={idx} className="align-top">
-              {/* ลำดับ (โชว์เฉพาะเลข ไม่ต้องมีหัวข้อ) */}
-              <td className="pt-1.5 pr-1">{idx + 1}</td>
-
-              <td className="pt-1.5 pr-1">{`เหล็ก ${item.steelType}`}</td>
-
-              <td className="pt-1.5 pr-1">
-                {`${item.thickness} x ${item.width} x ${item.length} ${
-                  item.unit || "mm."
-                }`}
-              </td>
-
-              <td className="pt-1.5 pr-1 text-left">{item.job}</td>
-
-              <td className="pt-1.5 pr-1 text-left">{item.amount}</td>
-
-              <td className="pt-1.5 pr-1 text-left">
-                {item.weight == null || item.weight === 0
-                  ? ""
-                  : formatNumber(item.weight)}
-              </td>
-
-              <td className="pt-1.5 pr-1 text-left">
-                {item.weight == null || item.weight === 0
-                  ? ""
-                  : formatNumber(item.price)}
-              </td>
-
-              <td className="pt-1.5 pr-1 text-left">
-                {item.weight == null || item.weight === 0
-                  ? ""
-                  : formatNumber(item.total)}
-              </td>
+          {/* หัวคอลัมน์ มีเส้นใต้ ไม่มีกรอบรอบตาราง */}
+          <thead>
+            <tr className="text-center">
+              {/* ลำดับ: มีคอลัมน์แต่ไม่โชว์ข้อความ */}
+              <th className="pb-1 font-normal text-left">
+                <span className="underline opacity-0">ลำดับ</span>
+              </th>
+              <th className="pb-1 font-normal text-left">
+                <span className="underline">เกรดเหล็ก</span>
+              </th>
+              <th className="pb-1 font-normal text-left">
+                <span className="underline">หนา x กว้าง x ยาว</span>
+              </th>
+              <th className="pb-1 font-normal text-left">
+                <span className="underline">JOB</span>
+              </th>
+              <th className="pb-1 font-normal text-left">
+                <span className="underline">จำนวน</span>
+              </th>
+              <th className="pb-1 font-normal text-left">
+                <span className="underline">น้ำหนัก</span>
+              </th>
+              <th className="pb-1 font-normal text-left">
+                <span className="underline">ราคา</span>
+              </th>
+              <th className="pb-1 font-normal text-left">
+                <span className="underline">จำนวนเงิน</span>
+              </th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
 
-      {/* เว้นบรรทัดก่อนโซนรวมยอด */}
-      <div className="mt-130" />
+          {/* เนื้อหารายการ ต่อจากหัวคอลัมน์ลงมาเลย */}
+          <tbody>
+            {items.map((item, idx) => {
+              // Format steel type with F/P if cuttingMethod is FB
+              let steelTypeDisplay = `เหล็ก ${item.steelType}`;
+              if (item.cuttingMethod === "FB") {
+                steelTypeDisplay += " F/P";
+              }
+              // Add @ symbol if width is 0 or null (เพลา/line shape)
+              if (item.width === 0 || item.width === null) {
+                steelTypeDisplay += " @";
+              }
 
-      {/* รวมเงิน, ฐานภาษี, VAT, รวมทั้งสิ้น (จัดขวาเหมือนในใบ) */}
-      <div className="space-y-[2px]">
-        <div className="flex justify-between">
-          <span className="flex-1" />
-          <span className="w-[160px] text-right">
+              // Format dimensions based on cutting method
+              let dimensionsDisplay;
+              if (item.cuttingMethod === "steelDisc") {
+                // For circular cutting: use t OD and ID format
+                dimensionsDisplay = `${item.thickness} t OD ${item.width} ID ${item.length} ${item.unit || "mm."}`;
+              } else {
+                // Normal format: thickness x width x length
+                dimensionsDisplay = `${item.thickness} x ${item.width} x ${item.length} ${item.unit || "mm."}`;
+              }
+
+              return (
+                <tr key={idx} className="align-top">
+                  {/* ลำดับ (โชว์เฉพาะเลข ไม่ต้องมีหัวข้อ) */}
+                  <td className="pt-1.5 pr-1">{idx + 1}</td>
+
+                  <td className="pt-1.5 pr-1">{steelTypeDisplay}</td>
+
+                  <td className="pt-1.5 pr-1">{dimensionsDisplay}</td>
+
+                  <td className="pt-1.5 pr-1 text-left">{item.job}</td>
+
+                  <td className="pt-1.5 pr-1 text-left">{item.amount}</td>
+
+                  <td className="pt-1.5 pr-1 text-left">
+                    {item.weight == null || item.weight === 0
+                      ? ""
+                      : formatNumber(item.weight)}
+                  </td>
+
+                  <td className="pt-1.5 pr-1 text-left">
+                    {item.weight == null || item.weight === 0
+                      ? ""
+                      : formatNumber(item.price)}
+                  </td>
+
+                  <td className="pt-1.5 pr-1 text-left">
+                    {item.weight == null || item.weight === 0
+                      ? ""
+                      : formatNumber(item.total)}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+
+        {/* เว้นบรรทัดก่อนโซนรวมยอด */}
+        <div className="mt-35" />
+
+        {/* รวมเงิน, ฐานภาษี, VAT, รวมทั้งสิ้น (จัดขวาเหมือนในใบ) */}
+        <div className="space-y-[2px]">
+          <div className="flex justify-between">
+            <span className="flex-1" />
+            <span className="w-[160px] text-right">
+              {items[0].weight == null || items[0].weight === 0
+                ? ""
+                : formatNumber(subtotal)}
+            </span>
+          </div>
+
+          <div className="flex justify-between">
+            <span className="flex-1" />
+            <span className="w-[150px] text-right">
+              {items[0].weight == null || items[0].weight === 0
+                ? ""
+                : formatNumber(vat)}
+            </span>
+          </div>
+        </div>
+
+        {/* แถว: ข้อความตัวหนังสือ & รวมทั้งสิ้น */}
+        <div className="mt-2 flex">
+          <div className="flex-1">
             {items[0].weight == null || items[0].weight === 0
               ? ""
-              : formatNumber(subtotal)}
-          </span>
-        </div>
-
-        <div className="flex justify-between">
-          <span className="flex-1" />
-          <span className="w-[150px] text-right">
+              : totalTextThai}
+          </div>
+          <div className="w-[160px] text-right font-semibold">
             {items[0].weight == null || items[0].weight === 0
               ? ""
-              : formatNumber(vat)}
-          </span>
+              : formatNumber(total)}
+          </div>
         </div>
       </div>
-
-      {/* แถว: ข้อความตัวหนังสือ & รวมทั้งสิ้น */}
-      <div className="mt-2 flex">
-        <div className="flex-1">
-          {items[0].weight == null || items[0].weight === 0
-            ? ""
-            : totalTextThai}
-        </div>
-        <div className="w-[160px] text-right font-semibold">
-          {items[0].weight == null || items[0].weight === 0
-            ? ""
-            : formatNumber(total)}
-        </div>
-      </div>
-    </div>
+    </>
   );
 };
