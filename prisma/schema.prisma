@@ -79,7 +79,7 @@ model Bill {
   Customer   Customer @relation(fields: [customerId], references: [id], onDelete: Restrict)
   Staff_Bill_deliveredByToStaff Staff?    @relation("Bill_deliveredByToStaff", fields: [deliveredById], references: [id])
   Staff_Bill_salesNameToStaff   Staff?    @relation("Bill_salesNameToStaff", fields: [salesNameId], references: [id])
-  OrderPO                       OrderPO[]
+  OrderPO                       OrderPO?
 
   @@index([customerId])
   @@index([salesNameId])
@@ -90,7 +90,7 @@ model OrderPO {
   id          Int       @id @default(autoincrement())
   poNumber    String?   @unique
   customerId  Int?
-  billId      Int?
+  billId      Int?      @unique
   status      JobStatus @default(pending)
   total       Float
   completedAt DateTime?
@@ -128,12 +128,14 @@ model Product {
   orderPOId     Int
   steelId       Int
   wide          Float?
-  length        Float?
-  thickness     Float?
+  length        Float
+  thickness     Float
   amount        Int
   detail        String?
   actualWeight  Float?
-  total         Float
+  unitPrice     Float         @default(0)
+  discount      Float?
+  total         Float?
   cuttingMethod CuttingMethod @default(normal)
   job           Int?
   OrderPO       OrderPO       @relation(fields: [orderPOId], references: [id], onDelete: Cascade)
