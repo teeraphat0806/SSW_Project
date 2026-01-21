@@ -28,12 +28,13 @@ import {
   Ruler,
   CheckIcon,
 } from "lucide-react";
+import { ShapeSteel } from "@/types/enums";
 
 // --- Types (คงเดิม) ---
 export type SteelItemType = {
   id: string;
   steelType: string;
-  shape: "line" | "square" | string;
+  shape: ShapeSteel;
   quantity: number;
   width: number | null;
   length: number;
@@ -46,7 +47,7 @@ export type SteelItemType = {
 export type SteelTypeOption = {
   id: string | number;
   name: string;
-  shape: "line" | "square" | string;
+  shape: ShapeSteel;
 };
 
 export type HeadOrderType = {
@@ -60,7 +61,7 @@ type AddItemProps = {
   updateSteelItem: <K extends keyof SteelItemType>(
     id: SteelItemType["id"],
     field: K,
-    value: SteelItemType[K]
+    value: SteelItemType[K],
   ) => void;
   addSteelItem: () => void;
   removeSteelItem: (id: SteelItemType["id"]) => void;
@@ -313,13 +314,13 @@ export default function AddItem({
                           value={item.steelType || ""}
                           onValueChange={(value) => {
                             const selected = steelTypes.find(
-                              (t) => t.name === value
+                              (t) => t.name === value,
                             );
                             if (selected) {
                               updateSteelItem(
                                 item.id,
                                 "steelType",
-                                selected.name
+                                selected.name,
                               );
                               updateSteelItem(item.id, "shape", selected.shape);
                               if (selected.shape === "line") {
@@ -358,8 +359,8 @@ export default function AddItem({
                                     {type.shape === "square"
                                       ? "(แผ่น)"
                                       : type.shape === "line"
-                                      ? "(เพลา)"
-                                      : ""}
+                                        ? "(เพลา)"
+                                        : ""}
                                   </span>
                                 </SelectItem>
                               ))
@@ -390,7 +391,7 @@ export default function AddItem({
                                   updateSteelItem(
                                     item.id,
                                     "thickness",
-                                    Math.max(0, Number(e.target.value || 0))
+                                    Math.max(0, Number(e.target.value || 0)),
                                   )
                                 }
                               />
@@ -418,7 +419,7 @@ export default function AddItem({
                                     updateSteelItem(
                                       item.id,
                                       "width",
-                                      Math.max(0, Number(e.target.value || 0))
+                                      Math.max(0, Number(e.target.value || 0)),
                                     )
                                   }
                                 />
@@ -446,7 +447,7 @@ export default function AddItem({
                                   updateSteelItem(
                                     item.id,
                                     "length",
-                                    Math.max(0, Number(e.target.value || 0))
+                                    Math.max(0, Number(e.target.value || 0)),
                                   )
                                 }
                               />
@@ -472,7 +473,7 @@ export default function AddItem({
                             updateSteelItem(
                               item.id,
                               "quantity",
-                              Math.max(1, Number(e.target.value || 1))
+                              Math.max(1, Number(e.target.value || 1)),
                             )
                           }
                         />
@@ -497,7 +498,7 @@ export default function AddItem({
                               updateSteelItem(
                                 item.id,
                                 "cuttingMethod",
-                                item.cuttingMethod === "FB" ? "normal" : "FB"
+                                item.cuttingMethod === "FB" ? "normal" : "FB",
                               )
                             }
                             disabled={isLine}
@@ -534,7 +535,7 @@ export default function AddItem({
                                 "cuttingMethod",
                                 item.cuttingMethod === "steelDisc"
                                   ? "normal"
-                                  : "steelDisc"
+                                  : "steelDisc",
                               )
                             }
                             disabled={isLine}
@@ -580,7 +581,7 @@ export default function AddItem({
                                 "job",
                                 e.target.value === ""
                                   ? null
-                                  : Number(e.target.value)
+                                  : Number(e.target.value),
                               )
                             }
                             placeholder="No."
