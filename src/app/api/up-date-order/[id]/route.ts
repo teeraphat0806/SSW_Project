@@ -42,7 +42,7 @@ type ApiJobOrder = {
 
 export async function GET(
   req: NextRequest,
-  context: { params: Promise<{ id: string }> }
+  context: { params: Promise<{ id: string }> },
 ) {
   const { id } = await context.params;
   const poId = Number(id);
@@ -67,13 +67,13 @@ export async function GET(
     if (!jobOrder) {
       return NextResponse.json(
         { error: "Job order not found" },
-        { status: 404 }
+        { status: 404 },
       );
     }
     if (!jobOrder.Customer || !jobOrder.Product) {
       return NextResponse.json(
         { error: "Order is missing Customer or Product relation" },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -239,7 +239,7 @@ function calcLine(params: {
 }
 export async function PATCH(
   req: NextRequest,
-  context: { params: Promise<{ id: string }> }
+  context: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id } = await context.params;
@@ -255,7 +255,7 @@ export async function PATCH(
       console.error("Validation errors:", parsed.error.issues);
       return NextResponse.json(
         { error: "Invalid payload", issues: parsed.error.issues },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -301,8 +301,8 @@ export async function PATCH(
           new Set(
             patch.steel
               .map((l) => l.codeSteel?.trim())
-              .filter((x): x is string => !!x)
-          )
+              .filter((x): x is string => !!x),
+          ),
         );
 
         if (patch.steel.length === 0) {
@@ -323,7 +323,7 @@ export async function PATCH(
         });
 
         const codeToSteel = new Map<string, (typeof steelTypes)[0]>(
-          steelTypes.map((s) => [s.codeSteel, s])
+          steelTypes.map((s) => [s.codeSteel, s]),
         );
         const missing = codes.filter((c) => !codeToSteel.has(c));
         if (missing.length)
@@ -355,6 +355,7 @@ export async function PATCH(
               thickness: l.thickness ?? null,
               amount: l.amount,
               detail: l.detail ?? null,
+              unitPrice: st.price,
               actualWeight: l.weight ?? null,
               job: l.job ?? null,
               cuttingMethod: l.cuttingMethod ?? "normal",
