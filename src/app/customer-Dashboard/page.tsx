@@ -94,7 +94,7 @@ export default function CustomerDashboard() {
   async function fetchCustomers(signal?: AbortSignal) {
     setLoading(true);
     try {
-      const res = await fetch(`/api/customer/dashboard?${queryString}`, {
+      const res = await fetch(`/api/customer?${queryString}`, {
         method: "GET",
         cache: "no-store",
         signal,

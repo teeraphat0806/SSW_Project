@@ -225,7 +225,7 @@ export async function PATCH(
         where: { id: poId },
         select: {
           status: true,
-          Product: { select: { actualWeight: true } }, // ✅ relation จริงคือ Product
+          Product: { select: { actualWeight: true } },
         },
       });
 
@@ -237,15 +237,15 @@ export async function PATCH(
       }
 
       // (เลือกได้) บังคับ transition: ต้องอยู่ weighing ก่อนถึงจะไป ready
-      if (po.status !== "weighing") {
-        return NextResponse.json(
-          {
-            error:
-              "ไม่สามารถเปลี่ยนเป็น READY ได้: ต้องอยู่สถานะ WEIGHING ก่อน",
-          },
-          { status: 400 },
-        );
-      }
+      // if (po.status !== "weighing") {
+      //   return NextResponse.json(
+      //     {
+      //       error:
+      //         "ไม่สามารถเปลี่ยนเป็น READY ได้: ต้องอยู่สถานะ WEIGHING ก่อน",
+      //     },
+      //     { status: 400 },
+      //   );
+      // }
 
       const hasMissingWeight = po.Product.some(
         (p) => p.actualWeight == null || p.actualWeight <= 0,

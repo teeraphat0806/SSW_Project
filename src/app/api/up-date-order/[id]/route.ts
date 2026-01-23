@@ -289,6 +289,7 @@ export async function PATCH(
         where: { id: poId },
         data: {
           ...(patch.status ? { status: patch.status } : {}),
+          ...(patch.status === "completed" ? { completedAt: new Date() } : {}),
           ...(nextCustomerId !== undefined
             ? { customerId: nextCustomerId }
             : {}),

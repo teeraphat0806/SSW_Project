@@ -120,11 +120,12 @@ const NewJobOrder = () => {
     const fetchSteelTypes = async () => {
       setLoadingSteel(true);
       try {
-        const urlSteelType =
-          searchItem.trim() === ""
-            ? `api/steelType`
-            : `api/steelType/${encodeURIComponent(searchItem)}`;
-
+        const param = new URLSearchParams();
+        if (searchItem.trim() !== "") {
+          param.set("search", searchItem.trim());
+        }
+        param.set("status", "active");
+        const urlSteelType = `api/steelType?${param.toString()}`;
         const res = await fetch(urlSteelType);
         if (!res.ok) throw new Error("Error fetching steel types");
 
