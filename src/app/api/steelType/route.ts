@@ -59,6 +59,18 @@ export async function GET(req: NextRequest) {
     const result = await prisma.steelType.findMany({
       where,
       orderBy: { [sortField]: order },
+      select: {
+        id: true,
+        codeSteel: true,
+        amount: true,
+        price: true,
+        status: true,
+        createdAt: true,
+        updatedAt: true,
+        shape: true,
+        density: true,
+        _count: { select: { Product: true } },
+      },
     });
     return NextResponse.json(result, { status: 200 });
   } catch (e) {

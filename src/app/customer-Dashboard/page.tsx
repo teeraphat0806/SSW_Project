@@ -293,7 +293,7 @@ export default function CustomerDashboard() {
         {/* Table */}
         <div className="bg-white dark:bg-zinc-900 rounded-xl shadow-sm border border-zinc-100 dark:border-zinc-800 overflow-hidden transition-colors">
           <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
+            <table className="w-full text-left border-collapse min-w-[800px]">
               <thead>
                 <tr className="bg-zinc-50 dark:bg-zinc-950/50 border-b border-zinc-100 dark:border-zinc-800 text-zinc-600 dark:text-zinc-300 text-sm uppercase tracking-wider transition-colors">
                   <th className="p-4 font-medium text-center w-16">#</th>
@@ -382,7 +382,7 @@ export default function CustomerDashboard() {
                                 setOpenCustomerModal(true);
                               }}
                             >
-                              <Eye size={18} />
+                              <Eye size={18} /> แสดง
                             </button>
                             {canDelete ? (
                               <button
