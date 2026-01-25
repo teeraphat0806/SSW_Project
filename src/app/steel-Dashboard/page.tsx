@@ -196,7 +196,7 @@ const SteelListPage = () => {
             </thead>
 
             {/* Table Body */}
-            <tbody className="divide-y divide-gray-100 dark:divide-zinc-800 relative ">
+            <tbody className="divide-y divide-gray-200 dark:divide-zinc-700/50 bg-white dark:bg-zinc-900 relative ">
               {/* กรณี Loading */}
               {isLoading && steels.length === 0 && (
                 <tr>

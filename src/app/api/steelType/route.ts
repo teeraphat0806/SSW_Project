@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { requireAuth } from "@/lib/permissions";
 import { Prisma, SteelStatus } from "@prisma/client";
+import { SteelTypeSchema } from "@/lib/schemas/steeltype.shema";
 
 export async function GET(req: NextRequest) {
   const authResult = await requireAuth([
@@ -77,6 +78,36 @@ export async function GET(req: NextRequest) {
     console.error(e);
     return NextResponse.json(
       { error: "Failed to fetch steel type" },
+      { status: 500 },
+    );
+  }
+}
+
+export async function POST(req: NextRequest) {
+  const authResult = await requireAuth(["superadmin", "supervisor", "clerk"]);
+
+  if ("response" in authResult) {
+    return authResult.response;
+  }
+
+  const body = await req.json();
+  const parsed = SteelTypeSchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: "Invalid data format", details: parsed.error.format() },
+      { status: 400 },
+    );
+  }
+
+  try {
+    const result = await prisma.steelType.create({
+      data: parsed.data,
+    });
+
+    return NextResponse.json(result, { status: 201 });
+  } catch (error) {
+    return NextResponse.json(
+      { error: "Failed to create steel type: " + error },
       { status: 500 },
     );
   }

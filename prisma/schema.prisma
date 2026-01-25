@@ -188,7 +188,7 @@ model SteelType {
   codeSteel  String       @unique
   detail     String?
   amount     Int          @default(0)
-  shape      ShapeSteel
+  shape      ShapeSteel   @default(square)
   price      Float
   status     SteelStatus  @default(active)
   createdAt  DateTime     @default(now())
@@ -200,18 +200,21 @@ model SteelType {
 
 model SteelStock {
   id          Int         @id @default(autoincrement())
-  width       Float?
-  length      Float
-  thickness   Float
+  width       Int?
+  length      Int
+  thickness   Int
+  quantity    Int         @default(0)
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
   steeltypeId Int
-  withdrawnAt DateTime?
   status      StockStatus @default(available)
   SteelType   SteelType   @relation(fields: [steeltypeId], references: [id])
 
-  @@index([steeltypeId, status])
+  @@unique([steeltypeId, width,length, thickness])
+  @@index([steeltypeId, width, length, thickness, status])
 }
+
+
 
 model Expense {
   id          Int             @id @default(autoincrement())
@@ -280,5 +283,4 @@ enum OrderStaffRole {
   supervisor  
   cutter       
 }
-
 
