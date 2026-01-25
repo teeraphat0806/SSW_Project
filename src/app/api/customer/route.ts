@@ -3,7 +3,7 @@ import { requireAuth } from "@/lib/permissions";
 import { NextResponse, NextRequest } from "next/server";
 import prisma from "../../../lib/prisma";
 import { CustomerSchema } from "../../../lib/schemas/customer.schema";
-import { Prisma } from "@/generated/prisma/wasm";
+import { Prisma } from "@prisma/client";
 
 //กำหนดชนิดของพารามิเตอร์ที่รับเข้ามา
 function toInt(value: string | null, fallback: number) {
