@@ -9,20 +9,64 @@ import {
   ArrowUpDown,
   Loader2,
   AlertCircle,
+  Plus,
+  X,
+  PackageMinus,
+  MoreVertical,
+  PlusSquare,
+  Pencil,
+  PackagePlus,
 } from "lucide-react";
+import { useConfirm } from "@/components/providers/confirm-dialog-provider";
+import { toast } from "react-toastify";
+import { z } from "zod";
+import CreateSteelTypeModal from "@/components/steel-Dashboard/CreateSteelTypeModal";
+
+// ✅ ถ้าโปรเจคคุณมี Prisma enum จริง ให้ import แบบนี้
+// import { ShapeSteel } from "@prisma/client";
+
+// ✅ ถ้า import enum จาก prisma ใน client แล้วมีปัญหา bundling
+// ใช้ union แบบนี้แทนก็ได้ (ปลอดภัยสุดสำหรับ client)
+const ShapeSteelEnum = z.enum(["line", "square"]);
+
+const SteelTypeSchema = z.object({
+  codeSteel: z.string().min(1, "กรุณาระบุรหัสเหล็ก"),
+  detail: z.string().optional(),
+  shape: ShapeSteelEnum, // line | square
+  price: z.number().min(1, "กรุณาระบุราคาต่อหน่วย"),
+  density: z.number().min(0.00001, "กรุณาระบุความหนาแน่น"),
+});
+
+type SteelTypeForm = z.infer<typeof SteelTypeSchema>;
+
+type SteelItemApi = {
+  id: number;
+  codeSteel: string;
+  shape: "line" | "square" | string;
+  amount: number;
+  price: number;
+  status: "active" | "inactive" | string;
+  _count?: { Product?: number };
+};
 
 const SteelListPage = () => {
   // State จัดการข้อมูล
-  const [steels, setSteels] = useState([]);
+  const [steels, setSteels] = useState<SteelItemApi[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
 
   // State สำหรับ Filter/Sort
   const [search, setSearch] = useState("");
   const [sortConfig, setSortConfig] = useState({
-    key: "updatedAt", // ค่าเริ่มต้น: เรียงตามวันที่อัปเดตล่าสุด
-    direction: "desc",
+    key: "updatedAt",
+    direction: "desc" as "asc" | "desc",
   });
+
+  // ✅ Modal + Form state
+  const [openCreate, setOpenCreate] = useState(false);
+  const [openMenuId, setOpenMenuId] = useState<number | null>(null);
+
+  const confirm = useConfirm();
 
   // ฟังก์ชันดึงข้อมูลจาก API
   const fetchSteels = useCallback(async () => {
@@ -30,33 +74,27 @@ const SteelListPage = () => {
     setError(null);
 
     try {
-      // สร้าง Query Params: /api/steelType?search=xxx&sort=price&order=asc
       const params = new URLSearchParams({
-        search: search,
+        search,
         sort: sortConfig.key,
         order: sortConfig.direction,
       });
 
       const response = await fetch(`/api/steelType?${params.toString()}`);
 
-      if (!response.ok) {
-        throw new Error("Failed to fetch data");
-      }
+      if (!response.ok) throw new Error("Failed to fetch data");
 
       const data = await response.json();
-      // สมมติว่า API ส่งกลับมาเป็น Array โดยตรง ถ้าส่งเป็น { data: [...] } ให้แก้เป็น data.data
       setSteels(Array.isArray(data) ? data : []);
-    } catch (err) {
-      setError(err.message);
+    } catch (err: any) {
+      setError(err?.message ?? "Unknown error");
       setSteels([]);
     } finally {
       setIsLoading(false);
     }
   }, [search, sortConfig]);
 
-  // useEffect: เรียกข้อมูลเมื่อ search หรือ sort เปลี่ยน
   useEffect(() => {
-    // Debounce: รอให้หยุดพิมพ์ 500ms ก่อนยิง API
     const timeoutId = setTimeout(() => {
       fetchSteels();
     }, 500);
@@ -64,37 +102,51 @@ const SteelListPage = () => {
     return () => clearTimeout(timeoutId);
   }, [fetchSteels]);
 
-  // ฟังก์ชันลบข้อมูล (เรียก API DELETE)
-  const handleDelete = async (id, code) => {
-    if (!window.confirm(`ต้องการลบรายการ ${code} ใช่หรือไม่?`)) return;
+  // ฟังก์ชันลบข้อมูล
+  const handleDelete = async ({
+    steeltypeId,
+    codeSteel,
+  }: {
+    steeltypeId: number;
+    codeSteel: string;
+  }) => {
+    const isConfirmed = await confirm({
+      title: "ยืนยันการลบข้อมูลเหล็กประเภทนี้หรือไม่?",
+      description: `รหัสเหล็ก: ${codeSteel} การลบนี้ไม่สามารถกู้คืนได้และจะลบข้อมูลสต็อกทั้งหมดที่เกี่ยวข้องด้วย`,
+      variant: "destructive",
+      confirmText: "ลบข้อมูล",
+      cancelText: "ยกเลิก",
+    });
+    if (!isConfirmed) return;
 
     try {
-      const response = await fetch(`/api/steelType/${id}`, {
+      const response = await fetch(`/api/steelType/${steeltypeId}`, {
         method: "DELETE",
       });
 
       if (response.ok) {
-        // ลบสำเร็จ ให้ดึงข้อมูลใหม่
         fetchSteels();
-        alert("ลบข้อมูลสำเร็จ");
+        toast.success("ลบประเภทเหล็กสำเร็จ", { position: "bottom-right" });
       } else {
-        alert("เกิดข้อผิดพลาดในการลบข้อมูล");
+        toast.error("ลบประเภทเหล็กไม่สำเร็จ", { position: "bottom-right" });
       }
     } catch (error) {
       console.error("Delete error:", error);
-      alert("ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้");
+      toast.error("ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้", {
+        position: "bottom-right",
+      });
     }
   };
 
   // ฟังก์ชันเลือก Icon ตาม Shape
-  const getShapeIcon = (shape) => {
+  const getShapeIcon = (shape: string) => {
     if (shape === "square") return <Square className="w-5 h-5 text-blue-500" />;
     if (shape === "line") return <Minus className="w-5 h-5 text-green-500 " />;
     return <span className="text-gray-400">-</span>;
   };
 
   // ฟังก์ชันเปลี่ยน Sort
-  const handleSort = (key) => {
+  const handleSort = (key: string) => {
     setSortConfig((prev) => ({
       key,
       direction: prev.key === key && prev.direction === "asc" ? "desc" : "asc",
@@ -104,11 +156,22 @@ const SteelListPage = () => {
   return (
     <div className="w-full min-h-screen bg-gray-50 dark:bg-zinc-950 text-gray-800 dark:text-zinc-100 p-6 font-sans transition-colors duration-300">
       {/* Header Section */}
-      <div className="max-w-7xl mx-auto mb-6">
-        <h1 className="text-2xl font-bold mb-1">รายการประเภทเหล็ก</h1>
-        <p className="text-md text-gray-500 dark:text-zinc-400">
-          จัดการข้อมูลและสต็อกสินค้า
-        </p>
+      <div className="max-w-7xl mx-auto mb-6 flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold mb-1">รายการประเภทเหล็ก</h1>
+          <p className="text-md text-gray-500 dark:text-zinc-400">
+            จัดการข้อมูลและสต็อกสินค้า
+          </p>
+        </div>
+
+        {/* ✅ Add button */}
+        <button
+          onClick={() => setOpenCreate(true)}
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white shadow-sm transition"
+        >
+          <Plus className="w-4 h-4" />
+          เพิ่มประเภทเหล็ก
+        </button>
       </div>
 
       {/* Filter Bar */}
@@ -141,7 +204,7 @@ const SteelListPage = () => {
       </div>
 
       {/* Table Section */}
-      <div className="max-w-7xl mx-auto bg-white dark: bg-zinc-900/50 rounded-xl shadow-lg overflow-hidden border border-gray-100 dark:border-zinc-800 min-h-[400px]">
+      <div className="max-w-7xl mx-auto bg-white dark:bg-zinc-900/50 rounded-xl shadow-lg overflow-hidden border border-gray-100 dark:border-zinc-800 min-h-[400px]">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse min-w-[800px]">
             <thead>
@@ -153,7 +216,11 @@ const SteelListPage = () => {
                   <div className="flex items-center gap-1">
                     รหัสเหล็ก
                     <ArrowUpDown
-                      className={`w-3 h-3 ${sortConfig.key === "codeSteel" ? "text-blue-500" : "text-gray-400"}`}
+                      className={`w-3 h-3 ${
+                        sortConfig.key === "codeSteel"
+                          ? "text-blue-500"
+                          : "text-gray-400"
+                      }`}
                     />
                   </div>
                 </th>
@@ -169,7 +236,11 @@ const SteelListPage = () => {
                   <div className="flex items-center justify-center gap-1">
                     ปริมาณ (Stock)
                     <ArrowUpDown
-                      className={`w-3 h-3 ${sortConfig.key === "amount" ? "text-blue-500" : "text-gray-400"}`}
+                      className={`w-3 h-3 ${
+                        sortConfig.key === "amount"
+                          ? "text-blue-500"
+                          : "text-gray-400"
+                      }`}
                     />
                   </div>
                 </th>
@@ -181,7 +252,11 @@ const SteelListPage = () => {
                   <div className="flex items-center gap-1">
                     ราคา/หน่วย
                     <ArrowUpDown
-                      className={`w-3 h-3 ${sortConfig.key === "price" ? "text-blue-500" : "text-gray-400"}`}
+                      className={`w-3 h-3 ${
+                        sortConfig.key === "price"
+                          ? "text-blue-500"
+                          : "text-gray-400"
+                      }`}
                     />
                   </div>
                 </th>
@@ -195,9 +270,7 @@ const SteelListPage = () => {
               </tr>
             </thead>
 
-            {/* Table Body */}
             <tbody className="divide-y divide-gray-200 dark:divide-zinc-700/50 bg-white dark:bg-zinc-900 relative ">
-              {/* กรณี Loading */}
               {isLoading && steels.length === 0 && (
                 <tr>
                   <td colSpan={6} className="p-12 text-center text-zinc-400">
@@ -209,7 +282,6 @@ const SteelListPage = () => {
                 </tr>
               )}
 
-              {/* กรณี Error */}
               {error && !isLoading && (
                 <tr>
                   <td colSpan={6} className="p-12 text-center text-red-500">
@@ -221,7 +293,6 @@ const SteelListPage = () => {
                 </tr>
               )}
 
-              {/* กรณีแสดงข้อมูลปกติ */}
               {!isLoading &&
                 !error &&
                 steels.map((item) => (
@@ -229,7 +300,6 @@ const SteelListPage = () => {
                     key={item.id}
                     className="hover:bg-blue-50 dark:hover:bg-zinc-800/40 transition-colors duration-150 "
                   >
-                    {/* Code Steel + Product Count */}
                     <td className="p-4">
                       <div className="flex flex-col">
                         <span className="font-medium text-blue-600 dark:text-blue-400 text-base">
@@ -241,7 +311,6 @@ const SteelListPage = () => {
                       </div>
                     </td>
 
-                    {/* Shape Icon */}
                     <td className="p-4">
                       <div className="flex items-center gap-2">
                         <div className="p-2 bg-gray-100 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700">
@@ -253,21 +322,22 @@ const SteelListPage = () => {
                       </div>
                     </td>
 
-                    {/* Amount */}
-                    <td className="p-4 flex  justify-center">
+                    <td className="p-4 text-center">
                       <span
-                        className={`font-medium ${item.amount === 0 ? "text-red-500" : "text-gray-700 dark:text-gray-300"}`}
+                        className={`font-medium  ${
+                          item.amount === 0
+                            ? "text-red-500"
+                            : "text-gray-700 dark:text-gray-300"
+                        }`}
                       >
                         {item.amount}
                       </span>
                     </td>
 
-                    {/* Price */}
                     <td className="p-4 font-mono text-gray-600 dark:text-gray-300">
                       {Number(item.price).toFixed(2)} ฿
                     </td>
 
-                    {/* Status Badge */}
                     <td className="p-4 text-center">
                       <span
                         className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border
@@ -278,40 +348,84 @@ const SteelListPage = () => {
                       }`}
                       >
                         <span
-                          className={`w-1.5 h-1.5 rounded-full mr-1.5 ${item.status === "active" ? "bg-green-500" : "bg-gray-400"}`}
+                          className={`w-1.5 h-1.5 rounded-full mr-1.5 ${
+                            item.status === "active"
+                              ? "bg-green-500"
+                              : "bg-gray-400"
+                          }`}
                         ></span>
                         {item.status === "active" ? "ใช้งาน" : "ไม่ใช้งาน"}
                       </span>
                     </td>
 
-                    {/* Actions */}
                     <td className="p-4 text-right">
                       <div className="flex items-center justify-end gap-2">
-                        {/* View Button */}
+                        {/* 1) ดูรายละเอียด/สต็อก */}
                         <button
-                          className="p-2 text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-all"
-                          title="ดูรายละเอียด"
+                          className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition"
+                          title="ดูรายละเอียด/สต็อก"
                           onClick={() =>
                             (window.location.href = `/steel/${item.id}`)
-                          } // ลิงก์ไปหน้า view จริง
+                          }
                         >
                           <Eye className="w-5 h-5" />
                         </button>
 
-                        {/* Delete Button (Logic: _count.Product === 0) */}
-                        {item._count?.Product === 0 ? (
+
+                        {/* 3) เมนูเพิ่มเติม */}
+                        <div className="relative">
                           <button
-                            className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-all"
-                            title="ลบรายการ"
+                            className="p-2 text-gray-500 hover:text-gray-800 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-lg transition"
+                            title="เมนูเพิ่มเติม"
                             onClick={() =>
-                              handleDelete(item.id, item.codeSteel)
+                              setOpenMenuId(
+                                openMenuId === item.id ? null : item.id,
+                              )
                             }
                           >
-                            <Trash2 className="w-5 h-5" />
+                            <MoreVertical className="w-5 h-5" />
                           </button>
-                        ) : (
-                          <></>
-                        )}
+
+                          {openMenuId === item.id && (
+                            <div className="absolute right-0 mt-2 w-52 rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 shadow-lg overflow-hidden z-20">
+                              <button
+                                className="w-full px-3 py-2 text-sm flex items-center gap-2 hover:bg-gray-50 dark:hover:bg-zinc-800"
+                                onClick={() => ({})}
+                              >
+                                <PackagePlus className="w-5 h-5 text-gray-500" />
+                                รับสินค้าเข้าคลัง
+                              </button>
+
+                              <button
+                                className="w-full px-3 py-2 text-sm flex items-center gap-2 hover:bg-gray-50 dark:hover:bg-zinc-800"
+                                onClick={() => ({})} // <- เปิด modal เบิกออก (ต้อง fetch list size)
+                              >
+                                <PackageMinus className="w-5 h-5 text-gray-500" />
+                                เบิกออกจากคลัง
+                              </button>
+                              
+
+                              {item._count?.Product === 0 ? (
+                                <button
+                                  className="w-full px-3 py-2 text-sm flex items-center gap-2 hover:bg-red-50 dark:hover:bg-red-900/30 text-red-600"
+                                  onClick={() =>
+                                    handleDelete({
+                                      steeltypeId: item.id,
+                                      codeSteel: item.codeSteel,
+                                    })
+                                  }
+                                >
+                                  <Trash2 className="w-5 h-5" />
+                                  ลบประเภทเหล็ก
+                                </button>
+                              ) : (
+                                <div className="px-3 py-2 text-xs text-gray-500 dark:text-zinc-400">
+                                  ลบไม่ได้ (มีสินค้าใช้งานอยู่)
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </td>
                   </tr>
@@ -319,7 +433,6 @@ const SteelListPage = () => {
             </tbody>
           </table>
 
-          {/* Empty State (โหลดเสร็จแล้วแต่ไม่มีข้อมูล) */}
           {!isLoading && !error && steels.length === 0 && (
             <div className="py-12 flex flex-col items-center justify-center text-gray-400 dark:text-gray-500">
               <Search className="w-12 h-12 mb-3 opacity-20" />
@@ -328,6 +441,13 @@ const SteelListPage = () => {
           )}
         </div>
       </div>
+
+      {/* ✅ Create Modal */}
+      <CreateSteelTypeModal
+        open={openCreate}
+        onClose={() => setOpenCreate(false)}
+        onCreated={() => fetchSteels()}
+      />
     </div>
   );
 };

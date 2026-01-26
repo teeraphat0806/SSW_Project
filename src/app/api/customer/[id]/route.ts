@@ -54,6 +54,16 @@ export async function PATCH(
     return NextResponse.json({ error: "Invalid data format" }, { status: 400 });
   }
   try {
+    const customer = await prisma.customer.findUnique({
+      where: { id: Number(id) },
+    });
+    if (!customer) {
+      return NextResponse.json(
+        { error: "ไม่พบลูกค้าที่ระบุ" },
+        { status: 404 },
+      );
+    }
+
     const result = await prisma.customer.update({
       where: { id: Number(id) },
       data: parsed.data,
