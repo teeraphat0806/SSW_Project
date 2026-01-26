@@ -210,8 +210,8 @@ model SteelStock {
   status      StockStatus @default(available)
   SteelType   SteelType   @relation(fields: [steeltypeId], references: [id])
 
-  @@unique([steeltypeId, width,length, thickness])
-  @@index([steeltypeId, width, length, thickness, status])
+  @@unique([steeltypeId, length, thickness], name: "uq_line")
+  @@unique([steeltypeId, width, length, thickness], name: "uq_square")
 }
 
 

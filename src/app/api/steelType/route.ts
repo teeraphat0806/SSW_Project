@@ -105,9 +105,36 @@ export async function POST(req: NextRequest) {
     });
 
     return NextResponse.json(result, { status: 201 });
-  } catch (error) {
+  } catch (err: any) {
+    // ✅ Prisma Unique constraint
+    if (err instanceof Prisma.PrismaClientKnownRequestError) {
+      if (err.code === "P2002") {
+        // fields that are duplicate
+        const fields = (err.meta?.target ?? []) as string[];
+        if (fields.includes("codeSteel")) {
+          return NextResponse.json(
+            {
+              error: "รหัสเหล็กซ้ำในระบบ",
+              code: "CODE_STEEL_DUPLICATE",
+              field: "codeSteel",
+            },
+            { status: 409 },
+          );
+        }
+
+        return NextResponse.json(
+          {
+            error: "ชื่อเหล็กซ้ำในระบบ",
+            code: "UNIQUE_CONSTRAINT_FAILED",
+            fields,
+          },
+          { status: 409 },
+        );
+      }
+    }
+
     return NextResponse.json(
-      { error: "Failed to create steel type: " + error },
+      { error: "Failed to create steel type" },
       { status: 500 },
     );
   }
