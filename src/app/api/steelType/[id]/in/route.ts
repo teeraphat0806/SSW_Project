@@ -50,57 +50,47 @@ export async function POST(
       );
     }
 
+
+    
+
     //ถ้าเป็น shape line ให้เก็บ width เป็น null เสมอ
-    // const width = steelType.shape === "line" ? null : parsed.data.width;
+    const width = steelType.shape === "line" ? null : parsed.data.width;
+
+    const existingStock = await prisma.steelStock.findFirst({
+      where: {
+        steeltypeId,
+        length: parsed.data.length,
+        thickness: parsed.data.thickness,
+        width: width,
+      },
+    });
+
+    let stockOperation;
+    
+    if (existingStock) {
+      stockOperation = prisma.steelStock.update({
+        where: { id: existingStock.id },
+        data: {
+          quantity: { increment: parsed.data.quantity },
+          status: "available",
+        },
+      });
+    } else {
+      stockOperation = prisma.steelStock.create({
+        data: {
+          steeltypeId,
+          quantity: parsed.data.quantity,
+          width: width,
+          length: parsed.data.length,
+          thickness: parsed.data.thickness,
+          status: "available",
+        },
+      });
+    }
 
     //ทำการเพิ่ม stock และอัปเดตจำนวน steel type พร้อมกันใน transaction
     const [stockRow] = await prisma.$transaction([
-      //เพิ่ม stock
-
-      steelType.shape === "line"
-        ? prisma.steelStock.upsert({
-            where: {
-              uq_line: {
-                steeltypeId,
-                length: parsed.data.length,
-                thickness: parsed.data.thickness,
-              },
-            },
-            create: {
-              steeltypeId,
-              quantity: parsed.data.quantity,
-              width: null,
-              length: parsed.data.length,
-              thickness: parsed.data.thickness,
-            },
-            update: {
-              quantity: { increment: parsed.data.quantity },
-              status: "available",
-            },
-          })
-        : prisma.steelStock.upsert({
-            where: {
-              uq_square: {
-                steeltypeId,
-                width: parsed.data.width!,
-                length: parsed.data.length,
-                thickness: parsed.data.thickness,
-              },
-            },
-            create: {
-              steeltypeId,
-              quantity: parsed.data.quantity,
-              width: parsed.data.width!,
-              length: parsed.data.length,
-              thickness: parsed.data.thickness,
-              status: "available",
-            },
-            update: {
-              quantity: { increment: parsed.data.quantity },
-              status: "available",
-            },
-          }),
-
+      stockOperation,
       //อัปเดตจำนวน steel type
       prisma.steelType.update({
         where: { id: steeltypeId },

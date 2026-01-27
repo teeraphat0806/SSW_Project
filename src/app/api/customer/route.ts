@@ -91,8 +91,8 @@ export async function GET(req: NextRequest) {
           tel: true,
           email: true,
           taxNumber: true,
-          // faxNumber: true,   //เอาออกก่อนหลักๆยังไม่ใช่
-          // address: true,
+          faxNumber: true,
+          address: true,
           createdAt: true,
           updatedAt: true,
           _count: { select: { Bill: true, OrderPO: true } }, // เอาไว้โชว์ในตาราง
@@ -107,7 +107,7 @@ export async function GET(req: NextRequest) {
     ]);
 
     const now = new Date();
-
+    console.log("customer data fetched:", data);
     return NextResponse.json(
       {
         data: data.map((c) => {
