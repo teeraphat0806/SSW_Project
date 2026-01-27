@@ -49,7 +49,8 @@ export async function GET(req: NextRequest) {
       "amount",
       "codeSteel",
       "price",
-      "updatedAt",
+      "shape",
+
     ];
 
     const sortField = allowedSort.includes(sortParam as any)

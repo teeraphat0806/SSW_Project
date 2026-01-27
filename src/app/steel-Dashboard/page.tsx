@@ -58,7 +58,7 @@ const SteelListPage = () => {
   // State สำหรับ Filter/Sort
   const [search, setSearch] = useState("");
   const [sortConfig, setSortConfig] = useState({
-    key: "updatedAt",
+    key: "createdAt",
     direction: "desc" as "asc" | "desc",
   });
 
@@ -225,8 +225,20 @@ const SteelListPage = () => {
                   </div>
                 </th>
 
-                <th className="p-4 font-semibold text-sm uppercase tracking-wider w-24">
-                  รูปร่าง
+                <th
+                  className="p-4 font-semibold text-sm uppercase tracking-wider cursor-pointer group hover:bg-gray-200 dark:hover:bg-gray-700 transition"
+                  onClick={() => handleSort("shape")}
+                >
+                  <div className="flex items-center justify-center gap-1">
+                    รูปร่าง
+                    <ArrowUpDown
+                      className={`w-3 h-3 ${
+                        sortConfig.key === "shape"
+                          ? "text-blue-500"
+                          : "text-gray-400"
+                      }`}
+                    />
+                  </div>
                 </th>
 
                 <th
@@ -371,7 +383,6 @@ const SteelListPage = () => {
                           <Eye className="w-5 h-5" />
                         </button>
 
-
                         {/* 3) เมนูเพิ่มเติม */}
                         <div className="relative">
                           <button
@@ -403,7 +414,6 @@ const SteelListPage = () => {
                                 <PackageMinus className="w-5 h-5 text-gray-500" />
                                 เบิกออกจากคลัง
                               </button>
-                              
 
                               {item._count?.Product === 0 ? (
                                 <button
