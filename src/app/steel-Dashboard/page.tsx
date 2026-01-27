@@ -10,12 +10,6 @@ import {
   Loader2,
   AlertCircle,
   Plus,
-  X,
-  PackageMinus,
-  MoreVertical,
-  PlusSquare,
-  Pencil,
-  PackagePlus,
 } from "lucide-react";
 import { useConfirm } from "@/components/providers/confirm-dialog-provider";
 import { toast } from "react-toastify";
@@ -23,10 +17,6 @@ import { z } from "zod";
 import CreateSteelTypeModal from "@/components/steel-Dashboard/CreateSteelTypeModal";
 import SteelTypeDetailModal from "@/components/steel-Dashboard/steelTypeDetailModal";
 
-// ✅ ถ้าโปรเจคคุณมี Prisma enum จริง ให้ import แบบนี้
-// import { ShapeSteel } from "@prisma/client";
-
-// ✅ ถ้า import enum จาก prisma ใน client แล้วมีปัญหา bundling
 // ใช้ union แบบนี้แทนก็ได้ (ปลอดภัยสุดสำหรับ client)
 const ShapeSteelEnum = z.enum(["line", "square"]);
 
@@ -38,7 +28,7 @@ const SteelTypeSchema = z.object({
   density: z.number().min(0.00001, "กรุณาระบุความหนาแน่น"),
 });
 
-type SteelTypeForm = z.infer<typeof SteelTypeSchema>;
+// type SteelTypeForm = z.infer<typeof SteelTypeSchema>;
 
 type SteelItemApi = {
   id: number;
@@ -65,9 +55,6 @@ const SteelListPage = () => {
 
   //เบิดปิดสร้างลูกค้า
   const [openCreate, setOpenCreate] = useState(false);
-
-  //เบิดปิดเมนูแต่ละแถว
-  const [openMenuId, setOpenMenuId] = useState<number | null>(null);
 
   //ทำไว้เผื่อเปิดดูรายละเอียด/สต็อก
   const [selectedSteelId, setSelectedSteelId] = useState<number | null>(null);
@@ -391,60 +378,22 @@ const SteelListPage = () => {
                         >
                           <Eye className="w-5 h-5" />
                         </button>
-
-                        {/* 3) เมนูเพิ่มเติม */}
-                        <div className="relative">
-                          <button
-                            className="p-2 text-gray-500 hover:text-gray-800 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-lg transition"
-                            title="เมนูเพิ่มเติม"
-                            onClick={() =>
-                              setOpenMenuId(
-                                openMenuId === item.id ? null : item.id,
-                              )
-                            }
-                          >
-                            <MoreVertical className="w-5 h-5" />
-                          </button>
-
-                          {openMenuId === item.id && (
-                            <div className="absolute right-0 mt-2 w-52 rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 shadow-lg overflow-hidden z-20">
-                              <button
-                                className="w-full px-3 py-2 text-sm flex items-center gap-2 hover:bg-gray-50 dark:hover:bg-zinc-800"
-                                onClick={() => ({})}
-                              >
-                                <PackagePlus className="w-5 h-5 text-gray-500" />
-                                รับสินค้าเข้าคลัง
-                              </button>
-
-                              <button
-                                className="w-full px-3 py-2 text-sm flex items-center gap-2 hover:bg-gray-50 dark:hover:bg-zinc-800"
-                                onClick={() => ({})} // <- เปิด modal เบิกออก (ต้อง fetch list size)
-                              >
-                                <PackageMinus className="w-5 h-5 text-gray-500" />
-                                เบิกออกจากคลัง
-                              </button>
-
-                              {item._count?.Product === 0 ? (
-                                <button
-                                  className="w-full px-3 py-2 text-sm flex items-center gap-2 hover:bg-red-50 dark:hover:bg-red-900/30 text-red-600"
-                                  onClick={() =>
-                                    handleDelete({
-                                      steeltypeId: item.id,
-                                      codeSteel: item.codeSteel,
-                                    })
-                                  }
-                                >
-                                  <Trash2 className="w-5 h-5" />
-                                  ลบประเภทเหล็ก
-                                </button>
-                              ) : (
-                                <div className="px-3 py-2 text-xs text-gray-500 dark:text-zinc-400">
-                                  ลบไม่ได้ (มีสินค้าใช้งานอยู่)
-                                </div>
-                              )}
-                            </div>
-                          )}
-                        </div>
+                        {/* 2) ลบข้อมูล */}
+                        {item._count?.Product === 0 && (
+                          <div className="relative">
+                            <button
+                              className="w-full px-3 py-2 text-sm flex items-center gap-2 hover:bg-red-50 dark:hover:bg-red-900/30 text-red-600"
+                              onClick={() =>
+                                handleDelete({
+                                  steeltypeId: item.id,
+                                  codeSteel: item.codeSteel,
+                                })
+                              }
+                            >
+                              <Trash2 className="w-5 h-5" />
+                            </button>
+                          </div>
+                        )}
                       </div>
                     </td>
                   </tr>
