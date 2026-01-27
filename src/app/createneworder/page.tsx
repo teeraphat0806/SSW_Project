@@ -29,6 +29,15 @@ import type { CustomerFormData } from "@/components/newJobOrder/CustomerForm";
 import { cn } from "@/lib/utils";
 import { CuttingMethod, ShapeSteel } from "@prisma/client";
 
+type CustomerApiItem = {
+  id: number;
+  name: string;
+};
+
+type CustomerApiResponse = {
+  data: CustomerApiItem[];
+};
+
 type SteelItem = {
   id: string;
   steelType: string;
@@ -71,7 +80,7 @@ const NewJobOrder = () => {
   const [customers, setCustomers] = useState<{ id: string; name: string }[]>(
     [],
   );
-  const [searchCustoer, setsearchCustoer] = useState(""); // เก็บค่าที่ค้นหาลูกค้า
+  const [searchCustomer, setSearchCustomer] = useState(""); // เก็บค่าที่ค้นหาลูกค้า
 
   // สินค้า
   const [searchItem, setsearchItem] = useState(""); //เก็บค่าที่ค้นหาสินค้า
@@ -106,10 +115,13 @@ const NewJobOrder = () => {
       notes: "",
     },
   ]);
+
+  //จำนวนรวมของเหล็ก
   const totalQuantity = steelItems.reduce(
     (sum, item) => sum + item.quantity,
     0,
   );
+  //จำนวนประเภทเหล็ก
   const totalTypes = new Set(
     steelItems.filter((item) => item.steelType).map((item) => item.steelType),
   ).size;
@@ -125,7 +137,7 @@ const NewJobOrder = () => {
           param.set("search", searchItem.trim());
         }
         param.set("status", "active");
-        const urlSteelType = `api/steelType?${param.toString()}`;
+        const urlSteelType = `/api/steelType?${param.toString()}`;
         const res = await fetch(urlSteelType);
         if (!res.ok) throw new Error("Error fetching steel types");
 
@@ -151,20 +163,19 @@ const NewJobOrder = () => {
     const fetchCustomers = async () => {
       setLoading(true);
       try {
-        const urlCustomer =
-          searchCustoer.trim() === ""
-            ? `api/customer`
-            : `${
-                process.env.NEXTAUTH_URL
-              }api/customer/name/${encodeURIComponent(searchCustoer)}`;
-        const res = await fetch(urlCustomer);
+        const param = new URLSearchParams();
+        const q = searchCustomer.trim();
+        if (q) param.set("search", q);
+        const urlCustomer = `/api/customer?${param.toString()}`;
+
+        const res = await fetch(urlCustomer, { cache: "no-store" });
         if (!res.ok) throw new Error("Error fetching customers");
 
-        const data = await res.json();
+        const json: CustomerApiResponse = await res.json();
 
         if (!ignore) {
           setCustomers(
-            data.map((c: { id: number; name: string }) => ({
+            json.data.map((c: CustomerApiItem) => ({
               id: c.id.toString(),
               name: c.name,
             })),
@@ -184,7 +195,7 @@ const NewJobOrder = () => {
     return () => {
       ignore = true;
     };
-  }, [searchCustoer, searchItem]);
+  }, [searchCustomer, searchItem]);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files) {
@@ -486,8 +497,8 @@ const NewJobOrder = () => {
                     selectedCustomerId={selectedCustomerId}
                     setSelectedCustomer={setSelectedCustomerId}
                     customers={customers}
-                    search={searchCustoer}
-                    setSearch={setsearchCustoer}
+                    search={searchCustomer}
+                    setSearch={setSearchCustomer}
                     loading={loading}
                   />
                 )}
@@ -725,7 +736,6 @@ const NewJobOrder = () => {
                   </Card>
                 </div>
               </div>
-              {/* Steel Items */}
             </div>
           </div>
         </form>

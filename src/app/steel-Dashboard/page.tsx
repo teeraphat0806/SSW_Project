@@ -21,6 +21,7 @@ import { useConfirm } from "@/components/providers/confirm-dialog-provider";
 import { toast } from "react-toastify";
 import { z } from "zod";
 import CreateSteelTypeModal from "@/components/steel-Dashboard/CreateSteelTypeModal";
+import SteelTypeDetailModal from "@/components/steel-Dashboard/steelTypeDetailModal";
 
 // ✅ ถ้าโปรเจคคุณมี Prisma enum จริง ให้ import แบบนี้
 // import { ShapeSteel } from "@prisma/client";
@@ -62,9 +63,16 @@ const SteelListPage = () => {
     direction: "desc" as "asc" | "desc",
   });
 
-  // ✅ Modal + Form state
+  //เบิดปิดสร้างลูกค้า
   const [openCreate, setOpenCreate] = useState(false);
+
+  //เบิดปิดเมนูแต่ละแถว
   const [openMenuId, setOpenMenuId] = useState<number | null>(null);
+
+  //ทำไว้เผื่อเปิดดูรายละเอียด/สต็อก
+  const [selectedSteelId, setSelectedSteelId] = useState<number | null>(null);
+  const [openDetail, setOpenDetail] = useState(false);
+  const [openOut, setOpenOut] = useState(false);
 
   const confirm = useConfirm();
 
@@ -376,9 +384,10 @@ const SteelListPage = () => {
                         <button
                           className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition"
                           title="ดูรายละเอียด/สต็อก"
-                          onClick={() =>
-                            (window.location.href = `/steel/${item.id}`)
-                          }
+                          onClick={() => {
+                            setSelectedSteelId(item.id);
+                            setOpenDetail(true);
+                          }}
                         >
                           <Eye className="w-5 h-5" />
                         </button>
@@ -457,6 +466,13 @@ const SteelListPage = () => {
         open={openCreate}
         onClose={() => setOpenCreate(false)}
         onCreated={() => fetchSteels()}
+      />
+
+      <SteelTypeDetailModal
+        open={openDetail}
+        steelTypeId={selectedSteelId}
+        onClose={() => setOpenDetail(false)}
+        onUpdated={() => fetchSteels()}
       />
     </div>
   );

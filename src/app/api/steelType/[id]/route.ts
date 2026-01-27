@@ -18,15 +18,12 @@ export async function GET(
     const result = await prisma.steelType.findUnique({
       where: {
         id: Number(id),
-        amount: {
-          not: 0,
-        },
       },
       include: {
-        SteelStock: true,
+        SteelStock: { where: { quantity: { gt: 0 } } }, //gt: 0 คือ quantity != 0
       },
     });
-
+    console.log("result", result);
     return NextResponse.json(result, { status: 200 });
   } catch (error) {
     return NextResponse.json(

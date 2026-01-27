@@ -32,7 +32,6 @@ import {
 import { Badge } from "@/components/ui/badge"; // ถ้ามี component นี้ (Optional)
 import { Separator } from "@/components/ui/separator"; // ถ้ามี component นี้ (Optional)
 
-// ... (Types ยังคงเดิม) ...
 type CustomerApiItem = {
   id: string | number;
   name: string;
@@ -121,9 +120,8 @@ export default function DetailCustomer<T extends JobCustomerFields>({
       setError(null);
       try {
         const param = new URLSearchParams();
-        if (q.trim() !== "" || q.trim().length > 0) {
-          param.set("search", q.trim());
-        }
+        const q = searchCustomer.trim();
+        if (q) param.set("search", q);
         const url = `/api/customer?${param.toString()}`;
         const res = await fetch(url, { cache: "no-store" });
         const data = await res.json();
