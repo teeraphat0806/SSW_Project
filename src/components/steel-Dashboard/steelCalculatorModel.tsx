@@ -1,7 +1,7 @@
 import React, { useMemo, useState, useRef, useEffect } from "react";
 import { X, Plus, Trash2, Search, ChevronDown, Calculator } from "lucide-react";
 import { set } from "zod";
-import { createPortal } from "react-dom";
+
 // --- Types ---
 type SteelItemApi = {
   id: number;
@@ -33,7 +33,6 @@ function toNum(v: string) {
 }
 
 // --- Sub-component: Searchable Steel Select ---
-
 function SteelSearchSelect({
   steels,
   value,
@@ -55,41 +54,6 @@ function SteelSearchSelect({
     );
   }, [steels, search]);
 
-  // --- ตำแหน่ง dropdown (fixed) ---
-  const [pos, setPos] = useState<{ left: number; top: number; width: number }>({
-    left: 0,
-    top: 0,
-    width: 0,
-  });
-
-  const updatePos = () => {
-    const el = containerRef.current;
-    if (!el) return;
-    const rect = el.getBoundingClientRect();
-    setPos({
-      left: rect.left,
-      top: rect.bottom + 6, // เว้นระยะจากปุ่ม
-      width: rect.width,
-    });
-  };
-
-  useEffect(() => {
-    if (!isOpen) return;
-    updatePos();
-
-    const onScroll = () => updatePos();
-    const onResize = () => updatePos();
-
-    // capture scroll จากทุก parent ที่ scroll ได้
-    window.addEventListener("scroll", onScroll, true);
-    window.addEventListener("resize", onResize);
-
-    return () => {
-      window.removeEventListener("scroll", onScroll, true);
-      window.removeEventListener("resize", onResize);
-    };
-  }, [isOpen]);
-
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (
@@ -103,21 +67,11 @@ function SteelSearchSelect({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // ปิดด้วย ESC
-  useEffect(() => {
-    if (!isOpen) return;
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setIsOpen(false);
-    };
-    document.addEventListener("keydown", onKeyDown);
-    return () => document.removeEventListener("keydown", onKeyDown);
-  }, [isOpen]);
-
   return (
     <div className="relative w-full" ref={containerRef}>
       <button
         type="button"
-        onClick={() => setIsOpen((v) => !v)}
+        onClick={() => setIsOpen(!isOpen)}
         className="flex items-center justify-between w-full px-3 py-2 text-sm bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg hover:border-blue-500 transition-all focus:ring-2 focus:ring-blue-500/20 outline-none"
       >
         <span
@@ -126,75 +80,56 @@ function SteelSearchSelect({
           }
         >
           {selectedSteel
-            ? `${selectedSteel.codeSteel} (${
-                selectedSteel.shape === "square" ? "แผ่น" : "เส้น"
-              })`
+            ? `${selectedSteel.codeSteel} (${selectedSteel.shape === "square" ? "แผ่น" : "เส้น"})`
             : "ค้นหาเหล็ก..."}
         </span>
         <ChevronDown
-          className={`w-4 h-4 text-zinc-400 transition-transform ${
-            isOpen ? "rotate-180" : ""
-          }`}
+          className={`w-4 h-4 text-zinc-400 transition-transform ${isOpen ? "rotate-180" : ""}`}
         />
       </button>
 
-      {isOpen &&
-        typeof document !== "undefined" &&
-        createPortal(
-          <div
-            className="fixed z-[9999]"
-            style={{
-              left: pos.left,
-              top: pos.top,
-              width: pos.width,
-            }}
-          >
-            <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-150">
-              <div className="p-2 border-b border-zinc-100 dark:border-zinc-800 flex items-center gap-2">
-                <Search className="w-4 h-4 text-zinc-400" />
-                <input
-                  autoFocus
-                  className="w-full bg-transparent outline-none text-sm p-1 text-zinc-900 dark:text-zinc-100"
-                  placeholder="พิมพ์เพื่อค้นหา..."
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                />
+      {isOpen && (
+        <div className="absolute z-100 w-full mt-1 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-150">
+          <div className="p-2 border-b border-zinc-100 dark:border-zinc-800 flex items-center gap-2">
+            <Search className="w-4 h-4 text-zinc-400" />
+            <input
+              autoFocus
+              className="w-full bg-transparent outline-none text-sm p-1 text-zinc-900 dark:text-zinc-100"
+              placeholder="พิมพ์เพื่อค้นหา..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
+          <div className="max-h-60 overflow-y-auto">
+            {filtered.length > 0 ? (
+              filtered.map((s) => (
+                <div
+                  key={s.id}
+                  className={`px-4 py-2 text-sm cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-900/20 flex flex-col ${
+                    value === s.id ? "bg-blue-50/50 dark:bg-blue-900/10" : ""
+                  }`}
+                  onClick={() => {
+                    onChange(s.id);
+                    setIsOpen(false);
+                    setSearch("");
+                  }}
+                >
+                  <span className="font-medium text-zinc-900 dark:text-zinc-100">
+                    {s.codeSteel} ({s.shape === "square" ? "แผ่น" : "เส้น"})
+                  </span>
+                  <span className="text-[10px] text-zinc-500">
+                    Density: {s.density} | Price: {s.price}
+                  </span>
+                </div>
+              ))
+            ) : (
+              <div className="px-4 py-8 text-center text-zinc-400 text-sm">
+                ไม่พบข้อมูล
               </div>
-
-              <div className="max-h-60 overflow-y-auto">
-                {filtered.length > 0 ? (
-                  filtered.map((s) => (
-                    <div
-                      key={s.id}
-                      className={`px-4 py-2 text-sm cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-900/20 flex flex-col ${
-                        value === s.id
-                          ? "bg-blue-50/50 dark:bg-blue-900/10"
-                          : ""
-                      }`}
-                      onClick={() => {
-                        onChange(s.id);
-                        setIsOpen(false);
-                        setSearch("");
-                      }}
-                    >
-                      <span className="font-medium text-zinc-900 dark:text-zinc-100">
-                        {s.codeSteel} ({s.shape === "square" ? "แผ่น" : "เส้น"})
-                      </span>
-                      <span className="text-sm text-zinc-500">
-                        ความหนาแน่น: {s.density} | ราคาต่อหน่วย: {s.price}
-                      </span>
-                    </div>
-                  ))
-                ) : (
-                  <div className="px-4 py-8 text-center text-zinc-400 text-sm">
-                    ไม่พบข้อมูล
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>,
-          document.body,
-        )}
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
