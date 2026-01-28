@@ -51,7 +51,7 @@ type ApiJobOrder = {
 
 export async function GET(
   req: NextRequest,
-  context: { params: Promise<{ id: string }> }
+  context: { params: Promise<{ id: string }> },
 ) {
   const authResult = await requireAuth(["superadmin", "clerk", "supervisor"]);
   if ("response" in authResult) return authResult.response;
@@ -67,13 +67,22 @@ export async function GET(
     const jobOrder = await prisma.orderPO.findUnique({
       where: { id: poId },
       include: {
-        bill: true,
+        bill: { select: { id: true, deliveryDate: true } },
         Product: {
           include: {
             SteelType: true,
           },
         },
-        Customer: true,
+        Customer: {
+          select: {
+            id: true,
+            code: true,
+            name: true,
+            email: true,
+            tel: true,
+            address: true,
+          },
+        },
         staffLinks: {
           include: { staff: { include: { user: true } } },
         },
@@ -83,7 +92,7 @@ export async function GET(
     if (!jobOrder) {
       return NextResponse.json(
         { error: "Job order not found" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -91,7 +100,7 @@ export async function GET(
     if (!jobOrder.Customer || !jobOrder.bill) {
       return NextResponse.json(
         { error: "Order is missing Customer or Bill relation" },
-        { status: 500 }
+        { status: 500 },
       );
     }
     const links = jobOrder.staffLinks ?? [];
@@ -126,7 +135,7 @@ export async function GET(
         width: p.wide ?? undefined,
         length: p.length ?? undefined,
         thickness: p.thickness ?? undefined,
-        price: p.SteelType.price,
+        price: p.unitPrice,
         density: p.SteelType.density,
         detail: p.detail ?? undefined,
         shape: p.SteelType.shape,
@@ -166,7 +175,7 @@ const STATUS_OPTIONS = Object.keys(ALLOWED_ROLES_BY_STATUS);
 // PATCH /api/job-order-detail/[id]
 export async function PATCH(
   req: NextRequest,
-  context: { params: Promise<{ id: string }> }
+  context: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id } = await context.params;
@@ -181,7 +190,7 @@ export async function PATCH(
     } catch (e) {
       return NextResponse.json(
         { error: "Invalid JSON format" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -190,7 +199,7 @@ export async function PATCH(
         {
           error: `Invalid status value. Allowed: ${STATUS_OPTIONS.join(", ")}`,
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -205,7 +214,7 @@ export async function PATCH(
         | "clerk"
         | "delivery"
         | "cutter"
-      )[]
+      )[],
     );
     if ("response" in authResult) {
       return authResult.response;
@@ -216,30 +225,30 @@ export async function PATCH(
         where: { id: poId },
         select: {
           status: true,
-          Product: { select: { actualWeight: true } }, // ✅ relation จริงคือ Product
+          Product: { select: { actualWeight: true } },
         },
       });
 
       if (!po) {
         return NextResponse.json(
           { error: "Job order not found" },
-          { status: 404 }
+          { status: 404 },
         );
       }
 
       // (เลือกได้) บังคับ transition: ต้องอยู่ weighing ก่อนถึงจะไป ready
-      if (po.status !== "weighing") {
-        return NextResponse.json(
-          {
-            error:
-              "ไม่สามารถเปลี่ยนเป็น READY ได้: ต้องอยู่สถานะ WEIGHING ก่อน",
-          },
-          { status: 400 }
-        );
-      }
+      // if (po.status !== "weighing") {
+      //   return NextResponse.json(
+      //     {
+      //       error:
+      //         "ไม่สามารถเปลี่ยนเป็น READY ได้: ต้องอยู่สถานะ WEIGHING ก่อน",
+      //     },
+      //     { status: 400 },
+      //   );
+      // }
 
       const hasMissingWeight = po.Product.some(
-        (p) => p.actualWeight == null || p.actualWeight <= 0
+        (p) => p.actualWeight == null || p.actualWeight <= 0,
       );
 
       if (hasMissingWeight) {
@@ -248,7 +257,7 @@ export async function PATCH(
             error:
               "ไม่สามารถเปลี่ยนเป็น READY ได้: ต้องกรอกน้ำหนักเหล็กก่อน (Actual Weight ต้องมากกว่า 0)",
           },
-          { status: 400 }
+          { status: 400 },
         );
       }
     }
@@ -262,7 +271,7 @@ export async function PATCH(
     if (!poCurrent) {
       return NextResponse.json(
         { error: "Job order not found" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -270,7 +279,7 @@ export async function PATCH(
     if (poCurrent.status === "canceled") {
       return NextResponse.json(
         { error: "ออเดอร์ถูกยกเลิกแล้ว ไม่สามารถเปลี่ยนสถานะได้" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -280,7 +289,7 @@ export async function PATCH(
       if (poCurrent.status === "shipped" || poCurrent.status === "completed") {
         return NextResponse.json(
           { error: "ไม่สามารถยกเลิกได้: ออเดอร์ถูกจัดส่งหรือเสร็จสิ้นแล้ว" },
-          { status: 400 }
+          { status: 400 },
         );
       }
     }
@@ -297,20 +306,20 @@ export async function PATCH(
         status: result.status,
         updatedAt: result.updatedAt,
       },
-      { status: 200 }
+      { status: 200 },
     );
   } catch (error: any) {
     if (error.code === "P2025") {
       return NextResponse.json(
         { error: "Job order not found" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
     console.error("Update Order Error:", error);
     return NextResponse.json(
       { error: "Internal Server Error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

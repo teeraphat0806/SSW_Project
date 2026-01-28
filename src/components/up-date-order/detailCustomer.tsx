@@ -32,7 +32,6 @@ import {
 import { Badge } from "@/components/ui/badge"; // ถ้ามี component นี้ (Optional)
 import { Separator } from "@/components/ui/separator"; // ถ้ามี component นี้ (Optional)
 
-// ... (Types ยังคงเดิม) ...
 type CustomerApiItem = {
   id: string | number;
   name: string;
@@ -120,13 +119,11 @@ export default function DetailCustomer<T extends JobCustomerFields>({
       setLoading(true);
       setError(null);
       try {
-        // Mockup หรือเรียก API จริง
-        const endpoint =
-          q.trim().length > 0
-            ? `/api/customer/name/${encodeURIComponent(q.trim())}`
-            : `/api/customer`;
-
-        const res = await fetch(endpoint, { cache: "no-store" });
+        const param = new URLSearchParams();
+        const q = searchCustomer.trim();
+        if (q) param.set("search", q);
+        const url = `/api/customer?${param.toString()}`;
+        const res = await fetch(url, { cache: "no-store" });
         const data = await res.json();
 
         if (!res.ok) throw new Error(data?.error || `Error: ${res.status}`);
@@ -134,7 +131,7 @@ export default function DetailCustomer<T extends JobCustomerFields>({
 
         const list: CustomerApiItem[] = Array.isArray(data)
           ? data
-          : data?.data ?? [];
+          : (data?.data ?? []);
         setCustomers(list);
       } catch (e) {
         if (!cancelledRef?.())
@@ -143,14 +140,14 @@ export default function DetailCustomer<T extends JobCustomerFields>({
         if (!cancelledRef?.()) setLoading(false);
       }
     },
-    []
+    [],
   );
 
   React.useEffect(() => {
     let cancelled = false;
     const t = setTimeout(
       () => fetchCustomers(searchCustomer, () => cancelled),
-      300
+      300,
     );
     return () => {
       cancelled = true;
@@ -175,7 +172,7 @@ export default function DetailCustomer<T extends JobCustomerFields>({
     <section
       className={cn(
         "group relative overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm transition-all hover:shadow-md dark:border-zinc-800 dark:bg-zinc-900",
-        className
+        className,
       )}
     >
       {/* Header Bar: เน้นที่การเลือกเป็นหลัก */}
@@ -204,7 +201,7 @@ export default function DetailCustomer<T extends JobCustomerFields>({
                 "border border-zinc-300 dark:border-zinc-700",
                 // ✅ 3. ใส่เงาเพื่อให้ปุ่มดูลอยออกมาจากพื้นหลัง
                 "shadow-sm",
-                !job.customerName && "text-zinc-500"
+                !job.customerName && "text-zinc-500",
               )}
             >
               <div className="flex items-center truncate">
@@ -263,14 +260,14 @@ export default function DetailCustomer<T extends JobCustomerFields>({
                                 setJob((prev) =>
                                   prev
                                     ? { ...prev, ...mapCustomerToJobFields(c) }
-                                    : prev
+                                    : prev,
                                 );
                                 setOpen(false);
                               }}
                               className={cn(
                                 "flex items-center justify-between text-xs cursor-pointer",
                                 // ✅ เพิ่มสีเวลาเอาเมาส์ชี้ (Hover) ให้ชัดเจน
-                                "aria-selected:bg-blue-50 aria-selected:text-blue-900 dark:aria-selected:bg-blue-900/20 dark:aria-selected:text-blue-100"
+                                "aria-selected:bg-blue-50 aria-selected:text-blue-900 dark:aria-selected:bg-blue-900/20 dark:aria-selected:text-blue-100",
                               )}
                             >
                               <div className="flex flex-col truncate">
@@ -345,7 +342,7 @@ export default function DetailCustomer<T extends JobCustomerFields>({
                   <div
                     className={cn(
                       "sm:col-span-6",
-                      !job.customerFax && "sm:col-span-12"
+                      !job.customerFax && "sm:col-span-12",
                     )}
                   >
                     <InfoItem

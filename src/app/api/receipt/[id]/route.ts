@@ -2,7 +2,6 @@
 import prisma from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/permissions";
-import { includes } from "zod";
 
 function ThaiBaht(numberStr: string) {
   //ตัดสิ่งที่ไม่ต้องการทิ้งลงโถส้วม
@@ -24,7 +23,7 @@ function ThaiBaht(numberStr: string) {
     "เจ็ด",
     "แปด",
     "เก้า",
-    "สิบ"
+    "สิบ",
   );
   var TxtDigitArr = new Array("", "สิบ", "ร้อย", "พัน", "หมื่น", "แสน", "ล้าน");
   var BahtText = "";
@@ -119,9 +118,11 @@ type ApiReceipt = {
 
 export async function GET(
   req: NextRequest,
-  context: { params: Promise<{ id: string }> }
+  context: { params: Promise<{ id: string }> },
 ) {
   const { id } = await context.params;
+  const authResult = await requireAuth(["superadmin", "supervisor", "clerk"]);
+  if ("response" in authResult) return authResult.response;
   const receiptId = Number(id);
 
   if (Number.isNaN(receiptId)) {
@@ -136,7 +137,6 @@ export async function GET(
         OrderPO: {
           include: {
             Product: {
-              // <- อันนี้ต้องเป็นชื่อ relation จริงใน OrderPO
               include: {
                 SteelType: true,
               },
@@ -152,12 +152,26 @@ export async function GET(
     if (!receipt.Customer || !receipt.OrderPO) {
       return NextResponse.json(
         { error: "Incomplete receipt data" },
-        { status: 500 }
+        { status: 500 },
       );
     }
     const customer = receipt.Customer;
     console.log("steel items:", receipt);
     const grandTotal = receipt.grandTotal ?? 0;
+
+    const steel = receipt.OrderPO.Product.map((p) => ({
+      steelType: p.SteelType.codeSteel,
+      amount: p.amount,
+      width: p.wide ?? 0,
+      length: p.length,
+      thickness: p.thickness,
+      price: p.unitPrice,
+      weight: p.actualWeight,
+      job: p.job,
+      cuttingMethod: p.cuttingMethod,
+      total: p.total ?? 0,
+    }));
+
     const apiReceipt: ApiReceipt = {
       id: receipt.id,
       invoiceNo: receipt.invoiceNo,
@@ -176,27 +190,14 @@ export async function GET(
         tel: customer.tel,
         faxNumber: customer.faxNumber,
       },
-      steel: receipt.OrderPO.flatMap((po) =>
-        po.Product.map((p) => ({
-          steelType: p.SteelType.codeSteel,
-          amount: p.amount,
-          width: p.wide ?? 0,
-          length: p.length,
-          thickness: p.thickness,
-          price: p.SteelType.price,
-          weight: p.actualWeight,
-          job: p.job,
-          cuttingMethod: p.cuttingMethod,
-          total: p.total,
-        }))
-      ),
+      steel,
     };
 
     return NextResponse.json(apiReceipt);
   } catch (error) {
     return NextResponse.json(
       { error: "Internal server error" + error },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

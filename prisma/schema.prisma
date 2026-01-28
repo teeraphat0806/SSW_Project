@@ -56,13 +56,13 @@ model Customer {
 
 model Bill {
   id                            Int       @id @default(autoincrement())
-  customerId                    Int?
+  customerId                    Int
   yourRef                       String
   invoiceNo                     Int       @unique @default(autoincrement())
-  codeCustomer                  String?   @unique
+  codeCustomer                  String   @unique
   deliveryDate                  DateTime
   deliveryOrderNo               String?
-  salesName                     String?
+  salesName                     String
   deliveredBy                   String?
   description                   String?
   vatRate                       Float     @default(7.0)
@@ -71,15 +71,15 @@ model Bill {
   discount                      Float?
   vat                           Float
   dateReceive                   DateTime?
-  salesNameId                   Int?
+  salesNameId                   Int
   deliveredById                 Int?
   updatedAt                     DateTime  @updatedAt
   createdAt                     DateTime  @default(now())
   credit                        Int       @default(30)
-  Customer                      Customer? @relation(fields: [customerId], references: [id])
+  Customer   Customer @relation(fields: [customerId], references: [id], onDelete: Restrict)
   Staff_Bill_deliveredByToStaff Staff?    @relation("Bill_deliveredByToStaff", fields: [deliveredById], references: [id])
   Staff_Bill_salesNameToStaff   Staff?    @relation("Bill_salesNameToStaff", fields: [salesNameId], references: [id])
-  OrderPO                       OrderPO[]
+  OrderPO                       OrderPO?
 
   @@index([customerId])
   @@index([salesNameId])
@@ -90,7 +90,7 @@ model OrderPO {
   id          Int       @id @default(autoincrement())
   poNumber    String?   @unique
   customerId  Int?
-  billId      Int?
+  billId      Int?      @unique
   status      JobStatus @default(pending)
   total       Float
   completedAt DateTime?
@@ -128,12 +128,14 @@ model Product {
   orderPOId     Int
   steelId       Int
   wide          Float?
-  length        Float?
-  thickness     Float?
+  length        Float
+  thickness     Float
   amount        Int
   detail        String?
   actualWeight  Float?
-  total         Float
+  unitPrice     Float         @default(0)
+  discount      Float?
+  total         Float?
   cuttingMethod CuttingMethod @default(normal)
   job           Int?
   OrderPO       OrderPO       @relation(fields: [orderPOId], references: [id], onDelete: Cascade)
@@ -186,8 +188,9 @@ model SteelType {
   codeSteel  String       @unique
   detail     String?
   amount     Int          @default(0)
-  shape      ShapeSteel
+  shape      ShapeSteel   @default(square)
   price      Float
+  status     SteelStatus  @default(active)
   createdAt  DateTime     @default(now())
   updatedAt  DateTime     @updatedAt
   density    Float
@@ -197,18 +200,21 @@ model SteelType {
 
 model SteelStock {
   id          Int         @id @default(autoincrement())
-  width       Float?
-  length      Float
-  thickness   Float
+  width       Int?
+  length      Int
+  thickness   Int
+  quantity    Int         @default(0)
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
   steeltypeId Int
-  withdrawnAt DateTime?
   status      StockStatus @default(available)
   SteelType   SteelType   @relation(fields: [steeltypeId], references: [id])
 
-  @@index([steeltypeId, status])
+ 
+  @@unique([steeltypeId, width, length, thickness])
 }
+
+
 
 model Expense {
   id          Int             @id @default(autoincrement())
@@ -267,7 +273,14 @@ enum StockStatus {
   withdrawn
 }
 
+enum SteelStatus{
+  active
+  inactive
+  hold
+}
+
 enum OrderStaffRole {
   supervisor  
   cutter       
 }
+

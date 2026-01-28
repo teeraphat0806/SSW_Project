@@ -2,7 +2,7 @@ import { randomBytes } from "crypto";
 
 function generateCode(
   length = 20,
-  charset = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-_"
+  charset = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-_",
 ) {
   if (length <= 0) return "";
   const chars = charset;
@@ -48,38 +48,34 @@ export const billData = [
     vat: 70.0,
     grandTotal: 1062.26,
     dateReceive: new Date("2025-08-01"),
-    typeBill: "บิลเงินสด",
     OrderPO: {
-      create: [
-        {
-          poNumber: "PO-001",
-          total: 1000,
-          Customer: { connect: { id: 1 } },
-          urlPo: ["po/1/1764165666751_6845381f_3754_20250619154804853.pdf"],
-          date: new Date(),
-          Staff: { connect: [{ id: 3 }, { id: 4 }, { id: 6 }, { id: 7 }] },
-          Product: {
-            create: [
-              {
-                SteelType: { connect: { codeSteel: "SS400" } },
-                wide: 10,
-                length: 20,
-                thickness: 1,
-                amount: 5,
-                total: 200,
-              },
-              {
-                SteelType: { connect: { codeSteel: "A36" } },
-                wide: 15,
-                length: 25,
-                thickness: 2,
-                amount: 10,
-                total: 800,
-              },
-            ],
-          },
+      create: {
+        poNumber: "PO-001",
+        total: 1000,
+        Customer: { connect: { id: 1 } },
+        urlPo: ["po/1/1764165666751_6845381f_3754_20250619154804853.pdf"],
+       
+        Product: {
+          create: [
+            {
+              SteelType: { connect: { codeSteel: "SS400" } },
+              wide: 10,
+              length: 20,
+              thickness: 1,
+              amount: 5,
+              total: 200,
+            },
+            {
+              SteelType: { connect: { codeSteel: "A36" } },
+              wide: 15,
+              length: 25,
+              thickness: 2,
+              amount: 10,
+              total: 800,
+            },
+          ],
         },
-      ],
+      },
     },
   },
   {
@@ -101,36 +97,33 @@ export const billData = [
     grandTotal: 1062.26,
     dateReceive: new Date("2025-08-01"),
     OrderPO: {
-      create: [
-        {
-          poNumber: "PO-002",
-          total: 2000,
-          Customer: { connect: { id: 2 } },
-          urlPo: ["po/2/1764165579932_a96687e4_3214654_104x104x460.pdf"],
-          date: new Date(),
-          Staff: { connect: [{ id: 3 }, { id: 4 }, { id: 7 }] },
-          Product: {
-            create: [
-              {
-                SteelType: { connect: { codeSteel: "A572" } },
-                wide: 10,
-                length: 20,
-                thickness: 1,
-                amount: 5,
-                total: 200,
-              },
-              {
-                SteelType: { connect: { codeSteel: "A516" } },
-                wide: 15,
-                length: 25,
-                thickness: 2,
-                amount: 10,
-                total: 800,
-              },
-            ],
-          },
+      create: {
+        poNumber: "PO-002",
+        total: 2000,
+        Customer: { connect: { id: 2 } },
+        urlPo: ["po/2/1764165579932_a96687e4_3214654_104x104x460.pdf"],
+       
+        Product: {
+          create: [
+            {
+              SteelType: { connect: { codeSteel: "A572" } },
+              wide: 10,
+              length: 20,
+              thickness: 1,
+              amount: 5,
+              total: 200,
+            },
+            {
+              SteelType: { connect: { codeSteel: "A516" } },
+              wide: 15,
+              length: 25,
+              thickness: 2,
+              amount: 10,
+              total: 800,
+            },
+          ],
         },
-      ],
+      },
     },
   },
   {
@@ -151,36 +144,33 @@ export const billData = [
     grandTotal: 1062.26,
     dateReceive: new Date("2025-08-01"),
     OrderPO: {
-      create: [
-        {
-          poNumber: "PO-003",
-          total: 3000,
-          Customer: { connect: { id: 3 } },
-          urlPo: ["po/3/1764165700182_9832fd5d_375455_PVS0289.pdf"],
-          date: new Date(),
-          Staff: { connect: [{ id: 3 }, { id: 4 }, { id: 6 }, { id: 7 }] },
-          Product: {
-            create: [
-              {
-                SteelType: { connect: { codeSteel: "AISI 1018" } },
-                wide: 10,
-                length: 20,
-                thickness: 1,
-                amount: 5,
-                total: 200,
-              },
-              {
-                SteelType: { connect: { codeSteel: "SUS304" } },
-                wide: 15,
-                length: 25,
-                thickness: 2,
-                amount: 10,
-                total: 800,
-              },
-            ],
-          },
+      create: {
+        poNumber: "PO-003",
+        total: 3000,
+        Customer: { connect: { id: 3 } },
+        urlPo: ["po/3/1764165700182_9832fd5d_375455_PVS0289.pdf"],
+        
+        Product: {
+          create: [
+            {
+              SteelType: { connect: { codeSteel: "AISI 1018" } },
+              wide: 10,
+              length: 20,
+              thickness: 1,
+              amount: 5,
+              total: 200,
+            },
+            {
+              SteelType: { connect: { codeSteel: "SUS304" } },
+              wide: 15,
+              length: 25,
+              thickness: 2,
+              amount: 10,
+              total: 800,
+            },
+          ],
         },
-      ],
+      },
     },
   },
   {
@@ -202,36 +192,33 @@ export const billData = [
     grandTotal: 1062.26,
     dateReceive: new Date("2025-08-01"),
     OrderPO: {
-      create: [
-        {
-          poNumber: "PO-004",
-          total: 4000,
-          Customer: { connect: { id: 4 } },
-          urlPo: ["po/4/1764165734119_7e5effad_52467_SSW250833__2_.pdf"],
-          date: new Date(),
-          Staff: { connect: [{ id: 4 }, { id: 6 }, { id: 7 }] },
-          Product: {
-            create: [
-              {
-                SteelType: { connect: { codeSteel: "SS400" } },
-                wide: 10,
-                length: 20,
-                thickness: 1,
-                amount: 5,
-                total: 200,
-              },
-              {
-                SteelType: { connect: { codeSteel: "SUS304" } },
-                wide: 15,
-                length: 25,
-                thickness: 2,
-                amount: 10,
-                total: 800,
-              },
-            ],
-          },
+      create: {
+        poNumber: "PO-004",
+        total: 4000,
+        Customer: { connect: { id: 4 } },
+        urlPo: ["po/4/1764165734119_7e5effad_52467_SSW250833__2_.pdf"],
+       
+        Product: {
+          create: [
+            {
+              SteelType: { connect: { codeSteel: "SS400" } },
+              wide: 10,
+              length: 20,
+              thickness: 1,
+              amount: 5,
+              total: 200,
+            },
+            {
+              SteelType: { connect: { codeSteel: "SUS304" } },
+              wide: 15,
+              length: 25,
+              thickness: 2,
+              amount: 10,
+              total: 800,
+            },
+          ],
         },
-      ],
+      },
     },
   },
   {
@@ -253,36 +240,33 @@ export const billData = [
     grandTotal: 1062.26,
     dateReceive: new Date("2025-08-01"),
     OrderPO: {
-      create: [
-        {
-          poNumber: "PO-005",
-          total: 5000,
-          Customer: { connect: { id: 5 } },
-          urlPo: ["po/5/1764165758648_904c45d3_88964_SSW250833__2_.pdf"],
-          date: new Date(),
-          Staff: { connect: [{ id: 3 }, { id: 4 }, { id: 6 }] },
-          Product: {
-            create: [
-              {
-                SteelType: { connect: { codeSteel: "SS400" } },
-                wide: 10,
-                length: 20,
-                thickness: 1,
-                amount: 5,
-                total: 200,
-              },
-              {
-                SteelType: { connect: { codeSteel: "A36" } },
-                wide: 15,
-                length: 25,
-                thickness: 2,
-                amount: 10,
-                total: 800,
-              },
-            ],
-          },
+      create: {
+        poNumber: "PO-005",
+        total: 5000,
+        Customer: { connect: { id: 5 } },
+        urlPo: ["po/5/1764165758648_904c45d3_88964_SSW250833__2_.pdf"],
+       
+        Product: {
+          create: [
+            {
+              SteelType: { connect: { codeSteel: "SS400" } },
+              wide: 10,
+              length: 20,
+              thickness: 1,
+              amount: 5,
+              total: 200,
+            },
+            {
+              SteelType: { connect: { codeSteel: "A36" } },
+              wide: 15,
+              length: 25,
+              thickness: 2,
+              amount: 10,
+              total: 800,
+            },
+          ],
         },
-      ],
+      },
     },
   },
 ];

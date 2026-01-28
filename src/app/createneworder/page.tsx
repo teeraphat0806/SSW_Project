@@ -24,29 +24,37 @@ import {
   X,
 } from "lucide-react";
 import SelectCustomer from "@/components/SelectCustomer";
-//import { se } from "date-fns/locale";
 
 import type { CustomerFormData } from "@/components/newJobOrder/CustomerForm";
 import { cn } from "@/lib/utils";
-import { CuttingMethod } from "@prisma/client";
+import { CuttingMethod, ShapeSteel } from "@prisma/client";
+
+type CustomerApiItem = {
+  id: number;
+  name: string;
+};
+
+type CustomerApiResponse = {
+  data: CustomerApiItem[];
+};
 
 type SteelItem = {
   id: string;
   steelType: string;
-  shape: "line" | "square" | string;
+  shape: ShapeSteel;
   quantity: number;
   width: number | null;
   length: number;
   thickness: number;
   notes: string;
-  cuttingMethod?: "normal" | "FB" | "steelDisc";
+  cuttingMethod?: CuttingMethod;
   job?: number | null;
 };
 
 type SteelType = {
   id: string;
   name: string; // ใช้แสดงใน Select
-  shape: "line" | "square" | string;
+  shape: ShapeSteel;
 };
 
 // ฟังก์ชันช่วยแปลงวันที่ให้สวยงาม (ใส่ไว้ใน utils หรือประกาศในไฟล์)
@@ -70,9 +78,9 @@ const NewJobOrder = () => {
   const [useJob, setUseJob] = useState(false);
   // ลูกค้า
   const [customers, setCustomers] = useState<{ id: string; name: string }[]>(
-    []
+    [],
   );
-  const [searchCustoer, setsearchCustoer] = useState(""); // เก็บค่าที่ค้นหาลูกค้า
+  const [searchCustomer, setSearchCustomer] = useState(""); // เก็บค่าที่ค้นหาลูกค้า
 
   // สินค้า
   const [searchItem, setsearchItem] = useState(""); //เก็บค่าที่ค้นหาสินค้า
@@ -98,7 +106,7 @@ const NewJobOrder = () => {
     {
       id: "",
       steelType: "",
-      shape: "",
+      shape: "square",
       quantity: 1,
       width: null,
       length: 1,
@@ -107,14 +115,15 @@ const NewJobOrder = () => {
       notes: "",
     },
   ]);
+
+  //จำนวนรวมของเหล็ก
   const totalQuantity = steelItems.reduce(
-    (sum: number, item: any) => sum + item.quantity,
-    0
+    (sum, item) => sum + item.quantity,
+    0,
   );
+  //จำนวนประเภทเหล็ก
   const totalTypes = new Set(
-    steelItems
-      .filter((item: any) => item.steelType)
-      .map((item: any) => item.steelType)
+    steelItems.filter((item) => item.steelType).map((item) => item.steelType),
   ).size;
 
   useEffect(() => {
@@ -123,11 +132,12 @@ const NewJobOrder = () => {
     const fetchSteelTypes = async () => {
       setLoadingSteel(true);
       try {
-        const urlSteelType =
-          searchItem.trim() === ""
-            ? `api/steelType`
-            : `api/steelType/${encodeURIComponent(searchItem)}`;
-
+        const param = new URLSearchParams();
+        if (searchItem.trim() !== "") {
+          param.set("search", searchItem.trim());
+        }
+        param.set("status", "active");
+        const urlSteelType = `/api/steelType?${param.toString()}`;
         const res = await fetch(urlSteelType);
         if (!res.ok) throw new Error("Error fetching steel types");
 
@@ -139,7 +149,7 @@ const NewJobOrder = () => {
               id: t.id.toString(),
               name: t.codeSteel, // ใช้เป็น value/label ใน Select
               shape: t.shape,
-            }))
+            })),
           );
         }
       } catch (e) {
@@ -153,23 +163,22 @@ const NewJobOrder = () => {
     const fetchCustomers = async () => {
       setLoading(true);
       try {
-        const urlCustomer =
-          searchCustoer.trim() === ""
-            ? `api/customer`
-            : `${
-                process.env.NEXTAUTH_URL
-              }api/customer/name/${encodeURIComponent(searchCustoer)}`;
-        const res = await fetch(urlCustomer);
+        const param = new URLSearchParams();
+        const q = searchCustomer.trim();
+        if (q) param.set("search", q);
+        const urlCustomer = `/api/customer?${param.toString()}`;
+
+        const res = await fetch(urlCustomer, { cache: "no-store" });
         if (!res.ok) throw new Error("Error fetching customers");
 
-        const data = await res.json();
+        const json: CustomerApiResponse = await res.json();
 
         if (!ignore) {
           setCustomers(
-            data.map((c: { id: number; name: string }) => ({
+            json.data.map((c: CustomerApiItem) => ({
               id: c.id.toString(),
               name: c.name,
-            }))
+            })),
           );
         }
       } catch (err) {
@@ -186,7 +195,7 @@ const NewJobOrder = () => {
     return () => {
       ignore = true;
     };
-  }, [searchCustoer, searchItem]);
+  }, [searchCustomer, searchItem]);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files) {
@@ -291,7 +300,6 @@ const NewJobOrder = () => {
       const poKeys = await UploadFiles({
         files: UploadFile,
         poNumber: headOrder.poNumber || null,
-
         customerId: customerId || "",
       });
 
@@ -299,33 +307,28 @@ const NewJobOrder = () => {
         customerId: Number(customerId),
         yourRef: headOrder.yourRef,
         deliveryDate: new Date(headOrder.deliveryDate).toISOString(),
-        vat: 7.0,
-        orderPOs: [
-          {
-            poNumber: headOrder.poNumber,
-            total: steelItems.reduce((sum, item) => {
-              return sum + item.quantity;
-            }, 0),
-            vat: 7.0,
-            urlPo: poKeys,
-            products: steelItems.map((item) => {
-              return {
-                steelType: item.steelType,
-                wide: item.width ?? null,
-                length: item.length,
-                amount: item.quantity,
-                thickness: item.thickness,
-                total: 200,
-                detail: item.notes || "",
-                CuttingMethod: item.cuttingMethod || "normal",
-                job: item.job || null,
-              };
-            }),
-          },
-        ],
+        orderPO: {
+          poNumber: headOrder.poNumber ?? null,
+          urlPo: poKeys,
+
+          products: steelItems.map((item) => ({
+            steelType: item.steelType,
+            wide: item.width ?? null,
+            length: item.length,
+            thickness: item.thickness,
+            amount: item.quantity,
+
+            cuttingMethod: item.cuttingMethod ?? "normal",
+
+            job: item.job ?? null,
+
+            detail: item.notes || undefined, // optional ส่ง undefined ได้
+          })),
+        },
       };
+
       //สร้างออเดอร์ใหม่
-      const billRes = await fetch(`api/createNewOrder`, {
+      const billRes = await fetch(`/api/createNewOrder`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payloadBill),
@@ -367,7 +370,7 @@ const NewJobOrder = () => {
   // Update form data
   const updateFormData = <K extends keyof CustomerFormData>(
     field: K,
-    value: CustomerFormData[K]
+    value: CustomerFormData[K],
   ) => {
     setFormData((prev) => ({
       ...prev,
@@ -378,10 +381,10 @@ const NewJobOrder = () => {
   const updateSteelItem = <K extends keyof SteelItem>(
     id: SteelItem["id"],
     field: K,
-    value: SteelItem[K]
+    value: SteelItem[K],
   ) => {
     setSteelItems((prev) =>
-      prev.map((item) => (item.id === id ? { ...item, [field]: value } : item))
+      prev.map((item) => (item.id === id ? { ...item, [field]: value } : item)),
     );
   };
 
@@ -391,8 +394,8 @@ const NewJobOrder = () => {
       id: uuidv4(),
       steelType: "",
       quantity: 1,
-      width: 0,
-      shape: "line",
+      width: null,
+      shape: "square",
       length: 0,
       thickness: 0,
       notes: "",
@@ -435,7 +438,14 @@ const NewJobOrder = () => {
     }
     if (steelItems.length > 15)
       return "ไม่สามารถเพิ่มรายการเหล็กเกิน 15 รายการ";
-    if (steelItems.some((item) => item.length <= 0 || item.thickness <= 0 || (item.shape === "square" && (item.width === null || item.width <= 0)))) 
+    if (
+      steelItems.some(
+        (item) =>
+          item.length <= 0 ||
+          item.thickness <= 0 ||
+          (item.shape === "square" && (item.width === null || item.width <= 0)),
+      )
+    )
       return "ขนาดของเหล็กต้องมากกว่า 0";
     return null;
   };
@@ -487,8 +497,8 @@ const NewJobOrder = () => {
                     selectedCustomerId={selectedCustomerId}
                     setSelectedCustomer={setSelectedCustomerId}
                     customers={customers}
-                    search={searchCustoer}
-                    setSearch={setsearchCustoer}
+                    search={searchCustomer}
+                    setSearch={setSearchCustomer}
                     loading={loading}
                   />
                 )}
@@ -503,7 +513,7 @@ const NewJobOrder = () => {
                     "flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 border",
                     showForm
                       ? "bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-400 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700"
-                      : "bg-blue-50 text-blue-600 border-blue-100 hover:bg-blue-400 dark:bg-blue-900/20 dark:text-white dark:border-blue-900/50"
+                      : "bg-blue-50 text-blue-600 border-blue-100 hover:bg-blue-400 dark:bg-blue-900/20 dark:text-white dark:border-blue-900/50",
                   )}
                 >
                   {showForm ? (
@@ -726,7 +736,6 @@ const NewJobOrder = () => {
                   </Card>
                 </div>
               </div>
-              {/* Steel Items */}
             </div>
           </div>
         </form>

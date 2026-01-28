@@ -164,10 +164,12 @@ function PrintContent() {
         @media print {
           @page {
             size: A4;
-            margin: 10mm;
+            margin: 0;
           }
 
           body {
+            margin: 0 !important;
+            padding: 0 !important;
             print-color-adjust: exact;
             -webkit-print-color-adjust: exact;
           }

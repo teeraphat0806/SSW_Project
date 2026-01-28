@@ -174,7 +174,7 @@ export default function SteelTable({ steel = [] }: SteelTableProps) {
                           className={` px-1.5 py-0.5 rounded border font-medium bg-zinc-100 border-zinc-200 text-zinc-500 dark:bg-zinc-900 dark:border-zinc-800 dark:text-zinc-500`}
                         >
                           {item.original.cuttingMethod == "FB"
-                            ? "F/B"
+                            ? "F/P"
                             : "แบนกลม"}
                         </span>
                       )}

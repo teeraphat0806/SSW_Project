@@ -9,7 +9,7 @@ export const metadata = {
   description: "My App Description",
 };
 
-export default function CustomerDashboardLayout({
+export default function SteelDashboardLayout({
   children,
 }: {
   children: React.ReactNode;

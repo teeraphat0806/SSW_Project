@@ -159,7 +159,7 @@ type SteelStockApiItem = {
 };
 function mergeOrderSteelIntoOptions(
   options: SteelOption[],
-  job: Joborder | null
+  job: Joborder | null,
 ): SteelOption[] {
   if (!job?.steel?.length) return options;
 
@@ -268,7 +268,13 @@ const UpdateOrderPage = ({ id }: { id: string }) => {
   const fetchSteel = async (name: string, cancelledRef?: () => boolean) => {
     setLoadingSteel(true);
     try {
-      const res = await fetch(`/api/steelType/${encodeURIComponent(name)}`, {
+      const param = new URLSearchParams();
+      if (name.trim() !== "") {
+        param.set("search", name.trim());
+      }
+      param.set("status", "active");
+      const urlSteelType = `/api/steelType?${param.toString()}`;
+      const res = await fetch(urlSteelType, {
         method: "GET",
         cache: "no-store",
       });
@@ -321,7 +327,7 @@ const UpdateOrderPage = ({ id }: { id: string }) => {
       } catch (e) {
         if (!cancelled)
           setError(
-            e instanceof Error ? e.message : "Failed to fetch job order"
+            e instanceof Error ? e.message : "Failed to fetch job order",
           );
       } finally {
         if (!cancelled) setLoading(false);
@@ -355,7 +361,7 @@ const UpdateOrderPage = ({ id }: { id: string }) => {
         (s) =>
           s.length <= 0 ||
           s.thickness <= 0 ||
-          (s.shape == "square" && (s.width == null || s.width <= 0))
+          (s.shape == "square" && (s.width == null || s.width <= 0)),
       )
     )
       return "ขนาดของเหล็กต้องมากกว่า 0";
@@ -400,7 +406,7 @@ const UpdateOrderPage = ({ id }: { id: string }) => {
           "ขออภัย มีข้อผิดพลาด: กรุณาเลือกประเภทเหล็กให้ครบทุกบรรทัด",
           {
             position: "bottom-right",
-          }
+          },
         );
         return;
       }
@@ -427,7 +433,7 @@ const UpdateOrderPage = ({ id }: { id: string }) => {
                 ...prev,
                 steel: (prev.steel ?? []).map((s) => ({ ...s, job: null })),
               }
-            : prev
+            : prev,
         );
       }
     } catch (e) {
@@ -483,24 +489,27 @@ const UpdateOrderPage = ({ id }: { id: string }) => {
   const uniqueTypeCount = new Set(job.steel.map((i) => i.steeltype)).size;
   const totalQty = job.steel.reduce(
     (sum, i) => sum + (Number(i.quantity) || 0),
-    0
+    0,
   );
 
   const totalWeight = weightEnabled
     ? job.steel.reduce(
         (sum, i) => sum + (Number(i.weight) || 0) * (Number(i.quantity) || 0),
-        0
+        0,
       )
     : 0;
 
-  const summaryByType = job.steel.reduce((acc, i) => {
-    const key = i.steeltype || "ไม่ระบุ";
-    if (!acc[key]) acc[key] = { lines: 0, qty: 0, weight: 0 };
-    acc[key].lines += 1;
-    acc[key].qty += Number(i.quantity) || 0;
-    acc[key].weight += (Number(i.weight) || 0) * (Number(i.quantity) || 0);
-    return acc;
-  }, {} as Record<string, { lines: number; qty: number; weight: number }>);
+  const summaryByType = job.steel.reduce(
+    (acc, i) => {
+      const key = i.steeltype || "ไม่ระบุ";
+      if (!acc[key]) acc[key] = { lines: 0, qty: 0, weight: 0 };
+      acc[key].lines += 1;
+      acc[key].qty += Number(i.quantity) || 0;
+      acc[key].weight += (Number(i.weight) || 0) * (Number(i.quantity) || 0);
+      return acc;
+    },
+    {} as Record<string, { lines: number; qty: number; weight: number }>,
+  );
 
   const fmtInt = (n: number) => Intl.NumberFormat().format(n);
   const fmtWeight = (n: number) =>

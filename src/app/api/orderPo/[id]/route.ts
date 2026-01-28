@@ -2,10 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "../../../../lib/prisma";
 import { OrderPOSchema } from "../../../../lib/schemas/orderPO.schema";
 import { requireAuth } from "@/lib/permissions";
-// GET /api/payroll/[id]
+// GET /api/orderPo/[id]
 export async function GET(
   req: NextRequest,
-  context: { params: Promise<{ id: string }> }
+  context: { params: Promise<{ id: string }> },
 ) {
   const { id } = await context.params;
   const authResult = await requireAuth([
@@ -29,15 +29,15 @@ export async function GET(
   } catch (error) {
     return NextResponse.json(
       { error: "Failed to fetch orderPO: " + error },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
 
-// PUT /api/payroll/[id]
+// PUT /api/orderPo/[id]
 export async function PATCH(
   req: NextRequest,
-  context: { params: Promise<{ id: string }> }
+  context: { params: Promise<{ id: string }> },
 ) {
   const { id } = await context.params;
   const authResult = await requireAuth([
@@ -67,15 +67,15 @@ export async function PATCH(
   } catch (error) {
     return NextResponse.json(
       { error: "Failed to update orderPO: " + error },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
 
-// DELETE /api/payroll/[id]
+// DELETE /api/orderPo/[id]
 export async function DELETE(
   req: NextRequest,
-  context: { params: Promise<{ id: string }> }
+  context: { params: Promise<{ id: string }> },
 ) {
   const { id } = await context.params;
   const authResult = await requireAuth([
@@ -98,7 +98,7 @@ export async function DELETE(
     console.error("error: ", error);
     return NextResponse.json(
       { error: "Failed to delete orderPO" },
-      { status: 500 }
+      { status: 500 },
     );
   }
   return NextResponse.json({ message: `Delete Complete` });
