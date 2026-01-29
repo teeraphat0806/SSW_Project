@@ -45,7 +45,7 @@ async function getCroppedImg(imageSrc: string, pixelCrop: Area): Promise<Blob> {
     0,
     0,
     pixelCrop.width,
-    pixelCrop.height
+    pixelCrop.height,
   );
 
   return new Promise((resolve, reject) => {
@@ -69,6 +69,7 @@ export default function EditProfilePage() {
   const [zoom, setZoom] = useState(1);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
   const [message, setMessage] = useState<{
     type: "success" | "error";
     text: string;
@@ -78,7 +79,7 @@ export default function EditProfilePage() {
     (_croppedArea: Area, croppedAreaPixels: Area) => {
       setCroppedAreaPixels(croppedAreaPixels);
     },
-    []
+    [],
   );
 
   const onFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -152,132 +153,225 @@ export default function EditProfilePage() {
     }
   };
 
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
+
+  const handleDrop = async (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(false);
+
+    const files = e.dataTransfer.files;
+    if (files && files.length > 0) {
+      const file = files[0];
+      if (file.type.startsWith("image/")) {
+        const imageDataUrl = await readFile(file);
+        setImageSrc(imageDataUrl);
+        setMessage(null);
+      }
+    }
+  };
+
   if (!session) {
     return null;
   }
 
+  const currentImage = session.user?.image;
+  const userName = session.user?.name || "User";
+  const initials = userName.charAt(0).toUpperCase();
+
   return (
-    <div className="min-h-screen bg-background p-4 md:p-8">
-      <div className="max-w-4xl mx-auto">
+    <div className="min-h-screen bg-background">
+      <div className="max-w-5xl mx-auto p-4 pt-20 md:p-8 pt-0 md:pl-32 pt-0 lg:pl-32 pt-0 ">
         {/* Header */}
-        <div className="mb-6 flex items-center gap-4">
+        <div className="mb-8 flex items-center gap-4">
           <Button
             variant="outline"
             size="icon"
             onClick={() => router.push("/profile")}
+            className="hover:bg-primary hover:text-primary-foreground transition-colors"
           >
-            <ArrowLeft className="h-4 w-4" />
+            <ArrowLeft className="h-5 w-5" />
           </Button>
           <div>
             <h1 className="text-3xl font-bold">แก้ไขรูปโปรไฟล์</h1>
-            <p className="text-muted-foreground">
+            <p className="text-muted-foreground mt-1">
               อัพโหลดและปรับแต่งรูปภาพของคุณ
             </p>
           </div>
         </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>อัพโหลดรูปภาพ</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            {/* File Input */}
-            {!imageSrc && (
-              <div className="flex flex-col items-center justify-center border-2 border-dashed border-border rounded-lg p-12 hover:border-primary transition-colors">
-                <Upload className="h-12 w-12 text-muted-foreground mb-4" />
-                <p className="text-sm text-muted-foreground mb-4">
-                  คลิกเพื่อเลือกรูปภาพ หรือลากไฟล์มาวางที่นี่
+        <div className="flex flex-col gap-6">
+          {/* Current Profile Image */}
+          <Card className="border-2">
+            <CardHeader className="bg-muted/50">
+              <CardTitle className="text-lg">รูปโปรไฟล์ปัจจุบัน</CardTitle>
+            </CardHeader>
+            <CardContent className="p-8">
+              <div className="flex flex-col items-center justify-center space-y-4">
+                <div className="relative w-64 h-64 rounded-full border-4 border-primary/20 shadow-2xl overflow-hidden bg-muted">
+                  {currentImage ? (
+                    <img
+                      src={currentImage}
+                      alt={userName}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/10 to-primary/5">
+                      <span className="text-8xl font-bold text-primary/30">
+                        {initials}
+                      </span>
+                    </div>
+                  )}
+                </div>
+                <p className="text-sm text-muted-foreground text-center">
+                  {currentImage
+                    ? "นี่คือรูปโปรไฟล์ปัจจุบันของคุณ"
+                    : "คุณยังไม่มีรูปโปรไฟล์"}
                 </p>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  onChange={onFileChange}
-                  className="hidden"
-                  id="file-upload"
-                />
-                <Button asChild>
-                  <label htmlFor="file-upload" className="cursor-pointer">
-                    เลือกรูปภาพ
-                  </label>
-                </Button>
               </div>
-            )}
+            </CardContent>
+          </Card>
 
-            {/* Cropper */}
-            {imageSrc && (
-              <div className="space-y-4">
-                <div className="relative h-96 bg-muted rounded-lg overflow-hidden">
-                  <Cropper
-                    image={imageSrc}
-                    crop={crop}
-                    zoom={zoom}
-                    aspect={1}
-                    onCropChange={setCrop}
-                    onCropComplete={onCropComplete}
-                    onZoomChange={setZoom}
-                    cropShape="round"
-                    showGrid={false}
+          {/* Upload New Image */}
+          <Card className="border-2">
+            <CardHeader className="bg-muted/50">
+              <CardTitle className="text-lg">
+                {imageSrc ? "ปรับแต่งรูปภาพ" : "อัพโหลดรูปภาพใหม่"}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-6 space-y-6">
+              {/* File Input - Drag and Drop Area */}
+              {!imageSrc && (
+                <div
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  onDrop={handleDrop}
+                  className={`flex flex-col items-center justify-center border-2 border-dashed rounded-xl p-12 transition-all duration-200 ${
+                    isDragging
+                      ? "border-primary bg-primary/5 scale-105"
+                      : "border-border hover:border-primary hover:bg-accent/50"
+                  }`}
+                >
+                  <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+                    <Upload className="h-10 w-10 text-primary" />
+                  </div>
+                  <p className="text-base font-medium mb-2 text-center">
+                    {isDragging ? "วางไฟล์ที่นี่" : "ลากและวางรูปภาพที่นี่"}
+                  </p>
+                  <p className="text-sm text-muted-foreground mb-6 text-center">
+                    หรือคลิกเพื่อเลือกไฟล์
+                  </p>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={onFileChange}
+                    className="hidden"
+                    id="file-upload"
                   />
-                </div>
-
-                {/* Zoom Slider */}
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">ซูม</label>
-                  <Slider
-                    value={[zoom]}
-                    min={1}
-                    max={3}
-                    step={0.1}
-                    onValueChange={(value) => setZoom(value[0])}
-                  />
-                </div>
-
-                {/* Action Buttons */}
-                <div className="flex gap-2">
-                  <Button
-                    onClick={handleUpload}
-                    disabled={uploading}
-                    className="flex-1"
-                  >
-                    {uploading ? (
-                      <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
-                        กำลังอัพโหลด...
-                      </>
-                    ) : (
-                      <>
-                        <Check className="h-4 w-4 mr-2" />
-                        บันทึก
-                      </>
-                    )}
+                  <Button asChild size="lg" className="shadow-md">
+                    <label htmlFor="file-upload" className="cursor-pointer">
+                      <Upload className="h-4 w-4 mr-2" />
+                      เลือกรูปภาพ
+                    </label>
                   </Button>
-                  <Button
-                    variant="outline"
-                    onClick={handleCancel}
-                    disabled={uploading}
-                  >
-                    <X className="h-4 w-4 mr-2" />
-                    ยกเลิก
-                  </Button>
+                  <p className="text-xs text-muted-foreground mt-4">
+                    รองรับไฟล์: JPG, PNG, GIF (สูงสุด 10MB)
+                  </p>
                 </div>
-              </div>
-            )}
+              )}
 
-            {/* Message */}
-            {message && (
-              <div
-                className={`p-4 rounded-lg ${
-                  message.type === "success"
-                    ? "bg-green-50 text-green-800 dark:bg-green-900/20 dark:text-green-400"
-                    : "bg-red-50 text-red-800 dark:bg-red-900/20 dark:text-red-400"
-                }`}
-              >
-                {message.text}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+              {/* Cropper */}
+              {imageSrc && (
+                <div className="space-y-4">
+                  <div className="relative h-80 bg-muted rounded-xl overflow-hidden shadow-inner border-2 border-border">
+                    <Cropper
+                      image={imageSrc}
+                      crop={crop}
+                      zoom={zoom}
+                      aspect={1}
+                      onCropChange={setCrop}
+                      onCropComplete={onCropComplete}
+                      onZoomChange={setZoom}
+                      cropShape="round"
+                      showGrid={false}
+                    />
+                  </div>
+
+                  {/* Zoom Slider */}
+                  <div className="space-y-3 p-4 bg-muted/50 rounded-lg">
+                    <label className="text-sm font-medium flex items-center justify-between">
+                      <span>ปรับซูม</span>
+                      <span className="text-xs text-muted-foreground">
+                        {zoom.toFixed(1)}x
+                      </span>
+                    </label>
+                    <Slider
+                      value={[zoom]}
+                      min={1}
+                      max={3}
+                      step={0.1}
+                      onValueChange={(value) => setZoom(value[0])}
+                      className="cursor-pointer"
+                    />
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="flex gap-3 pt-2">
+                    <Button
+                      onClick={handleUpload}
+                      disabled={uploading}
+                      className="flex-1 h-11 shadow-md"
+                      size="lg"
+                    >
+                      {uploading ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+                          กำลังอัพโหลด...
+                        </>
+                      ) : (
+                        <>
+                          <Check className="h-5 w-5 mr-2" />
+                          บันทึก
+                        </>
+                      )}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={handleCancel}
+                      disabled={uploading}
+                      className="flex-1 h-11"
+                      size="lg"
+                    >
+                      <X className="h-5 w-5 mr-2" />
+                      ยกเลิก
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {/* Message */}
+              {message && (
+                <div
+                  className={`p-4 rounded-lg border-2 font-medium ${
+                    message.type === "success"
+                      ? "bg-green-50 text-green-800 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800"
+                      : "bg-red-50 text-red-800 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800"
+                  }`}
+                >
+                  {message.text}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   );
