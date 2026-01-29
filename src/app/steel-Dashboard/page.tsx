@@ -10,12 +10,14 @@ import {
   Loader2,
   AlertCircle,
   Plus,
+  Calculator,
 } from "lucide-react";
 import { useConfirm } from "@/components/providers/confirm-dialog-provider";
 import { toast } from "react-toastify";
 import { z } from "zod";
 import CreateSteelTypeModal from "@/components/steel-Dashboard/CreateSteelTypeModal";
 import SteelTypeDetailModal from "@/components/steel-Dashboard/steelTypeDetailModal";
+import { SteelCalculatorModal } from "@/components/steel-Dashboard/steelCalculatorModel";
 
 // ใช้ union แบบนี้แทนก็ได้ (ปลอดภัยสุดสำหรับ client)
 const ShapeSteelEnum = z.enum(["line", "square"]);
@@ -33,9 +35,10 @@ const SteelTypeSchema = z.object({
 type SteelItemApi = {
   id: number;
   codeSteel: string;
-  shape: "line" | "square" | string;
+  shape: "line" | "square";
   amount: number;
   price: number;
+  density: number;
   status: "active" | "inactive" | string;
   _count?: { Product?: number };
 };
@@ -52,6 +55,8 @@ const SteelListPage = () => {
     key: "createdAt",
     direction: "desc" as "asc" | "desc",
   });
+  //เปิดปิดคำนวนราคา
+  const [openCalculatePrice, setOpenCalculatePrice] = useState(false);
 
   //เบิดปิดสร้างลูกค้า
   const [openCreate, setOpenCreate] = useState(false);
@@ -59,7 +64,6 @@ const SteelListPage = () => {
   //ทำไว้เผื่อเปิดดูรายละเอียด/สต็อก
   const [selectedSteelId, setSelectedSteelId] = useState<number | null>(null);
   const [openDetail, setOpenDetail] = useState(false);
-  const [openOut, setOpenOut] = useState(false);
 
   const confirm = useConfirm();
 
@@ -160,13 +164,22 @@ const SteelListPage = () => {
         </div>
 
         {/* ✅ Add button */}
-        <button
-          onClick={() => setOpenCreate(true)}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white shadow-sm transition"
-        >
-          <Plus className="w-4 h-4" />
-          เพิ่มประเภทเหล็ก
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setOpenCalculatePrice(true)}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-white shadow-sm transition dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-200"
+          >
+            <Calculator className="w-4 h-4" />
+            คำนวณเหล็ก
+          </button>
+          <button
+            onClick={() => setOpenCreate(true)}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white shadow-sm transition"
+          >
+            <Plus className="w-4 h-4" />
+            เพิ่มประเภทเหล็ก
+          </button>
+        </div>
       </div>
 
       {/* Filter Bar */}
@@ -422,6 +435,12 @@ const SteelListPage = () => {
         steelTypeId={selectedSteelId}
         onClose={() => setOpenDetail(false)}
         onUpdated={() => fetchSteels()}
+      />
+
+      <SteelCalculatorModal
+        open={openCalculatePrice}
+        onClose={() => setOpenCalculatePrice(false)}
+        steels={steels}
       />
     </div>
   );

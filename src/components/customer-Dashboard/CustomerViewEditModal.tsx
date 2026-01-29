@@ -55,11 +55,7 @@ type FieldRowProps = {
 const digitsOnly = (s: string) => s.replace(/\D/g, "");
 
 const CustomerFormSchema = z.object({
-  code: z
-    .string()
-    .trim()
-    .min(1, "กรุณากรอกรหัสลูกค้า")
-    .max(50, "รหัสลูกค้ายาวเกินไป"),
+  code: z.string().trim().max(50, "รหัสลูกค้ายาวเกินไป").nullable().optional(),
   name: z
     .string()
     .trim()
@@ -245,8 +241,8 @@ export default function CustomerViewEditModal({
   const handleSave = async () => {
     if (!customerId || saving) return;
 
-    if (!form.name.trim() || !form.code.trim()) {
-      toast.warn("กรุณากรอกรหัสและชื่อลูกค้า", { position: "bottom-right" });
+    if (!form.name.trim()) {
+      toast.warn("กรุณากรอกชื่อลูกค้า", { position: "bottom-right" });
       return;
     }
     const parsed = CustomerFormSchema.safeParse(form);
@@ -351,7 +347,6 @@ export default function CustomerViewEditModal({
                     isEditing={mode === "edit"}
                     onChange={(v) => setForm((p) => ({ ...p, code: v }))}
                     icon={<Hash size={14} />}
-                    required
                   />
                   <FieldRow
                     label="ชื่อลูกค้า / บริษัท"
