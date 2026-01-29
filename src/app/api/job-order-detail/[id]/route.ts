@@ -17,7 +17,7 @@ type ApiJobOrder = {
   customerName: string;
   customerEmail: string;
   customerPhone: string;
-  customercode: string;
+  customercode: string | null;
   deliveryAddress: string;
   key: string[];
   supervisors: ApiStaffMember[];

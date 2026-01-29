@@ -57,6 +57,51 @@ type SteelType = {
   shape: ShapeSteel;
 };
 
+type OcrParseResponse = {
+  source: { fileName: string; fileType: string; fileSize: number };
+  customerMatch: {
+    matched: boolean;
+    customerId: number | null;
+    matchedBy: "taxNumber" | "tel" | "faxNumber" | "email" | null;
+  };
+  customerDraft: {
+    code: string | null;
+    name: string;
+    address: string;
+    tel: string;
+    taxNumber: string;
+    faxNumber: string;
+    email: string;
+  };
+  orderDraft: {
+    poNumber: string | null;
+    poDate: string | null;
+    deliveryDate: string | null;
+    yourRef: string | null;
+  };
+  items: Array<{
+    raw: {
+      codeSteel: string | null;
+      description: string | null;
+      shape: ShapeSteel;
+      width: number | null;
+      length: number | null;
+      thickness: number | null;
+      quantity: number | null;
+      cuttingMethod: CuttingMethod;
+      job: number | null;
+      notes: string | null;
+      confidence: number | null;
+    };
+    match: {
+      matched: boolean;
+      steelTypeId: number | null;
+      matchedBy: "codeSteel" | null;
+    };
+  }>;
+  meta: { warnings: string[]; confidence: number | null };
+};
+
 // ฟังก์ชันช่วยแปลงวันที่ให้สวยงาม (ใส่ไว้ใน utils หรือประกาศในไฟล์)
 const formatDate = (dateString: string) => {
   if (!dateString) return "-";
@@ -70,6 +115,7 @@ const formatDate = (dateString: string) => {
 
 const NewJobOrder = () => {
   const router = useRouter();
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [UploadFile, setUploadFile] = useState<File[]>([]); //ดึงไฟล์อัปโหลด
   const [showForm, setShowForm] = useState(false); //แสดงหรือซ่อนข้อมุลลูกค้า
@@ -86,6 +132,10 @@ const NewJobOrder = () => {
   const [searchItem, setsearchItem] = useState(""); //เก็บค่าที่ค้นหาสินค้า
   const [loadingSteel, setLoadingSteel] = useState(false);
   const [loading, setLoading] = useState(false); //สถานะโหลดข้อมุล
+
+  //ocr
+  const [ocrLoading, setOcrLoading] = useState(false);
+  const [ocrData, setOcrData] = useState<OcrParseResponse | null>(null);
 
   const [selectedCustomerId, setSelectedCustomerId] = useState<
     string | number | null
@@ -210,7 +260,7 @@ const NewJobOrder = () => {
 
   // Form data customer
   const [formData, setFormData] = useState<CustomerFormData>({
-    code: "",
+    code: null,
     customerName: "",
     customerEmail: "",
     customerPhone: "",
@@ -271,7 +321,7 @@ const NewJobOrder = () => {
     try {
       if (showForm) {
         const payloadNewcustomer = {
-          code: formData.code,
+          code: formData.code ? formData.code : undefined,
           name: formData.customerName,
           address: formData.deliveryAddress,
           tel: formData.customerPhone,
@@ -411,10 +461,98 @@ const NewJobOrder = () => {
     }
   };
 
+  const applyOcrToForm = (data: OcrParseResponse) => {
+    // 1) headOrder
+    setheadOrder((prev) => ({
+      ...prev,
+      poNumber: data.orderDraft?.poNumber ?? prev.poNumber,
+      deliveryDate: data.orderDraft?.deliveryDate ?? prev.deliveryDate,
+      yourRef: data.orderDraft?.yourRef ?? prev.yourRef,
+    }));
+
+    // 2) customer: match -> select / else -> showForm + fill
+    if (data.customerMatch?.matched && data.customerMatch.customerId) {
+      setSelectedCustomerId(String(data.customerMatch.customerId));
+      setShowForm(false);
+    } else {
+      setSelectedCustomerId(null);
+      setShowForm(true);
+
+      const c = data.customerDraft;
+      setFormData((prev) => ({
+        ...prev,
+        code: c.code ?? null,
+        customerName: c.name ?? "",
+        deliveryAddress: c.address ?? "",
+        customerPhone: c.tel ?? "",
+        taxNumber: c.taxNumber ?? "",
+        faxNumber: c.faxNumber ?? "",
+        customerEmail: c.email ?? "",
+      }));
+    }
+
+    // 3) steelItems จาก steelTypeId ที่ match มาแล้ว
+    const mapped: SteelItem[] = (data.items ?? []).map((x) => ({
+      id: uuidv4(),
+      steelType: x.match?.steelTypeId ? String(x.match.steelTypeId) : "",
+      shape: x.raw?.shape ?? "square",
+      quantity: x.raw?.quantity ?? 1,
+      width: x.raw?.width ?? null,
+      length: x.raw?.length ?? 0,
+      thickness: x.raw?.thickness ?? 0,
+      notes: x.raw?.notes ?? "",
+      cuttingMethod: x.raw?.cuttingMethod ?? "normal",
+      job: x.raw?.job ?? null,
+    }));
+    if (mapped.length) setSteelItems(mapped);
+  };
+
+  const handleRunOcr = async () => {
+    const firstFile = UploadFile[0];
+    if (!firstFile) {
+      toast.error("กรุณาแนบไฟล์ก่อนกด OCR", { position: "bottom-right" });
+      return;
+    }
+
+    try {
+      setOcrLoading(true);
+
+      const fd = new FormData();
+      fd.append("files", firstFile); // ส่งแค่ไฟล์แรก
+
+      const res = await fetch("/api/ocr/parse-po", {
+        method: "POST",
+        body: fd,
+      });
+
+      const data: OcrParseResponse = await res.json().catch(() => ({}) as any);
+      if (!res.ok) throw new Error((data as any)?.error || "OCR parse failed");
+
+      setOcrData(data);
+      applyOcrToForm(data);
+
+      toast.success("เติมข้อมูลจาก OCR แล้ว กรุณาตรวจสอบก่อนบันทึก", {
+        position: "bottom-right",
+      });
+    } catch (err) {
+      console.error(err);
+      toast.error(
+        `OCR ไม่สำเร็จ: ${err instanceof Error ? err.message : String(err)}`,
+        { position: "bottom-right" },
+      );
+    } finally {
+      setOcrLoading(false);
+    }
+  };
+
+  const resetOcr = () => {
+    setOcrData(null);
+  };
+
   // function to validate from data
   const validateForm = () => {
     if (showForm) {
-      if (!formData.code.trim()) return "กรุณากรอกรหัสลูกค้า (Code)";
+      // if (!formData.code.trim()) return "กรุณากรอกรหัสลูกค้า (Code)";
       if (!formData.customerName.trim()) return "กรุณากรอกชื่อลูกค้า";
       if (!formData.deliveryAddress.trim())
         return "กรุณากรอกที่อยู่สำหรับจัดส่ง";
@@ -535,6 +673,14 @@ const NewJobOrder = () => {
                     onChange={handleFileChange}
                   />
                 </label>
+                <Button
+                  type="button"
+                  onClick={handleRunOcr}
+                  disabled={ocrLoading || UploadFile.length === 0}
+                  className="h-10"
+                >
+                  {ocrLoading ? "กำลัง OCR..." : "ดึงข้อมูลจากไฟล์ (OCR)"}
+                </Button>
               </div>
             </div>
           </div>

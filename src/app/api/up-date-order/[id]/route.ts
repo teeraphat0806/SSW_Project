@@ -22,7 +22,7 @@ type ApiJobOrder = {
   customerPhone: string;
   customerAddress: string;
   customerTaxId: string;
-  customerCode: string;
+  customerCode: string | null;
   customerFax: string;
   steel: {
     id: number;
@@ -89,7 +89,7 @@ export async function GET(
       customerPhone: customer.tel,
       customerAddress: customer.address,
       customerTaxId: customer.taxNumber,
-      customerCode: customer.code,
+      customerCode: customer.code || null,
       customerFax: customer.faxNumber,
       steel: Product.map((item) => ({
         id: item.id,
@@ -439,7 +439,7 @@ export async function PATCH(
         customerPhone: customer.tel,
         customerAddress: customer.address,
         customerTaxId: customer.taxNumber,
-        customerCode: customer.code,
+        customerCode: customer.code || null,
         customerFax: customer.faxNumber,
         steel: order.Product.map((p) => ({
           id: p.id,

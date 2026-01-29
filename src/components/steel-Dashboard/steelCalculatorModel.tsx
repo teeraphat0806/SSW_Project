@@ -1,6 +1,5 @@
 import React, { useMemo, useState, useRef, useEffect } from "react";
 import { X, Plus, Trash2, Search, ChevronDown, Calculator } from "lucide-react";
-import { set } from "zod";
 
 // --- Types ---
 type SteelItemApi = {
@@ -163,25 +162,25 @@ export function SteelCalculatorModal({
   };
 
   const calcWeight = (row: CalcRow) => {
-    const s = getSteel(row.steelId);
-    if (!s) return 0;
-    const { thickness: t, length: l } = row;
-    const d = s.density;
-    return s.shape === "square"
-      ? t * (row.width ?? 0) * l * d * 0.1
-      : t * l * l * d * 0.1;
+    const steel = getSteel(row.steelId);
+    if (!steel) return 0;
+    const { thickness: thickness, length: length } = row;
+    const density = steel.density;
+    return steel.shape === "square"
+      ? thickness * (row.width ?? 0) * length * density * 0.1
+      : thickness * length * length * density * 0.1;
   };
 
   const totals = useMemo(() => {
     return rows.reduce(
-      (acc, r) => {
-        const s = getSteel(r.steelId);
-        const qty = Math.max(1, r.qty || 1);
-        const w = calcWeight(r);
-        const p = s ? w * s.price : 0;
+      (acc, row) => {
+        const steel = getSteel(row.steelId);
+        const qty = Math.max(1, row.qty || 1);
+        const weight = calcWeight(row);
+        const price = steel ? weight * steel.price : 0;
         return {
-          totalWeight: acc.totalWeight + w * qty,
-          totalPrice: acc.totalPrice + p * qty,
+          totalWeight: acc.totalWeight + weight * qty,
+          totalPrice: acc.totalPrice + price * qty,
         };
       },
       { totalWeight: 0, totalPrice: 0 },
@@ -190,7 +189,7 @@ export function SteelCalculatorModal({
 
   const updateRow = (rowId: string, patch: Partial<CalcRow>) => {
     setRows((prev) =>
-      prev.map((r) => (r.rowId === rowId ? { ...r, ...patch } : r)),
+      prev.map((row) => (row.rowId === rowId ? { ...row, ...patch } : row)),
     );
   };
 

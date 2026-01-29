@@ -13,7 +13,7 @@ import { Building2 } from "lucide-react";
 
 export type CustomerFormData = {
   customerName: string;
-  code: string;
+  code: string | null;
   customerEmail: string;
   customerPhone: string;
   taxNumber: string;
@@ -25,7 +25,7 @@ type CustomerFormProps = {
   formData: CustomerFormData;
   updateFormData: <K extends keyof CustomerFormData>(
     field: K,
-    value: CustomerFormData[K]
+    value: CustomerFormData[K],
   ) => void;
 };
 
@@ -59,17 +59,15 @@ export default function CustomerForm({
             />
           </div>
           <div>
-            <Label htmlFor="code">
-              เลข Code <span className="text-red-500">*</span>
-            </Label>
+            <Label htmlFor="code">เลข Code</Label>
             <Input
               id="code"
               type="text" // 1. เปลี่ยนเป็น text เพื่อรับเลข 0 นำหน้า
               inputMode="numeric"
               pattern="[0-9]*" // 2. เพิ่ม pattern เพื่อจำกัดให้กรอกเฉพาะตัวเลข
               minLength={13}
-              maxLength={13} 
-              value={formData.code}
+              maxLength={13}
+              value={formData.code ?? undefined}
               onChange={(e) => updateFormData("code", e.target.value)}
               placeholder="1001"
               className="mt-1"
