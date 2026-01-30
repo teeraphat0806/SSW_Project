@@ -72,10 +72,43 @@ export async function GET(
       },
     });
 
+    // คำนวณค่าเงินเดือนพนักงานทั้งหมดทั้งปี (12 เดือน)
+    // ดึงพนักงานทั้งหมดที่มีอยู่
+    const allStaff = await prisma.staff.findMany({
+      select: { id: true },
+    });
+
+    let totalSalaryAmount = 0;
+
+    // วนลูปคำนวณเงินเดือนของแต่ละคนในแต่ละเดือน
+    for (const staff of allStaff) {
+      for (let month = 0; month < 12; month++) {
+        const monthDate = new Date(yearNumber, month, 1);
+
+        // หาเงินเดือนที่มีผลในเดือนนั้น (effectiveDate ล่าสุดที่ <= วันแรกของเดือน)
+        const salary = await prisma.staffSalary.findFirst({
+          where: {
+            staffId: staff.id,
+            effectiveDate: {
+              lte: monthDate,
+            },
+          },
+          orderBy: {
+            effectiveDate: "desc",
+          },
+        });
+
+        if (salary) {
+          totalSalaryAmount += salary.amount;
+        }
+      }
+    }
+
     const totalSales = orderStats._sum.total || 0;
     const orderCount = orderStats._count.id || 0;
     const totalRevenue = revenueStats._sum.grandTotal || 0;
-    const totalExpense = expenseStats._sum.amount || 0;
+    const totalExpenseAmount = expenseStats._sum.amount || 0;
+    const totalExpense = totalExpenseAmount + totalSalaryAmount;
     const profit = totalRevenue - totalExpense;
     const profitPercentage =
       totalRevenue > 0
@@ -105,6 +138,10 @@ export async function GET(
           total: profit,
           formatted: `฿${profit.toLocaleString("en-US")}`,
           percentage: profitPercentage,
+        },
+        salary: {
+          total: totalSalaryAmount,
+          formatted: `฿${totalSalaryAmount.toLocaleString("en-US")}`,
         },
       },
       meta: {

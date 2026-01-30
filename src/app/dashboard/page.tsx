@@ -471,7 +471,7 @@ export default function Dashboard() {
                     <td className="py-4 px-6 text-center">
                       <span
                         className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border ${getStatusStyle(
-                          order.status
+                          order.status,
                         )}`}
                       >
                         {toThaiStatus(order.status)}
