@@ -70,6 +70,7 @@ export default function EditProfilePage() {
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
   const [uploading, setUploading] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
+  const [imageKey, setImageKey] = useState(Date.now());
   const [message, setMessage] = useState<{
     type: "success" | "error";
     text: string;
@@ -123,12 +124,12 @@ export default function EditProfilePage() {
 
       setMessage({ type: "success", text: "อัพโหลดรูปโปรไฟล์สำเร็จ!" });
 
-      // Update session with new image
+      // Update session with new image and force reload
       await update();
 
-      // Redirect back to profile after 1.5 seconds
+      // Redirect back to profile after 1.5 seconds with full page reload
       setTimeout(() => {
-        router.push("/profile");
+        window.location.href = "/profile";
       }, 1500);
     } catch (error) {
       console.error("Upload error:", error);
@@ -218,7 +219,8 @@ export default function EditProfilePage() {
                 <div className="relative w-64 h-64 rounded-full border-4 border-primary/20 shadow-2xl overflow-hidden bg-muted">
                   {currentImage ? (
                     <img
-                      src={currentImage}
+                      key={imageKey}
+                      src={`${currentImage}?t=${imageKey}`}
                       alt={userName}
                       className="w-full h-full object-cover"
                     />
