@@ -53,7 +53,7 @@ type SteelItem = {
 
 type SteelType = {
   id: string;
-  name: string; // ใช้แสดงใน Select
+  steelType: string; // ใช้แสดงใน Select
   shape: ShapeSteel;
 };
 
@@ -418,9 +418,9 @@ const NewJobOrder = () => {
   };
 
   // Update form data
-  const updateFormData = <K extends keyof CustomerFormData>(
-    field: K,
-    value: CustomerFormData[K],
+  const updateFormData = <key extends keyof CustomerFormData>(
+    field: key,
+    value: CustomerFormData[key],
   ) => {
     setFormData((prev) => ({
       ...prev,
@@ -428,10 +428,10 @@ const NewJobOrder = () => {
     }));
   };
   // Update steel item
-  const updateSteelItem = <K extends keyof SteelItem>(
+  const updateSteelItem = <key extends keyof SteelItem>(
     id: SteelItem["id"],
-    field: K,
-    value: SteelItem[K],
+    field: key,
+    value: SteelItem[key],
   ) => {
     setSteelItems((prev) =>
       prev.map((item) => (item.id === id ? { ...item, [field]: value } : item)),

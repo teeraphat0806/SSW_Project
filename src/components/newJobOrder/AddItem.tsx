@@ -46,7 +46,7 @@ export type SteelItemType = {
 
 export type SteelTypeOption = {
   id: string | number;
-  name: string;
+  steelType: string;
   shape: ShapeSteel;
 };
 
@@ -314,13 +314,13 @@ export default function AddItem({
                           value={item.steelType || ""}
                           onValueChange={(value) => {
                             const selected = steelTypes.find(
-                              (t) => t.name === value,
+                              (t) => t.steelType === value,
                             );
                             if (selected) {
                               updateSteelItem(
                                 item.id,
                                 "steelType",
-                                selected.name,
+                                selected.steelType,
                               );
                               updateSteelItem(item.id, "shape", selected.shape);
                               if (selected.shape === "line") {
@@ -351,9 +351,9 @@ export default function AddItem({
                               </div>
                             ) : (
                               steelTypes.map((type) => (
-                                <SelectItem key={type.id} value={type.name}>
+                                <SelectItem key={type.id} value={type.steelType}>
                                   <span className="font-medium">
-                                    {type.name}
+                                    {type.steelType}
                                   </span>
                                   <span className="ml-2 text-xs text-muted-foreground">
                                     {type.shape === "square"
