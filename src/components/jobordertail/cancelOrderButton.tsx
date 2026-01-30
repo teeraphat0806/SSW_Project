@@ -35,7 +35,12 @@ export function CancelOrderButton({
           type="button"
           variant="destructive"
           size="sm"
-          disabled={!jobOrder || isUpdating || isCanceled}
+          disabled={
+            !jobOrder ||
+            isUpdating ||
+            isCanceled ||
+            jobOrder.status === "completed"
+          }
           className="bg-red-50 text-red-600 hover:bg-red-100 border border-red-200 shadow-none dark:bg-red-900/20 dark:text-red-300 dark:border-red-900/40 dark:hover:bg-red-900/35"
         >
           <XCircle className="w-4 h-4 mr-2" />
