@@ -1,3 +1,4 @@
+// src/components/jobordertail/CustomerTab.tsx
 "use client";
 
 import { Mail, Phone, MapPin, Copy, Check, ExternalLink } from "lucide-react";
@@ -40,7 +41,7 @@ export function CustomerTab({ customer }: CustomerTabProps) {
     const encodedAddress = encodeURIComponent(customer.shippingAddress);
     window.open(
       `https://www.google.com/maps/search/?api=1&query=${encodedAddress}`,
-      "_blank"
+      "_blank",
     );
   };
 
@@ -115,7 +116,7 @@ export function CustomerTab({ customer }: CustomerTabProps) {
                     "w-full gap-2 text-xs transition-all duration-200",
                     isAddressCopied
                       ? "hover:bg-primary/5 transition-colors text-blue-500 hover:text-blue-600"
-                      : "hover:border-primary hover:text-primary dark:hover:border-primary"
+                      : "hover:border-primary hover:text-primary dark:hover:border-primary",
                   )}
                   onClick={handleCopyAddress}
                 >

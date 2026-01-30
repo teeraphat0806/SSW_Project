@@ -28,6 +28,10 @@ import SelectCustomer from "@/components/SelectCustomer";
 import type { CustomerFormData } from "@/components/newJobOrder/CustomerForm";
 import { cn } from "@/lib/utils";
 import { CuttingMethod, ShapeSteel } from "@prisma/client";
+import {
+  OcrResultModal,
+  type OcrSummary,
+} from "@/components/newJobOrder/OcrResultModel";
 
 type CustomerApiItem = {
   id: number;
@@ -135,7 +139,20 @@ const NewJobOrder = () => {
 
   //ocr
   const [ocrLoading, setOcrLoading] = useState(false);
+  const [ocrModalOpen, setOcrModalOpen] = useState(false);
   const [ocrData, setOcrData] = useState<OcrParseResponse | null>(null);
+  const [ocrStage, setOcrStage] = useState<"loading" | "done">("loading");
+  const [ocrSummary, setOcrSummary] = useState<{
+    customerLine: string;
+    items: Array<{
+      codeSteel: string;
+      thickness: number | null;
+      width: number | null;
+      length: number | null;
+      quantity: number | null;
+      description: string | null;
+    }>;
+  } | null>(null);
 
   const [selectedCustomerId, setSelectedCustomerId] = useState<
     string | number | null
@@ -418,9 +435,9 @@ const NewJobOrder = () => {
   };
 
   // Update form data
-  const updateFormData = <K extends keyof CustomerFormData>(
-    field: K,
-    value: CustomerFormData[K],
+  const updateFormData = <key extends keyof CustomerFormData>(
+    field: key,
+    value: CustomerFormData[key],
   ) => {
     setFormData((prev) => ({
       ...prev,
@@ -428,10 +445,10 @@ const NewJobOrder = () => {
     }));
   };
   // Update steel item
-  const updateSteelItem = <K extends keyof SteelItem>(
+  const updateSteelItem = <key extends keyof SteelItem>(
     id: SteelItem["id"],
-    field: K,
-    value: SteelItem[K],
+    field: key,
+    value: SteelItem[key],
   ) => {
     setSteelItems((prev) =>
       prev.map((item) => (item.id === id ? { ...item, [field]: value } : item)),
@@ -494,7 +511,7 @@ const NewJobOrder = () => {
     // 3) steelItems จาก steelTypeId ที่ match มาแล้ว
     const mapped: SteelItem[] = (data.items ?? []).map((x) => ({
       id: uuidv4(),
-      steelType: x.match?.steelTypeId ? String(x.match.steelTypeId) : "",
+      steelType: x.match?.steelTypeId ? String(x.raw.codeSteel) : "",
       shape: x.raw?.shape ?? "square",
       quantity: x.raw?.quantity ?? 1,
       width: x.raw?.width ?? null,
@@ -505,6 +522,23 @@ const NewJobOrder = () => {
       job: x.raw?.job ?? null,
     }));
     if (mapped.length) setSteelItems(mapped);
+    const customerLine = data.customerMatch?.matched
+      ? `${data.customerDraft?.name}: #${data.customerMatch.customerId}`
+      : `ไม่พบลูกค้าในระบบ: ${data.customerDraft?.name || "-"}`;
+
+    setOcrSummary({
+      customerLine,
+      items: (data.items ?? []).map((it) => ({
+        codeSteel: it.raw?.codeSteel || "(ไม่พบรหัส)",
+        thickness: it.raw?.thickness ?? null,
+        width: it.raw?.width ?? null,
+        length: it.raw?.length ?? null,
+        quantity: it.raw?.quantity ?? null,
+        description: it.raw?.description ?? null,
+      })),
+    });
+
+    setOcrStage("done");
   };
 
   const handleRunOcr = async () => {
@@ -516,13 +550,16 @@ const NewJobOrder = () => {
 
     try {
       setOcrLoading(true);
+      setOcrModalOpen(true);
+      setOcrStage("loading");
+      setOcrSummary(null);
 
-      const fd = new FormData();
-      fd.append("files", firstFile); // ส่งแค่ไฟล์แรก
+      const file = new FormData();
+      file.append("files", firstFile); // ส่งแค่ไฟล์แรก
 
       const res = await fetch("/api/ocr/parse-po", {
         method: "POST",
-        body: fd,
+        body: file,
       });
 
       const data: OcrParseResponse = await res.json().catch(() => ({}) as any);
@@ -592,7 +629,6 @@ const NewJobOrder = () => {
     <div className="min-h-screen md:pl-24 ">
       <div className="container mx-auto p-6">
         {/* Header */}
-
         <div className="mb-8">
           <div className=" mb-4 border-b ">
             <Button
@@ -886,6 +922,55 @@ const NewJobOrder = () => {
           </div>
         </form>
       </div>
+      {ocrModalOpen && (
+        <div className="fixed inset-0 z-50">
+          {/* overlay กันคลิก */}
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+
+          {/* modal */}
+          <div className="absolute inset-0 flex items-center justify-center p-4">
+            <div className="w-full max-w-lg rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-xl overflow-hidden">
+              <div className="p-4 border-b border-zinc-100 dark:border-zinc-800 flex items-center justify-between">
+                <div className="text-sm font-semibold">
+                  {ocrStage === "loading"
+                    ? "กำลังอ่านเอกสาร (OCR)..."
+                    : "สรุปผล OCR"}
+                </div>
+
+                {/* ปิดได้เฉพาะตอน done */}
+                <Button
+                  type="button"
+                  variant="ghost"
+                  disabled={ocrStage !== "done"}
+                  onClick={() => setOcrModalOpen(false)}
+                >
+                  ปิด
+                </Button>
+              </div>
+
+              <div className="p-4 space-y-4">
+                <OcrResultModal
+                  open={ocrModalOpen}
+                  stage={ocrStage}
+                  summary={ocrSummary}
+                  onClose={() => setOcrModalOpen(false)}
+                />
+              </div>
+
+              {/* footer */}
+              <div className="p-4 border-t border-zinc-100 dark:border-zinc-800 flex justify-end gap-2">
+                <Button
+                  type="button"
+                  disabled={ocrStage !== "done"}
+                  onClick={() => setOcrModalOpen(false)}
+                >
+                  เข้าใจแล้ว
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       <ToastContainer />
     </div>

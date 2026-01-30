@@ -185,12 +185,16 @@ export async function POST(request: NextRequest) {
           })
         : [];
 
-    const steelMap = new Map<string, { id: number; codeSteel: string }>();
+    const steelMap = new Map<
+      string,
+      { id: number; codeSteel: string; shape: ShapeSteel }
+    >();
 
     for (const steel of steelTypeRows)
       steelMap.set(steel.codeSteel, {
         id: steel.id,
         codeSteel: steel.codeSteel,
+        shape: steel.shape,
       });
 
     const items = result.items.map((it) => {
@@ -198,14 +202,14 @@ export async function POST(request: NextRequest) {
       const matchedSteel = codeSteel ? steelMap.get(codeSteel) : null;
 
       // normalize shape and cuttingMethod
-      const shape = (it.shape as ShapeSteel) || "square";
+      const shape = matchedSteel ? matchedSteel.shape : "square";
       const cuttingMethod = (it.cuttingMethod as CuttingMethod) || "normal";
 
       return {
         raw: {
           codeSteel: codeSteel || null,
           description: it.description ?? null,
-          shape,
+          shape: shape,
           width: it.width ?? null,
           length: it.length ?? null,
           thickness: it.thickness ?? null,
@@ -222,7 +226,13 @@ export async function POST(request: NextRequest) {
         },
       };
     });
-
+    console.log("OCR Parse Result:", {
+      customerMatch,
+      customerDraft,
+      orderDraft,
+      items,
+      result,
+    });
     return NextResponse.json({
       source: {
         fileName: first.name,
