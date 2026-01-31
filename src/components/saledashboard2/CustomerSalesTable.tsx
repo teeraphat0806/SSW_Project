@@ -9,7 +9,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight, ArrowUpDown } from "lucide-react";
+import { ChevronLeft, ChevronRight, ArrowUpDown, Printer } from "lucide-react";
 import { User } from "lucide-react";
 import { Loader2 } from "lucide-react";
 interface Customer {
@@ -167,6 +167,19 @@ export function CustomerSalesTable({ year, month }: CustomerSalesTableProps) {
         <h2 className="text-2xl font-bold text-zinc-900 dark:text-white">
           ตารางรายได้ (ยอดขายตามลูกค้า)
         </h2>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => {
+            window.open(
+              `/saledashboard2/${year}/${month}/report`,
+              "_blank",
+            );
+          }}
+        >
+          <Printer className="h-4 w-4 mr-2" />
+          พิมพ์รายงาน
+        </Button>
       </div>
 
       {/* Filters */}
