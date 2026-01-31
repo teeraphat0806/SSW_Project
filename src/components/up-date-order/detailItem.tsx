@@ -43,7 +43,7 @@ type SteelItem = {
   weight?: number | null;
   shape: "square" | "line";
   job?: number | null;
-  cuttingMethod?: "normal" | "FB" | "steelDisc";
+  cuttingMethod?: "normal" | "FB" | "steelDisc" | "CNC";
 };
 
 type SteelOption = {
@@ -89,8 +89,8 @@ function SteelSearchSelect({
   const selectedLabel = selectedOpt
     ? `${selectedOpt.label} (${shapeText(selectedOpt.shape)})`
     : value
-    ? value
-    : "เลือกชนิด";
+      ? value
+      : "เลือกชนิด";
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -103,7 +103,7 @@ function SteelSearchSelect({
           disabled={disabled}
           className={cn(
             "h-10 w-full justify-between border-zinc-200 bg-zinc-50 font-medium",
-            "dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
+            "dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100",
           )}
         >
           <span className="truncate">{selectedLabel}</span>
@@ -115,7 +115,7 @@ function SteelSearchSelect({
         align="start"
         className={cn(
           "w-[--radix-popover-trigger-width] p-0 border-zinc-200 bg-white",
-          "dark:border-zinc-700 dark:bg-zinc-900"
+          "dark:border-zinc-700 dark:bg-zinc-900",
         )}
       >
         <Command>
@@ -140,7 +140,7 @@ function SteelSearchSelect({
                       <Check
                         className={cn(
                           "h-4 w-4",
-                          isSelected ? "opacity-100" : "opacity-0"
+                          isSelected ? "opacity-100" : "opacity-0",
                         )}
                       />
                       <span className="truncate">
@@ -262,7 +262,7 @@ export default function DetailItem<T extends JobWithSteel>({
       return {
         ...prev,
         steel: (prev.steel ?? []).map((item, i) =>
-          i === index ? { ...item, ...patch } : item
+          i === index ? { ...item, ...patch } : item,
         ),
       };
     });
@@ -357,7 +357,7 @@ export default function DetailItem<T extends JobWithSteel>({
                             width:
                               (opt?.shape ?? item.shape) === "line"
                                 ? null
-                                : item.width ?? 0,
+                                : (item.width ?? 0),
                           });
                         }}
                         options={steelOptions}
@@ -388,7 +388,7 @@ export default function DetailItem<T extends JobWithSteel>({
                                 patchSteelItem(idx, {
                                   thickness: Math.max(
                                     0,
-                                    Number(e.target.value || 0)
+                                    Number(e.target.value || 0),
                                   ),
                                 })
                               }
@@ -417,7 +417,7 @@ export default function DetailItem<T extends JobWithSteel>({
                                   patchSteelItem(idx, {
                                     width: Math.max(
                                       0,
-                                      Number(e.target.value || 0)
+                                      Number(e.target.value || 0),
                                     ),
                                   })
                                 }
@@ -446,7 +446,7 @@ export default function DetailItem<T extends JobWithSteel>({
                                 patchSteelItem(idx, {
                                   length: Math.max(
                                     0,
-                                    Number(e.target.value || 0)
+                                    Number(e.target.value || 0),
                                   ),
                                 })
                               }
@@ -494,7 +494,7 @@ export default function DetailItem<T extends JobWithSteel>({
                                 patchSteelItem(idx, {
                                   weight: Math.max(
                                     0,
-                                    Number(e.target.value || 0)
+                                    Number(e.target.value || 0),
                                   ),
                                 })
                               }
@@ -536,22 +536,20 @@ export default function DetailItem<T extends JobWithSteel>({
                           }
                           disabled={isLine}
                           className={`flex h-10 items-center gap-2 rounded-lg border px-3 text-sm transition-all
-          ${
-            item.cuttingMethod === "FB"
-              ? "border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
-              : "border-zinc-200 bg-white text-zinc-600 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-400"
-          }
-          ${isLine ? "cursor-not-allowed opacity-50" : ""}
-        `}
+                          ${
+                            item.cuttingMethod === "FB"
+                              ? "border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
+                              : "border-zinc-200 bg-white text-zinc-600 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800"
+                          }
+                          ${isLine ? "cursor-not-allowed opacity-50" : ""}`}
                         >
                           <div
                             className={`flex h-4 w-4 items-center justify-center rounded border
-            ${
-              item.cuttingMethod === "FB"
-                ? "border-blue-500 bg-blue-500"
-                : "border-zinc-300 bg-white"
-            }
-          `}
+                            ${
+                              item.cuttingMethod === "FB"
+                                ? "border-blue-500 bg-blue-500"
+                                : "border-zinc-300 bg-white"
+                            }`}
                           >
                             {item.cuttingMethod === "FB" && (
                               <CheckIcon className="h-3 w-3 text-white" />
@@ -572,28 +570,58 @@ export default function DetailItem<T extends JobWithSteel>({
                           }
                           disabled={isLine}
                           className={`flex h-10 items-center gap-2 rounded-lg border px-3 text-sm transition-all
-          ${
-            item.cuttingMethod === "steelDisc"
-              ? "border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
-              : "border-zinc-200 bg-white text-zinc-600 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-400"
-          }
-          ${isLine ? "cursor-not-allowed opacity-50" : ""}
-        `}
+                          ${
+                            item.cuttingMethod === "steelDisc"
+                              ? "border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
+                              : "border-zinc-200 bg-white text-zinc-600 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800"
+                          }
+                          ${isLine ? "cursor-not-allowed opacity-50" : ""}`}
                         >
                           <div
                             className={`flex h-4 w-4 items-center justify-center rounded border
-            ${
-              item.cuttingMethod === "steelDisc"
-                ? "border-blue-500 bg-blue-500"
-                : "border-zinc-300 bg-white"
-            }
-          `}
+                            ${
+                              item.cuttingMethod === "steelDisc"
+                                ? "border-blue-500 bg-blue-500"
+                                : "border-zinc-300 bg-white"
+                            }`}
                           >
                             {item.cuttingMethod === "steelDisc" && (
                               <CheckIcon className="h-3 w-3 text-white" />
                             )}
                           </div>
                           หนากลม
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() =>
+                            patchSteelItem(idx, {
+                              cuttingMethod:
+                                item.cuttingMethod === "CNC" ? "normal" : "CNC",
+                            })
+                          }
+                          disabled={isLine}
+                          className={`flex h-10 items-center gap-2 rounded-lg border px-3 text-sm transition-all
+                          ${
+                            item.cuttingMethod === "CNC"
+                              ? "border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
+                              : "border-zinc-200 bg-white text-zinc-600 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800"
+                          }
+                          ${isLine ? "cursor-not-allowed opacity-50" : ""}`}
+                        >
+                          <div
+                            className={`flex h-4 w-4 items-center justify-center rounded border
+                            ${
+                              item.cuttingMethod === "CNC"
+                                ? "border-blue-500 bg-blue-500"
+                                : "border-zinc-300 bg-white"
+                            }`}
+                          >
+                            {item.cuttingMethod === "CNC" && (
+                              <CheckIcon className="h-3 w-3 text-white" />
+                            )}
+                          </div>
+                          CNC
                         </button>
                       </div>
                     </div>

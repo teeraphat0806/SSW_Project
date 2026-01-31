@@ -35,7 +35,7 @@ type ApiJobOrder = {
     weight?: number | null;
     shape: "square" | "line";
     job: number | null;
-    cuttingMethod: "normal" | "FB" | "steelDisc";
+    cuttingMethod: "normal" | "FB" | "steelDisc" | "CNC";
   }[];
   status: statusType;
 };
@@ -135,7 +135,7 @@ const SteelLineSchema = z.object({
   thickness: z.number().nonnegative(),
   weight: z.number().nonnegative().nullable().optional(),
   detail: z.string().nullable().optional(),
-  cuttingMethod: z.enum(["normal", "FB", "steelDisc"]).optional(),
+  cuttingMethod: z.enum(["normal", "FB", "steelDisc", "CNC"]).optional(),
   job: z.number().int().nullable().optional(),
 });
 

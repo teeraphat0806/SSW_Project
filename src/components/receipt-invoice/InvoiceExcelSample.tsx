@@ -13,7 +13,7 @@ type InvoiceItem = {
   weight: number; // 233.00
   price: number; // 34.00
   total: number; // 7922.00
-  cuttingMethod?: "normal" | "FB" | "steelDisc";
+  cuttingMethod?: "normal" | "FB" | "steelDisc"|"CNC";
 };
 
 type Inv71LikeInvoiceProps = {

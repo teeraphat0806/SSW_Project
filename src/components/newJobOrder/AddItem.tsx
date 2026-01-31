@@ -39,7 +39,7 @@ export type SteelItemType = {
   width: number | null;
   length: number;
   thickness: number;
-  cuttingMethod?: "normal" | "FB" | "steelDisc";
+  cuttingMethod?: "normal" | "FB" | "steelDisc" | "CNC";
   job?: number | null;
   notes: string;
 };
@@ -503,22 +503,20 @@ export default function AddItem({
                             }
                             disabled={isLine}
                             className={`flex h-10 items-center gap-2 rounded-lg border px-3 text-sm transition-all
-              ${
-                item.cuttingMethod === "FB"
-                  ? "border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
-                  : "border-zinc-200 bg-white text-zinc-600 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-400"
-              }
-              ${isLine ? "opacity-50 cursor-not-allowed" : ""}
-            `}
+                                     ${
+                                       item.cuttingMethod === "FB"
+                                         ? "border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
+                                         : "border-zinc-200 bg-white text-zinc-600 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800"
+                                     }
+                                      ${isLine ? "opacity-50 cursor-not-allowed" : ""}`}
                           >
                             <div
                               className={`h-4 w-4 rounded border flex items-center justify-center
-               ${
-                 item.cuttingMethod === "FB"
-                   ? "border-blue-500 bg-blue-500"
-                   : "border-zinc-300 bg-white"
-               }
-            `}
+                                ${
+                                  item.cuttingMethod === "FB"
+                                    ? "border-blue-500 bg-blue-500"
+                                    : "border-zinc-300 bg-white"
+                                }`}
                             >
                               {item.cuttingMethod === "FB" && (
                                 <CheckIcon className="w-3 h-3 text-white" />
@@ -540,28 +538,60 @@ export default function AddItem({
                             }
                             disabled={isLine}
                             className={`flex h-10 items-center gap-2 rounded-lg border px-3 text-sm transition-all
-              ${
-                item.cuttingMethod === "steelDisc"
-                  ? "border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
-                  : "border-zinc-200 bg-white text-zinc-600 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-400"
-              }
-              ${isLine ? "opacity-50 cursor-not-allowed" : ""}
-            `}
+                            ${
+                              item.cuttingMethod === "steelDisc"
+                                ? "border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
+                                : "border-zinc-200 bg-white text-zinc-600 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800/40"
+                            }
+                            ${isLine ? "opacity-50 cursor-not-allowed" : ""}`}
                           >
                             <div
                               className={`h-4 w-4 rounded border flex items-center justify-center
-               ${
-                 item.cuttingMethod === "steelDisc"
-                   ? "border-blue-500 bg-blue-500"
-                   : "border-zinc-300 bg-white"
-               }
-            `}
+                              ${
+                                item.cuttingMethod === "steelDisc"
+                                  ? "border-blue-500 bg-blue-500"
+                                  : "border-zinc-300 bg-white"
+                              }`}
                             >
                               {item.cuttingMethod === "steelDisc" && (
                                 <CheckIcon className="w-3 h-3 text-white" />
                               )}
                             </div>
                             หนากลม
+                          </button>
+
+                          {/* CNC */}
+                          <button
+                            type="button"
+                            onClick={() =>
+                              updateSteelItem(
+                                item.id,
+                                "cuttingMethod",
+                                item.cuttingMethod === "CNC" ? "normal" : "CNC",
+                              )
+                            }
+                            disabled={isLine}
+                            className={`flex h-10 items-center gap-2 rounded-lg border px-3 text-sm transition-all
+                            ${
+                              item.cuttingMethod === "CNC"
+                                ? "border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
+                                : "border-zinc-200 bg-white text-zinc-600 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800"
+                            }
+                            ${isLine ? "opacity-50 cursor-not-allowed" : ""}`}
+                          >
+                            <div
+                              className={`h-4 w-4 rounded border flex items-center justify-center
+                              ${
+                                item.cuttingMethod === "CNC"
+                                  ? "border-blue-500 bg-blue-500"
+                                  : "border-zinc-300 bg-white"
+                              }`}
+                            >
+                              {item.cuttingMethod === "CNC" && (
+                                <CheckIcon className="w-3 h-3 text-white" />
+                              )}
+                            </div>
+                            CNC
                           </button>
                         </div>
                       </div>

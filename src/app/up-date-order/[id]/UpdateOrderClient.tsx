@@ -51,7 +51,7 @@ type ApiJobOrder = {
     weight?: number | null;
     shape: "square" | "line";
     job?: number | null;
-    cuttingMethod?: "normal" | "FB" | "steelDisc";
+    cuttingMethod?: "normal" | "FB" | "steelDisc" | "CNC";
   }[];
   status:
     | "pending"
@@ -85,7 +85,7 @@ type Joborder = {
     weight?: number | null;
     shape: "square" | "line";
     job?: number | null;
-    cuttingMethod?: "normal" | "FB" | "steelDisc";
+    cuttingMethod?: "normal" | "FB" | "steelDisc" | "CNC";
   }[];
   status:
     | "pending"
@@ -211,7 +211,7 @@ type PatchPayload = {
     weight?: number | null;
     detail?: string | null;
     job?: number | null;
-    cuttingMethod?: "normal" | "FB" | "steelDisc";
+    cuttingMethod?: "normal" | "FB" | "steelDisc" | "CNC";
   }[];
 };
 

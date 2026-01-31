@@ -34,7 +34,7 @@ type ApiJobOrder = {
     detail?: string;
     shape: string;
     job?: number;
-    cuttingMethod: "normal" | "FB" | "steelDisc";
+    cuttingMethod: "normal" | "FB" | "steelDisc"|"CNC";
   }[];
   updatedAt: Date;
   status:

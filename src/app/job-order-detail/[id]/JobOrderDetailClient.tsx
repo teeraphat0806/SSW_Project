@@ -73,7 +73,7 @@ type ApiJobOrder = {
     detail?: string | null;
     shape: string;
     job?: number | null;
-    cuttingMethod: "normal" | "FB" | "steelDisc" | null;
+    cuttingMethod: "normal" | "FB" | "steelDisc" | "CNC" | null;
   }[];
 
   status: JobStatus;
@@ -84,7 +84,7 @@ type ApiJobOrder = {
   completedAt?: string | null;
 };
 
- export type JobOrder = {
+export type JobOrder = {
   id: string;
   billid: number;
   poNumber: string | null;
@@ -108,7 +108,7 @@ type ApiJobOrder = {
     detail?: string;
     density: number;
     job?: number;
-    cuttingMethod: "normal" | "FB" | "steelDisc";
+    cuttingMethod: "normal" | "FB" | "steelDisc" | "CNC";
     shape: string;
   }>;
   status: JobStatus;
@@ -117,7 +117,7 @@ type ApiJobOrder = {
   updatedAt: Date;
   assignedCutter?: string;
   completedAt?: Date;
-}
+};
 
 // --- DATA MAPPING FUNCTION (จุดสำคัญที่แก้ไข) ---
 

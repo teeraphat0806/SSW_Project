@@ -14,7 +14,7 @@ export type SteelItem = {
   detail?: string;
   density: number;
   job?: number;
-  cuttingMethod: "normal" | "FB" | "steelDisc";
+  cuttingMethod: "normal" | "FB" | "steelDisc" | "CNC";
   shape: string;
 };
 
@@ -92,7 +92,7 @@ export default function SteelTable({ steel = [] }: SteelTableProps) {
       totalWeight: acc.totalWeight + curr.weight,
       grandTotal: acc.grandTotal + curr.totalPrice,
     }),
-    { totalWeight: 0, grandTotal: 0 }
+    { totalWeight: 0, grandTotal: 0 },
   );
 
   return (
@@ -175,7 +175,9 @@ export default function SteelTable({ steel = [] }: SteelTableProps) {
                         >
                           {item.original.cuttingMethod == "FB"
                             ? "F/P"
-                            : "แบนกลม"}
+                            : item.original.cuttingMethod == "steelDisc"
+                              ? "แบนกลม"
+                              : "CNC"}
                         </span>
                       )}
 
