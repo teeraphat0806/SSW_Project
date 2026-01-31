@@ -265,6 +265,7 @@ enum ShapeSteel {
 enum CuttingMethod {
   normal
   FB
+  CNC
   steelDisc
 }
 

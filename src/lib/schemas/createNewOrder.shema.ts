@@ -22,7 +22,9 @@ export const CreateNewOrderSchema = z.object({
           length: z.number(),
           thickness: z.number(),
           amount: z.number().int().positive(),
-          cuttingMethod: z.enum(["normal", "FB", "steelDisc"]).optional(),
+          cuttingMethod: z
+            .enum(["normal", "FB", "steelDisc", "CNC"])
+            .optional(),
           job: z.number().int().nullable().optional(),
           detail: z.string().optional(),
         }),

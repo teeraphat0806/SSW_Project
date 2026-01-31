@@ -14,7 +14,7 @@ export type SteelItem = {
   detail?: string;
   density: number;
   job?: number;
-  cuttingMethod: "normal" | "FB" | "steelDisc";
+  cuttingMethod: "normal" | "FB" | "steelDisc" | "CNC";
   shape: string;
 };
 
@@ -55,12 +55,10 @@ const calculateWeightDetails = (item: SteelItem) => {
 
   if (width > 0) {
     // เหล็กแผ่น (Plate)
-    const volume = width * length * thickness;
-    weightPerPiece = volume * density * 0.1; //weightPerPiece = cm3ToM3(volumeCm3) * density;
+    weightPerPiece = width * length * thickness * density * 0.1;
   } else {
     // เหล็กเส้น/กลม (Round Bar) -> thickness คือ diameter
-    const volume = length * length * thickness;
-    weightPerPiece = volume * density * 0.1;
+    weightPerPiece = length * length * thickness * density * 0.1;
   }
 
   const totalWeight = weightPerPiece * amount;
@@ -76,10 +74,11 @@ const calculateWeightDetails = (item: SteelItem) => {
 // --- Main Component ---
 
 interface SteelTableProps {
+  vatRate: number;
   steel: SteelItem[];
 }
 
-export default function SteelTable({ steel = [] }: SteelTableProps) {
+export default function SteelTable({ steel = [], vatRate }: SteelTableProps) {
   // Pre-calculate logic
   const processedItems = steel.map((item) => ({
     original: item,
@@ -92,7 +91,7 @@ export default function SteelTable({ steel = [] }: SteelTableProps) {
       totalWeight: acc.totalWeight + curr.weight,
       grandTotal: acc.grandTotal + curr.totalPrice,
     }),
-    { totalWeight: 0, grandTotal: 0 }
+    { totalWeight: 0, grandTotal: 0 },
   );
 
   return (
@@ -110,7 +109,7 @@ export default function SteelTable({ steel = [] }: SteelTableProps) {
                 รายการเหล็ก
               </CardTitle>
               <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5 font-medium">
-                สรุปรายการและคำนวณราคา
+                สรุปรายการและคำนวณราคา (หนา×กว้าง×ยาว) หรือ (หนา×วงใน×วงนอก)
               </p>
             </div>
           </div>
@@ -175,7 +174,9 @@ export default function SteelTable({ steel = [] }: SteelTableProps) {
                         >
                           {item.original.cuttingMethod == "FB"
                             ? "F/P"
-                            : "แบนกลม"}
+                            : item.original.cuttingMethod == "steelDisc"
+                              ? "แบนกลม"
+                              : "CNC"}
                         </span>
                       )}
 

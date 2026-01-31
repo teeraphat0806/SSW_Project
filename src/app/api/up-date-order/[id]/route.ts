@@ -1,8 +1,8 @@
 import { requireAuth } from "@/lib/permissions";
 import prisma from "@/lib/prisma";
-import { se, th, tr } from "date-fns/locale";
+import type { Prisma } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
-import z, { custom, includes } from "zod";
+import z from "zod";
 
 type statusType =
   | "pending"
@@ -12,6 +12,8 @@ type statusType =
   | "shipped"
   | "completed"
   | "canceled";
+
+type cuttingMethodType = "normal" | "FB" | "steelDisc" | "CNC";
 
 type ApiJobOrder = {
   id: number;
@@ -35,10 +37,52 @@ type ApiJobOrder = {
     weight?: number | null;
     shape: "square" | "line";
     job: number | null;
-    cuttingMethod: "normal" | "FB" | "steelDisc";
+    cuttingMethod: cuttingMethodType;
+    discount?: number | null;
+    total: number | null;
   }[];
   status: statusType;
 };
+
+type OrderWithRelations = Prisma.OrderPOGetPayload<{
+  include: { Product: { include: { SteelType: true } }; Customer: true };
+}>;
+
+function toApiJobOrder(order: OrderWithRelations): ApiJobOrder {
+  if (!order.Customer) {
+    throw new Error("Order is missing Customer relation");
+  }
+  const customer = order.Customer;
+
+  return {
+    id: order.id,
+    poNumber: order.poNumber ?? null,
+    customerId: customer.id,
+    customerName: customer.name,
+    customerEmail: customer.email,
+    customerPhone: customer.tel,
+    customerAddress: customer.address,
+    customerTaxId: customer.taxNumber,
+    customerCode: customer.code ?? null,
+    customerFax: customer.faxNumber,
+    steel: order.Product.map((p) => ({
+      id: p.id,
+      steelType: p.SteelType.codeSteel,
+      amount: p.amount,
+      width: p.wide ?? undefined,
+      length: p.length ?? 0,
+      thickness: p.thickness ?? 0,
+      detail: p.detail ?? null,
+      weight: p.actualWeight ?? null,
+      shape: p.SteelType.shape as "square" | "line",
+      job: p.job ?? null,
+      cuttingMethod: (p.cuttingMethod ?? "normal") as cuttingMethodType,
+      discount: p.discount ?? null,
+      total: p.total ?? null,
+    })),
+    status: order.status as statusType,
+  };
+}
 
 export async function GET(
   req: NextRequest,
@@ -49,6 +93,12 @@ export async function GET(
 
   if (Number.isNaN(poId)) {
     return NextResponse.json({ error: "Invalid id" }, { status: 400 });
+  }
+
+  const authResult = await requireAuth(["superadmin", "supervisor", "clerk"]);
+
+  if ("response" in authResult) {
+    return authResult.response;
   }
 
   try {
@@ -64,50 +114,14 @@ export async function GET(
       },
     });
 
-    if (!jobOrder) {
+    if (!jobOrder || !jobOrder.Customer) {
       return NextResponse.json(
         { error: "Job order not found" },
         { status: 404 },
       );
     }
-    if (!jobOrder.Customer || !jobOrder.Product) {
-      return NextResponse.json(
-        { error: "Order is missing Customer or Product relation" },
-        { status: 500 },
-      );
-    }
 
-    const Product = jobOrder.Product;
-    const customer = jobOrder.Customer;
-
-    const responseData: ApiJobOrder = {
-      id: poId,
-      poNumber: jobOrder.poNumber || null,
-      customerId: customer.id,
-      customerName: customer.name,
-      customerEmail: customer.email,
-      customerPhone: customer.tel,
-      customerAddress: customer.address,
-      customerTaxId: customer.taxNumber,
-      customerCode: customer.code || null,
-      customerFax: customer.faxNumber,
-      steel: Product.map((item) => ({
-        id: item.id,
-        steelType: item.SteelType.codeSteel,
-        amount: item.amount,
-        width: item.wide ?? undefined,
-        length: item.length ?? 0,
-        thickness: item.thickness ?? 0,
-        detail: item.detail ?? undefined,
-        weight: item.actualWeight ?? undefined,
-        job: item.job ?? null,
-        cuttingMethod: item.cuttingMethod ?? "normal",
-        shape: item.SteelType.shape,
-      })),
-      status: jobOrder.status,
-    };
-
-    return NextResponse.json(responseData, { status: 200 });
+    return NextResponse.json(toApiJobOrder(jobOrder), { status: 200 });
   } catch (error) {
     console.error("Error fetching job order:", error);
     const message =
@@ -135,8 +149,10 @@ const SteelLineSchema = z.object({
   thickness: z.number().nonnegative(),
   weight: z.number().nonnegative().nullable().optional(),
   detail: z.string().nullable().optional(),
-  cuttingMethod: z.enum(["normal", "FB", "steelDisc"]).optional(),
+  cuttingMethod: z.enum(["normal", "FB", "steelDisc", "CNC"]).optional(),
   job: z.number().int().nullable().optional(),
+  discount: z.number().nonnegative().nullable().optional(),
+  total: z.number().nonnegative().nullable().optional(),
 });
 
 const PatchSchema = z.object({
@@ -145,29 +161,29 @@ const PatchSchema = z.object({
   steel: z.array(SteelLineSchema).optional(),
 });
 
-type UpdateOrderPayload = {
-  status?: statusType;
-  customerId?: string;
-  steel?: Array<{
-    id: number;
-    steelType: string;
-    amount: number;
-    width?: number;
-    length: number;
-    thickness: number;
-    detail?: string;
-  }>;
-};
+// type UpdateOrderPayload = {
+//   status?: statusType;
+//   customerId?: string;
+//   steel?: Array<{
+//     id: number;
+//     steelType: string;
+//     amount: number;
+//     width?: number;
+//     length: number;
+//     thickness: number;
+//     detail?: string;
+
+//   }>;
+// };
 
 const round2 = (n: number) => Math.round(n * 100) / 100;
-const cm3ToM3 = (cm3: number) => cm3 / 1_000_000;
 
 const safeNum = (v: unknown) => {
   const n = typeof v === "number" ? v : Number(v);
   return Number.isFinite(n) ? n : 0;
 };
 
-type SteelShape = "square" | "line"; // ให้ตรงกับ enum ที่คุณใช้จริง
+type SteelShape = "square" | "line";
 
 function calcComputedWeightKg(params: {
   shape: SteelShape;
@@ -189,18 +205,11 @@ function calcComputedWeightKg(params: {
   let weightPerPieceKg = 0;
 
   if (params.shape === "square") {
-    // plate: volume = w * l * t (cm3)
     // ถ้าไม่ได้ส่ง width มาให้ถือว่า 0 -> จะได้ weight 0 (กันพัง)
     if (width <= 0) return 0;
-
-    const volumeCm3 = width * length * thickness;
-    weightPerPieceKg = cm3ToM3(volumeCm3) * density;
+    weightPerPieceKg = width * length * thickness * density * 0.1;
   } else {
-    // line/round: thickness = diameter (cm)
-    const r = thickness / 2;
-    const areaCm2 = Math.PI * r * r;
-    const volumeCm3 = areaCm2 * length;
-    weightPerPieceKg = cm3ToM3(volumeCm3) * density;
+    weightPerPieceKg = length * length * thickness * density * 0.1;
   }
 
   const totalWeightKg = weightPerPieceKg * amount;
@@ -213,15 +222,20 @@ function calcLine(params: {
   width?: number | null;
   length: number;
   thickness: number;
-  steel: { price: number; density: number; shape: SteelShape };
+  steel: {
+    price: number;
+    density: number;
+    shape: SteelShape;
+  };
 }) {
   const price = safeNum(params.steel.price);
   const manualWeight = safeNum(params.weight);
 
   // 1) มีน้ำหนักจริง -> ใช้น้ำหนักจริง (ถือว่าเป็น "น้ำหนักรวมของรายการ" แล้ว)
   if (manualWeight > 0) {
-    const total = manualWeight * price;
-    return { weightKg: manualWeight, total };
+    const totalCalculate = round2(manualWeight * price);
+
+    return { weightKg: manualWeight, totalCalculate };
   }
 
   // 2) ไม่มีน้ำหนักจริง -> คำนวณจากมิติ + density + shape + amount
@@ -234,8 +248,8 @@ function calcLine(params: {
     density: params.steel.density,
   });
 
-  const total = round2(computedWeightKg * price);
-  return { weightKg: round2(computedWeightKg), total };
+  const totalCalculate = round2(computedWeightKg * price);
+  return { weightKg: round2(computedWeightKg), totalCalculate };
 }
 export async function PATCH(
   req: NextRequest,
@@ -246,6 +260,11 @@ export async function PATCH(
     const poId = Number(id);
     if (Number.isNaN(poId)) {
       return NextResponse.json({ error: "Invalid id" }, { status: 400 });
+    }
+    const authResult = await requireAuth(["superadmin", "supervisor", "clerk"]);
+
+    if ("response" in authResult) {
+      return authResult.response;
     }
 
     const body = await req.json().catch(() => null);
@@ -289,7 +308,9 @@ export async function PATCH(
         where: { id: poId },
         data: {
           ...(patch.status ? { status: patch.status } : {}),
-          ...(patch.status === "completed" ? { completedAt: new Date() } : {}),
+          ...(patch.status === "completed"
+            ? { completedAt: new Date() }
+            : { completedAt: undefined }),
           ...(nextCustomerId !== undefined
             ? { customerId: nextCustomerId }
             : {}),
@@ -331,11 +352,12 @@ export async function PATCH(
           throw new Error(`SteelType not found: ${missing.join(", ")}`);
         await tx.product.deleteMany({ where: { orderPOId: poId } });
 
+        // สร้างใหม่รายการเหล็กทั้งหมด
         await tx.product.createMany({
           data: patch.steel.map((l) => {
             const st = codeToSteel.get(l.codeSteel.trim())!;
 
-            const { total } = calcLine({
+            const { totalCalculate } = calcLine({
               amount: l.amount,
               weight: l.weight ?? null,
               width: l.width ?? null,
@@ -344,7 +366,7 @@ export async function PATCH(
               steel: {
                 price: st.price,
                 density: st.density,
-                shape: st.shape as "square" | "line", // <- ถ้า st.shape เป็น enum ใน prisma TS มันจะเทียบได้เอง ให้ลบทิ้ง cast ได้
+                shape: st.shape as "square" | "line",
               },
             });
 
@@ -360,24 +382,28 @@ export async function PATCH(
               actualWeight: l.weight ?? null,
               job: l.job ?? null,
               cuttingMethod: l.cuttingMethod ?? "normal",
-
-              // total คำนวณตามเงื่อนไขใหม่
-              total,
+              discount: l.discount ?? null,
+              total: l.cuttingMethod === "CNC" ? l.total : totalCalculate,
             };
           }),
         });
-
+        // หาค่ารวมจำนวนเงินกับส่วนลดรวม
         const sum = await tx.product.aggregate({
           where: { orderPOId: poId },
-          _sum: { total: true },
+
+          _sum: { total: true, discount: true },
         });
 
+        // update total ใน orderPO
         await tx.orderPO.update({
           where: { id: poId },
           data: { total: sum._sum.total ?? 0 },
         });
 
         const subtotal = sum._sum.total ?? 0;
+        const discount = sum._sum.discount ?? 0;
+
+        // update บิลที่เชื่อมโยงกับ orderPO นี้
         const orderWithBill = await tx.orderPO.findUnique({
           where: { id: poId },
           select: {
@@ -400,13 +426,15 @@ export async function PATCH(
           if (!bill) throw new Error("Bill not found");
 
           const vatRate = bill.vatRate ?? 7;
-          const vat = round2(subtotal * (vatRate / 100));
-          const grandTotal = round2(subtotal + vat);
+          const subtotalafterDiscount = round2(subtotal - discount);
+          const vat = round2(subtotalafterDiscount * (vatRate / 100));
+          const grandTotal = round2(subtotalafterDiscount + vat);
 
           await tx.bill.update({
             where: { id: bill.id },
             data: {
               subtotal,
+              discount,
               vat,
               grandTotal,
             },
@@ -430,34 +458,7 @@ export async function PATCH(
 
       const customer = order.Customer;
 
-      const responseData: ApiJobOrder = {
-        id: order.id,
-        poNumber: order.poNumber ?? null,
-        customerId: customer.id,
-        customerName: customer.name,
-        customerEmail: customer.email,
-        customerPhone: customer.tel,
-        customerAddress: customer.address,
-        customerTaxId: customer.taxNumber,
-        customerCode: customer.code || null,
-        customerFax: customer.faxNumber,
-        steel: order.Product.map((p) => ({
-          id: p.id,
-          steelType: p.SteelType.codeSteel,
-          amount: p.amount,
-          width: p.wide ?? undefined,
-          length: p.length ?? 0,
-          thickness: p.thickness ?? 0,
-          detail: p.detail ?? null,
-          weight: p.actualWeight ?? null,
-          shape: p.SteelType.shape,
-          job: p.job ?? null,
-          cuttingMethod: p.cuttingMethod ?? "normal",
-        })),
-        status: order.status,
-      };
-      console.log("Updated order:", responseData);
-      return responseData;
+      return toApiJobOrder(order);
     });
 
     return NextResponse.json(updated, { status: 200 });
