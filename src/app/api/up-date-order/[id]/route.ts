@@ -160,14 +160,13 @@ type UpdateOrderPayload = {
 };
 
 const round2 = (n: number) => Math.round(n * 100) / 100;
-const cm3ToM3 = (cm3: number) => cm3 / 1_000_000;
 
 const safeNum = (v: unknown) => {
   const n = typeof v === "number" ? v : Number(v);
   return Number.isFinite(n) ? n : 0;
 };
 
-type SteelShape = "square" | "line"; // ให้ตรงกับ enum ที่คุณใช้จริง
+type SteelShape = "square" | "line";
 
 function calcComputedWeightKg(params: {
   shape: SteelShape;
@@ -189,18 +188,11 @@ function calcComputedWeightKg(params: {
   let weightPerPieceKg = 0;
 
   if (params.shape === "square") {
-    // plate: volume = w * l * t (cm3)
     // ถ้าไม่ได้ส่ง width มาให้ถือว่า 0 -> จะได้ weight 0 (กันพัง)
     if (width <= 0) return 0;
-
-    const volumeCm3 = width * length * thickness;
-    weightPerPieceKg = cm3ToM3(volumeCm3) * density;
+    weightPerPieceKg = width * length * thickness * density * 0.1;
   } else {
-    // line/round: thickness = diameter (cm)
-    const r = thickness / 2;
-    const areaCm2 = Math.PI * r * r;
-    const volumeCm3 = areaCm2 * length;
-    weightPerPieceKg = cm3ToM3(volumeCm3) * density;
+    weightPerPieceKg = length * length * thickness * density * 0.1;
   }
 
   const totalWeightKg = weightPerPieceKg * amount;
@@ -253,6 +245,7 @@ export async function PATCH(
     const parsed = PatchSchema.safeParse(body);
     if (!parsed.success) {
       console.error("Validation errors:", parsed.error.issues);
+      console.log("-------------------");
       return NextResponse.json(
         { error: "Invalid payload", issues: parsed.error.issues },
         { status: 400 },
