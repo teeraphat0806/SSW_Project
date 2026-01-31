@@ -46,7 +46,7 @@ type CustomerApiItem = {
 type JobCustomerFields = {
   customerId: string;
   customerName: string;
-  customerCode: string;
+  customerCode: string | null;
   customerTaxId: string;
   customerPhone: string;
   customerEmail: string;
@@ -68,7 +68,7 @@ function mapCustomerToJobFields(c: CustomerApiItem) {
   return {
     customerId: String(c.id),
     customerName: c.name ?? "",
-    customerCode: c.code ?? "",
+    customerCode: c.code ?? null,
     customerTaxId: c.taxNumber ?? "",
     customerPhone: c.tel ?? "",
     customerEmail: c.email ?? "",
@@ -86,7 +86,7 @@ const InfoItem = ({
 }: {
   icon: any;
   label: string;
-  value?: string;
+  value?: string | null;
   className?: string;
 }) => {
   if (!value || value === "-") return null;

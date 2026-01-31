@@ -31,26 +31,34 @@ import {
 } from "@/components/ui/command";
 import { tr } from "date-fns/locale";
 import { ToastContainer, toast } from "react-toastify";
+import {
+  SteelShape,
+  CuttingMethod,
+} from "@/app/up-date-order/[id]/UpdateOrderClient";
+import { ShapeSteel } from "@prisma/client";
 
 type SteelItem = {
   id: number;
-  steeltype: string;
+  steelType: string;
   quantity: number;
   width?: number | null;
   length: number;
   thickness: number;
   detail?: string | null;
   weight?: number | null;
-  shape: "square" | "line";
+  shape: SteelShape;
   job?: number | null;
-  cuttingMethod?: "normal" | "FB" | "steelDisc" | "CNC";
+  cuttingMethod: CuttingMethod;
+  total: number | null; //ค่าส่งจริงส่งไปแค่ตอน CNC
+  cncTotalDraft?: number | null; // total จำค่าไว้ เฉพาะ UI
+  discount: number | null;
 };
 
 type SteelOption = {
   value: string;
   label: string;
   quantity: number;
-  shape: "square" | "line";
+  shape: SteelShape;
 };
 
 //  job ต้องมีอย่างน้อย id + steel
@@ -70,7 +78,7 @@ type Props<T extends JobWithSteel> = {
   setUseJob: React.Dispatch<React.SetStateAction<boolean>>;
 };
 
-const shapeText = (s: "square" | "line") => (s === "line" ? "เพลา" : "แผ่น");
+const shapeText = (s: SteelShape) => (s === "line" ? "เพลา" : "แผ่น");
 
 function SteelSearchSelect({
   value,
@@ -211,14 +219,14 @@ export default function DetailItem<T extends JobWithSteel>({
 
       const firstOpt = steelOptions?.[0];
       const firstType = firstOpt?.value ?? "";
-      const firstShape: "square" | "line" = firstOpt?.shape ?? "square";
+      const firstShape: ShapeSteel = firstOpt?.shape ?? "square";
 
       return {
         ...prev,
         steel: [
           ...(prev.steel ?? []),
           {
-            steeltype: firstType,
+            steelType: firstType,
             quantity: 1,
             width: firstShape === "line" ? null : 1,
             length: 1,
@@ -228,6 +236,8 @@ export default function DetailItem<T extends JobWithSteel>({
             job: null,
             cuttingMethod: "normal",
             shape: firstShape,
+            total: null,
+            discount: null,
           },
         ],
       };
@@ -346,13 +356,13 @@ export default function DetailItem<T extends JobWithSteel>({
                       </label>
 
                       <SteelSearchSelect
-                        value={item.steeltype}
+                        value={item.steelType}
                         onChange={(v) => {
                           const opt = steelOptions.find((o) => o.value === v);
 
-                          // คง logic เดิม: update steeltype + shape + width null เมื่อเป็น line
+                          // คง logic เดิม: update steelType + shape + width null เมื่อเป็น line
                           patchSteelItem(idx, {
-                            steeltype: v,
+                            steelType: v,
                             shape: opt?.shape ?? item.shape ?? "square",
                             width:
                               (opt?.shape ?? item.shape) === "line"
@@ -528,12 +538,23 @@ export default function DetailItem<T extends JobWithSteel>({
                       <div className="flex gap-2">
                         <button
                           type="button"
-                          onClick={() =>
+                          onClick={() => {
+                            const nextMethod: CuttingMethod =
+                              item.cuttingMethod === "FB" ? "normal" : "FB";
+
                             patchSteelItem(idx, {
-                              cuttingMethod:
-                                item.cuttingMethod === "FB" ? "normal" : "FB",
-                            })
-                          }
+                              cuttingMethod: nextMethod,
+
+                              // ถ้ากำลังออกจาก CNC ให้จำค่าที่เคยกรอกไว้ก่อน
+                              cncTotalDraft:
+                                item.cuttingMethod === "CNC"
+                                  ? (item.total ?? item.cncTotalDraft ?? null)
+                                  : (item.cncTotalDraft ?? null),
+
+                              // ไม่ใช่ CNC ต้องล้าง total เสมอ
+                              total: null,
+                            });
+                          }}
                           disabled={isLine}
                           className={`flex h-10 items-center gap-2 rounded-lg border px-3 text-sm transition-all
                           ${
@@ -560,14 +581,20 @@ export default function DetailItem<T extends JobWithSteel>({
 
                         <button
                           type="button"
-                          onClick={() =>
+                          onClick={() => {
+                            const currentMethod =
+                              item.cuttingMethod === "steelDisc"
+                                ? "normal"
+                                : "steelDisc";
                             patchSteelItem(idx, {
-                              cuttingMethod:
-                                item.cuttingMethod === "steelDisc"
-                                  ? "normal"
-                                  : "steelDisc",
-                            })
-                          }
+                              cuttingMethod: currentMethod,
+                              cncTotalDraft:
+                                item.cuttingMethod === "CNC"
+                                  ? (item.total ?? item.cncTotalDraft ?? null)
+                                  : (item.cncTotalDraft ?? null),
+                              total: null,
+                            });
+                          }}
                           disabled={isLine}
                           className={`flex h-10 items-center gap-2 rounded-lg border px-3 text-sm transition-all
                           ${
@@ -594,12 +621,23 @@ export default function DetailItem<T extends JobWithSteel>({
 
                         <button
                           type="button"
-                          onClick={() =>
-                            patchSteelItem(idx, {
-                              cuttingMethod:
-                                item.cuttingMethod === "CNC" ? "normal" : "CNC",
-                            })
-                          }
+                          onClick={() => {
+                            const currentMethod =
+                              item.cuttingMethod === "CNC" ? "normal" : "CNC";
+                            if (currentMethod === "CNC") {
+                              patchSteelItem(idx, {
+                                cuttingMethod: currentMethod,
+                                total: item.cncTotalDraft ?? null,
+                              });
+                            } else {
+                              patchSteelItem(idx, {
+                                cuttingMethod: "normal",
+                                cncTotalDraft:
+                                  item.total ?? item.cncTotalDraft ?? null,
+                                total: null,
+                              });
+                            }
+                          }}
                           disabled={isLine}
                           className={`flex h-10 items-center gap-2 rounded-lg border px-3 text-sm transition-all
                           ${
@@ -623,6 +661,65 @@ export default function DetailItem<T extends JobWithSteel>({
                           </div>
                           CNC
                         </button>
+                      </div>
+                    </div>
+
+                    {/* CNC Total (only when CNC) */}
+                    {item.cuttingMethod === "CNC" && (
+                      <div className="w-full lg:w-44 flex-none">
+                        <label className="mb-1.5 block text-xs font-medium text-zinc-500 dark:text-zinc-400">
+                          ราคาตัด CNC
+                        </label>
+                        <div className="relative">
+                          <Input
+                            type="number"
+                            min="0"
+                            value={item.total ?? ""}
+                            onChange={(e) => {
+                              const v =
+                                e.target.value === ""
+                                  ? null
+                                  : Math.max(0, Number(e.target.value)); //ไม่ให้ติดลบ
+                              patchSteelItem(idx, {
+                                //idx คือ index ของ item ที่จะแก้
+                                total: v,
+                                cncTotalDraft: v,
+                              });
+                            }}
+                            placeholder="0"
+                            className="h-10 border-zinc-200 bg-white text-right pr-10 font-mono dark:border-zinc-700 dark:bg-zinc-900"
+                          />
+                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-zinc-400">
+                            ฿
+                          </span>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Discount */}
+                    <div className="w-full lg:w-40 flex-none">
+                      <label className="mb-1.5 block text-xs font-medium text-zinc-500 dark:text-zinc-400">
+                        ส่วนลด (บาท)
+                      </label>
+                      <div className="relative">
+                        <Input
+                          type="number"
+                          min="0"
+                          value={item.discount ?? ""}
+                          onChange={(e) =>
+                            patchSteelItem(idx, {
+                              discount:
+                                e.target.value === ""
+                                  ? null
+                                  : Math.max(0, Number(e.target.value)),
+                            })
+                          }
+                          placeholder="0"
+                          className="h-10 border-zinc-200 bg-white text-right pr-10 dark:border-zinc-700 dark:bg-zinc-900"
+                        />
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-zinc-400">
+                          ฿
+                        </span>
                       </div>
                     </div>
 

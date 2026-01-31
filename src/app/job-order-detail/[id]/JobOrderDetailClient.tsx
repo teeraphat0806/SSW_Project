@@ -60,6 +60,7 @@ type ApiJobOrder = {
   key: string[];
   supervisors: StaffMember[];
   technicians: StaffMember[];
+  vatRate: number | null;
 
   steel: {
     steelType: string;
@@ -97,6 +98,7 @@ export type JobOrder = {
   key: string[];
   supervisors: StaffMember[];
   technicians: StaffMember[];
+  vatRate: number;
   steel: Array<{
     steelType: string;
     amount: number;
@@ -136,7 +138,7 @@ const tojobOrder = (api: ApiJobOrder): JobOrder => {
     key: api.key ?? [],
     supervisors: api.supervisors,
     technicians: api.technicians,
-
+    vatRate: api.vatRate ?? 7,
     steel: (api.steel || []).map((s) => ({
       steelType: s.steelType,
       amount: s.amount,
@@ -422,9 +424,6 @@ const JobOrderDetailPage = ({ id }: { id: string }) => {
           </div>
         </div>
       </header>
-      {/* <pre className="text-xs overflow-auto p-3 border rounded">
-        {JSON.stringify(jobOrder, null, 2)}
-      </pre> */}
 
       <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
         {/* --- Page Header & Actions --- */}
@@ -511,7 +510,7 @@ const JobOrderDetailPage = ({ id }: { id: string }) => {
             </Card>
 
             {/* Steel Order Table */}
-            <SteelOrderTable steel={jobOrder?.steel || []} />
+            <SteelOrderTable steel={jobOrder?.steel || []}  vatRate={jobOrder?.vatRate || 7} />
 
             {/* Tabs Card */}
             <Card className="rounded-lg shadow-md ">

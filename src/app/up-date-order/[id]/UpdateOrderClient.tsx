@@ -1,14 +1,6 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
 import { useRouter } from "next/navigation";
 import {
   Boxes,
@@ -21,7 +13,6 @@ import {
   PackageCheck,
 } from "lucide-react";
 import { Button } from "../../../components/ui/button";
-import { de } from "zod/v4/locales";
 import DetailCustomer from "@/components/up-date-order/detailCustomer";
 import DetailItem from "@/components/up-date-order/detailItem";
 import Summary from "@/components/up-date-order/summary";
@@ -29,16 +20,41 @@ import Stepper from "@/components/up-date-order/stepper";
 import { LoadingScreen } from "@/components/Loading";
 import { toast } from "react-toastify";
 
+export type Status =
+  | "pending"
+  | "cutting"
+  | "weighing"
+  | "ready"
+  | "shipped"
+  | "completed"
+  | "canceled";
+
+export type CuttingMethod = "normal" | "FB" | "steelDisc" | "CNC";
+export type SteelShape = "square" | "line";
+
+const STATUS_ORDER: Record<Status, number> = {
+  pending: 0,
+  cutting: 1,
+  weighing: 2,
+  ready: 3,
+  shipped: 4,
+  completed: 5,
+  canceled: 6,
+};
+
+const isAtLeast = (s: Status, atLeast: Status) =>
+  STATUS_ORDER[s] >= STATUS_ORDER[atLeast];
+
 type ApiJobOrder = {
   id: number;
-  poNumber: string;
+  poNumber: string | null;
   customerId: string;
   customerName: string;
   customerEmail: string;
   customerPhone: string;
   customerAddress: string;
   customerTaxId: string;
-  customerCode: string;
+  customerCode: string | null;
   customerFax: string;
   steel: {
     id: number;
@@ -49,77 +65,71 @@ type ApiJobOrder = {
     thickness: number;
     detail?: string | null;
     weight?: number | null;
-    shape: "square" | "line";
+    shape: SteelShape;
     job?: number | null;
-    cuttingMethod?: "normal" | "FB" | "steelDisc" | "CNC";
+    cuttingMethod: CuttingMethod;
+    discount: number | null;
+    total: number | null;
   }[];
-  status:
-    | "pending"
-    | "cutting"
-    | "weighing"
-    | "ready"
-    | "shipped"
-    | "completed"
-    | "canceled";
+  status: Status;
 };
 
 type Joborder = {
   id: string;
-  ponumber: string;
+  poNumber: string;
   customerId: string;
   customerName: string;
   customerEmail: string;
   customerPhone: string;
   customerAddress: string;
   customerTaxId: string;
-  customerCode: string;
+  customerCode: string | null;
   customerFax: string;
   steel: {
     id: number;
-    steeltype: string;
+    steelType: string;
     quantity: number;
     width?: number | null;
     length: number;
     thickness: number;
     detail?: string | null;
     weight?: number | null;
-    shape: "square" | "line";
+    shape: SteelShape;
     job?: number | null;
-    cuttingMethod?: "normal" | "FB" | "steelDisc" | "CNC";
+    cuttingMethod: CuttingMethod;
+    discount: number | null;
+    total: number | null;
   }[];
-  status:
-    | "pending"
-    | "cutting"
-    | "weighing"
-    | "ready"
-    | "shipped"
-    | "completed"
-    | "canceled";
+  status: Status;
 };
 
 const toJoborder = (api: ApiJobOrder): Joborder => ({
   id: api.id.toString(),
-  ponumber: api.poNumber,
+  poNumber: api.poNumber ?? "",
+
   customerId: api.customerId ?? "",
   customerName: api.customerName ?? "",
   customerEmail: api.customerEmail ?? "",
   customerPhone: api.customerPhone ?? "",
   customerAddress: api.customerAddress ?? "",
   customerTaxId: api.customerTaxId ?? "",
-  customerCode: api.customerCode ?? "",
+  customerCode: api.customerCode ?? null,
   customerFax: api.customerFax ?? "",
+
   steel: (api.steel ?? []).map((s) => ({
     id: s.id,
-    steeltype: s.steelType,
+    steelType: s.steelType,
     quantity: s.amount,
     width: s.width ?? null,
-    length: s.length,
-    thickness: s.thickness,
+    length: s.length ?? 0,
+    thickness: s.thickness ?? 0,
     detail: s.detail ?? null,
     weight: s.weight ?? null,
+    shape: s.shape,
     job: s.job ?? null,
     cuttingMethod: s.cuttingMethod ?? "normal",
-    shape: s.shape,
+    discount: s.discount ?? null,
+    total: s.total ?? null,
   })),
   status: api.status,
 });
@@ -166,7 +176,7 @@ function mergeOrderSteelIntoOptions(
   const map = new Map(options.map((o) => [o.value, o]));
 
   for (const s of job.steel) {
-    const code = s.steeltype?.trim();
+    const code = s.steelType?.trim();
     if (!code) continue;
 
     // ถ้าไม่มีใน options ให้เติมเข้าไป (quantity=0) เพื่อให้ Select แสดงได้
@@ -199,10 +209,9 @@ const toThaiStatus = (s: Joborder["status"]): OrderStatus => {
 };
 
 type PatchPayload = {
-  status?: Joborder["status"];
+  status?: Status;
   customerId?: string;
   steel?: {
-    id: number;
     codeSteel: string;
     amount: number;
     width?: number | null;
@@ -211,7 +220,9 @@ type PatchPayload = {
     weight?: number | null;
     detail?: string | null;
     job?: number | null;
-    cuttingMethod?: "normal" | "FB" | "steelDisc" | "CNC";
+    cuttingMethod?: CuttingMethod;
+    discount?: number | null;
+    total?: number | null;
   }[];
 };
 
@@ -220,8 +231,7 @@ function buildPatchPayload(job: Joborder): PatchPayload {
     status: job.status,
     customerId: String(job.customerId),
     steel: job.steel.map((l) => ({
-      id: l.id,
-      codeSteel: l.steeltype?.trim(),
+      codeSteel: l.steelType?.trim(),
       amount: Number(l.quantity),
       width: l.width ?? null,
       length: Number(l.length),
@@ -230,6 +240,8 @@ function buildPatchPayload(job: Joborder): PatchPayload {
       detail: l.detail ?? null,
       job: l.job ?? null,
       cuttingMethod: l.cuttingMethod ?? "normal",
+      discount: l.discount ?? null,
+      total: l.cuttingMethod === "CNC" ? (l.total ?? null) : null,
     })),
   };
 }
@@ -355,6 +367,15 @@ const UpdateOrderPage = ({ id }: { id: string }) => {
     if (itemCount > 15)
       return "ไม่สามารถบันทึกคำสั่งซื้อที่มีรายการเหล็กเกิน 15 รายการได้";
     if (hasMissingJob) return "กรุณากรอกหมายเลขงาน (Job No.) ให้ครบทุกบรรทัด";
+    if (isAtLeast(job.status, "weighing")) {
+      const hasZeroWeight = job.steel.some((s) => !s.weight || s.weight <= 0);
+      if (hasZeroWeight) return "กรุณากรอกน้ำหนักเหล็กก่อนบันทึกคำสั่งซื้อ";
+      const hasZeroprice = job.steel
+        .filter((s) => s.cuttingMethod == "CNC")
+        .some((s) => !s.total || s.total <= 0);
+      if (hasZeroprice)
+        return "กรุณากรอกราคาต่อหน่วยเหล็ก CNC ก่อนบันทึกคำสั่งซื้อ";
+    }
 
     if (
       job.steel.some(
@@ -486,7 +507,7 @@ const UpdateOrderPage = ({ id }: { id: string }) => {
 
   // ✅ คำนวณจาก job.steel โดยตรง
   const itemCount = job.steel.length;
-  const uniqueTypeCount = new Set(job.steel.map((i) => i.steeltype)).size;
+  const uniqueTypeCount = new Set(job.steel.map((i) => i.steelType)).size;
   const totalQty = job.steel.reduce(
     (sum, i) => sum + (Number(i.quantity) || 0),
     0,
@@ -501,7 +522,7 @@ const UpdateOrderPage = ({ id }: { id: string }) => {
 
   const summaryByType = job.steel.reduce(
     (acc, i) => {
-      const key = i.steeltype || "ไม่ระบุ";
+      const key = i.steelType || "ไม่ระบุ";
       if (!acc[key]) acc[key] = { lines: 0, qty: 0, weight: 0 };
       acc[key].lines += 1;
       acc[key].qty += Number(i.quantity) || 0;
@@ -546,7 +567,7 @@ const UpdateOrderPage = ({ id }: { id: string }) => {
                   อัปเดตคำสั่งซื้อ
                 </h1>
                 <p className="text-sm text-muted-foreground font-mono">
-                  {job.ponumber}
+                  {job.poNumber || "(ไม่ระบุ PO)"}
                 </p>
               </div>
             </div>
