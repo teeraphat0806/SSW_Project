@@ -354,7 +354,7 @@ export async function PATCH(
               job: l.job ?? null,
               cuttingMethod: l.cuttingMethod ?? "normal",
 
-              // total คำนวณตามเงื่อนไขใหม่
+              
               total,
             };
           }),
