@@ -66,37 +66,8 @@ export async function GET(
         `Querying month ${month}: ${startOfMonth.toISOString()} to ${endOfMonth.toISOString()}`,
       );
 
-      // Get sales data (from OrderPO) - ใช้ createdAt และ OR completedAt
-      const salesStats = await prisma.orderPO.aggregate({
-        where: {
-          status: "completed",
-          OR: [
-            {
-              completedAt: {
-                gte: startOfMonth,
-                lt: endOfMonth,
-              },
-            },
-            {
-              createdAt: {
-                gte: startOfMonth,
-                lt: endOfMonth,
-              },
-            },
-          ],
-        },
-        _sum: {
-          total: true,
-        },
-        _count: {
-          id: true,
-        },
-      });
-
-      console.log(`Sales stats for month ${month}:`, salesStats);
-
-      // Get income data (from Bill)
-      const incomeStats = await prisma.bill.aggregate({
+      // Get sales data (from Bill)
+      const salesStats = await prisma.bill.aggregate({
         where: {
           createdAt: {
             gte: startOfMonth,
@@ -106,7 +77,49 @@ export async function GET(
         _sum: {
           grandTotal: true,
         },
+        _count: {
+          id: true,
+        },
       });
+
+      console.log(`Sales stats for month ${month}:`, salesStats);
+
+      // Get all staff
+      const allStaff = await prisma.staff.findMany({
+        select: {
+          id: true,
+          currentSalary: true,
+        },
+      });
+
+      // Get staff salaries for the month
+      const staffSalaries = await prisma.staffSalary.findMany({
+        where: {
+          effectiveDate: {
+            gte: startOfMonth,
+            lt: endOfMonth,
+          },
+        },
+        orderBy: {
+          effectiveDate: "desc", // Get latest first
+        },
+      });
+
+      // Group by staffId and take only the latest one per staff
+      const staffSalaryMap = new Map<number, number>();
+      staffSalaries.forEach((salary) => {
+        if (!staffSalaryMap.has(salary.staffId)) {
+          staffSalaryMap.set(salary.staffId, salary.amount);
+        }
+      });
+
+      // Calculate total salaries - one per staff
+      const totalSalaries = allStaff.reduce((sum, staff) => {
+        const salaryAmount = staffSalaryMap.has(staff.id)
+          ? staffSalaryMap.get(staff.id)!
+          : staff.currentSalary;
+        return sum + salaryAmount;
+      }, 0);
 
       // Get expense data
       const expenseStats = await prisma.expense.aggregate({
@@ -121,10 +134,11 @@ export async function GET(
         },
       });
 
-      const salesAmt = salesStats._sum.total || 0;
+      const salesAmt = salesStats._sum.grandTotal || 0;
       const salesQty = salesStats._count.id || 0;
-      const income = incomeStats._sum.grandTotal || 0;
-      const expense = expenseStats._sum.amount || 0;
+      const income = salesStats._sum.grandTotal || 0; // Income = Sales from Bill
+      const expenseAmount = expenseStats._sum.amount || 0;
+      const expense = expenseAmount + totalSalaries; // Include salaries in expense
       const net = income - expense;
 
       monthlyData.push({

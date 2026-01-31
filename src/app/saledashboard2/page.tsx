@@ -3,6 +3,7 @@
 import { DashboardHeader } from "@/components/saleDashboard/dashboard-header";
 import { KPICardsGrid } from "@/components/saleDashboard/kpi-cards-grid";
 import { MonthlyDataTable } from "@/components/saleDashboard/monthly-data-table";
+import { SalesBarChart } from "@/components/saledashboard2/SalesBarChart";
 import { useState, useEffect } from "react";
 import { Loader2 } from "lucide-react";
 
@@ -126,6 +127,9 @@ export default function SaleDashboard2Page() {
         />
 
         <KPICardsGrid data={kpiData} />
+
+        {/* Sales Bar Chart */}
+        <SalesBarChart data={monthlyData} year={selectedYear} />
 
         {/* Monthly Data Table */}
         <div className="space-y-4">

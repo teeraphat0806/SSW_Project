@@ -98,54 +98,32 @@ export async function GET(req: NextRequest) {
       const startOfDay = new Date(yearNumber, monthNumber - 1, day);
       const endOfDay = new Date(yearNumber, monthNumber - 1, day + 1);
 
-      // Get sales data for this day
-      const salesStats = await prisma.orderPO.aggregate({
-        where: {
-          status: "completed",
-          OR: [
-            {
-              completedAt: {
-                gte: startOfDay,
-                lt: endOfDay,
-              },
-            },
-            {
-              createdAt: {
-                gte: startOfDay,
-                lt: endOfDay,
-              },
-            },
-          ],
-        },
-        _sum: {
-          total: true,
-        },
-        _count: {
-          id: true,
-        },
-      });
-
-      // Get bill count for this day
-      const billCount = await prisma.bill.count({
+      // Get sales data for this day (from Bill)
+      const salesStats = await prisma.bill.aggregate({
         where: {
           createdAt: {
             gte: startOfDay,
             lt: endOfDay,
           },
         },
+        _sum: {
+          grandTotal: true,
+        },
+        _count: {
+          id: true,
+        },
       });
 
-      const salesAmt = salesStats._sum.total || 0;
+      const salesAmt = salesStats._sum.grandTotal || 0;
       const salesQty = salesStats._count.id || 0;
 
       // Only add days that have data
-      if (salesAmt > 0 || salesQty > 0 || billCount > 0) {
+      if (salesAmt > 0 || salesQty > 0) {
         dailyData.push({
           day,
           date: startOfDay.toISOString().split("T")[0],
           salesAmt,
           salesQty,
-          billCount,
           formatted: {
             salesAmt: `฿${salesAmt.toLocaleString("en-US")}`,
             salesQty: `${salesQty}`,
@@ -154,7 +132,6 @@ export async function GET(req: NextRequest) {
 
         totalSalesAmt += salesAmt;
         totalSalesQty += salesQty;
-        totalBills += billCount;
       }
     }
 
@@ -168,7 +145,6 @@ export async function GET(req: NextRequest) {
         totalDays: daysInMonth,
         totalSalesAmt,
         totalSalesQty,
-        totalBills,
       },
     };
 

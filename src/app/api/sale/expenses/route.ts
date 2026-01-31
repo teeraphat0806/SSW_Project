@@ -176,14 +176,73 @@ export async function GET(req: NextRequest) {
       orderByClause = { category: { name: sortOrder } };
     }
 
-    // Get total count
-    const total = await prisma.expense.count({
-      where: whereClause,
+    // Get staff salaries for the month
+    // First, get all staff
+    const allStaff = await prisma.staff.findMany({
+      include: {
+        user: true,
+      },
     });
 
-    // Get paginated data
-    const skip = (page - 1) * limit;
-    const expenses = await prisma.expense.findMany({
+    // Get staff salaries for the month
+    const salariesFromDB = await prisma.staffSalary.findMany({
+      where: {
+        effectiveDate: {
+          gte: startOfMonth,
+          lt: endOfMonth,
+        },
+      },
+      include: {
+        Staff: {
+          include: {
+            user: true,
+          },
+        },
+      },
+      orderBy: {
+        effectiveDate: "desc", // Get latest first
+      },
+    });
+
+    // Group by staffId and take only the latest one per staff
+    const staffSalaryMap = new Map<number, (typeof salariesFromDB)[0]>();
+    salariesFromDB.forEach((salary) => {
+      if (!staffSalaryMap.has(salary.staffId)) {
+        staffSalaryMap.set(salary.staffId, salary);
+      }
+    });
+
+    // Build salary expenses - one per staff
+    const salaryExpenses = allStaff.map((staff, index) => {
+      const salaryRecord = staffSalaryMap.get(staff.id);
+      const amount = salaryRecord ? salaryRecord.amount : staff.currentSalary;
+      const effectiveDate = salaryRecord
+        ? salaryRecord.effectiveDate
+        : new Date(yearNumber, monthNumber - 1, 1); // First day of month if using currentSalary
+
+      return {
+        id: -1000000 - index, // Negative ID to distinguish from real expenses
+        expenseDate: effectiveDate,
+        categoryId: null,
+        category: null,
+        description: `เงินเดือนพนักงาน - ${staff.user?.name || "Unknown"}${salaryRecord ? "" : " (ใช้เงินเดือนปัจจุบัน)"}`,
+        amount: amount,
+        receiptUrl: null,
+        staffName: staff.user?.name || "Unknown",
+      };
+    });
+
+    // Get total count (expenses + salaries)
+    const expenseCount = await prisma.expense.count({
+      where: whereClause,
+    });
+    const total = expenseCount + allStaff.length; // Use allStaff.length instead of salaries.length
+
+    // Combine expenses and salaries, then sort
+    let allExpenses: any[] = [];
+
+    // Get all expenses without pagination first
+    const expensesData = await prisma.expense.findMany({
       where: whereClause,
       include: {
         category: {
@@ -192,13 +251,59 @@ export async function GET(req: NextRequest) {
           },
         },
       },
-      orderBy: orderByClause,
-      skip,
-      take: limit,
     });
 
-    // Calculate totals and category breakdown for meta
-    const allExpenses = await prisma.expense.groupBy({
+    // Combine with salary expenses
+    allExpenses = [
+      ...expensesData.map((e) => ({
+        ...e,
+        staffName: undefined, // Expenses don't have direct staff relation
+      })),
+      ...salaryExpenses,
+    ];
+
+    // Sort combined data
+    if (sortBy === "date") {
+      allExpenses.sort((a, b) => {
+        const dateA = a.expenseDate.getTime();
+        const dateB = b.expenseDate.getTime();
+        return sortOrder === "asc" ? dateA - dateB : dateB - dateA;
+      });
+    } else if (sortBy === "amount") {
+      allExpenses.sort((a, b) => {
+        return sortOrder === "asc" ? a.amount - b.amount : b.amount - a.amount;
+      });
+    } else if (sortBy === "category") {
+      allExpenses.sort((a, b) => {
+        const catA = a.category?.name || "เงินเดือน";
+        const catB = b.category?.name || "เงินเดือน";
+        return sortOrder === "asc"
+          ? catA.localeCompare(catB)
+          : catB.localeCompare(catA);
+      });
+    }
+
+    // Apply pagination after sorting
+    const skip = (page - 1) * limit;
+    const expenses = allExpenses.slice(skip, skip + limit);
+
+    // Calculate totals including salaries
+    const allExpensesForTotal = await prisma.expense.findMany({
+      where: whereClause,
+    });
+
+    const expensesTotal = allExpensesForTotal.reduce(
+      (sum, exp) => sum + exp.amount,
+      0,
+    );
+    const salariesTotal = salaryExpenses.reduce(
+      (sum, sal) => sum + sal.amount,
+      0,
+    );
+    const totalAmount = expensesTotal + salariesTotal;
+
+    // Build category breakdown (including salary as a category)
+    const allExpensesGrouped = await prisma.expense.groupBy({
       by: ["categoryId"],
       where: whereClause,
       _sum: {
@@ -209,19 +314,8 @@ export async function GET(req: NextRequest) {
       },
     });
 
-    // Get total amount
-    const totalAmountResult = await prisma.expense.aggregate({
-      where: whereClause,
-      _sum: {
-        amount: true,
-      },
-    });
-
-    const totalAmount = totalAmountResult._sum.amount || 0;
-
-    // Build category breakdown
     const categoryBreakdown = await Promise.all(
-      allExpenses.map(async (expense) => {
+      allExpensesGrouped.map(async (expense) => {
         const cat = await prisma.expenseCategory.findUnique({
           where: { id: expense.categoryId },
         });
@@ -239,8 +333,23 @@ export async function GET(req: NextRequest) {
       }),
     );
 
+    // Add salary as a category
+    if (salariesTotal > 0) {
+      categoryBreakdown.push({
+        category: "เงินเดือนพนักงาน",
+        amount: salariesTotal,
+        percentage:
+          totalAmount > 0
+            ? parseFloat(((salariesTotal / totalAmount) * 100).toFixed(1))
+            : 0,
+      });
+    }
+
     // Format data
     const formattedData = expenses.map((expense) => {
+      // Check if this is a salary expense (negative ID)
+      const isSalary = expense.id < 0;
+
       return {
         id: expense.id,
         date: expense.expenseDate.toLocaleDateString("th-TH", {
@@ -249,22 +358,33 @@ export async function GET(req: NextRequest) {
           year: "numeric",
         }),
         dateISO: expense.expenseDate.toISOString().split("T")[0],
-        category: expense.category
+        category: isSalary
           ? {
-              id: expense.category.id,
-              name: expense.category.name,
-              description: expense.category.description,
+              id: -1,
+              name: "เงินเดือนพนักงาน",
+              description: "เงินเดือนประจำเดือน",
             }
-          : null,
+          : expense.category
+            ? {
+                id: expense.category.id,
+                name: expense.category.name,
+                description: expense.category.description,
+              }
+            : null,
         description: expense.description,
         amount: expense.amount,
         receiptUrl: expense.receiptUrl,
-        staff: expense.category?.Staff
+        staff: isSalary
           ? {
-              id: expense.category.Staff.id,
-              name: expense.category.Staff.user?.name || "Unknown",
+              id: 0,
+              name: expense.staffName || "พนักงาน",
             }
-          : null,
+          : expense.category?.Staff
+            ? {
+                id: expense.category.Staff.id,
+                name: expense.category.Staff.user?.name || "Unknown",
+              }
+            : null,
         formatted: {
           date: expense.expenseDate.toLocaleDateString("th-TH", {
             day: "2-digit",

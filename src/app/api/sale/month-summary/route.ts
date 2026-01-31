@@ -132,16 +132,36 @@ export async function GET(req: NextRequest) {
       },
     });
 
+    // Get staff salary data for the selected month
+    const salaryStats = await prisma.staffSalary.aggregate({
+      where: {
+        effectiveDate: {
+          gte: startOfMonth,
+          lt: endOfMonth,
+        },
+      },
+      _sum: {
+        amount: true,
+      },
+      _count: {
+        id: true,
+      },
+    });
+
     const totalIncome = incomeStats._sum.grandTotal || 0;
     const billCount = incomeStats._count.id || 0;
     const avgPerBill =
       billCount > 0 ? parseFloat((totalIncome / billCount).toFixed(2)) : 0;
 
-    const totalExpense = expenseStats._sum.amount || 0;
+    const totalExpenseFromExpense = expenseStats._sum.amount || 0;
+    const totalSalary = salaryStats._sum.amount || 0;
+    const totalExpense = totalExpenseFromExpense + totalSalary;
     const expenseItemCount = expenseStats._count.id || 0;
+    const salaryItemCount = salaryStats._count.id || 0;
+    const totalExpenseItemCount = expenseItemCount + salaryItemCount;
     const avgPerItem =
-      expenseItemCount > 0
-        ? parseFloat((totalExpense / expenseItemCount).toFixed(2))
+      totalExpenseItemCount > 0
+        ? parseFloat((totalExpense / totalExpenseItemCount).toFixed(2))
         : 0;
 
     const netTotal = totalIncome - totalExpense;
@@ -177,8 +197,12 @@ export async function GET(req: NextRequest) {
         expense: {
           total: totalExpense,
           formatted: `฿${totalExpense.toLocaleString("en-US")}`,
-          itemCount: expenseItemCount,
+          itemCount: totalExpenseItemCount,
           avgPerItem,
+          salaryAmount: totalSalary,
+          expenseAmount: totalExpenseFromExpense,
+          salaryCount: salaryItemCount,
+          expenseCount: expenseItemCount,
         },
         net: {
           total: netTotal,
