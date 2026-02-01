@@ -112,7 +112,7 @@ function MessageBox({
           <div className="flex gap-2 mt-1 self-start">
             <button
               onClick={handleCopy}
-              className="px-2 py-1 text-xs sm:text-sm rounded-lg border hover:text-gray-600 hover:cursor-pointer active:scale-95 transition bg-white "
+              className="px-2 py-1 text-xs sm:text-sm rounded-lg border hover:text-gray-600 hover:cursor-pointer active:scale-95 transition bg-background "
             >
               {copied ? "คัดลอกแล้ว!" : "คัดลอก"}
             </button>
@@ -122,7 +122,7 @@ function MessageBox({
           <div className="flex gap-2 mt-1 self-end">
             <button
               onClick={handleCopy}
-              className="px-2 py-1 text-xs sm:text-sm rounded-lg border hover:text-gray-600 hover:cursor-pointer active:scale-95 transition bg-white "
+              className="px-2 py-1 text-xs sm:text-sm rounded-lg border hover:text-gray-600 hover:cursor-pointer active:scale-95 transition bg-background "
             >
               {copied ? "คัดลอกแล้ว!" : "คัดลอก"}
             </button>
@@ -235,7 +235,7 @@ export default function Home() {
           const blob = await response.blob();
           const url = URL.createObjectURL(blob);
           const fileName = extractFileNameFromContentDisposition(
-            response.headers.get("content-disposition")
+            response.headers.get("content-disposition"),
           );
 
           setMessages((prev) => [

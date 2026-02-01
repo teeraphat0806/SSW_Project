@@ -18,7 +18,7 @@ export async function proxy(request: NextRequest) {
       allowedRoles: ["superadmin", "clerk", "supervisor"],
     },
     {
-      prefix: "/saledashboards",
+      prefix: "/saledashboard2",
       allowedRoles: ["superadmin", "clerk", "supervisor"],
     },
     { prefix: "/payroll", allowedRoles: ["superadmin", "clerk", "supervisor"] },
@@ -49,7 +49,7 @@ export async function proxy(request: NextRequest) {
   ];
 
   const matchedRoute = protectedRoutes.find(({ prefix }) =>
-    pathname.startsWith(prefix)
+    pathname.startsWith(prefix),
   );
 
   if (matchedRoute && !matchedRoute.allowedRoles.includes(user?.role ?? "")) {

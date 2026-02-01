@@ -31,7 +31,9 @@ export async function POST(req: NextRequest) {
     }
 
     // 1) ขอ SQL จาก OpenRouter (helper ใน lib)
+    console.log("[Chatbot] User query:", userQuery);
     const rawSql = await callOpenRouter(userQuery);
+    console.log("[Chatbot] Generated SQL:", rawSql);
 
     // 2) ตรวจความปลอดภัย
     // const safe = looksSafeSelect(rawSql);
@@ -57,13 +59,22 @@ export async function POST(req: NextRequest) {
     // });
     const response = await GETSQL(rawSql);
 
+    // ตรวจสอบว่ามีข้อมูลหรือไม่
+    if (!response || (Array.isArray(response) && response.length === 0)) {
+      return NextResponse.json({
+        sql: rawSql,
+        result:
+          "ไม่พบข้อมูลที่ตรงกับคำถามของคุณ อาจเป็นเพราะไม่มีข้อมูลในช่วงเวลาที่ระบุ หรือเงื่อนไขการค้นหาไม่ตรงกับข้อมูลในระบบ",
+      });
+    }
+
     if (Array.isArray(response)) {
       const rowWithUrlPo = response.find(
         (row) =>
           row &&
           Array.isArray(row.urlPo) &&
           row.urlPo.length > 0 &&
-          typeof row.urlPo[0] === "string"
+          typeof row.urlPo[0] === "string",
       );
 
       if (rowWithUrlPo) {
@@ -95,7 +106,7 @@ export async function POST(req: NextRequest) {
 
     // กรณีไม่มี urlPo → ค่อย narrate ตามปกติ (helper ใน lib)
     const narration = await narrateArrayWithOpenRouter(
-      Array.isArray(response) ? response : [response]
+      Array.isArray(response) ? response : [response],
     );
 
     return NextResponse.json({
@@ -103,6 +114,7 @@ export async function POST(req: NextRequest) {
       result: narration,
     });
   } catch (e) {
+    console.error("[Chatbot] Error:", e);
     if (e instanceof Error) {
       return NextResponse.json({ error: e.message }, { status: 500 });
     }

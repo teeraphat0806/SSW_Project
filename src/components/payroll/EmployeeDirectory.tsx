@@ -1,15 +1,6 @@
 "use client";
 
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -53,13 +44,12 @@ const THAI_BANKS = [
   { code: "UOB", name: "ธนาคารยูโอบี" },
   { code: "SCB", name: "ธนาคารไทยพาณิชย์" },
   { code: "TTB", name: "ธนาคารทหารไทย" },
-  { code: "GSB", name: "ธนาคารอิสลามแห่งประเทศไทย" },
   { code: "GSB", name: "ธนาคารออมสิน" },
   { code: "ISBT", name: "ธนาคารอิสลามแห่งประเทศไทย" },
   { code: "LHBANK", name: "ธนาคารลาดหญ้า" },
   { code: "AYUDHYA", name: "ธนาคารพัฒนาวิสาหกิจขนาดกลางและขนาดย่อม" },
   { code: "TBANK", name: "ธนาคารไทยร่วมทุน" },
-  { code: "TBANK", name: "ธนาคารไทยเวธนะ" },
+  { code: "TBANK2", name: "ธนาคารไทยเวธนะ" },
   { code: "TCAP", name: "ธนาคารซูมิโตโม มิตซูย ทrust" },
   { code: "ICBC", name: "ธนาคารอิศบร" },
   { code: "BCHT", name: "ธนาคารจีนแรนดส์" },
@@ -83,7 +73,7 @@ interface EmployeeDirectoryProps {
 
 export function EmployeeDirectory({ employees }: EmployeeDirectoryProps) {
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(
-    null
+    null,
   );
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
@@ -130,74 +120,99 @@ export function EmployeeDirectory({ employees }: EmployeeDirectoryProps) {
   };
 
   return (
-    <Card className="border-border/60">
-      <CardHeader className="pb-3">
-        <CardTitle className="flex items-center gap-2">
-          <Eye className="h-5 w-5" />
-          ตารางข้อมูลพนักงาน
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="rounded-lg border overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow className="bg-muted/50">
-                <TableHead className="font-semibold">ลำดับ</TableHead>
-                <TableHead className="font-semibold">รหัสพนักงาน</TableHead>
-                <TableHead className="font-semibold">ชื่อ</TableHead>
-                <TableHead className="font-semibold">ตำแหน่ง</TableHead>
-                <TableHead className="font-semibold text-right">
-                  เงินเดือน
-                </TableHead>
-                <TableHead className="font-semibold">วันที่เข้าทำงาน</TableHead>
-                <TableHead className="font-semibold text-center">
-                  การกระทำ
-                </TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {employees.map((emp, idx) => (
-                <TableRow
-                  key={emp.id}
-                  className="hover:bg-muted/50 transition-colors cursor-pointer"
-                  onClick={() => handleViewDetails(emp)}
-                >
-                  <TableCell className="text-center">{idx + 1}</TableCell>
-                  <TableCell className="font-mono text-sm">
+    <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-sm border border-zinc-200 dark:border-zinc-800 overflow-hidden">
+      <div className="overflow-x-auto">
+        <table className="w-full text-left border-collapse">
+          <thead>
+            <tr className="bg-zinc-50/80 dark:bg-zinc-900/50 border-b border-zinc-200 dark:border-zinc-700">
+              <th className="py-4 px-6 text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+                ลำดับ
+              </th>
+              <th className="py-4 px-6 text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+                รหัสพนักงาน
+              </th>
+              <th className="py-4 px-6 text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+                ชื่อ
+              </th>
+              <th className="py-4 px-6 text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+                ตำแหน่ง
+              </th>
+              <th className="py-4 px-6 text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider text-right">
+                เงินเดือน
+              </th>
+              <th className="py-4 px-6 text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+                วันที่เข้าทำงาน
+              </th>
+              <th className="py-4 px-6 text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider text-center">
+                แก้ไข
+              </th>
+            </tr>
+          </thead>
+
+          <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
+            {employees.map((emp, idx) => (
+              <tr
+                key={emp.id}
+                className="group hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors duration-150 cursor-pointer"
+                onClick={() => handleViewDetails(emp)}
+              >
+                <td className="py-4 px-6 text-center">
+                  <span className="text-sm font-medium text-zinc-700 dark:text-zinc-200">
+                    {idx + 1}
+                  </span>
+                </td>
+
+                <td className="py-4 px-6">
+                  <span className="font-mono text-sm font-medium text-zinc-700 dark:text-zinc-200">
                     {emp.code}
-                  </TableCell>
-                  <TableCell className="font-semibold">{emp.name}</TableCell>
-                  <TableCell>{emp.position}</TableCell>
-                  <TableCell className="text-right font-mono">
+                  </span>
+                </td>
+
+                <td className="py-4 px-6">
+                  <span className="text-sm font-semibold text-zinc-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                    {emp.name}
+                  </span>
+                </td>
+
+                <td className="py-4 px-6">
+                  <span className="text-sm font-medium text-zinc-700 dark:text-zinc-200">
+                    {POSITION_ROLES[emp.position as PositionRole] ||
+                      emp.position}
+                  </span>
+                </td>
+
+                <td className="py-4 px-6 text-right">
+                  <span className="font-mono text-sm font-medium text-zinc-700 dark:text-zinc-200">
                     {emp.currentSalary?.toLocaleString("th-TH", {
                       style: "currency",
                       currency: "THB",
                     })}
-                  </TableCell>
-                  <TableCell className="text-sm">
+                  </span>
+                </td>
+
+                <td className="py-4 px-6">
+                  <span className="text-sm font-medium text-zinc-700 dark:text-zinc-200">
                     {new Date(emp.startDate).toLocaleDateString("th-TH")}
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex justify-center gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleEditClick(emp);
-                        }}
-                      >
-                        <Edit className="h-4 w-4" />
-                        แก้ไข
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
-      </CardContent>
+                  </span>
+                </td>
+
+                <td className="py-4 px-6 text-center">
+                  <button
+                    className="p-2 rounded-lg flex flex-row items-center gap-2 text-blue-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 dark:hover:text-blue-400 transition-all mx-auto"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleEditClick(emp);
+                    }}
+                  >
+                    <Edit className="h-4 w-4" />
+                    แก้ไข
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
 
       {/* Details Dialog */}
       <Dialog open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
@@ -218,7 +233,10 @@ export function EmployeeDirectory({ employees }: EmployeeDirectoryProps) {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">ตำแหน่ง</p>
-                <p className="font-semibold">{selectedEmployee.position}</p>
+                <p className="font-semibold">
+                  {POSITION_ROLES[selectedEmployee.position as PositionRole] ||
+                    selectedEmployee.position}
+                </p>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">เงินเดือน</p>
@@ -259,7 +277,7 @@ export function EmployeeDirectory({ employees }: EmployeeDirectoryProps) {
                 <p className="text-sm text-muted-foreground">วันที่เข้าทำงาน</p>
                 <p className="font-semibold">
                   {new Date(selectedEmployee.startDate).toLocaleDateString(
-                    "th-TH"
+                    "th-TH",
                   )}
                 </p>
               </div>
@@ -314,7 +332,8 @@ export function EmployeeDirectory({ employees }: EmployeeDirectoryProps) {
                   <SelectTrigger className="mt-1">
                     <SelectValue placeholder="เลือกตำแหน่ง">
                       {editData.position
-                        ? POSITION_ROLES[editData.position as PositionRole]
+                        ? POSITION_ROLES[editData.position as PositionRole] ||
+                          editData.position
                         : "เลือกตำแหน่ง"}
                     </SelectValue>
                   </SelectTrigger>
@@ -326,6 +345,12 @@ export function EmployeeDirectory({ employees }: EmployeeDirectoryProps) {
                     ))}
                   </SelectContent>
                 </Select>
+                {editData.position &&
+                  !POSITION_ROLES[editData.position as PositionRole] && (
+                    <p className="text-xs text-amber-600 mt-1">
+                      ตำแหน่งปัจจุบัน: {editData.position} (ไม่อยู่ในรายการ)
+                    </p>
+                  )}
               </div>
               <div>
                 <Label>ธนาคาร</Label>
@@ -339,8 +364,11 @@ export function EmployeeDirectory({ employees }: EmployeeDirectoryProps) {
                     <SelectValue placeholder="เลือกธนาคาร" />
                   </SelectTrigger>
                   <SelectContent>
-                    {THAI_BANKS.map((bank) => (
-                      <SelectItem key={bank.code} value={bank.name}>
+                    {THAI_BANKS.map((bank, index) => (
+                      <SelectItem
+                        key={`${bank.code}-${index}`}
+                        value={bank.name}
+                      >
                         {bank.name}
                       </SelectItem>
                     ))}
@@ -455,6 +483,6 @@ export function EmployeeDirectory({ employees }: EmployeeDirectoryProps) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </Card>
+    </div>
   );
 }

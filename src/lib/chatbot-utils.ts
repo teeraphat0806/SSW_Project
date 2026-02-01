@@ -3,8 +3,130 @@
 
 // ---------- CONFIG ----------
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY!;
-const OPENROUTER_MODEL = "deepseek/deepseek-chat-v3-0324";
+const OPENROUTER_MODEL =
+  process.env.OPENROUTER_MODEL || "deepseek/deepseek-chat-v3-0324";
 const INTERNAL_SECRET = process.env.INTERNAL_SQL_API_SECRET!;
+
+// ---------- CONTEXT PREPROCESSING ----------
+function preprocessQuery(query: string): { query: string; context: string } {
+  const today = new Date();
+  const yesterday = new Date(today);
+  yesterday.setDate(yesterday.getDate() - 1);
+  const thisMonth = today.getMonth() + 1;
+  const thisYear = today.getFullYear();
+
+  const todayStr = today.toISOString().split("T")[0];
+  const yesterdayStr = yesterday.toISOString().split("T")[0];
+
+  const context = `
+วันนี้: ${todayStr}
+เมื่อวาน: ${yesterdayStr}
+เดือนนี้: ${thisMonth}
+ปีนี้ (ค.ศ.): ${thisYear}
+ปีนี้ (พ.ศ.): ${thisYear + 543}
+`;
+
+  // แปลงคำพูดเป็นวันที่จริง
+  let processed = query
+    .replace(/วันนี้/gi, todayStr)
+    .replace(/เมื่อวาน/gi, yesterdayStr)
+    .replace(/เดือนนี้/gi, `เดือน ${thisMonth}`)
+    .replace(/ปีนี้/gi, `ปี ${thisYear}`);
+
+  // แปลงปีพุทธศักราช (พ.ศ.) เป็นคริสต์ศักราช (ค.ศ.)
+  // จับรูปแบบ: "ปี 2569", "ปี2569", "พ.ศ. 2569", "พ.ศ.2569", "2569"
+  processed = processed.replace(
+    /(?:ปี\s*|พ\.ศ\.\s*)?(25\d{2})/gi,
+    (match, year) => {
+      const buddhistYear = parseInt(year);
+      if (buddhistYear >= 2500 && buddhistYear <= 2600) {
+        const christianYear = buddhistYear - 543;
+        return `ปี ${christianYear}`;
+      }
+      return match;
+    },
+  );
+
+  return { query: processed, context };
+}
+
+// ---------- RAG KNOWLEDGE BASE ----------
+interface KnowledgeItem {
+  pattern: RegExp;
+  tables: string[];
+  examples: string[];
+}
+
+const KNOWLEDGE_BASE: KnowledgeItem[] = [
+  {
+    pattern: /ยอดขาย|รายได้|ขายได้|ขายออเดอร์|ยอดรวม|รวมยอด|ซื้อเยอะ|ซื้อมาก/i,
+    tables: ["Bill", "Customer", "OrderPO"],
+    examples: [
+      `SELECT SUM("grandTotal") as "total_sales" FROM "Bill" WHERE "deliveryDate" = '2024-01-15'`,
+      `SELECT SUM("grandTotal") as "total_sales" FROM "Bill" WHERE "deliveryDate" >= '2024-01-01' AND "deliveryDate" < '2024-02-01'`,
+      `SELECT SUM("grandTotal") as "total_sales" FROM "Bill" WHERE EXTRACT(YEAR FROM "dateReceive") = 2026`,
+      `SELECT c."name", SUM(b."grandTotal") as "total_sales" FROM "Customer" c JOIN "Bill" b ON c."id" = b."customerId" WHERE EXTRACT(YEAR FROM b."dateReceive") = 2026 GROUP BY c."name" ORDER BY "total_sales" DESC LIMIT 1`,
+      `SELECT c."name", SUM(b."grandTotal") as "total" FROM "Customer" c JOIN "Bill" b ON c."id" = b."customerId" GROUP BY c."name" ORDER BY "total" DESC`,
+    ],
+  },
+  {
+    pattern: /ลูกค้า|เจ้าไหน|บริษัท|คัสเตอเมอร์|ซื้อเยอะ|ซื้อมาก/i,
+    tables: ["Customer", "Bill"],
+    examples: [
+      `SELECT * FROM "Customer" WHERE "name" ILIKE '%ธนาวรรณ%'`,
+      `SELECT c."name", c."tel", c."address" FROM "Customer" c WHERE c."code" ILIKE '%C001%'`,
+      `SELECT c."name", SUM(b."grandTotal") as "total_sales" FROM "Customer" c JOIN "Bill" b ON c."id" = b."customerId" GROUP BY c."name" ORDER BY "total_sales" DESC LIMIT 10`,
+      `SELECT c."name", SUM(b."grandTotal") as "total_sales" FROM "Customer" c JOIN "Bill" b ON c."id" = b."customerId" WHERE EXTRACT(YEAR FROM b."dateReceive") = 2026 GROUP BY c."name" ORDER BY "total_sales" DESC LIMIT 1`,
+    ],
+  },
+  {
+    pattern: /พนักงาน|สตาฟ|เงินเดือน|รายได้อื่น/i,
+    tables: ["Staff", "User", "StaffIncome", "StaffSalary"],
+    examples: [
+      `SELECT u."name", s."position", s."currentSalary" FROM "Staff" s JOIN "User" u ON s."userId" = u."id"`,
+      `SELECT u."name", SUM(si."amount") as "total_income" FROM "Staff" s JOIN "User" u ON s."userId" = u."id" JOIN "StaffIncome" si ON s."id" = si."staffId" GROUP BY u."name"`,
+    ],
+  },
+  {
+    pattern: /ออเดอร์|PO|ใบสั่ง/i,
+    tables: ["OrderPO", "Customer", "Product"],
+    examples: [
+      `SELECT * FROM "OrderPO" WHERE "poNumber" ILIKE '%PO001%'`,
+      `SELECT o."poNumber", c."name", o."total" FROM "OrderPO" o JOIN "Customer" c ON o."customerId" = c."id" WHERE o."date" = '2024-01-15'`,
+      `SELECT COUNT(*) as "order_count" FROM "OrderPO" WHERE "status" = 'completed'`,
+    ],
+  },
+  {
+    pattern: /ค่าใช้จ่าย|ค่าโดยสาร|เบิก/i,
+    tables: ["Expense", "ExpenseCategory"],
+    examples: [
+      `SELECT SUM("amount") as "total_expense" FROM "Expense" WHERE "expenseDate" >= '2024-01-01' AND "expenseDate" < '2024-02-01'`,
+      `SELECT ec."name", SUM(e."amount") as "total" FROM "Expense" e JOIN "ExpenseCategory" ec ON e."categoryId" = ec."id" GROUP BY ec."name"`,
+    ],
+  },
+];
+
+function getRelevantContext(query: string): string {
+  const relevant = KNOWLEDGE_BASE.find((kb) => kb.pattern.test(query));
+
+  if (!relevant) {
+    // Fallback: ส่ง minimal schema
+    return `Tables: Bill, Customer, OrderPO, Staff, Product
+Use ILIKE for text search, JOIN when needed, GROUP BY for totals.`;
+  }
+
+  const tableSchemas = relevant.tables
+    .map((t) => `"${t}" (${ALLOWED[t]?.map((c) => `"${c}"`).join(", ") || ""})`)
+    .join("\n");
+
+  return `
+Relevant tables:
+${tableSchemas}
+
+Example queries:
+${relevant.examples.join("\n\n")}
+`;
+}
 
 // ตารางและคอลัมน์ที่อนุญาต (ต้องตรงกับ Prisma schema)
 const ALLOWED: Record<string, string[]> = {
@@ -115,69 +237,36 @@ const ALLOWED: Record<string, string[]> = {
   ExpenseCategory: ["id", "name", "description"],
 };
 
-const SCHEMA_CONTEXT = `
-You are an NL2SQL generator for PostgreSQL. Use ONLY these tables and columns.
-- Use **double quotes** for every identifier (tables, columns, aliases) because schema uses camelCase.
+// ---------- SIMPLIFIED SCHEMA CONTEXT ----------
+const BASE_SCHEMA_RULES = `
+You are an NL2SQL generator for PostgreSQL.
+- Use **double quotes** for every identifier (tables, columns, aliases).
 - Output ONLY ONE SQL statement, **no code fences**, no explanation.
-- Return **read-only SELECT** (or WITH ... SELECT). Absolutely no DDL/DML.
+- Return **read-only SELECT** only. No DDL/DML.
+- **DO NOT include semicolon (;) at the end.**
 
-Tables (columns):
-${Object.entries(ALLOWED)
-  .map(([t, cols]) => `- "${t}" (${cols.map((c) => `"${c}"`).join(", ")})`)
-  .join("\n")}
+Key relationships:
+- "Bill"."customerId" -> "Customer"."id"
+- "OrderPO"."customerId" -> "Customer"."id"
+- "Staff"."userId" -> "User"."id"
+- "Product"."orderPOId" -> "OrderPO"."id"
 
-Business hints:
-- "ยอดขาย" = usually sum of "grandTotal" from "Bill" or sum of "total" from "OrderPO" depending on user wording.
-- Dates:
-  - Use "date" (OrderPO), "deliveryDate" (Bill), "createdAt" (Bill/Expense/SteelType), "expenseDate" (Expense)
-  - For month filters in Thai (เช่น "มกราคม" = January) map to month number; use date_trunc or EXTRACT(MONTH FROM ...).
-- Relationships:
-  - "Bill"."customerId" -> "Customer"."id"
-  - "OrderPO"."customerId" -> "Customer"."id"
-  - "OrderPO"."billId" -> "Bill"."id"
-  - "Product"."orderPOId" -> "OrderPO"."id"
-  - "Product"."steelId" -> "SteelType"."id"
-  - "StaffIncome"."typeId" -> "TypeStaffIncome"."id"
-  - "Expense"."categoryId" -> "ExpenseCategory"."id"
-  - "Staff"."userId" -> "User"."id"
-
-Conventions:
-- Prefer GROUP BY  aggregations when user asks for totals by month/year/customer.
-- Use BETWEEN with inclusive bounds or date_trunc for month ranges.
-- If ambiguous, choose **reasonable default**:
-  - "ยอดขายเดือน X" → sum "grandTotal" from "Bill" filtered by "deliveryDate" within that calendar month.
-- Always alias results with safe snake_case (quoted), e.g. "total_sales".
-
-String search rules (very important):
-- When the user asks to find data by **name**, **company name**, **staff name**, **customer name**, **product detail**, **invoice**, **PO number**, **bank name**, **description**, or any text field that could be incomplete,
-  you must use **ILIKE** with wildcards on both sides:  
-  e.g. \`"Customer"."name" ILIKE '%' || <keyword> || '%'\`
-- Apply this rule to **every table** that contains textual fields (such as "name", "detail", "description", "code", "bankName", "address", "email", "tel", etc).
-- Always use ILIKE instead of = when comparing text fields that are likely partial or uncertain.
-- Only use = for exact identifiers like numeric IDs, unique codes, or foreign keys.
-- If the user inputs a Buddhist year (ปี พ.ศ.), convert it to Christian year (ปี ค.ศ.) by subtracting 543.
-- If the user says the customer name directly → use "=".
-- If the user says “มีคำว่า”, “contains”, “ประมาณว่า”, or types partial text → use ILIKE '%keyword%'.
-- For date filters:
-  - If user asks for a single day → use o."date"::date = DATE 'YYYY-MM-DD'.
-  - If user asks for a date range → use:
-      o."date" >= 'YYYY-MM-DD 00:00:00'
-      AND o."date" <  'YYYY-MM-DD1 00:00:00'
-  - If user includes time range → merge date  time:
-      o."date" >= 'YYYY-MM-DD HH:MM:00'
-      AND o."date" <= 'YYYY-MM-DD HH:MM:59'
-- If user mentions PO number → search with ILIKE unless the user explicitly says “เท่ากับ”.
-
-General behavior:
-- Always return a valid PostgreSQL SELECT or WITH ... SELECT statement.
-- Prefer joins only when the query explicitly mentions relationships (e.g. customer name with bill total).
-- When in doubt between equality and partial match, prefer **ILIKE with wildcards**.
-- Never output explanations, Markdown fences, or extra text—only pure SQL.
-- Always convert พ.ศ. to ค.ศ. when needed.
+Rules:
+- Use ILIKE '%text%' for partial text search (names, codes, descriptions)
+- Use = only for exact IDs or numbers
+- For dates: Use ISO format 'YYYY-MM-DD'
+- For years in database: ALL dates are stored in Christian era (ค.ศ./AD), NOT Buddhist era (พ.ศ./BE)
+- Year conversion: Buddhist year (พ.ศ.) = Christian year (ค.ศ.) + 543
+  Example: พ.ศ. 2569 = ค.ศ. 2026, พ.ศ. 2568 = ค.ศ. 2025
+- For year filters: EXTRACT(YEAR FROM "dateColumn") = YYYY (use Christian year)
+- For month filters: EXTRACT(MONTH FROM "date") = N
+- For aggregations: Always use GROUP BY with aggregate functions
+- For "top N": USE ORDER BY ... DESC LIMIT N
+- Alias results clearly: "total_sales", "customer_name", etc.
 `;
 
 export async function narrateArrayWithOpenRouter(
-  dataArray: unknown[]
+  dataArray: unknown[],
 ): Promise<string> {
   if (!OPENROUTER_API_KEY) {
     throw new Error("Missing OPENROUTER_API_KEY");
@@ -227,19 +316,29 @@ export async function narrateArrayWithOpenRouter(
 
   if (!resp.ok) {
     const text = await resp.text();
-    throw new Error(`OpenRouter error: ${resp.status} ${text}`);
+    console.error(`[OpenRouter Narration] API error ${resp.status}:`, text);
+    throw new Error(`ไม่สามารถเรียบเรียงข้อมูลได้ (${resp.status})`);
   }
 
   const data = await resp.json();
   const text: string = data?.choices?.[0]?.message?.content?.trim?.() ?? "";
-  if (!text) throw new Error("Empty response from OpenRouter");
+  if (!text) {
+    console.error("[OpenRouter Narration] Empty response");
+    throw new Error("AI model ไม่สามารถเรียบเรียงข้อมูลได้");
+  }
   return text;
 }
 
 export async function GETSQL(sql: string) {
   console.log("Executing SQL from chatbot (via internal proxy):", sql);
   const encodedSQL = encodeURIComponent(sql);
-  const resp = await fetch(`api/chatbot?sql=${encodedSQL}`, {
+
+  // ใช้ absolute URL สำหรับ server-side fetch
+  const baseUrl = process.env.NEXTAUTH_URL || "http://localhost:3000";
+  const url = `${baseUrl}/api/chatbot?sql=${encodedSQL}`;
+  console.log("Calling internal API:", url);
+
+  const resp = await fetch(url, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -249,20 +348,39 @@ export async function GETSQL(sql: string) {
 
   if (!resp.ok) {
     const errText = await resp.text().catch(() => "");
-    throw new Error(`chatbot error ${resp.status}: ${errText}`);
+    console.error("GETSQL error:", resp.status, errText);
+    throw new Error(`ไม่สามารถรันคำสั่ง SQL ได้ (${resp.status}): ${errText}`);
   }
   return resp.json();
 }
 
 export async function callOpenRouter(userQuery: string): Promise<string> {
+  // Step 1: Preprocess query (แปลงวันที่)
+  const { query: processedQuery, context } = preprocessQuery(userQuery);
+  console.log("[Chatbot] Preprocessed query:", processedQuery);
+
+  // Step 2: Get relevant context (RAG)
+  const relevantContext = getRelevantContext(processedQuery);
+
+  // Step 3: Build optimized prompt
+  const systemPrompt = `${BASE_SCHEMA_RULES}
+
+${relevantContext}
+
+Current date context:
+${context}
+
+Instructions:
+- Generate ONLY the SQL statement
+- No explanations, no markdown, no semicolon
+- Use the examples above as reference for query patterns
+`;
+
   const messages = [
-    { role: "system" as const, content: SCHEMA_CONTEXT },
+    { role: "system" as const, content: systemPrompt },
     {
       role: "user" as const,
-      content:
-        `จงเขียนคำสั่ง SQL (PostgreSQL) เพียง 1 คำสั่ง สำหรับคำขอนี้ โดยทำตามกฎทั้งหมดด้านบน:\n` +
-        `คำขอ: ${userQuery}\n\n` +
-        `รูปแบบผลลัพธ์: ส่งเฉพาะคำสั่ง SQL เดียว ไม่มีคำอธิบาย ไม่มี backticks ไม่มีเครื่องหมาย \`\`\`.`,
+      content: `Generate SQL for: ${processedQuery}`,
     },
   ];
 
@@ -276,22 +394,33 @@ export async function callOpenRouter(userQuery: string): Promise<string> {
       model: OPENROUTER_MODEL,
       messages,
       temperature: 0.1,
-      max_tokens: 800,
+      max_tokens: 500,
     }),
   });
 
   if (!resp.ok) {
     const text = await resp.text();
-    throw new Error(`OpenRouter error: ${resp.status} ${text}`);
+    console.error(`[OpenRouter] API error ${resp.status}:`, text);
+    throw new Error(
+      `ไม่สามารถเชื่อมต่อกับ AI model ได้ (${resp.status}). กรุณาตรวจสอบ OPENROUTER_MODEL ใน .env ว่าถูกต้อง`,
+    );
   }
   const data = await resp.json();
-  const sql: string = data?.choices?.[0]?.message?.content?.trim?.() || "";
+  let sql: string = data?.choices?.[0]?.message?.content?.trim?.() || "";
 
-  if (!sql) throw new Error("Empty SQL from model");
+  if (!sql) {
+    console.error("[OpenRouter] Empty response from model");
+    throw new Error("AI model ไม่สามารถสร้าง SQL ได้");
+  }
 
-  return sql
+  // ลบ code fences และ semicolon
+  sql = sql
     .replace(/^```sql\s*/i, "")
     .replace(/^```\s*/i, "")
     .replace(/```$/i, "")
+    .replace(/;\s*$/g, "")
     .trim();
+
+  console.log("[Chatbot] Final SQL:", sql);
+  return sql;
 }

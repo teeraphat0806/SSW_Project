@@ -43,10 +43,10 @@ export function KPIStatCard({
     format === "currency"
       ? formatCurrency(value as number)
       : format === "number"
-      ? formatNumber(value as number)
-      : format === "percentage"
-      ? `${(value as number).toFixed(1)}%`
-      : value;
+        ? formatNumber(value as number)
+        : format === "percentage"
+          ? `${(value as number).toFixed(1)}%`
+          : value;
 
   // Variant styles
   const variantStyles = {
@@ -100,7 +100,7 @@ export function KPIStatCard({
 
   return (
     <Card
-      className={`p-6 shadow-lg rounded-2xl border-2 hover:shadow-xl hover:scale-[1.02] transition-all duration-300 ${variantStyles[variant]}`}
+      className={`p-3 shadow-lg rounded-2xl border-2 hover:shadow-xl hover:scale-[1.02] transition-all duration-300 ${variantStyles[variant]}`}
     >
       <div className="flex flex-col gap-3">
         <div className="flex items-center justify-between">
@@ -125,10 +125,10 @@ export function KPIStatCard({
               isGradientVariant
                 ? "text-white"
                 : colorCode === "profit"
-                ? "text-green-600 dark:text-green-400"
-                : colorCode === "loss"
-                ? "text-red-600 dark:text-red-400"
-                : ""
+                  ? "text-green-600 dark:text-green-400"
+                  : colorCode === "loss"
+                    ? "text-red-600 dark:text-red-400"
+                    : ""
             }`}
           >
             {formattedValue}
@@ -141,8 +141,8 @@ export function KPIStatCard({
                     ? "text-white/90"
                     : "text-white/90"
                   : trend.isPositive
-                  ? "text-green-600"
-                  : "text-red-600"
+                    ? "text-green-600"
+                    : "text-red-600"
               }`}
             >
               {trend.isPositive ? "↑ +" : "↓ "}

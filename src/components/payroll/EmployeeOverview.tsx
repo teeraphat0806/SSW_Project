@@ -1,81 +1,140 @@
-import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../components/ui/table';
-import { Button } from '../../components/ui/button';
-import { Employee } from '../../types/payroll';
-import { FileText } from 'lucide-react';
-import { useEffect } from 'react';
+import { Employee } from "../../types/payroll";
+import { FileText } from "lucide-react";
+import { useEffect } from "react";
+
+// Position mapping with Thai translations
+const POSITION_ROLES = {
+  superadmin: "ผู้จัดการระบบ",
+  supervisor: "หัวหน้างาน",
+  clerk: "เจ้าหน้าที่",
+  cutter: "ช่างตัด",
+  delivery: "ผู้จัดส่ง",
+} as const;
+
+type PositionRole = keyof typeof POSITION_ROLES;
 
 interface EmployeeOverviewProps {
   employees: Employee[];
   onGeneratePayslip: (employee: Employee) => void;
 }
 
-export const EmployeeOverview = ({ employees, onGeneratePayslip }: EmployeeOverviewProps) => {
-  const totalMonthlySalary = employees.reduce((sum, emp) => sum + emp.currentSalary, 0);
+export const EmployeeOverview = ({
+  employees,
+  onGeneratePayslip,
+}: EmployeeOverviewProps) => {
+  const totalMonthlySalary = employees.reduce(
+    (sum, emp) => sum + emp.currentSalary,
+    0,
+  );
   useEffect(() => {
-    console.log("arm",employees);
-  },[])
+    console.log("arm", employees);
+  }, []);
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>เงินเดือนพนักงานทั้งหมด</CardTitle>
-      </CardHeader>
-      <CardContent>
+    <div>
+      <div className="mb-4">
+        <h2 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-white flex items-center gap-2">
+          เงินเดือนพนักงานทั้งหมด
+        </h2>
+        <p className="text-zinc-500 dark:text-zinc-400 mt-1">
+          ข้อมูลเงินเดือนพนักงานทั้งหมดในระบบ
+        </p>
+      </div>
+      <div>
         <div className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-            <Card className="bg-blue-500">
-              <CardContent className="pt-6">
+            <div className="bg-blue-500 rounded-lg p-6">
+              <div className="pt-3">
                 <div className="text-2xl font-bold text-white">
                   ฿{totalMonthlySalary.toLocaleString()}
                 </div>
-                <p className="text-sm text-gray-200">ยอดเงินเดือนรวมทั้งบริษัทประจำเดือน</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="pt-6">
+                <p className="text-sm text-gray-200">
+                  ยอดเงินเดือนรวมทั้งบริษัทประจำเดือนนี้
+                </p>
+              </div>
+            </div>
+            <div className="border rounded-lg p-6 bg-gray-50 dark:bg-zinc-900">
+              <div className="pt-3">
                 <div className="text-2xl font-bold text-secondary">
                   {employees.length}
                 </div>
-                <p className="text-sm text-muted-foreground">จำนวนพนักงานทั้งหมด</p>
-              </CardContent>
-            </Card>
+                <p className="text-sm text-muted-foreground">
+                  จำนวนพนักงานทั้งหมด
+                </p>
+              </div>
+            </div>
           </div>
 
-          <div className="rounded-md border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>รหัสพนักงาน</TableHead>
-                  <TableHead>ชื่อ</TableHead>
-                  <TableHead>ตำแหน่ง</TableHead>
-                  <TableHead>เงินเดือน</TableHead>
-                  <TableHead>สลิปเงินเดือน</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {employees.map((employee) => (
-                  <TableRow key={employee.id}>
-                    <TableCell className="font-medium">{employee.code}</TableCell>
-                    <TableCell>{employee?.name||"arm"}</TableCell>
-                    <TableCell>{employee.position}</TableCell>
-                    <TableCell>฿{employee.currentSalary.toLocaleString()}</TableCell>
-                    <TableCell>
-                      <Button
-                        size="sm"
-                        onClick={() => onGeneratePayslip(employee)}
-                        className="flex items-center gap-2 bg-green-400 text-white font-bold hover:scale-110 hover:bg-green-600 hover:cursor-pointer transition-all "
-                      >
-                        <FileText className="h-4 w-4" />
-                        ดาวน์โหลดสลิป
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+          <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-sm border border-zinc-200 dark:border-zinc-800 overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-zinc-50/80 dark:bg-zinc-900/50 border-b border-zinc-200 dark:border-zinc-700">
+                    <th className="py-4 px-6 text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+                      รหัสพนักงาน
+                    </th>
+                    <th className="py-4 px-6 text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+                      ชื่อ
+                    </th>
+                    <th className="py-4 px-6 text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+                      ตำแหน่ง
+                    </th>
+                    <th className="py-4 px-6 text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider text-right">
+                      เงินเดือน
+                    </th>
+                    <th className="py-4 px-6 text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider text-center">
+                      สลิปเงินเดือน
+                    </th>
+                  </tr>
+                </thead>
+
+                <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
+                  {employees.map((employee) => (
+                    <tr
+                      key={employee.id}
+                      className="group hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors duration-150"
+                    >
+                      <td className="py-4 px-6">
+                        <span className="font-mono text-sm font-medium text-zinc-700 dark:text-zinc-200">
+                          {employee.code}
+                        </span>
+                      </td>
+
+                      <td className="py-4 px-6">
+                        <span className="text-sm font-semibold text-zinc-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                          {employee?.name || "arm"}
+                        </span>
+                      </td>
+
+                      <td className="py-4 px-6">
+                        <span className="text-sm font-medium text-zinc-700 dark:text-zinc-200">
+                          {POSITION_ROLES[employee.position as PositionRole] ||
+                            employee.position}
+                        </span>
+                      </td>
+
+                      <td className="py-4 px-6 text-right">
+                        <span className="font-mono text-sm font-medium text-zinc-700 dark:text-zinc-200">
+                          ฿{employee.currentSalary.toLocaleString()}
+                        </span>
+                      </td>
+
+                      <td className="py-4 px-6 text-center">
+                        <button
+                          onClick={() => onGeneratePayslip(employee)}
+                          className="p-2 rounded-lg flex flex-row items-center gap-2 text-green-400 hover:text-green-600 hover:bg-green-100 dark:hover:bg-green-900/30 dark:hover:text-green-400 hover:cursor-pointer transition-all mx-auto font-semibold"
+                        >
+                          <FileText size={18} />
+                          ดาวน์โหลดสลิป
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 };

@@ -82,7 +82,7 @@ export default function NavbarWithSidebar() {
           <SidebarItem
             icon={<ClipboardList size={20} />}
             label="ยอดขาย"
-            href="/saledashboards"
+            href="/saledashboard2"
           />
           <SidebarItem
             icon={<Users size={20} />}

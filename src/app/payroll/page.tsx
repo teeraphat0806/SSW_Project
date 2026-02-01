@@ -17,12 +17,7 @@ import {
 } from "../../components/ui/dialog";
 import { Input } from "../../components/ui/input";
 import { Label } from "../../components/ui/label";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "../../components/ui/card";
+
 import { Separator } from "../../components/ui/separator";
 import { Badge } from "../../components/ui/badge";
 import {
@@ -66,9 +61,11 @@ import { SalaryAdjustmentForm } from "../../components/payroll/SalaryAdjustmentF
 import { PayslipGenerator } from "../../components/payroll/PayslipGenerator";
 import { EmployeeDirectory } from "../../components/payroll/EmployeeDirectory";
 import { EmployeeOverview } from "../../components/payroll/EmployeeOverview";
+import { KPIStatCard } from "../../components/saleDashboard/kpi-stat-card";
 import { mockEmployees, mockAdjustments } from "../../data/mockPayrollData";
 import type { Employee, SalaryAdjustment } from "../../types/payroll";
 import { ToastContainer, toast } from "react-toastify";
+import { Loader2 } from "lucide-react";
 /* =========================
    Types & Helpers
 ========================= */
@@ -80,6 +77,11 @@ export type OtherIncomeType = {
 };
 
 function isOtherIncome(adj: SalaryAdjustment, types: OtherIncomeType[]) {
+  // ถ้ามี nameIncome แสดงว่าเป็นรายได้อื่นจาก staffIncome table
+  if (adj.nameIncome) {
+    return true;
+  }
+  // fallback: เช็คจาก detail ถ้าไม่มี nameIncome
   if (!adj.detail) return false;
   const detailLower = adj.detail.toLowerCase().trim();
   return types.some((t) => detailLower.includes(t.name.toLowerCase().trim()));
@@ -89,7 +91,7 @@ type TimeframeMode = "year" | "past-5" | "past-10" | "all";
 function inTimeframeMode(
   dateISO: string,
   mode: TimeframeMode,
-  selectedYear?: number
+  selectedYear?: number,
 ): boolean {
   const d = new Date(dateISO);
   const now = new Date();
@@ -126,15 +128,15 @@ export default function PayrollPage() {
 
   // Overview filters
   const [overviewEmployee, setOverviewEmployee] = useState<string | "all">(
-    "all"
+    "all",
   );
   const [timeframeMode, setTimeframeMode] = useState<TimeframeMode>("all");
   const allYearsSortedDesc = useMemo(
     () =>
       Array.from(
-        new Set(adjustments.map((a) => new Date(a.date).getFullYear()))
+        new Set(adjustments.map((a) => new Date(a.date).getFullYear())),
       ).sort((a, b) => b - a),
-    [adjustments]
+    [adjustments],
   );
   const defaultYear = allYearsSortedDesc[0] ?? new Date().getFullYear();
   const [selectedYearForChart, setSelectedYearForChart] =
@@ -143,10 +145,10 @@ export default function PayrollPage() {
 
   // Adjustment tab
   const [adjustmentType, setAdjustmentType] = useState<"salary" | "other">(
-    "salary"
+    "salary",
   );
   const [latestEmployeeOnly, setLatestEmployeeOnly] = useState<"none" | string>(
-    "none"
+    "none",
   );
 
   // Other income catalog
@@ -195,7 +197,7 @@ export default function PayrollPage() {
       const tfOk = inTimeframeMode(
         adj.date,
         timeframeMode,
-        selectedYearForChart
+        selectedYearForChart,
       );
       return empOk && tfOk;
     });
@@ -229,10 +231,6 @@ export default function PayrollPage() {
     );
   };
 
-  useEffect(() => {
-    loadAdjustments();
-  }, []);
-
   // ดูค่า adjustments ทุกครั้งที่เปลี่ยน
   useEffect(() => {
     console.log("adjustments:", adjustments);
@@ -247,6 +245,7 @@ export default function PayrollPage() {
     staffId: String(r.staffId),
     amount: Number(r.amount) ?? 0,
     detail: r.detail ?? r.name ?? "",
+    nameIncome: r.nameIncome || r.name, // เก็บ nameIncome จาก API
     date: new Date(r.date ?? r.createdAt ?? Date.now())
       .toISOString()
       .slice(0, 10),
@@ -279,14 +278,14 @@ export default function PayrollPage() {
     if (!res.ok) {
       const msg = await res.text().catch(() => "");
       throw new Error(
-        `Fetch failed (${res.status}): ${msg || "Unknown error"}`
+        `Fetch failed (${res.status}): ${msg || "Unknown error"}`,
       );
     }
     console.log("Fetched adjustments:", isSalary, res);
 
     const data: SalaryAdjustment[] = await res.json();
     const mapped = (isSalary ? data.map(mapSalary) : data.map(mapIncome)).sort(
-      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
     );
 
     setAdjustments(mapped);
@@ -298,9 +297,14 @@ export default function PayrollPage() {
     (async () => {
       try {
         await loadAdjustments(ac.signal);
-      } catch (e) {
-        console.error(e);
-        setAdjustments([]);
+      } catch (e: any) {
+        // ไม่ต้อง log error ถ้าเป็นการ abort ปกติ
+        if (e?.name !== "AbortError" && !ac.signal.aborted) {
+          console.error(e);
+        }
+        if (!ac.signal.aborted) {
+          setAdjustments([]);
+        }
       }
     })();
     return () => ac.abort();
@@ -310,7 +314,7 @@ export default function PayrollPage() {
     if (overviewEmployee === "all")
       return employees.reduce((s, e) => s + e.currentSalary, 0);
     const emp = employees.find(
-      (e) => String(e.id) === String(overviewEmployee)
+      (e) => String(e.id) === String(overviewEmployee),
     );
     return emp?.currentSalary ?? 0;
   }, [overviewEmployee, employees]);
@@ -319,7 +323,7 @@ export default function PayrollPage() {
     const slice = adjustments.filter(
       (a) =>
         (overviewEmployee === "all" || a.staffId === overviewEmployee) &&
-        inTimeframeMode(a.date, timeframeMode, selectedYearForChart)
+        inTimeframeMode(a.date, timeframeMode, selectedYearForChart),
     );
 
     const pickVal = (adj: SalaryAdjustment) => {
@@ -359,7 +363,7 @@ export default function PayrollPage() {
     const years = startYear
       ? Array.from(
           { length: endYear - startYear + 1 },
-          (_, i) => startYear! + i
+          (_, i) => startYear! + i,
         )
       : Array.from(map.keys()).sort((a, b) => a - b);
 
@@ -396,7 +400,8 @@ export default function PayrollPage() {
 
   /* Handlers */
   const handleSalaryAdjustment = async (
-    adjustment: Omit<SalaryAdjustment, "id" | "date" | "type">
+    adjustment: Omit<SalaryAdjustment, "id" | "date" | "type">,
+    nameIncome?: string,
   ) => {
     const amountNum = Number(adjustment.amount) || 0;
     const newAdjustment: SalaryAdjustment = {
@@ -414,8 +419,8 @@ export default function PayrollPage() {
         body: JSON.stringify({
           staffId: Number(newAdjustment?.staffId), // "1" -> 1
           amount: amountNum,
-          detail: newAdjustment?.detail,
-          nameIncome: newAdjustment?.detail || "OT-005",
+          detail: newAdjustment?.detail, // เหตุผลจาก Textarea
+          nameIncome: nameIncome || otherIncomeTypes[0]?.name || "OT", // ชื่อประเภทจาก dropdown
         }),
       })
         .then(async (res) => {
@@ -497,17 +502,19 @@ export default function PayrollPage() {
           position: "bottom-right",
         });
       }
+
+      // อัพเดต currentSalary ใน state เฉพาะตอนปรับเงินเดือน
+      setEmployees((prev) =>
+        prev.map((emp) =>
+          emp.id === Number(adjustment.staffId)
+            ? {
+                ...emp,
+                currentSalary: emp.currentSalary + amountNum,
+              }
+            : emp,
+        ),
+      );
     }
-    setEmployees((prev) =>
-      prev.map((emp) =>
-        emp.id === Number(adjustment.staffId)
-          ? {
-              ...emp,
-              currentSalary: emp.currentSalary + amountNum,
-            }
-          : emp
-      )
-    );
     setAdjustments((prev) => [newAdjustment, ...prev]);
   };
 
@@ -517,14 +524,14 @@ export default function PayrollPage() {
 
   // CRUD other income types
   const inferTypesFromAmount = (
-    amt: number | undefined
+    amt: number | undefined,
   ): "increase" | "decrease" => ((amt ?? 0) < 0 ? "decrease" : "increase");
 
   // API add
   const addOtherIncomeType = async (
     name: string,
     defaultAmount?: number,
-    types?: "increase" | "decrease"
+    types?: "increase" | "decrease",
   ) => {
     const body = {
       name: name.trim(),
@@ -557,7 +564,7 @@ export default function PayrollPage() {
     id: string,
     name: string,
     defaultAmount?: number,
-    types?: "increase" | "decrease"
+    types?: "increase" | "decrease",
   ) => {
     const body = {
       name: name.trim(),
@@ -638,9 +645,9 @@ export default function PayrollPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">กำลังโหลดข้อมูล...</p>
+        <div className="max-w-full flex flex-col items-center justify-center min-h-screen">
+          <Loader2 className="mr-2 h-12 w-12 animate-spin" />
+          <p className="text-lg mt-4 ">กำลังโหลดข้อมูล...</p>
         </div>
       </div>
     );
@@ -667,19 +674,19 @@ export default function PayrollPage() {
         <TabsList className="grid w-full grid-cols-3 rounded-xl bg-white/50 dark:bg-zinc-900/50 p-1 gap-0 border border-zinc-200 dark:border-zinc-800">
           <TabsTrigger
             value="overview"
-            className="text-xs md:text-sm data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:scale-100 md:data-[state=active]:scale-105 data-[state=active]:shadow-md rounded-lg py-2 md:py-3 text-zinc-700 dark:text-zinc-300"
+            className="w-full text-xs md:text-sm data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:shadow-sm rounded-lg py-2 md:py-3 text-zinc-700 dark:text-zinc-300"
           >
-            ภาพรวม
+            พนักงาน
           </TabsTrigger>
           <TabsTrigger
             value="adjustment"
-            className="text-xs md:text-sm data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:scale-100 md:data-[state=active]:scale-105 data-[state=active]:shadow-md rounded-lg py-2 md:py-3 text-zinc-700 dark:text-zinc-300"
+            className="w-full text-xs md:text-sm data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:shadow-sm rounded-lg py-2 md:py-3 text-zinc-700 dark:text-zinc-300"
           >
             ปรับเงิน
           </TabsTrigger>
           <TabsTrigger
             value="directory"
-            className="text-xs md:text-sm data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:scale-100 md:data-[state=active]:scale-105 data-[state=active]:shadow-md rounded-lg py-2 md:py-3 text-zinc-700 dark:text-zinc-300"
+            className="w-full text-xs md:text-sm data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:shadow-sm rounded-lg py-2 md:py-3 text-zinc-700 dark:text-zinc-300"
           >
             สลิป
           </TabsTrigger>
@@ -688,17 +695,66 @@ export default function PayrollPage() {
         {/* ========= OVERVIEW ========= */}
         <TabsContent value="overview" className="space-y-6">
           {/* Employee Directory Table */}
+          <div className="pb-3 pt-6">
+            <h2 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-white flex items-center gap-2">
+              ตารางข้อมูลพนักงาน
+            </h2>
+            <p className="text-zinc-500 dark:text-zinc-400 mt-1">
+              ข้อมูลพนักงานทั้งหมดที่ลงทะเบียนในระบบ
+            </p>
+          </div>
           <EmployeeDirectory employees={employees} />
 
-          <Card className="border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm">
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2">
-                <BarChart3 className="h-5 w-5" />
-                ภาพรวมรายได้พนักงาน (Dashboard)
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4 md:space-y-5">
+          <div className="pb-3 pt-6">
+            <h2 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-white flex items-center gap-2">
+              ภาพรวมรายได้พนักงาน
+            </h2>
+            <p className="text-zinc-500 dark:text-zinc-400 mt-1">
+              ข้อมูลรายได้พนักงานทั้งหมดในระบบ
+            </p>
+          </div>
+          <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4">
+            <KPIStatCard
+              icon={Wallet}
+              title="เงินเดือนปัจจุบัน"
+              value={currentSalaryKpi}
+              format="currency"
+              variant="primary"
+            />
+            <KPIStatCard
+              icon={PiggyBank}
+              title="สุทธิ (ปรับทั้งหมด)"
+              value={dashboardMetrics.totalNet}
+              format="currency"
+              variant="info"
+            />
+            <KPIStatCard
+              icon={TrendingUp}
+              title="ปรับเพิ่มเงินเดือน"
+              value={dashboardMetrics.salaryIncreases}
+              format="currency"
+              variant="success"
+            />
+            <KPIStatCard
+              icon={TrendingDown}
+              title="ปรับลดเงินเดือน"
+              value={dashboardMetrics.salaryDecreases}
+              format="currency"
+              variant="danger"
+            />
+            <KPIStatCard
+              icon={PiggyBank}
+              title="รายได้อื่นทั้งหมด"
+              value={dashboardMetrics.otherIncome}
+              format="currency"
+              variant="warning"
+            />
+          </div>
+          <div className="border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm rounded-lg p-6">
+            <div className="space-y-4 md:space-y-5">
               {/* Filters */}
+
+              {/* KPIs */}
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
                 <div className="space-y-2">
                   <Label>พนักงาน</Label>
@@ -780,45 +836,6 @@ export default function PayrollPage() {
                 </div>
               </div>
 
-              {/* KPIs */}
-              <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4">
-                <Kpi
-                  icon={<Wallet className="h-5 w-5 text-blue-500" />}
-                  title="เงินเดือนปัจจุบัน"
-                  value={currentSalaryKpi}
-                  colorBackground={"bg-blue-200"}
-                  formatCurrency
-                />
-                <Kpi
-                  icon={<PiggyBank className="h-5 w-5 text-pink-400" />}
-                  title="สุทธิ (ปรับทั้งหมด)"
-                  value={dashboardMetrics.totalNet}
-                  colorBackground={"bg-pink-200"}
-                  formatCurrency
-                />
-                <Kpi
-                  icon={<TrendingUp className="h-5 w-5 text-green-400" />}
-                  title="ปรับเพิ่มเงินเดือน"
-                  value={dashboardMetrics.salaryIncreases}
-                  colorBackground={"bg-green-200"}
-                  formatCurrency
-                />
-                <Kpi
-                  icon={<TrendingDown className="h-5 w-5 text-red-500" />}
-                  title="ปรับลดเงินเดือน"
-                  value={dashboardMetrics.salaryDecreases}
-                  colorBackground={"bg-red-200"}
-                  formatCurrency
-                />
-                <Kpi
-                  icon={<PiggyBank className="h-5 w-5 text-purple-500" />}
-                  title="รายได้อื่นทั้งหมด"
-                  value={dashboardMetrics.otherIncome}
-                  colorBackground={"bg-purple-200"}
-                  formatCurrency
-                />
-              </div>
-
               {/* Chart */}
               <div className="h-64 sm:h-72 md:h-80 w-full rounded-xl border bg-card">
                 <ResponsiveContainer width="100%" height="100%">
@@ -849,163 +866,136 @@ export default function PayrollPage() {
                   )}
                 </ResponsiveContainer>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         </TabsContent>
 
         {/* ========= ADJUSTMENT ========= */}
         <TabsContent value="adjustment" className="space-y-4 md:space-y-6">
-          {/* Step Indicator */}
-          <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg p-4 md:p-5">
-            <div className="flex items-center gap-3">
-              <Badge className="rounded-full bg-blue-600">1</Badge>
-              <div>
-                <p className="font-semibold text-sm">
-                  ขั้นตอนที่ 1: เลือกประเภท
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  ปรับเงินเดือนหรือรายได้อื่น
-                </p>
-              </div>
-              <Select
-                value={adjustmentType}
-                onValueChange={(v: "salary" | "other") => setAdjustmentType(v)}
-              >
-                <SelectTrigger className="w-56 ml-auto">
-                  <SelectValue placeholder="เลือกประเภท" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="salary">
-                    <div className="flex items-center gap-2">
-                      <DollarSign className="h-4 w-4" /> ปรับเงินเดือน
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="other">➕ ปรับรายได้อื่น</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+          <div className="pb-3">
+            <h2 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-white">
+              ปรับรายได้พนักงาน
+            </h2>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
             {/* Left column: Form */}
-            <Card className="md:col-span-2 shadow-md border-l-4 border-l-blue-600">
-              <CardHeader className="bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 border-b pb-3">
+            <div className="lg:col-span-2 space-y-4">
+              <div className="bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 rounded-lg p-4 border border-blue-200 dark:border-blue-800">
                 <div className="flex items-center justify-between">
-                  <div className="space-y-1">
-                    <CardTitle className="text-base md:text-lg flex items-center gap-2">
-                      <FileText className="h-5 w-5 text-blue-600" />
-                      {adjustmentType === "salary"
-                        ? "ฟอร์มปรับเงินเดือน"
-                        : "ฟอร์มปรับรายได้อื่น"}
-                    </CardTitle>
+                  <h2 className="text-base md:text-lg font-semibold flex items-center gap-2">
+                    <FileText className="h-5 w-5 text-blue-600" />
+                    {adjustmentType === "salary"
+                      ? "ฟอร์มปรับเงินเดือน"
+                      : "ฟอร์มปรับรายได้อื่น"}
+                  </h2>
+                  <Select
+                    value={adjustmentType}
+                    onValueChange={(v: "salary" | "other") =>
+                      setAdjustmentType(v)
+                    }
+                  >
+                    <SelectTrigger className="w-56">
+                      <SelectValue placeholder="เลือกประเภท" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="salary">
+                        <div className="flex items-center gap-2">
+                          ปรับเงินเดือน
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="other"> ปรับรายได้อื่น</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                {adjustmentType === "other" && (
+                  <div className="space-y-2 p-4 bg-amber-50 dark:bg-amber-950/20 rounded-lg border border-amber-200 dark:border-amber-700">
+                    <Label className="text-sm font-semibold text-amber-900 dark:text-amber-100 flex items-center gap-2">
+                      <ListChecks className="h-4 w-4" /> เลือกรายการรายได้อื่น
+                    </Label>
+                    <div className="flex gap-2">
+                      <Select
+                        defaultValue={otherIncomeTypes[0]?.name ?? "OT"}
+                        onValueChange={(v) => {
+                          const el = document.getElementById(
+                            "other-income-select",
+                          ) as HTMLInputElement | null;
+                          if (el) el.value = v;
+                        }}
+                      >
+                        <SelectTrigger className="flex-1">
+                          <SelectValue placeholder="เลือกรายการ" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {otherIncomeTypes.map((t) => (
+                            <SelectItem key={t.id} value={t.name}>
+                              {t.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+
+                      <Dialog open={manageOpen} onOpenChange={setManageOpen}>
+                        <DialogTrigger asChild>
+                          <Button
+                            variant="outline"
+                            title="จัดการรายการรายได้อื่น"
+                          >
+                            <Pencil className="h-4 w-4 mr-1" />
+                            แก้ไข
+                          </Button>
+                        </DialogTrigger>
+                        <ManageOtherIncomeModal
+                          types={otherIncomeTypes}
+                          // ⬇️ ไม่เปลี่ยน signature ของ modal: ส่งแค่ (name, defaultAmount?)
+                          onAdd={async (name, amount) => {
+                            try {
+                              const created = await addOtherIncomeType(
+                                name,
+                                amount,
+                              );
+                              setOtherIncomeTypes((prev) => [created, ...prev]);
+                            } catch (err) {
+                              console.error(err);
+                            }
+                          }}
+                          onUpdate={async (id, name, amount) => {
+                            try {
+                              const updated = await updateOtherIncomeType(
+                                id,
+                                name,
+                                amount,
+                              );
+                              setOtherIncomeTypes((prev) =>
+                                prev.map((t) => (t.id === id ? updated : t)),
+                              );
+                            } catch (err) {
+                              console.error(err);
+                            }
+                          }}
+                          onRemove={async (id) => {
+                            try {
+                              await removeOtherIncomeType(id);
+                              setOtherIncomeTypes((prev) =>
+                                prev.filter((t) => t.id !== id),
+                              );
+                            } catch (err) {
+                              console.error(err);
+                            }
+                          }}
+                        />
+                      </Dialog>
+                    </div>
+                    {/* ซ่อนไว้ใช้ bridge ค่าให้กับฟอร์ม */}
+                    <input id="other-income-select" hidden />
                     <p className="text-xs text-muted-foreground">
-                      ขั้นตอนที่ 2-3: เลือกพนักงานและจำนวนเงิน
+                      * เพิ่ม/แก้ไข/ลบ รายการได้ผ่านปุ่ม “แก้ไข”
                     </p>
                   </div>
-                  <Badge variant="secondary" className="rounded-full">
-                    {adjustmentType === "salary" ? (
-                      <div className="flex items-center gap-1">
-                        <Briefcase className="h-3 w-3" /> เงินเดือน
-                      </div>
-                    ) : (
-                      <div className="flex items-center gap-1">
-                        <BarChart3 className="h-3 w-3" /> รายได้
-                      </div>
-                    )}
-                  </Badge>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-3 md:space-y-4 pt-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
-                  {adjustmentType === "other" && (
-                    <div className="space-y-2 p-3 md:p-4 bg-amber-50 dark:bg-amber-950/20 rounded-lg border-2 border-amber-200 dark:border-amber-700 md:col-span-2">
-                      <Label className="text-sm font-semibold text-amber-900 dark:text-amber-100 flex items-center gap-2">
-                        <ListChecks className="h-4 w-4" /> เลือกรายการรายได้อื่น
-                      </Label>
-                      <div className="flex gap-2">
-                        <Select
-                          defaultValue={otherIncomeTypes[0]?.name ?? "OT"}
-                          onValueChange={(v) => {
-                            const el = document.getElementById(
-                              "other-income-select"
-                            ) as HTMLInputElement | null;
-                            if (el) el.value = v;
-                          }}
-                        >
-                          <SelectTrigger className="flex-1">
-                            <SelectValue placeholder="เลือกรายการ" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {otherIncomeTypes.map((t) => (
-                              <SelectItem key={t.id} value={t.name}>
-                                {t.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-
-                        <Dialog open={manageOpen} onOpenChange={setManageOpen}>
-                          <DialogTrigger asChild>
-                            <Button
-                              variant="outline"
-                              title="จัดการรายการรายได้อื่น"
-                            >
-                              <Pencil className="h-4 w-4 mr-1" />
-                              แก้ไข
-                            </Button>
-                          </DialogTrigger>
-                          <ManageOtherIncomeModal
-                            types={otherIncomeTypes}
-                            // ⬇️ ไม่เปลี่ยน signature ของ modal: ส่งแค่ (name, defaultAmount?)
-                            onAdd={async (name, amount) => {
-                              try {
-                                const created = await addOtherIncomeType(
-                                  name,
-                                  amount
-                                );
-                                setOtherIncomeTypes((prev) => [
-                                  created,
-                                  ...prev,
-                                ]);
-                              } catch (err) {
-                                console.error(err);
-                              }
-                            }}
-                            onUpdate={async (id, name, amount) => {
-                              try {
-                                const updated = await updateOtherIncomeType(
-                                  id,
-                                  name,
-                                  amount
-                                );
-                                setOtherIncomeTypes((prev) =>
-                                  prev.map((t) => (t.id === id ? updated : t))
-                                );
-                              } catch (err) {
-                                console.error(err);
-                              }
-                            }}
-                            onRemove={async (id) => {
-                              try {
-                                await removeOtherIncomeType(id);
-                                setOtherIncomeTypes((prev) =>
-                                  prev.filter((t) => t.id !== id)
-                                );
-                              } catch (err) {
-                                console.error(err);
-                              }
-                            }}
-                          />
-                        </Dialog>
-                      </div>
-                      {/* ซ่อนไว้ใช้ bridge ค่าให้กับฟอร์ม */}
-                      <input id="other-income-select" hidden />
-                      <p className="text-xs text-muted-foreground">
-                        * เพิ่ม/แก้ไข/ลบ รายการได้ผ่านปุ่ม “แก้ไข”
-                      </p>
-                    </div>
-                  )}
-                </div>
+                )}
 
                 <Separator />
 
@@ -1015,136 +1005,171 @@ export default function PayrollPage() {
                   onEmployeeChange={(staffId) => setLatestEmployeeOnly(staffId)}
                   onAdjustmentSubmit={(payload) => {
                     if (adjustmentType === "other") {
+                      // ดึงชื่อประเภทรายได้จาก dropdown
                       const el = document.getElementById(
-                        "other-income-select"
+                        "other-income-select",
                       ) as HTMLInputElement | null;
-                      const detail = el?.value || payload.detail;
-                      handleSalaryAdjustment({ ...payload, detail });
+                      const selectedIncomeName =
+                        el?.value || otherIncomeTypes[0]?.name || "OT";
+                      // ส่ง payload (มี detail จาก Textarea) พร้อม nameIncome จาก dropdown
+                      handleSalaryAdjustment(payload, selectedIncomeName);
                     } else {
                       handleSalaryAdjustment(payload);
                     }
                   }}
                 />
-              </CardContent>
-            </Card>
+              </div>
+            </div>
 
             {/* Right column: Latest */}
-            <Card className="md:col-span-2 lg:col-span-1">
-              <CardHeader className="pb-2 md:pb-3">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-base md:text-lg">
-                    รายการล่าสุด
-                  </CardTitle>
-                  <Badge variant="outline" className="rounded-full capitalize">
-                    {adjustmentType === "salary" ? "เงินเดือน" : "รายได้อื่น"}
-                  </Badge>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-2 md:space-y-3">
-                <div className="space-y-1 md:space-y-2">
-                  <Label>พนักงาน</Label>
-                  <Select
-                    value={latestEmployeeOnly}
-                    onValueChange={(v) => setLatestEmployeeOnly(v)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="เลือกพนักงาน" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">
-                        ทั้งหมด (แนะนำเลือกพนักงานเพื่อความละเอียด)
-                      </SelectItem>
-                      {employees.map((emp) => (
-                        <SelectItem key={emp.id} value={String(emp.id)}>
-                          {emp.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+            <div className="lg:col-span-1 space-y-4">
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-semibold">รายการล่าสุด</h2>
+                <Badge variant="outline" className="rounded-full">
+                  {adjustmentType === "salary" ? "เงินเดือน" : "รายได้อื่น"}
+                </Badge>
+              </div>
 
-                {latestEmployeeOnly === "none" ? (
-                  <div className="rounded-xl border bg-muted/40 p-4 text-sm text-muted-foreground flex items-center gap-2">
-                    <Info className="h-4 w-4" />
-                    กรุณาเลือกพนักงานเพื่อดูรายการล่าสุดแบบละเอียด
-                  </div>
-                ) : latestList.length === 0 ? (
-                  <EmptyState message="ยังไม่มีรายการปรับล่าสุดสำหรับพนักงานนี้" />
-                ) : (
-                  <ScrollArea className="h-64 sm:h-72 md:h-80 lg:h-96 rounded-xl border bg-card">
-                    <div className="p-2 space-y-2">
-                      {latestList.map((adjustment) => {
-                        const employee = employeeById.get(
-                          String(adjustment.staffId)
-                        );
-                        const positive = adjustment.amount >= 0;
-                        return (
-                          <div
-                            key={adjustment.id}
-                            className="group rounded-xl border bg-background hover:bg-muted/50 transition-colors p-3"
-                          >
-                            <div className="flex items-start justify-between">
-                              <div className="space-y-1">
-                                <div className="flex items-center gap-2">
-                                  <p className="font-medium">
-                                    {employee?.name}
-                                  </p>
-                                  <Badge
-                                    className="rounded-full"
-                                    variant={
-                                      isOtherIncome(
-                                        adjustment,
-                                        otherIncomeTypes
-                                      )
-                                        ? "secondary"
-                                        : "outline"
-                                    }
-                                  >
-                                    {isOtherIncome(adjustment, otherIncomeTypes)
-                                      ? "รายได้อื่น"
-                                      : "เงินเดือน"}
-                                  </Badge>
-                                </div>
-                                <p className="text-xs text-muted-foreground">
-                                  {adjustment.detail}
+              <div className="space-y-2">
+                <Label>พนักงาน</Label>
+                <Select
+                  value={latestEmployeeOnly}
+                  onValueChange={(v) => setLatestEmployeeOnly(v)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="เลือกพนักงาน" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">ทั้งหมด</SelectItem>
+                    {employees.map((emp) => (
+                      <SelectItem key={emp.id} value={String(emp.id)}>
+                        {emp.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {latestEmployeeOnly === "none" ? (
+                <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50 p-4 text-sm text-muted-foreground flex items-center gap-2">
+                  <Info className="h-4 w-4" />
+                  กรุณาเลือกพนักงานเพื่อดูรายการล่าสุด
+                </div>
+              ) : latestList.length === 0 ? (
+                <EmptyState message="ยังไม่มีรายการปรับล่าสุดสำหรับพนักงานนี้" />
+              ) : (
+                <ScrollArea className="h-[280px] [&>[data-radix-scroll-area-viewport]]:pr-3">
+                  <div className="space-y-3 ">
+                    {latestList.map((adjustment) => {
+                      const employee = employeeById.get(
+                        String(adjustment.staffId),
+                      );
+                      const positive = adjustment.amount >= 0;
+                      return (
+                        <div
+                          key={adjustment.id}
+                          className="rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors p-5"
+                        >
+                          <div className="flex items-start justify-between gap-4">
+                            <div className="space-y-2 flex-1">
+                              <div className="flex items-center gap-2">
+                                <p className="font-semibold text-base">
+                                  {employee?.name}
                                 </p>
-                              </div>
-                              <div className="text-right">
-                                <p
-                                  className={`font-semibold ${
-                                    positive
-                                      ? "text-green-600 dark:text-green-500"
-                                      : "text-red-600 dark:text-red-500"
-                                  }`}
+                                <Badge
+                                  className="rounded-full text-xs"
+                                  variant={
+                                    isOtherIncome(adjustment, otherIncomeTypes)
+                                      ? "secondary"
+                                      : "outline"
+                                  }
                                 >
-                                  {positive ? "+" : ""}฿
-                                  {adjustment.amount.toLocaleString()}
-                                </p>
-                                <p className="text-xs text-muted-foreground">
-                                  {new Date(
-                                    adjustment.date
-                                  ).toLocaleDateString()}
-                                </p>
-                                {isOtherIncome(adjustment, otherIncomeTypes) ? (
-                                  <DeleteConfirmButton
-                                    onConfirm={() =>
-                                      deleteStaffIncome(adjustment.id)
-                                    }
-                                    label="การลบนี้ไม่สามารถย้อนกลับได้"
-                                  />
-                                ) : (
-                                  ""
-                                )}
+                                  {isOtherIncome(adjustment, otherIncomeTypes)
+                                    ? "รายได้อื่น"
+                                    : "เงินเดือน"}
+                                </Badge>
                               </div>
+                              <p className="text-sm text-muted-foreground">
+                                {adjustment.detail}
+                              </p>
+                            </div>
+                            <div className="text-right space-y-1">
+                              <p
+                                className={`font-bold text-lg ${
+                                  positive
+                                    ? "text-green-600 dark:text-green-500"
+                                    : "text-red-600 dark:text-red-500"
+                                }`}
+                              >
+                                {positive ? "+" : ""}฿
+                                {adjustment.amount.toLocaleString()}
+                              </p>
+                              <p className="text-sm text-muted-foreground">
+                                {new Date(adjustment.date).toLocaleDateString()}
+                              </p>
+                              {isOtherIncome(adjustment, otherIncomeTypes) ? (
+                                <DeleteConfirmButton
+                                  onConfirm={() =>
+                                    deleteStaffIncome(adjustment.id)
+                                  }
+                                  label="การลบนี้ไม่สามารถย้อนกลับได้"
+                                />
+                              ) : (
+                                ""
+                              )}
                             </div>
                           </div>
-                        );
-                      })}
-                    </div>
-                  </ScrollArea>
-                )}
-              </CardContent>
-            </Card>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </ScrollArea>
+              )}
+
+              {/* Summary - Current Salary or Total Other Income */}
+              {latestEmployeeOnly !== "none" &&
+                latestList.length > 0 &&
+                (() => {
+                  const emp = employees.find(
+                    (e) => String(e.id) === latestEmployeeOnly,
+                  );
+                  if (!emp) return null;
+
+                  if (adjustmentType === "salary") {
+                    // แสดงเงินเดือนปัจจุบัน
+                    return (
+                      <div className="border-t border-zinc-200 dark:border-zinc-800 pt-4 mt-4">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-muted-foreground">
+                            เงินเดือนปัจจุบัน
+                          </span>
+                          <span className="text-2xl font-bold">
+                            ฿{emp.currentSalary?.toLocaleString() || "0"}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  } else {
+                    // แสดงยอดรวมรายได้อื่นๆ
+                    const totalOtherIncome = latestList.reduce(
+                      (sum, item) => sum + item.amount,
+                      0,
+                    );
+                    return (
+                      <div className="border-t border-zinc-200 dark:border-zinc-800 pt-4 mt-4">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-muted-foreground">
+                            รวมรายได้อื่นทั้งหมด
+                          </span>
+                          <span className="text-2xl font-bold text-green-600 dark:text-green-500">
+                            ฿{totalOtherIncome.toLocaleString()}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  }
+                })()}
+            </div>
           </div>
         </TabsContent>
 
@@ -1216,56 +1241,6 @@ function DeleteOtherIncomeButton({ onConfirm }: { onConfirm: () => void }) {
         </DialogFooter>
       </DialogContent>
     </Dialog>
-  );
-}
-
-function Kpi({
-  title,
-  value,
-  formatCurrency,
-  icon,
-  gradient = "from-blue/60 to-blue/30",
-  colorBackground,
-}: {
-  title: string;
-  value: number;
-  formatCurrency?: boolean;
-  icon?: React.ReactNode;
-  gradient?: string;
-  colorBackground?: string;
-}) {
-  const display = formatCurrency
-    ? `฿${value.toLocaleString(undefined, {
-        maximumFractionDigits: 2,
-      })}`
-    : value.toString();
-
-  return (
-    <div className="rounded-2xl border bg-card p-0 overflow-hidden">
-      <div
-        className={`h-1.5 md:h-2 w-full bg-gradient-to-r ${gradient}`}
-        aria-hidden
-      />
-      <div className="p-3 md:p-4">
-        <div className="flex items-center justify-between gap-2">
-          <CardTitle className="text-xs md:text-sm text-muted-foreground line-clamp-1">
-            {title}
-          </CardTitle>
-          <div
-            className={`rounded-full shadow-lg md:shadow-2xl shadow-black p-1.5 md:p-2 flex-shrink-0 ${colorBackground}`}
-          >
-            {icon && (
-              <div className="text-muted-foreground/80 h-4 w-4 md:h-5 md:w-5">
-                {icon}
-              </div>
-            )}
-          </div>
-        </div>
-        <div className="mt-1.5 md:mt-2 text-lg md:text-2xl font-semibold text-foreground">
-          {display}
-        </div>
-      </div>
-    </div>
   );
 }
 

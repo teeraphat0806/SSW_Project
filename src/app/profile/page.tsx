@@ -3,8 +3,8 @@
 import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { Camera } from "lucide-react";
 import type { Session } from "next-auth";
+import ProfileHeader from "@/components/profile/ProfileHeader";
 
 type ToastState = { show: boolean; message: string };
 
@@ -32,7 +32,7 @@ export default function Profile() {
     if (!toast.show) return;
     const timer = setTimeout(
       () => setToast({ show: false, message: "" }),
-      2000
+      2000,
     );
     return () => clearTimeout(timer);
   }, [toast.show]);
@@ -108,179 +108,92 @@ export default function Profile() {
   const lastLoginAt = (user as any)?.lastLoginAt as string | undefined;
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-[hsl(var(--background))] text-[hsl(var(--foreground))]">
-      <div className="w-full max-w-4xl rounded-2xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] shadow-[var(--shadow-elevation)] overflow-hidden">
-        {/* Header */}
-        <div className="p-8 bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))]">
-          <div className="flex flex-col items-center gap-3">
-            <div className="relative">
-              <div className="w-32 h-32 rounded-full border-4 border-white/70 dark:border-white/25 shadow-lg bg-black/10 dark:bg-white/10 flex items-center justify-center overflow-hidden">
-                {user.image ? (
-                  <img
-                    src={user.image}
-                    alt={userName}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <span className="text-5xl font-bold">{initials}</span>
-                )}
+    <div className="min-h-screen mt-12 md:mt-0 lg:mt-0 items-center justify-center  bg-[hsl(var(--background))] text-[hsl(var(--foreground))]">
+      <ProfileHeader
+        userName={userName}
+        userEmail={userEmail}
+        userImage={user.image}
+        initials={initials}
+      />
+
+      <div className="flex md:ml-32 lg:ml-32">
+        <div className="w-full max-w-4xl bg-[hsl(var(--card))] shadow-[var(--shadow-elevation)] overflow-hidden">
+          {/* Header */}
+
+          {/* Body */}
+          <div className="p-8">
+            {/* Details */}
+            <section className="mb-8">
+              <h2 className="text-2xl font-semibold mb-4">รายละเอียดบัญชี</h2>
+
+              <div className="rounded-xl border border-[hsl(var(--border))] overflow-hidden">
+                <dl className="divide-y divide-[hsl(var(--border))]">
+                  {[
+                    ["ชื่อเต็ม", userName],
+                    ["ที่อยู่อีเมล", userEmail],
+                    ["ตำเเหน่ง", userRole],
+                  ].map(([k, v]) => (
+                    <div
+                      key={k}
+                      className="px-6 py-4 flex flex-col sm:flex-row sm:items-center bg-[hsl(var(--card))]"
+                    >
+                      <dt className="text-sm font-medium text-[hsl(var(--small-detail))] sm:w-1/3 mb-1 sm:mb-0">
+                        {k}
+                      </dt>
+                      <dd className="text-sm sm:w-2/3">{v}</dd>
+                    </div>
+                  ))}
+                </dl>
               </div>
-              <button
-                onClick={() => router.push("/profile/edit")}
-                className="absolute bottom-0 right-0 w-10 h-10 rounded-full bg-white dark:bg-gray-800 text-gray-800 dark:text-white shadow-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center justify-center border-2 border-[hsl(var(--primary))] hover:cursor-pointer"
-                aria-label="เปลี่ยนรูปโปรไฟล์"
-              >
-                <Camera className="w-5 h-5 text-black dark:text-white" />
-              </button>
-            </div>
+            </section>
 
-            <h1 className="text-3xl font-bold">{userName}</h1>
-
-            <div className="flex flex-wrap items-center justify-center gap-2">
-              <span className="inline-flex items-center rounded-full px-4 py-1 text-sm font-medium bg-black/15 dark:bg-white/15 backdrop-blur">
-                {userRole}
-              </span>
-              <button
-                onClick={toggleTheme}
-                className="inline-flex items-center rounded-full px-4 py-1 text-sm font-medium bg-black/15 dark:bg-white/15 hover:bg-black/25 dark:hover:bg-white/25 transition focus:outline-none focus:ring-2 focus:ring-white/60 focus:ring-offset-2 focus:ring-offset-transparent"
-                aria-label="Toggle theme"
-              >
-                {theme === "dark" ? "Dark" : "Light"}
-              </button>
-            </div>
-
-            <p className="opacity-90">{userEmail}</p>
-          </div>
-        </div>
-
-        {/* Body */}
-        <div className="p-8">
-          {/* Overview */}
-          <section className="mb-8">
-            <div className="flex items-end justify-between gap-4 mb-4">
-              <h2 className="text-2xl font-semibold">ภาพรวม</h2>
-              <p className="text-sm text-[hsl(var(--small-detail))]">
-                จัดการข้อมูลบัญชีและความปลอดภัยของคุณ
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div className="rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--aa))] p-4">
-                <p className="text-sm font-medium text-[hsl(var(--small-detail))] mb-1">
-                  สถานะบัญชี
-                </p>
-                <p className="text-lg font-bold">Active</p>
-              </div>
-
-              <div className="rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--aa))] p-4">
-                <p className="text-sm font-medium text-[hsl(var(--small-detail))] mb-1">
-                  ตำเเหน่ง
-                </p>
-                <p className="text-lg font-bold">{userRole}</p>
-              </div>
-
-              <div className="rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--aa))] p-4">
-                <p className="text-sm font-medium text-[hsl(var(--small-detail))] mb-1">
-                  เข้าสู่ระบบล่าสุด
-                </p>
-                <p className="text-lg font-bold">{formatDate(lastLoginAt)}</p>
-              </div>
-
-              <div className="rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--aa))] p-4">
-                <p className="text-sm font-medium text-[hsl(var(--small-detail))] mb-1">
-                  สมาชิกตั้งแต่
-                </p>
-                <p className="text-lg font-bold">{formatDate(createdAt)}</p>
-              </div>
-            </div>
-          </section>
-
-          {/* Details */}
-          <section className="mb-8">
-            <h2 className="text-2xl font-semibold mb-4">รายละเอียดบัญชี</h2>
-
-            <div className="rounded-xl border border-[hsl(var(--border))] overflow-hidden">
-              <dl className="divide-y divide-[hsl(var(--border))]">
-                {[
-                  ["ชื่อเต็ม", userName],
-                  ["ที่อยู่อีเมล", userEmail],
-                ].map(([k, v]) => (
-                  <div
-                    key={k}
-                    className="px-6 py-4 flex flex-col sm:flex-row sm:items-center bg-[hsl(var(--card))]"
-                  >
-                    <dt className="text-sm font-medium text-[hsl(var(--small-detail))] sm:w-1/3 mb-1 sm:mb-0">
-                      {k}
-                    </dt>
-                    <dd className="text-sm sm:w-2/3">{v}</dd>
-                  </div>
-                ))}
-              </dl>
-            </div>
-          </section>
-
-          {/* Security */}
-          <section className="mb-8">
-            <h2 className="text-2xl font-semibold mb-4">ความปลอดภัย</h2>
-            <div className="flex flex-wrap gap-3">
-              <button
-                onClick={handleLogout}
-                className="px-6 py-2.5 rounded-lg font-medium transition
+            {/* Security */}
+            <section className="mb-8">
+              <h2 className="text-2xl font-semibold mb-4">ความปลอดภัย</h2>
+              <div className="flex flex-wrap gap-3">
+                <button
+                  onClick={handleLogout}
+                  className="px-6 py-2.5 rounded-lg font-medium transition
                   bg-[hsl(var(--destructive))] text-[hsl(var(--destructive-foreground))]
                   hover:opacity-90
                   focus:outline-none focus:ring-2 focus:ring-[hsl(var(--ring))] focus:ring-offset-2 focus:ring-offset-[hsl(var(--background))] hover:cursor-pointer"
-              >
-                ออกจากระบบ
-              </button>
+                >
+                  ออกจากระบบ
+                </button>
 
-              <button
-                onClick={handleCopyEmail}
-                className="px-6 py-2.5 rounded-lg font-medium transition
-                  bg-[hsl(var(--secondary))] text-[hsl(var(--secondary-foreground))]
-                  hover:bg-[hsl(var(--hover))]
-                  focus:outline-none focus:ring-2 focus:ring-[hsl(var(--ring))] focus:ring-offset-2 focus:ring-offset-[hsl(var(--background))] hover:cursor-pointer"
-              >
-                คัดลอก อีเมล
-              </button>
-            </div>
-          </section>
-
-          {/* Actions */}
-          <section>
-            <h2 className="text-2xl font-semibold mb-4">การดำเนินการ</h2>
-            <div className="flex flex-wrap gap-3">
-              <button
-                onClick={handleBackToHome}
-                className="px-6 py-2.5 rounded-lg font-medium transition
+                <button
+                  onClick={handleBackToHome}
+                  className="px-6 py-2.5 rounded-lg font-medium transition
                   bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))]
                   hover:bg-[hsl(var(--primary-hover))]
                   focus:outline-none focus:ring-2 focus:ring-[hsl(var(--ring))] focus:ring-offset-2 focus:ring-offset-[hsl(var(--background))] hover:cursor-pointer"
-              >
-                กลับไปหน้าหลัก
-              </button>
-            </div>
-          </section>
+                >
+                  กลับไปหน้าหลัก
+                </button>
+              </div>
+            </section>
+          </div>
         </div>
-      </div>
 
-      {/* Toast */}
-      {toast.show && (
-        <div
-          className="fixed bottom-6 right-6 rounded-lg shadow-2xl px-5 py-3 flex items-center gap-3
+        {/* Toast */}
+        {toast.show && (
+          <div
+            className="fixed bottom-6 right-6 rounded-lg shadow-2xl px-5 py-3 flex items-center gap-3
           border border-[hsl(var(--border))]
           bg-[hsl(var(--popover))] text-[hsl(var(--popover-foreground))]
           animate-in slide-in-from-bottom-5 duration-300"
-        >
-          <span
-            className="inline-flex items-center justify-center w-8 h-8 rounded-full
-              bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))]"
-            aria-hidden="true"
           >
-            ✓
-          </span>
-          <span className="font-medium">{toast.message}</span>
-        </div>
-      )}
+            <span
+              className="inline-flex items-center justify-center w-8 h-8 rounded-full
+              bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))]"
+              aria-hidden="true"
+            >
+              ✓
+            </span>
+            <span className="font-medium">{toast.message}</span>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

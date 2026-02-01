@@ -48,8 +48,8 @@ model Customer {
   taxNumber String    @unique
   faxNumber String    @unique
   email     String    @unique
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
   Bill      Bill[]
   OrderPO   OrderPO[]
 }
@@ -59,7 +59,7 @@ model Bill {
   customerId                    Int
   yourRef                       String
   invoiceNo                     Int       @unique @default(autoincrement())
-  codeCustomer                  String   @unique
+  codeCustomer                  String    @unique
   deliveryDate                  DateTime
   deliveryOrderNo               String?
   salesName                     String
@@ -76,7 +76,7 @@ model Bill {
   updatedAt                     DateTime  @updatedAt
   createdAt                     DateTime  @default(now())
   credit                        Int       @default(30)
-  Customer   Customer @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  Customer                      Customer  @relation(fields: [customerId], references: [id], onDelete: Restrict)
   Staff_Bill_deliveredByToStaff Staff?    @relation("Bill_deliveredByToStaff", fields: [deliveredById], references: [id])
   Staff_Bill_salesNameToStaff   Staff?    @relation("Bill_salesNameToStaff", fields: [salesNameId], references: [id])
   OrderPO                       OrderPO?
@@ -87,18 +87,18 @@ model Bill {
 }
 
 model OrderPO {
-  id          Int       @id @default(autoincrement())
-  poNumber    String?   @unique
+  id          Int            @id @default(autoincrement())
+  poNumber    String?        @unique
   customerId  Int?
-  billId      Int?      @unique
-  status      JobStatus @default(pending)
+  billId      Int?           @unique
+  status      JobStatus      @default(pending)
   total       Float
   completedAt DateTime?
   urlPo       String[]
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  bill        Bill?     @relation(fields: [billId], references: [id])
-  Customer    Customer? @relation(fields: [customerId], references: [id])
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  bill        Bill?          @relation(fields: [billId], references: [id])
+  Customer    Customer?      @relation(fields: [customerId], references: [id])
   Product     Product[]
   staffLinks  OrderPOStaff[]
 
@@ -110,13 +110,13 @@ model OrderPO {
 }
 
 model OrderPOStaff {
-  orderPOId Int
-  staffId   Int
-  role      OrderStaffRole
-  assignedAt DateTime @default(now())
+  orderPOId  Int
+  staffId    Int
+  role       OrderStaffRole
+  assignedAt DateTime       @default(now())
 
-  orderPO OrderPO @relation(fields: [orderPOId],references:[id], onDelete:Cascade)
-  staff     Staff   @relation(fields: [staffId], references: [id])
+  orderPO OrderPO @relation(fields: [orderPOId], references: [id], onDelete: Cascade)
+  staff   Staff   @relation(fields: [staffId], references: [id])
 
   @@id([orderPOId, staffId, role])
   @@index([staffId])
@@ -210,11 +210,8 @@ model SteelStock {
   status      StockStatus @default(available)
   SteelType   SteelType   @relation(fields: [steeltypeId], references: [id])
 
- 
   @@unique([steeltypeId, width, length, thickness])
 }
-
-
 
 model Expense {
   id          Int             @id @default(autoincrement())
@@ -274,14 +271,13 @@ enum StockStatus {
   withdrawn
 }
 
-enum SteelStatus{
+enum SteelStatus {
   active
   inactive
   hold
 }
 
 enum OrderStaffRole {
-  supervisor  
-  cutter       
+  supervisor
+  cutter
 }
-
