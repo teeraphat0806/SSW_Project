@@ -1,5 +1,7 @@
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { calculateBillSummary } from "@/lib/calculateGrandTotal";
 import { FileText } from "lucide-react";
+import { useMemo } from "react";
 
 // --- Types ---
 // กำหนด Type ตามที่คุณระบุมา
@@ -105,18 +107,10 @@ export default function SteelTable({ steel = [], vatRate }: SteelTableProps) {
   }));
 
   // Summary logic
-  const summary = processedItems.reduce(
-    (acc, curr) => ({
-      totalWeight: acc.totalWeight + curr.weight,
-      subtotal: acc.subtotal + curr.totalPrice,
-      discount: acc.discount + curr.lineDiscount,
-    }),
-    { totalWeight: 0, subtotal: 0, discount: 0 },
+  const { subtotal, discount, vat, grandTotal } = useMemo(
+    () => calculateBillSummary(steel, vatRate),
+    [steel, vatRate],
   );
-
-  const net = Math.max(0, summary.subtotal - summary.discount); //  หลังหักส่วนลด
-  const vat = net * (safeNum(vatRate) / 100); // ภาษีมูลค่าเพิ่ม
-  const grandTotal = net + vat; // ราคารวมทั้งหมด
 
   return (
     <Card className="overflow-hidden rounded-xl shadow-md border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 transition-colors duration-300">
@@ -305,7 +299,7 @@ export default function SteelTable({ steel = [], vatRate }: SteelTableProps) {
                   รวมก่อนส่วนลด
                 </div>
                 <div className="col-span-6 text-right font-mono font-bold text-zinc-700 dark:text-zinc-300">
-                  {fmt(summary.subtotal)}
+                  {fmt(subtotal)}
                 </div>
               </div>
 
@@ -314,7 +308,7 @@ export default function SteelTable({ steel = [], vatRate }: SteelTableProps) {
                   ส่วนลดรวม
                 </div>
                 <div className="col-span-6 text-right font-mono font-bold text-red-600 dark:text-red-400">
-                  -{fmt(summary.discount)}
+                  -{fmt(discount)}
                 </div>
               </div>
 

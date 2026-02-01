@@ -24,13 +24,14 @@ import { StaffInfoCard } from "@/components/jobordertail/StaffInfoCard";
 import { CustomerTab } from "@/components/jobordertail/CustomerTab";
 import { ProductionTab } from "@/components/jobordertail/ProductionTab";
 import { DeliveryTab } from "@/components/jobordertail/DeliveryTab";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import SteelOrderTable from "@/components/jobordertail/SteelOrderTable";
 import { CancelOrderButton } from "@/components/jobordertail/cancelOrderButton";
 
 import { LoadingScreen } from "@/components/Loading";
 import { toast } from "react-toastify";
 import { CompletionTab } from "@/components/jobordertail/CompletionTab";
+import { calculateBillSummary } from "@/lib/calculateGrandTotal";
 
 type StaffMember = {
   id: number;
@@ -201,6 +202,8 @@ const JobOrderDetailPage = ({ id }: { id: string }) => {
   const [isUpdating, setIsUpdating] = useState(false);
 
   const router = useRouter();
+
+ 
 
   useEffect(() => {
     const fetchJobOrder = async () => {
