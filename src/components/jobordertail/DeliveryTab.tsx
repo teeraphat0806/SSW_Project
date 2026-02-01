@@ -105,11 +105,10 @@ export function DeliveryTab({
   // Status Checks
   const isReadyStep = status === "ready";
   const isShippedStep = status === "shipped"; // สถานะปัจจุบันคือส่งของแล้ว
-  const isCompletedStep = status === "completed"; // จบงานแล้ว
-  const isPostReady = isShippedStep || isCompletedStep;
+  const isPostReady = isShippedStep; // ใช้สำหรับล็อกสถานะเช็คของ
 
-  const progressPercent =
-    items.length > 0 ? (checkedCount / items.length) * 100 : 0;
+  // const progressPercent =
+  //   items.length > 0 ? (checkedCount / items.length) * 100 : 0;
 
   return (
     <div
@@ -280,49 +279,112 @@ export function DeliveryTab({
           </div>
 
           {/* Action Button Section */}
-          <div className="rounded-xl border bg-card p-4 shadow-sm space-y-3">
-            <h5 className="font-semibold text-sm">ดำเนินการ</h5>
+          <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white/80 dark:bg-zinc-900/60 backdrop-blur p-4 shadow-sm space-y-3">
+            {/* Header */}
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <h5 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+                  ยืนยันการจัดส่ง
+                </h5>
+                <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
+                  ตรวจสอบรายการให้ครบ แล้วกดเพื่อเปลี่ยนสถานะเป็น กำลังจัดส่ง
+                </p>
+              </div>
+
+              {/* Status badge (optional but helpful) */}
+              {status === "ready" && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 -mr-2 -mt-2"
+                  onClick={() => onUpdateStatus("weighing")}
+                  title="ย้อนกลับสถานะ (Undo)"
+                >
+                  <RotateCcw className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
 
             {isReadyStep ? (
-              <>
+              <div className="space-y-3">
+                {/* Warning callout when not all checked */}
+                {!allChecked && (
+                  <div className="rounded-xl border border-amber-200/70 dark:border-amber-900/40 bg-amber-50/70 dark:bg-amber-950/30 p-3">
+                    <div className="flex items-start gap-2">
+                      <div className="mt-0.5 inline-flex h-6 w-6 items-center justify-center rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-200">
+                        <AlertCircle className="h-4 w-4" />
+                      </div>
+
+                      <div className="min-w-0">
+                        <p className="text-xs font-semibold text-amber-900 dark:text-amber-200">
+                          ยังตรวจสอบสินค้าไม่ครบ
+                        </p>
+                        <p className="text-xs text-amber-800/80 dark:text-amber-200/80 mt-0.5">
+                          กรุณาติ๊กตรวจสอบให้ครบทุกบรรทัดก่อน
+                          เพื่อป้องกันการส่งของผิด/ขาด
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Primary action */}
                 <Button
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white gap-2"
+                  className="w-full h-11 rounded-xl bg-blue-600 hover:bg-blue-700 text-white gap-2 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
                   onClick={() => onUpdateStatus("shipped")}
                   disabled={!allChecked}
                 >
-                  <Truck className="h-4 w-4" /> ยืนยันการจัดส่ง (Shipped)
+                  <Play className="h-3 w-3 fill-current" />
+                  ยืนยันจัดส่งสินค้า{" "}
                 </Button>
-                {!allChecked && (
-                  <div className="flex items-center justify-center gap-1.5 text-[10px] text-amber-600 bg-amber-50 p-1.5 rounded-md border border-amber-100">
-                    <AlertCircle className="h-3 w-3" /> กรุณาตรวจสอบสินค้าให้ครบ
-                  </div>
-                )}
-              </>
+
+                <p className="text-xs text-zinc-500 dark:text-zinc-400 text-center">
+                  เมื่อยืนยันแล้ว ระบบจะล็อกขั้นตอนการผลิต และไปขั้นตอนการจัดส่ง
+                </p>
+              </div>
             ) : isPostReady ? (
-              <div className="text-center py-4 space-y-2 border-2 border-dashed border-blue-200 rounded-lg bg-blue-50/50 dark:bg-blue-900/20 dark:border-blue-800">
-                <div className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 text-blue-600 mb-1">
-                  <Truck className="h-5 w-5" />
+              <div className="rounded-2xl border border-emerald-200/70 dark:border-emerald-900/40 bg-emerald-50/60 dark:bg-emerald-950/30 p-4">
+                <div className="flex items-start gap-2">
+                  <div className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-200">
+                    <Truck className="h-5 w-5" />
+                  </div>
+
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold text-emerald-900 dark:text-emerald-200">
+                      ส่งสินค้าเรียบร้อย
+                    </p>
+                    <p className="text-xs text-emerald-800/80 dark:text-emerald-200/80 mt-0.5">
+                      สามารถกด “เสร็จสิ้นงาน” ได้ที่แท็บ{" "}
+                      <span className="font-medium">เสร็จสิ้น</span>
+                    </p>
+                  </div>
                 </div>
-                <p className="text-sm font-medium text-blue-900 dark:text-blue-200">
-                  สินค้าถูกส่งออกแล้ว
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  สามารถกดสำเร็จงานได้ที่แท็บ "เสร็จสิ้น"
-                </p>
+
                 {status === "shipped" && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="text-xs text-muted-foreground hover:text-red-500 h-7 mt-2"
-                    onClick={() => onUpdateStatus("ready")}
-                  >
-                    <RotateCcw className="h-3 w-3 mr-1" /> ยกเลิกการส่ง
-                  </Button>
+                  <div className="mt-3">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full h-11 rounded-xl border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-200 bg-white dark:bg-zinc-900 hover:bg-zinc-50 dark:hover:bg-zinc-800/50"
+                      onClick={() => onUpdateStatus("ready")}
+                    >
+                      <RotateCcw className="h-4 w-4 mr-2" />
+                      ย้อนกลับ
+                    </Button>
+                    <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1.5">
+                      ใช้กรณีย้อนกลับสถานะ เช่น กรณีลูกค้าไม่รับของ
+                    </p>
+                  </div>
                 )}
               </div>
             ) : (
-              <div className="text-center text-sm text-muted-foreground py-2">
-                รอการผลิตเสร็จสิ้น
+              <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50/60 dark:bg-zinc-900/40 p-3 text-center">
+                <p className="text-sm font-medium text-zinc-700 dark:text-zinc-200">
+                  รอการผลิตเสร็จสิ้น
+                </p>
+                <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
+                  เมื่อสถานะเป็น พร้อมจัดส่ง แล้วจึงจะยืนยันการจัดส่งได้
+                </p>
               </div>
             )}
           </div>

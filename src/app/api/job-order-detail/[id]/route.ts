@@ -144,6 +144,8 @@ export async function GET(
         cuttingMethod: p.cuttingMethod,
         job: p.job ?? undefined,
         weight: p.actualWeight ?? 0,
+        total: p.total ?? 0,
+        discount: p.discount ?? undefined,
       })),
       status: jobOrder.status,
       // createdAt จาก OrderPO เอง (ตาม schema)
@@ -165,7 +167,7 @@ export async function GET(
 const ALLOWED_ROLES_BY_STATUS: Record<string, string[]> = {
   pending: ["superadmin", "supervisor", "clerk"],
   cutting: ["superadmin", "supervisor", "clerk"],
-  weighing: ["superadmin", "supervisor", "clerk", "delivery"],
+  weighing: ["superadmin", "supervisor", "clerk"],
   ready: ["superadmin", "supervisor", "clerk", "delivery"],
   shipped: ["superadmin", "clerk", "delivery", "supervisor"],
   completed: ["superadmin", "clerk", "delivery", "supervisor"],
@@ -210,13 +212,7 @@ export async function PATCH(
     ];
 
     const authResult = await requireAuth(
-      requiredRoles as (
-        | "superadmin"
-        | "supervisor"
-        | "clerk"
-        | "delivery"
-        | "cutter"
-      )[],
+      requiredRoles as ("superadmin" | "supervisor" | "clerk" | "delivery")[],
     );
     if ("response" in authResult) {
       return authResult.response;
@@ -237,17 +233,6 @@ export async function PATCH(
           { status: 404 },
         );
       }
-
-      // (เลือกได้) บังคับ transition: ต้องอยู่ weighing ก่อนถึงจะไป ready
-      // if (po.status !== "weighing") {
-      //   return NextResponse.json(
-      //     {
-      //       error:
-      //         "ไม่สามารถเปลี่ยนเป็น READY ได้: ต้องอยู่สถานะ WEIGHING ก่อน",
-      //     },
-      //     { status: 400 },
-      //   );
-      // }
 
       const hasMissingWeight = po.Product.some(
         (p) => p.actualWeight == null || p.actualWeight <= 0,

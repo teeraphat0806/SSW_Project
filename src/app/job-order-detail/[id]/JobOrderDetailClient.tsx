@@ -24,13 +24,14 @@ import { StaffInfoCard } from "@/components/jobordertail/StaffInfoCard";
 import { CustomerTab } from "@/components/jobordertail/CustomerTab";
 import { ProductionTab } from "@/components/jobordertail/ProductionTab";
 import { DeliveryTab } from "@/components/jobordertail/DeliveryTab";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import SteelOrderTable from "@/components/jobordertail/SteelOrderTable";
 import { CancelOrderButton } from "@/components/jobordertail/cancelOrderButton";
 
 import { LoadingScreen } from "@/components/Loading";
 import { toast } from "react-toastify";
 import { CompletionTab } from "@/components/jobordertail/CompletionTab";
+import { calculateBillSummary } from "@/lib/calculateGrandTotal";
 
 type StaffMember = {
   id: number;
@@ -46,6 +47,8 @@ export type JobStatus =
   | "shipped"
   | "completed"
   | "canceled";
+
+type cuttingMethod = "normal" | "FB" | "steelDisc" | "CNC";
 
 type ApiJobOrder = {
   id: number;
@@ -74,7 +77,9 @@ type ApiJobOrder = {
     detail?: string | null;
     shape: string;
     job?: number | null;
-    cuttingMethod: "normal" | "FB" | "steelDisc" | "CNC" | null;
+    total?: number | null;
+    discount?: number | null;
+    cuttingMethod: cuttingMethod;
   }[];
 
   status: JobStatus;
@@ -110,7 +115,9 @@ export type JobOrder = {
     detail?: string;
     density: number;
     job?: number;
-    cuttingMethod: "normal" | "FB" | "steelDisc" | "CNC";
+    total?: number | null;
+    discount?: number | null;
+    cuttingMethod: cuttingMethod;
     shape: string;
   }>;
   status: JobStatus;
@@ -154,6 +161,8 @@ const tojobOrder = (api: ApiJobOrder): JobOrder => {
       job: s.job ?? undefined,
       cuttingMethod: (s.cuttingMethod ??
         "normal") as JobOrder["steel"][number]["cuttingMethod"],
+      total: s.total ?? 0,
+      discount: s.discount ?? undefined,
       shape: s.shape,
     })),
 
@@ -193,6 +202,8 @@ const JobOrderDetailPage = ({ id }: { id: string }) => {
   const [isUpdating, setIsUpdating] = useState(false);
 
   const router = useRouter();
+
+ 
 
   useEffect(() => {
     const fetchJobOrder = async () => {
@@ -510,7 +521,10 @@ const JobOrderDetailPage = ({ id }: { id: string }) => {
             </Card>
 
             {/* Steel Order Table */}
-            <SteelOrderTable steel={jobOrder?.steel || []}  vatRate={jobOrder?.vatRate || 7} />
+            <SteelOrderTable
+              steel={jobOrder?.steel || []}
+              vatRate={jobOrder?.vatRate || 7}
+            />
 
             {/* Tabs Card */}
             <Card className="rounded-lg shadow-md ">
