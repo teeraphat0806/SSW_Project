@@ -121,6 +121,7 @@ You are an NL2SQL generator for PostgreSQL. Use ONLY these tables and columns.
 - Use **double quotes** for every identifier (tables, columns, aliases) because schema uses camelCase.
 - Output ONLY ONE SQL statement, **no code fences**, no explanation.
 - Return **read-only SELECT** (or WITH ... SELECT). Absolutely no DDL/DML.
+- **DO NOT include semicolon (;) at the end of the SQL statement.**
 
 Tables (columns):
 ${Object.entries(ALLOWED)
@@ -228,19 +229,29 @@ export async function narrateArrayWithOpenRouter(
 
   if (!resp.ok) {
     const text = await resp.text();
-    throw new Error(`OpenRouter error: ${resp.status} ${text}`);
+    console.error(`[OpenRouter Narration] API error ${resp.status}:`, text);
+    throw new Error(`ไม่สามารถเรียบเรียงข้อมูลได้ (${resp.status})`);
   }
 
   const data = await resp.json();
   const text: string = data?.choices?.[0]?.message?.content?.trim?.() ?? "";
-  if (!text) throw new Error("Empty response from OpenRouter");
+  if (!text) {
+    console.error("[OpenRouter Narration] Empty response");
+    throw new Error("AI model ไม่สามารถเรียบเรียงข้อมูลได้");
+  }
   return text;
 }
 
 export async function GETSQL(sql: string) {
   console.log("Executing SQL from chatbot (via internal proxy):", sql);
   const encodedSQL = encodeURIComponent(sql);
-  const resp = await fetch(`api/chatbot?sql=${encodedSQL}`, {
+
+  // ใช้ absolute URL สำหรับ server-side fetch
+  const baseUrl = process.env.NEXTAUTH_URL || "http://localhost:3000";
+  const url = `${baseUrl}/api/chatbot?sql=${encodedSQL}`;
+  console.log("Calling internal API:", url);
+
+  const resp = await fetch(url, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -250,7 +261,8 @@ export async function GETSQL(sql: string) {
 
   if (!resp.ok) {
     const errText = await resp.text().catch(() => "");
-    throw new Error(`chatbot error ${resp.status}: ${errText}`);
+    console.error("GETSQL error:", resp.status, errText);
+    throw new Error(`ไม่สามารถรันคำสั่ง SQL ได้ (${resp.status}): ${errText}`);
   }
   return resp.json();
 }
@@ -283,16 +295,26 @@ export async function callOpenRouter(userQuery: string): Promise<string> {
 
   if (!resp.ok) {
     const text = await resp.text();
-    throw new Error(`OpenRouter error: ${resp.status} ${text}`);
+    console.error(`[OpenRouter] API error ${resp.status}:`, text);
+    throw new Error(
+      `ไม่สามารถเชื่อมต่อกับ AI model ได้ (${resp.status}). กรุณาตรวจสอบ OPENROUTER_MODEL ใน .env ว่าถูกต้อง`,
+    );
   }
   const data = await resp.json();
-  const sql: string = data?.choices?.[0]?.message?.content?.trim?.() || "";
+  let sql: string = data?.choices?.[0]?.message?.content?.trim?.() || "";
 
-  if (!sql) throw new Error("Empty SQL from model");
+  if (!sql) {
+    console.error("[OpenRouter] Empty response from model");
+    throw new Error("AI model ไม่สามารถสร้าง SQL ได้");
+  }
 
-  return sql
+  // ลบ code fences และ semicolon
+  sql = sql
     .replace(/^```sql\s*/i, "")
     .replace(/^```\s*/i, "")
     .replace(/```$/i, "")
+    .replace(/;\s*$/g, "") // ลบ semicolon ท้ายประโยค
     .trim();
+
+  return sql;
 }
