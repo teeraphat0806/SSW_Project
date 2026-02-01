@@ -3,7 +3,7 @@ import prisma from "../../../../../lib/prisma";
 import { requireAuth } from "@/lib/permissions";
 export async function GET(
   req: NextRequest,
-  context: { params: Promise<{ year: number }> },
+  context: { params: Promise<{ year: string }> },
 ) {
   const { year } = await context.params;
   const authResult = await requireAuth([
