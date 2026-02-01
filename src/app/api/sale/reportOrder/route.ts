@@ -144,7 +144,14 @@ export async function GET(req: NextRequest) {
         createdAt: "desc",
       },
     });
-
+    const customerAddress = await prisma.customer.findUnique({
+      where: {
+        id: Number(customerId),
+      },
+      select: {
+        address: true,
+      },
+    });
     // Format the data
     const formattedBills = bills.map((bill) => ({
       id: bill.id,
@@ -152,6 +159,7 @@ export async function GET(req: NextRequest) {
       invoiceNo: bill.invoiceNo || "",
       customerName: bill.Customer?.name || "ไม่ระบุ",
       customerCode: bill.Customer?.code || "",
+      customerAddress: customerAddress?.address || "",
       grandTotal: bill.grandTotal || 0,
       formatted: {
         createdAt: bill.createdAt

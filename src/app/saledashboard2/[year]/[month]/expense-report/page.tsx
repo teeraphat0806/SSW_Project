@@ -21,41 +21,55 @@ const MONTH_NAMES = [
   "ธันวาคม",
 ];
 
-interface BillData {
+interface Expense {
   id: number;
-  createdAt: string;
-  invoiceNo: string;
-  customerName: string;
-  customerCode: string;
-  grandTotal: number;
+  date: string;
+  dateISO: string;
+  category: {
+    id: number;
+    name: string;
+    description: string | null;
+  } | null;
+  description: string;
+  amount: number;
+  receiptUrl: string | null;
+  staff: {
+    id: number;
+    name: string;
+  } | null;
   formatted: {
-    createdAt: string;
-    grandTotal: string;
+    date: string;
+    amount: string;
   };
 }
 
 interface ApiResponse {
   success: boolean;
-  data: BillData[];
+  data: Expense[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+    hasNextPage: boolean;
+    hasPrevPage: boolean;
+  };
   meta: {
     year: number;
     month: number;
     monthName: string;
-    totalBills: number;
     totalAmount: number;
-    formatted: {
-      totalAmount: string;
-    };
+    categoryBreakdown: any[];
   };
 }
 
-export default function SalesReportPage() {
+export default function ExpenseReportPage() {
   const params = useParams();
   const router = useRouter();
   const year = params.year as string;
   const month = params.month as string;
 
-  const [data, setData] = useState<BillData[]>([]);
+  const [data, setData] = useState<Expense[]>([]);
   const [meta, setMeta] = useState<ApiResponse["meta"] | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -67,8 +81,9 @@ export default function SalesReportPage() {
     const fetchData = async () => {
       try {
         setLoading(true);
+        // Fetch all expenses without pagination
         const response = await fetch(
-          `/api/sale/reportOrder?year=${year}&month=${month}`,
+          `/api/sale/expenses?year=${year}&month=${month}&limit=999999`,
         );
 
         if (!response.ok) {
@@ -141,31 +156,30 @@ export default function SalesReportPage() {
         <div className="p-12">
           {/* Header */}
           <div className="text-center mb-8">
-            <h1 className="text-4xl font-bold mb-3">ใบคุม INVOICE</h1>
+            <h1 className="text-4xl font-bold mb-3">รายงานค่าใช้จ่าย</h1>
             <p className="text-lg text-zinc-600">
               {monthName} {buddhistYear}
             </p>
-            <p className="text-lg text-zinc-600">ลูกค้า: ทั้งหมด</p>
           </div>
 
           {/* Table */}
           <table className="w-full border-collapse border-2 border-black">
             <thead>
-              <tr className=" ">
+              <tr>
                 <th className="border-2 border-black px-3 py-2 text-lg font-bold text-center">
                   ลำดับ
                 </th>
                 <th className="border-2 border-black px-3 py-2 text-lg font-bold text-center">
-                  วันที่ขาย
+                  วันที่
                 </th>
                 <th className="border-2 border-black px-3 py-2 text-lg font-bold text-center">
-                  เลขที่ Invoice
+                  ประเภท
                 </th>
                 <th className="border-2 border-black px-3 py-2 text-lg font-bold text-center">
-                  ชื่อลูกค้า
+                  รายละเอียด
                 </th>
                 <th className="border-2 border-black px-3 py-2 text-lg font-bold text-center">
-                  มอดขาย (฿)
+                  ยอดเงิน (฿)
                 </th>
               </tr>
             </thead>
@@ -180,26 +194,26 @@ export default function SalesReportPage() {
                   </td>
                 </tr>
               ) : (
-                data.map((bill, index) => (
-                  <tr key={bill.id}>
+                data.map((expense, index) => (
+                  <tr key={expense.id}>
                     <td className="border-2 border-black px-3 py-2 text-lg text-center">
                       {index + 1}
                     </td>
                     <td className="border-2 border-black px-3 py-2 text-lg text-center">
-                      {new Date(bill.createdAt).toLocaleDateString("th-TH", {
+                      {new Date(expense.dateISO).toLocaleDateString("th-TH", {
                         day: "numeric",
                         month: "short",
                         year: "numeric",
                       })}
                     </td>
                     <td className="border-2 border-black px-3 py-2 text-lg text-center">
-                      {bill.invoiceNo || "-"}
+                      {expense.category?.name || "ไม่ระบุ"}
                     </td>
                     <td className="border-2 border-black px-3 py-2 text-lg">
-                      {bill.customerName}
+                      {expense.description || "-"}
                     </td>
                     <td className="border-2 border-black px-3 py-2 text-lg text-right">
-                      ฿{bill.grandTotal.toLocaleString("en-US")}
+                      ฿{expense.amount.toLocaleString("en-US")}
                     </td>
                   </tr>
                 ))
@@ -211,7 +225,7 @@ export default function SalesReportPage() {
                   colSpan={4}
                   className="border-2 border-black px-3 py-2 text-lg font-bold text-right"
                 >
-                  รวมทั้งหมด ({meta?.totalBills || 0} คำสั่ง)
+                  รวมทั้งหมด ({data.length} รายการ)
                 </td>
                 <td className="border-2 border-black px-3 py-2 text-lg font-bold text-right">
                   ฿{(meta?.totalAmount || 0).toLocaleString("en-US")}

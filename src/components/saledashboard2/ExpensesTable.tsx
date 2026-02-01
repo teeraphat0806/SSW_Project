@@ -9,7 +9,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight, ArrowUpDown } from "lucide-react";
+import { ChevronLeft, ChevronRight, ArrowUpDown, Printer } from "lucide-react";
 import { Loader2 } from "lucide-react";
 interface ExpenseCategory {
   id: number;
@@ -164,6 +164,19 @@ export function ExpensesTable({ year, month }: ExpensesTableProps) {
         <h2 className="text-2xl font-bold text-zinc-900 dark:text-white">
           ตารางรายจ่าย (รายละเอียด)
         </h2>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() =>
+            window.open(
+              `/saledashboard2/${year}/${month}/expense-report`,
+              "_blank",
+            )
+          }
+        >
+          <Printer className="h-4 w-4 mr-2" />
+          พิมพ์รายงาน
+        </Button>
       </div>
 
       {/* Filters */}
