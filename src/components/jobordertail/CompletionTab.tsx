@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   CheckCircle2,
   AlertTriangle,
@@ -18,6 +18,7 @@ import {
   JobOrder,
   JobStatus,
 } from "@/app/job-order-detail/[id]/JobOrderDetailClient"; // ปรับ path ตามจริง
+import { calculateBillSummary } from "@/lib/calculateGrandTotal";
 
 // Helper function to format date/time
 const formatDate = (date: Date | string | undefined) => {
@@ -41,6 +42,10 @@ export function CompletionTab({
   onUpdateStatus,
 }: CompletionTabProps) {
   const [isConfirming, setIsConfirming] = useState(false);
+  const { grandTotal } = useMemo(
+    () => calculateBillSummary(jobOrder?.steel || [], jobOrder?.vatRate || 7),
+    [jobOrder],
+  );
 
   if (!jobOrder) {
     return (
@@ -58,7 +63,6 @@ export function CompletionTab({
     (acc, item) => acc + item.weight,
     0,
   );
-  const totalPrice = jobOrder.steel.reduce((acc, item) => acc + item.price, 0);
 
   const handleCompleteJob = () => {
     onUpdateStatus("completed");
@@ -116,7 +120,7 @@ export function CompletionTab({
               </div>
               <span className="text-sm text-muted-foreground">มูลค่ารวม</span>
               <span className="text-xl font-bold">
-                {totalPrice.toLocaleString()} ฿
+                {grandTotal.toLocaleString()} ฿
               </span>
             </div>
           </div>
@@ -202,7 +206,7 @@ export function CompletionTab({
               </div>
               <div>
                 <div className="text-2xl font-bold text-primary">
-                  {totalPrice.toLocaleString()}
+                  {grandTotal.toLocaleString()}
                 </div>
                 <div className="text-xs text-muted-foreground">บาท</div>
               </div>
@@ -235,7 +239,7 @@ export function CompletionTab({
 
               <p className="text-sm text-muted-foreground leading-relaxed">
                 {isConfirming
-                  ? "การดำเนินการนี้ไม่สามารถย้อนกลับได้ สถานะจะถูกเปลี่ยนเป็น Completed และจะถูกล็อคทันที"
+                  ? "การดำเนินการนี้ไม่สามารถย้อนกลับได้ สถานะจะถูกเปลี่ยนเป็น สำเร็จ และจะถูกล็อคทันที"
                   : "เมื่อตรวจสอบรายการทั้งหมดครบถ้วนแล้ว กดปุ่มด้านล่างเพื่อยืนยันการเสร็จสิ้นงาน"}
               </p>
             </div>
