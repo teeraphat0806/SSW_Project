@@ -130,6 +130,11 @@ export async function GET(req: NextRequest) {
           gt: 0, // Greater than 0
         },
         customerId: Number(customerId) || undefined,
+        OrderPO: {
+          is: {
+            status: "completed",
+          },
+        },
       },
       include: {
         Customer: {

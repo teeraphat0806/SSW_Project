@@ -105,6 +105,11 @@ export async function GET(req: NextRequest) {
             gte: startOfDay,
             lt: endOfDay,
           },
+          OrderPO: {
+            is: {
+              status: "completed",
+            },
+          },
         },
         _sum: {
           grandTotal: true,

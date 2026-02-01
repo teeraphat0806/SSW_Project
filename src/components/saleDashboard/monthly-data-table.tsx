@@ -66,7 +66,7 @@ export function MonthlyDataTable({ data, year }: MonthlyDataTableProps) {
           <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
             {data.length > 0 ? (
               data
-                .filter((item) => item.income !== 0)
+                .filter((item) => item.salesAmt !== 0)
                 .map((item) => (
                   <tr
                     key={item.month}

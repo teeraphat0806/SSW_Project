@@ -73,6 +73,11 @@ export async function GET(
             gte: startOfMonth,
             lt: endOfMonth,
           },
+          OrderPO: {
+            is: {
+              status: "completed",
+            },
+          },
         },
         _sum: {
           grandTotal: true,

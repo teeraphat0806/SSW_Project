@@ -453,7 +453,7 @@ export function CustomerSalesTable({ year, month }: CustomerSalesTableProps) {
                   onClick={() => handleSortChange("quantity")}
                 >
                   <div className="flex items-center justify-end gap-2">
-                    จำนวนสินค้า
+                    จำนวนบิล
                     <ArrowUpDown className="h-3 w-3" />
                   </div>
                 </th>

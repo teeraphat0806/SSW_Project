@@ -107,6 +107,11 @@ export async function GET(req: NextRequest) {
           gte: startOfMonth,
           lt: endOfMonth,
         },
+        OrderPO: {
+          is: {
+            status: "completed",
+          },
+        },
       },
       _sum: {
         grandTotal: true,
