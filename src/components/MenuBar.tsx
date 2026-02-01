@@ -10,6 +10,7 @@ import {
   X,
   MessageCircle,
   UserRound,
+  Boxes,
 } from "lucide-react";
 import Link from "next/link";
 import { signOut, useSession } from "next-auth/react";
@@ -72,6 +73,11 @@ export default function NavbarWithSidebar() {
             icon={<UserRound size={20} />}
             label="ลูกค้า"
             href="/customer-Dashboard"
+          />
+          <SidebarItem
+            icon={<Boxes size={20} />}
+            label="สินค้า"
+            href="/steel-Dashboard"
           />
           <SidebarItem
             icon={<ClipboardList size={20} />}

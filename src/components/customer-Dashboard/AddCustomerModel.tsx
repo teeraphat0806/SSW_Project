@@ -17,7 +17,7 @@ import { toast } from "react-toastify";
 
 // --- Types & Schema (คงเดิม) ---
 type CustomerPayload = {
-  code: string;
+  code: string | null;
   name: string;
   address: string;
   tel: string;
@@ -45,11 +45,7 @@ const initialForm: CustomerPayload = {
 const digitsOnly = (s: string) => s.replace(/\D/g, "");
 
 const CustomerFormSchema = z.object({
-  code: z
-    .string()
-    .trim()
-    .min(1, "กรุณากรอกรหัสลูกค้า")
-    .max(50, "รหัสลูกค้ายาวเกินไป"),
+  code: z.string().trim().max(50, "รหัสลูกค้ายาวเกินไป").nullable().optional(),
   name: z
     .string()
     .trim()
@@ -81,7 +77,7 @@ const CustomerFormSchema = z.object({
       "แฟกซ์ควรเป็นตัวเลข 7–13 หลัก",
     ),
 });
-
+//
 type FieldErrors = Partial<Record<keyof CustomerPayload, string>>;
 
 // --- Component ---
@@ -254,12 +250,11 @@ export default function AddCustomerModal({ open, onClose, onCreated }: Props) {
             <InputField
               id="customer-code"
               label="รหัสลูกค้า"
-              value={form.code}
+              value={form.code ?? ""}
               onChange={setField("code")}
               placeholder="เช่น C-001"
               error={fieldErrors.code}
               icon={<Hash size={16} />}
-              required
             />
 
             <InputField

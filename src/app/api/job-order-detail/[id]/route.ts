@@ -17,11 +17,12 @@ type ApiJobOrder = {
   customerName: string;
   customerEmail: string;
   customerPhone: string;
-  customercode: string;
+  customercode: string | null;
   deliveryAddress: string;
   key: string[];
   supervisors: ApiStaffMember[];
   technicians: ApiStaffMember[];
+  vatRate: number;
   steel: {
     steelType: string;
     amount: number;
@@ -34,7 +35,7 @@ type ApiJobOrder = {
     detail?: string;
     shape: string;
     job?: number;
-    cuttingMethod: "normal" | "FB" | "steelDisc";
+    cuttingMethod: "normal" | "FB" | "steelDisc" | "CNC";
   }[];
   updatedAt: Date;
   status:
@@ -67,7 +68,7 @@ export async function GET(
     const jobOrder = await prisma.orderPO.findUnique({
       where: { id: poId },
       include: {
-        bill: { select: { id: true, deliveryDate: true } },
+        bill: { select: { id: true, deliveryDate: true, vatRate: true } },
         Product: {
           include: {
             SteelType: true,
@@ -129,6 +130,7 @@ export async function GET(
       key: jobOrder.urlPo.length ? jobOrder.urlPo : [],
       supervisors: supervisors ?? [],
       technicians: technicians ?? [],
+      vatRate: bill.vatRate,
       steel: jobOrder.Product.map((p) => ({
         steelType: p.SteelType.codeSteel, // SteelType เป็น non-null ตาม schema
         amount: p.amount,

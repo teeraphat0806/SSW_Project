@@ -112,7 +112,7 @@ type ApiReceipt = {
     weight: number | null;
     total: number;
     job?: number | null;
-    cuttingMethod?: "normal" | "FB" | "steelDisc";
+    cuttingMethod?: "normal" | "FB" | "steelDisc" | "CNC";
   }[];
 };
 

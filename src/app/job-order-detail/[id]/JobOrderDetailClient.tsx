@@ -17,6 +17,7 @@ import {
   Building2,
   Factory,
   Truck,
+  CheckCircle2,
 } from "lucide-react";
 import { QuickAction } from "@/components/jobordertail/QuickAction";
 import { StaffInfoCard } from "@/components/jobordertail/StaffInfoCard";
@@ -29,6 +30,7 @@ import { CancelOrderButton } from "@/components/jobordertail/cancelOrderButton";
 
 import { LoadingScreen } from "@/components/Loading";
 import { toast } from "react-toastify";
+import { CompletionTab } from "@/components/jobordertail/CompletionTab";
 
 type StaffMember = {
   id: number;
@@ -36,7 +38,7 @@ type StaffMember = {
   role: "supervisor" | "cutter";
 };
 
-type JobStatus =
+export type JobStatus =
   | "pending"
   | "cutting"
   | "weighing"
@@ -58,6 +60,7 @@ type ApiJobOrder = {
   key: string[];
   supervisors: StaffMember[];
   technicians: StaffMember[];
+  vatRate: number | null;
 
   steel: {
     steelType: string;
@@ -71,7 +74,7 @@ type ApiJobOrder = {
     detail?: string | null;
     shape: string;
     job?: number | null;
-    cuttingMethod: "normal" | "FB" | "steelDisc" | null;
+    cuttingMethod: "normal" | "FB" | "steelDisc" | "CNC" | null;
   }[];
 
   status: JobStatus;
@@ -82,7 +85,7 @@ type ApiJobOrder = {
   completedAt?: string | null;
 };
 
-interface JobOrder {
+export type JobOrder = {
   id: string;
   billid: number;
   poNumber: string | null;
@@ -95,6 +98,7 @@ interface JobOrder {
   key: string[];
   supervisors: StaffMember[];
   technicians: StaffMember[];
+  vatRate: number;
   steel: Array<{
     steelType: string;
     amount: number;
@@ -106,7 +110,7 @@ interface JobOrder {
     detail?: string;
     density: number;
     job?: number;
-    cuttingMethod: "normal" | "FB" | "steelDisc";
+    cuttingMethod: "normal" | "FB" | "steelDisc" | "CNC";
     shape: string;
   }>;
   status: JobStatus;
@@ -115,7 +119,7 @@ interface JobOrder {
   updatedAt: Date;
   assignedCutter?: string;
   completedAt?: Date;
-}
+};
 
 // --- DATA MAPPING FUNCTION (จุดสำคัญที่แก้ไข) ---
 
@@ -134,7 +138,7 @@ const tojobOrder = (api: ApiJobOrder): JobOrder => {
     key: api.key ?? [],
     supervisors: api.supervisors,
     technicians: api.technicians,
-
+    vatRate: api.vatRate ?? 7,
     steel: (api.steel || []).map((s) => ({
       steelType: s.steelType,
       amount: s.amount,
@@ -251,7 +255,7 @@ const JobOrderDetailPage = ({ id }: { id: string }) => {
           "ยังไปขั้นตอนถัดไปไม่ได้: ต้องกรอกน้ำหนักเหล็กก่อน แล้วจึงเปลี่ยนเป็น READY ได้",
           {
             position: "bottom-right",
-          }
+          },
         );
         console.log("Cannot change to READY: Weight missing");
 
@@ -276,7 +280,7 @@ const JobOrderDetailPage = ({ id }: { id: string }) => {
             "ไม่มีสิทธิ์เข้าถึง (Access Denied): คุณไม่มีสิทธิ์ในการแก้ไขสถานะนี้",
             {
               position: "bottom-right",
-            }
+            },
           );
           console.error("Access Denied: No permission to update status");
 
@@ -294,7 +298,7 @@ const JobOrderDetailPage = ({ id }: { id: string }) => {
         `เปลี่ยนสถานะเป็น ${toThaiStatus(newStatus)} เรียบร้อยแล้ว`,
         {
           position: "bottom-right",
-        }
+        },
       );
       console.log("Status updated successfully");
     } catch (error: any) {
@@ -311,7 +315,7 @@ const JobOrderDetailPage = ({ id }: { id: string }) => {
               (error.message || "ไม่สามารถอัปเดตสถานะได้ กรุณาลองใหม่อีกครั้ง"),
         {
           position: "bottom-right",
-        }
+        },
       );
     } finally {
       setIsUpdating(false);
@@ -344,7 +348,7 @@ const JobOrderDetailPage = ({ id }: { id: string }) => {
             "ไม่มีสิทธิ์เข้าถึง (Access Denied): คุณไม่มีสิทธิ์ยกเลิกออเดอร์นี้",
             {
               position: "bottom-right",
-            }
+            },
           );
           console.error("Access Denied: No permission to cancel this order");
 
@@ -364,7 +368,7 @@ const JobOrderDetailPage = ({ id }: { id: string }) => {
         "ยกเลิกล้มเหลว: " + (error.message || "ไม่สามารถยกเลิกออเดอร์ได้"),
         {
           position: "bottom-right",
-        }
+        },
       );
       console.error("Cancel Error:", error);
     } finally {
@@ -420,9 +424,6 @@ const JobOrderDetailPage = ({ id }: { id: string }) => {
           </div>
         </div>
       </header>
-      {/* <pre className="text-xs overflow-auto p-3 border rounded">
-        {JSON.stringify(jobOrder, null, 2)}
-      </pre> */}
 
       <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
         {/* --- Page Header & Actions --- */}
@@ -509,7 +510,7 @@ const JobOrderDetailPage = ({ id }: { id: string }) => {
             </Card>
 
             {/* Steel Order Table */}
-            <SteelOrderTable steel={jobOrder?.steel || []} />
+            <SteelOrderTable steel={jobOrder?.steel || []}  vatRate={jobOrder?.vatRate || 7} />
 
             {/* Tabs Card */}
             <Card className="rounded-lg shadow-md ">
@@ -528,6 +529,11 @@ const JobOrderDetailPage = ({ id }: { id: string }) => {
                       },
                       { id: "Production", label: "การผลิต", icon: Factory },
                       { id: "Delivery", label: "การจัดส่ง", icon: Truck },
+                      {
+                        id: "Completion",
+                        label: "เสร็จสิ้น",
+                        icon: CheckCircle2,
+                      },
                     ].map((tab) => (
                       <TabsTrigger
                         key={tab.id}
@@ -592,17 +598,22 @@ const JobOrderDetailPage = ({ id }: { id: string }) => {
                         "canceled"
                       >
                     }
-                    // ✅ แก้ตรงนี้: เช็คว่ามี jobOrder ก่อนค่อยแปลงวันที่ ถ้าไม่มีให้ส่ง string ว่างหรือ "-"
                     deliveryDate={
                       jobOrder?.deliveryDate
                         ? jobOrder.deliveryDate.toLocaleDateString("th-TH")
                         : "-"
                     }
-                    // ✅ แนะนำให้แก้ตรงนี้ด้วย: เพื่อป้องกันส่ง undefined ไปยัง Component ลูก
                     deliveryAddress={jobOrder?.deliveryAddress ?? "-"}
                     onUpdateStatus={handleStatusUpdate}
                     className=""
                     items={jobOrder?.steel || []}
+                  />
+                </TabsContent>
+
+                <TabsContent value="Completion" className="mt-0">
+                  <CompletionTab
+                    jobOrder={jobOrder}
+                    onUpdateStatus={handleStatusUpdate}
                   />
                 </TabsContent>
               </Tabs>
