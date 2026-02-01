@@ -70,7 +70,7 @@ export default function Sidebar() {
           <SidebarItem
             icon={<ClipboardList size={20} />}
             label="ยอดขาย"
-            href="/saledashboards"
+            href="/saledashboard2"
             expanded={expanded}
           />
           <SidebarItem
