@@ -160,6 +160,82 @@ export function CustomerSalesTable({ year, month }: CustomerSalesTableProps) {
     });
   };
 
+  // Popup state
+  const [showPrintModal, setShowPrintModal] = useState(false);
+  const [printType, setPrintType] = useState<
+    "invoice" | "receipt" | "billing" | null
+  >(null);
+  const [selectedPrintCustomer, setSelectedPrintCustomer] =
+    useState<string>("all");
+  const [printing, setPrinting] = useState(false);
+
+  // Helper for opening print tab(s)
+  const handlePrint = async () => {
+    setPrinting(true);
+
+    if (printType === "invoice") {
+      window.open(`/saledashboard2/${year}/${month}/report/`, "_blank");
+      setPrinting(false);
+    } else if (printType === "receipt" && customers.length > 0) {
+      if (selectedPrintCustomer === "all") {
+        // เปิดทีละ tab เพื่อไม่ให้โดน popup blocker
+        for (let i = 0; i < customers.length; i++) {
+          const c = customers[i];
+          setTimeout(() => {
+            const url = `/saledashboard2/${year}/${month}/receipt/?customerId=${c.id}&customerCode=${encodeURIComponent(c.code)}&customerName=${encodeURIComponent(c.name)}`;
+            window.open(url, "_blank");
+
+            // หยุด loading เมื่อเปิดครบแล้ว
+            if (i === customers.length - 1) {
+              setPrinting(false);
+            }
+          }, i * 300); // เพิ่ม delay เป็น 300ms
+        }
+      } else {
+        const customer = customers.find(
+          (c) => c.id.toString() === selectedPrintCustomer,
+        );
+        if (customer) {
+          const url = `/saledashboard2/${year}/${month}/receipt/?customerId=${selectedPrintCustomer}&customerCode=${encodeURIComponent(customer.code)}&customerName=${encodeURIComponent(customer.name)}`;
+          window.open(url, "_blank");
+        }
+        setPrinting(false);
+      }
+    } else if (printType === "billing" && customers.length > 0) {
+      if (selectedPrintCustomer === "all") {
+        // เปิดทีละ tab เพื่อไม่ให้โดน popup blocker
+        for (let i = 0; i < customers.length; i++) {
+          const c = customers[i];
+          setTimeout(() => {
+            const url = `/saledashboard2/${year}/${month}/billing/?customerId=${c.id}&customerCode=${encodeURIComponent(c.code)}&customerName=${encodeURIComponent(c.name)}`;
+            window.open(url, "_blank");
+
+            // หยุด loading เมื่อเปิดครบแล้ว
+            if (i === customers.length - 1) {
+              setPrinting(false);
+            }
+          }, i * 300); // เพิ่ม delay เป็น 300ms
+        }
+      } else {
+        const customer = customers.find(
+          (c) => c.id.toString() === selectedPrintCustomer,
+        );
+        if (customer) {
+          const url = `/saledashboard2/${year}/${month}/billing/?customerId=${selectedPrintCustomer}&customerCode=${encodeURIComponent(customer.code)}&customerName=${encodeURIComponent(customer.name)}`;
+          window.open(url, "_blank");
+        }
+        setPrinting(false);
+      }
+    }
+
+    // ปิด modal หลังจาก delay เล็กน้อย
+    setTimeout(() => {
+      setShowPrintModal(false);
+      setPrintType(null);
+      setSelectedPrintCustomer("all");
+    }, 500);
+  };
+
   return (
     <div className="space-y-4">
       {/* Header */}
@@ -170,17 +246,104 @@ export function CustomerSalesTable({ year, month }: CustomerSalesTableProps) {
         <Button
           variant="outline"
           size="sm"
-          onClick={() => {
-            window.open(
-              `/saledashboard2/${year}/${month}/report`,
-              "_blank",
-            );
-          }}
+          onClick={() => setShowPrintModal(true)}
         >
           <Printer className="h-4 w-4 mr-2" />
           พิมพ์รายงาน
         </Button>
       </div>
+
+      {/* Print Modal */}
+      {showPrintModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
+          <div className="bg-white dark:bg-zinc-900 rounded-xl shadow-lg p-6 min-w-[320px] max-w-[90vw]">
+            <h3 className="text-lg font-bold mb-4">
+              เลือกประเภทเอกสารที่ต้องการพิมพ์
+            </h3>
+            <div className="space-y-3">
+              <div>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="printType"
+                    value="invoice"
+                    checked={printType === "invoice"}
+                    onChange={() => setPrintType("invoice")}
+                  />
+                  ใบคุม INVOICE
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer mt-2">
+                  <input
+                    type="radio"
+                    name="printType"
+                    value="receipt"
+                    checked={printType === "receipt"}
+                    onChange={() => setPrintType("receipt")}
+                  />
+                  ใบเสร็จรับเงิน
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer mt-2">
+                  <input
+                    type="radio"
+                    name="printType"
+                    value="billing"
+                    checked={printType === "billing"}
+                    onChange={() => setPrintType("billing")}
+                  />
+                  ใบวางบิล
+                </label>
+              </div>
+
+              {/* Customer dropdown for receipt/billing */}
+              {(printType === "receipt" || printType === "billing") && (
+                <div className="mt-4">
+                  <label className="block text-sm font-medium mb-2">
+                    เลือกลูกค้า
+                  </label>
+                  <select
+                    className="w-full border rounded px-3 py-2 text-foreground bg-background"
+                    value={selectedPrintCustomer}
+                    onChange={(e) => setSelectedPrintCustomer(e.target.value)}
+                  >
+                    <option value="all">ทั้งหมด (แยกใบต่อ 1 ลูกค้า)</option>
+                    {customers.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.code} - {c.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+            </div>
+            <div className="flex gap-2 justify-end mt-6">
+              <Button
+                className="hover:cursor-pointer"
+                variant="ghost"
+                onClick={() => {
+                  setShowPrintModal(false);
+                  setPrintType(null);
+                  setSelectedPrintCustomer("all");
+                }}
+              >
+                ยกเลิก
+              </Button>
+              <Button
+                className="hover:cursor-pointer"
+                variant="default"
+                disabled={
+                  !printType ||
+                  ((printType === "receipt" || printType === "billing") &&
+                    customers.length === 0)
+                }
+                onClick={handlePrint}
+              >
+                <Printer className="h-4 w-4 mr-2" />
+                {printing ? "กำลังเปิด..." : "พิมพ์"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Filters */}
       <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-sm border border-zinc-200 dark:border-zinc-800 p-6">

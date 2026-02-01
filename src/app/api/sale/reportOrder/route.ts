@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "../../../../lib/prisma";
 import { requireAuth } from "@/lib/permissions";
-
+function isNumericString(value: string): boolean {
+  return /^[0-9]+$/.test(value);
+}
 export async function GET(req: NextRequest) {
   const authResult = await requireAuth([
     "superadmin",
@@ -22,8 +24,25 @@ export async function GET(req: NextRequest) {
     const searchParams = req.nextUrl.searchParams;
     const year = searchParams.get("year");
     const month = searchParams.get("month");
-
-    // Validate required parameters
+    const customerId = searchParams.get("customerId") || "";
+    // Validate required parameter
+    if (isNumericString(customerId) === false && customerId !== "") {
+      return NextResponse.json(
+        {
+          success: false,
+          error: {
+            code: "INVALID_CUSTOMER_ID",
+            message: "รหัสลูกค้าไม่ถูกต้อง ต้องเป็นตัวเลขเท่านั้น",
+            details: {
+              field: "customerId",
+              provided: customerId,
+              expected: "Numeric string",
+            },
+          },
+        },
+        { status: 400 },
+      );
+    }
     if (!year || !month) {
       return NextResponse.json(
         {
@@ -110,6 +129,7 @@ export async function GET(req: NextRequest) {
           not: null,
           gt: 0, // Greater than 0
         },
+        customerId: Number(customerId) || undefined,
       },
       include: {
         Customer: {

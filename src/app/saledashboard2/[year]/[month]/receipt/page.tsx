@@ -1,6 +1,6 @@
 "use client";
 
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Printer, ArrowLeft } from "lucide-react";
@@ -49,11 +49,13 @@ interface ApiResponse {
   };
 }
 
-export default function SalesReportPage() {
+export default function ReceiptReportPage() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const year = params.year as string;
   const month = params.month as string;
+  const customerId = searchParams.get("customerId");
 
   const [data, setData] = useState<BillData[]>([]);
   const [meta, setMeta] = useState<ApiResponse["meta"] | null>(null);
@@ -67,16 +69,13 @@ export default function SalesReportPage() {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const response = await fetch(
-          `/api/sale/reportOrder?year=${year}&month=${month}`,
-        );
-
-        if (!response.ok) {
-          throw new Error("Failed to fetch data");
+        let url = `/api/sale/reportOrder?year=${year}&month=${month}`;
+        if (customerId && customerId !== "all") {
+          url += `&customerId=${customerId}`;
         }
-
+        const response = await fetch(url);
+        if (!response.ok) throw new Error("Failed to fetch data");
         const result: ApiResponse = await response.json();
-
         if (result.success) {
           setData(result.data);
           setMeta(result.meta);
@@ -89,9 +88,8 @@ export default function SalesReportPage() {
         setLoading(false);
       }
     };
-
     fetchData();
-  }, [year, month]);
+  }, [year, month, customerId]);
 
   const handlePrint = () => {
     window.print();
@@ -104,7 +102,6 @@ export default function SalesReportPage() {
       </div>
     );
   }
-
   if (error) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white">
@@ -130,24 +127,24 @@ export default function SalesReportPage() {
           พิมพ์งาน
         </Button>
       </div>
-
       {/* A4 Paper */}
       <div className="mx-auto" style={{ width: "210mm", minHeight: "297mm" }}>
         {/* Content */}
         <div className="p-12">
           {/* Header */}
           <div className="text-center mb-8">
-            <h1 className="text-4xl font-bold mb-3">ใบคุม INVOICE</h1>
+            <h1 className="text-4xl font-bold mb-3">ใบเสร็จรับเงิน</h1>
             <p className="text-lg text-zinc-600">
               {monthName} {buddhistYear}
             </p>
-            <p className="text-lg text-zinc-600">ลูกค้า: ทั้งหมด</p>
+            <p className="text-lg text-zinc-600">
+              ลูกค้า: {data[0]?.customerName || "-"}
+            </p>
           </div>
-
           {/* Table */}
           <table className="w-full border-collapse border-2 border-black">
             <thead>
-              <tr className=" ">
+              <tr>
                 <th className="border-2 border-black px-3 py-2 text-lg font-bold text-center">
                   ลำดับ
                 </th>
@@ -161,7 +158,7 @@ export default function SalesReportPage() {
                   ชื่อลูกค้า
                 </th>
                 <th className="border-2 border-black px-3 py-2 text-lg font-bold text-center">
-                  มอดขาย (฿)
+                  ยอดขาย (฿)
                 </th>
               </tr>
             </thead>
@@ -217,74 +214,56 @@ export default function SalesReportPage() {
           </table>
         </div>
       </div>
-
       {/* Print Styles */}
       <style jsx global>{`
         table {
           border: 2px solid #000 !important;
         }
-
         table th,
         table td {
           border: 2px solid #000 !important;
         }
-
-        /* Prevent page breaks inside table rows */
         table tr {
           page-break-inside: avoid;
           break-inside: avoid;
         }
-
         @media print {
           @page {
             size: A4;
             margin: 15mm;
           }
-
           @page {
             margin-top: 15mm;
             margin-bottom: 15mm;
           }
-
           @page :first {
             margin-top: 15mm;
           }
-
           body {
             margin: 0;
             padding: 0;
           }
-
           .print\\:hidden {
             display: none !important;
           }
-
           table {
             border: 2px solid #000 !important;
             page-break-inside: auto;
           }
-
           table th,
           table td {
             border: 2px solid #000 !important;
           }
-
-          /* Prevent page breaks inside table rows */
           table tr {
             page-break-inside: avoid;
             break-inside: avoid;
           }
-
-          /* Keep table header on every page */
           thead {
             display: table-header-group;
           }
-
-          /* Keep table footer on every page */
           tfoot {
             display: table-footer-group;
           }
-
           tbody {
             display: table-row-group;
           }
