@@ -101,7 +101,7 @@ export default function MonthDetailPage() {
   }, [year, month]);
 
   return (
-    <div className="min-h-screen bg-zinc-50/50 dark:bg-zinc-950 p-8">
+    <div className="min-h-screen bg-zinc-50/50 dark:bg-zinc-950 p-8 mt-10 md:mt-0 lg:mt-0">
       <div className="max-w-7xl mx-auto space-y-8">
         {/* Header */}
         <div className="flex items-center gap-4">

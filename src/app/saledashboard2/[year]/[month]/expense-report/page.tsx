@@ -131,7 +131,7 @@ export default function ExpenseReportPage() {
   return (
     <div className="min-h-screen bg-zinc-50/50 dark:bg-zinc-950">
       {/* Print Controls - Hidden when printing */}
-      <div className="print:hidden fixed top-4 right-4 z-50 flex gap-2">
+      <div className="print:hidden fixed top-20 md:top-4 right-4 z-30 flex gap-2">
         <Button
           variant="outline"
           size="sm"

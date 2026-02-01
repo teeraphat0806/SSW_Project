@@ -22,8 +22,7 @@ function preprocessQuery(query: string): { query: string; context: string } {
 วันนี้: ${todayStr}
 เมื่อวาน: ${yesterdayStr}
 เดือนนี้: ${thisMonth}
-ปีนี้ (ค.ศ.): ${thisYear}
-ปีนี้ (พ.ศ.): ${thisYear + 543}
+ปีนี้: ${thisYear}
 `;
 
   // แปลงคำพูดเป็นวันที่จริง
@@ -32,20 +31,6 @@ function preprocessQuery(query: string): { query: string; context: string } {
     .replace(/เมื่อวาน/gi, yesterdayStr)
     .replace(/เดือนนี้/gi, `เดือน ${thisMonth}`)
     .replace(/ปีนี้/gi, `ปี ${thisYear}`);
-
-  // แปลงปีพุทธศักราช (พ.ศ.) เป็นคริสต์ศักราช (ค.ศ.)
-  // จับรูปแบบ: "ปี 2569", "ปี2569", "พ.ศ. 2569", "พ.ศ.2569", "2569"
-  processed = processed.replace(
-    /(?:ปี\s*|พ\.ศ\.\s*)?(25\d{2})/gi,
-    (match, year) => {
-      const buddhistYear = parseInt(year);
-      if (buddhistYear >= 2500 && buddhistYear <= 2600) {
-        const christianYear = buddhistYear - 543;
-        return `ปี ${christianYear}`;
-      }
-      return match;
-    },
-  );
 
   return { query: processed, context };
 }
@@ -59,24 +44,21 @@ interface KnowledgeItem {
 
 const KNOWLEDGE_BASE: KnowledgeItem[] = [
   {
-    pattern: /ยอดขาย|รายได้|ขายได้|ขายออเดอร์|ยอดรวม|รวมยอด|ซื้อเยอะ|ซื้อมาก/i,
+    pattern: /ยอดขาย|รายได้|ขายได้|ขายออเดอร์|ยอดรวม|รวมยอด/i,
     tables: ["Bill", "Customer", "OrderPO"],
     examples: [
       `SELECT SUM("grandTotal") as "total_sales" FROM "Bill" WHERE "deliveryDate" = '2024-01-15'`,
       `SELECT SUM("grandTotal") as "total_sales" FROM "Bill" WHERE "deliveryDate" >= '2024-01-01' AND "deliveryDate" < '2024-02-01'`,
-      `SELECT SUM("grandTotal") as "total_sales" FROM "Bill" WHERE EXTRACT(YEAR FROM "dateReceive") = 2026`,
-      `SELECT c."name", SUM(b."grandTotal") as "total_sales" FROM "Customer" c JOIN "Bill" b ON c."id" = b."customerId" WHERE EXTRACT(YEAR FROM b."dateReceive") = 2026 GROUP BY c."name" ORDER BY "total_sales" DESC LIMIT 1`,
       `SELECT c."name", SUM(b."grandTotal") as "total" FROM "Customer" c JOIN "Bill" b ON c."id" = b."customerId" GROUP BY c."name" ORDER BY "total" DESC`,
     ],
   },
   {
-    pattern: /ลูกค้า|เจ้าไหน|บริษัท|คัสเตอเมอร์|ซื้อเยอะ|ซื้อมาก/i,
+    pattern: /ลูกค้า|เจ้าไหน|บริษัท|คัสเตอเมอร์/i,
     tables: ["Customer", "Bill"],
     examples: [
       `SELECT * FROM "Customer" WHERE "name" ILIKE '%ธนาวรรณ%'`,
       `SELECT c."name", c."tel", c."address" FROM "Customer" c WHERE c."code" ILIKE '%C001%'`,
-      `SELECT c."name", SUM(b."grandTotal") as "total_sales" FROM "Customer" c JOIN "Bill" b ON c."id" = b."customerId" GROUP BY c."name" ORDER BY "total_sales" DESC LIMIT 10`,
-      `SELECT c."name", SUM(b."grandTotal") as "total_sales" FROM "Customer" c JOIN "Bill" b ON c."id" = b."customerId" WHERE EXTRACT(YEAR FROM b."dateReceive") = 2026 GROUP BY c."name" ORDER BY "total_sales" DESC LIMIT 1`,
+      `SELECT c."name", SUM(b."grandTotal") as "total" FROM "Customer" c JOIN "Bill" b ON c."id" = b."customerId" GROUP BY c."name" ORDER BY "total" DESC LIMIT 5`,
     ],
   },
   {
@@ -255,23 +237,46 @@ Rules:
 - Use ILIKE '%text%' for partial text search (names, codes, descriptions)
 - Use = only for exact IDs or numbers
 - For dates: Use ISO format 'YYYY-MM-DD'
-- For years in database: ALL dates are stored in Christian era (ค.ศ./AD), NOT Buddhist era (พ.ศ./BE)
-- Year conversion: Buddhist year (พ.ศ.) = Christian year (ค.ศ.) + 543
-  Example: พ.ศ. 2569 = ค.ศ. 2026, พ.ศ. 2568 = ค.ศ. 2025
-- For year filters: EXTRACT(YEAR FROM "dateColumn") = YYYY (use Christian year)
 - For month filters: EXTRACT(MONTH FROM "date") = N
 - For aggregations: Always use GROUP BY with aggregate functions
-- For "top N": USE ORDER BY ... DESC LIMIT N
+- For "top N": Use ORDER BY ... DESC LIMIT N
 - Alias results clearly: "total_sales", "customer_name", etc.
 `;
 
 export async function narrateArrayWithOpenRouter(
   dataArray: unknown[],
 ): Promise<string> {
-  if (!OPENROUTER_API_KEY) {
-    throw new Error("Missing OPENROUTER_API_KEY");
-  }
-  if (!Array.isArray(dataArray) || dataArray.length === 0) {
+- Always alias results with safe snake_case (quoted), e.g. "total_sales".
+
+String search rules (very important):
+- When the user asks to find data by **name**, **company name**, **staff name**, **customer name**, **product detail**, **invoice**, **PO number**, **bank name**, **description**, or any text field that could be incomplete,
+  you must use **ILIKE** with wildcards on both sides:  
+  e.g. \`"Customer"."name" ILIKE '%' || <keyword> || '%'\`
+- Apply this rule to **every table** that contains textual fields (such as "name", "detail", "description", "code", "bankName", "address", "email", "tel", etc).
+- Always use ILIKE instead of = when comparing text fields that are likely partial or uncertain.
+- Only use = for exact identifiers like numeric IDs, unique codes, or foreign keys.
+- If the user inputs a Buddhist year (ปี พ.ศ.), convert it to Christian year (ปี ค.ศ.) by subtracting 543.
+- If the user says the customer name directly → use "=".
+- If the user says “มีคำว่า”, “contains”, “ประมาณว่า”, or types partial text → use ILIKE '%keyword%'.
+- For date filters:
+  - If user asks for a single day → use o."date"::date = DATE 'YYYY-MM-DD'.
+  - If user asks for a date range → use:
+      o."date" >= 'YYYY-MM-DD 00:00:00'
+      AND o."date" <  'YYYY-MM-DD1 00:00:00'
+  - If user includes time range → merge date  time:
+      o."date" >= 'YYYY-MM-DD HH:MM:00'
+      AND o."date" <= 'YYYY-MM-DD HH:MM:59'
+- If user mentions PO number → search with ILIKE unless the user explicitly says “เท่ากับ”.
+
+General behavior:
+- Always return a valid PostgreSQL SELECT or WITH ... SELECT statement.
+- Prefer joins only when the query explicitly mentions relationships (e.g. customer name with bill total).
+- When in doubt between equality and partial match, prefer **ILIKE with wildcards**.
+- Never output explanations, Markdown fences, or extra text—only pure SQL.
+- Always convert พ.ศ. to ค.ศ. when needed.
+`;
+
+export async function narrateArrayWithOpenRouter(
     throw new Error("Invalid or empty data array");
   }
 
@@ -361,7 +366,7 @@ export async function callOpenRouter(userQuery: string): Promise<string> {
 
   // Step 2: Get relevant context (RAG)
   const relevantContext = getRelevantContext(processedQuery);
-
+  
   // Step 3: Build optimized prompt
   const systemPrompt = `${BASE_SCHEMA_RULES}
 
@@ -394,7 +399,7 @@ Instructions:
       model: OPENROUTER_MODEL,
       messages,
       temperature: 0.1,
-      max_tokens: 500,
+      max_tokens: 500, // ลดลงเพราะ prompt สั้นลง
     }),
   });
 
@@ -418,7 +423,7 @@ Instructions:
     .replace(/^```sql\s*/i, "")
     .replace(/^```\s*/i, "")
     .replace(/```$/i, "")
-    .replace(/;\s*$/g, "")
+    .replace(/;\s*$/g, "") // ลบ semicolon ท้ายประโยค
     .trim();
 
   console.log("[Chatbot] Final SQL:", sql);

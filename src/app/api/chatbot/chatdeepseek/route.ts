@@ -59,6 +59,15 @@ export async function POST(req: NextRequest) {
     // });
     const response = await GETSQL(rawSql);
 
+    // ตรวจสอบว่ามีข้อมูลหรือไม่
+    if (!response || (Array.isArray(response) && response.length === 0)) {
+      return NextResponse.json({
+        sql: rawSql,
+        result:
+          "ไม่พบข้อมูลที่ตรงกับคำถามของคุณ อาจเป็นเพราะไม่มีข้อมูลในช่วงเวลาที่ระบุ หรือเงื่อนไขการค้นหาไม่ตรงกับข้อมูลในระบบ",
+      });
+    }
+
     if (Array.isArray(response)) {
       const rowWithUrlPo = response.find(
         (row) =>

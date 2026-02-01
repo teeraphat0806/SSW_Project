@@ -197,23 +197,23 @@ export default function ReceiptReportPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-white">
+      <div className="min-h-screen flex items-center justify-center bg-white dark:bg-zinc-950">
         <Loader2 className="h-12 w-12 animate-spin text-zinc-400" />
       </div>
     );
   }
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-white">
+      <div className="min-h-screen flex items-center justify-center bg-white dark:bg-zinc-950">
         <p className="text-red-500">เกิดข้อผิดพลาด: {error}</p>
       </div>
     );
   }
 
   return (
-    <div className="bg-white">
+    <div className="bg-white dark:bg-zinc-950 print:bg-white">
       {/* Print Controls - Hidden when printing */}
-      <div className="print:hidden fixed top-4 right-4 z-50 flex gap-2">
+      <div className="print:hidden fixed top-20 md:top-4 right-4 z-30 flex gap-2">
         <Button
           variant="outline"
           size="sm"
@@ -240,34 +240,36 @@ export default function ReceiptReportPage() {
             <div className="mb-6">
               <div className="flex justify-between items-start mb-2">
                 <div className="text-left">
-                  <p className="text-lg font-semibold">
+                  <p className="text-lg font-semibold text-black dark:text-white print:text-black">
                     บริษัท ครุฑเหล็กการค้า จำกัด
                   </p>
-                  <p className="text-base">
+                  <p className="text-base text-black dark:text-white print:text-black">
                     123 ถนนศรีบุรินทร์ แขวงคลองขุนพิมพา เขตบึงกุ่ม กรุงเทพมหานคร
                     10110
                   </p>
-                  <p className="text-base">ภาษี 10110</p>
+                  <p className="text-base text-black dark:text-white print:text-black">
+                    ภาษี 10110
+                  </p>
                 </div>
-                <div className="text-right text-base">
+                <div className="text-right text-base text-black dark:text-white print:text-black">
                   <p>Page 1/1</p>
                 </div>
               </div>
               <div className="flex justify-end items-start mb-4">
-                <div className="text-right text-lg">
+                <div className="text-right text-lg text-black dark:text-white print:text-black">
                   <p className="font-semibold">{documentNo}</p>
                   <p>{thaiShortDate}</p>
                 </div>
               </div>
               <div className="mb-4">
-                <p className="text-base">
+                <p className="text-base text-black dark:text-white print:text-black">
                   {customerCode || ""} {customerName || ""}
                 </p>
               </div>
             </div>
 
             <div className="text-center py-8">
-              <p className="text-zinc-500">ไม่พบข้อมูล</p>
+              <p className="text-zinc-500 dark:text-zinc-400">ไม่พบข้อมูล</p>
             </div>
           </div>
         </div>
@@ -287,7 +289,7 @@ export default function ReceiptReportPage() {
                 <div className="mb-6">
                   <div className="flex justify-between items-start mb-2">
                     <div className="text-left"></div>
-                    <div className="text-right text-base">
+                    <div className="text-right text-base text-black dark:text-white print:text-black">
                       <p>
                         Page {pageIndex + 1}/{pages.length}
                       </p>
@@ -297,15 +299,15 @@ export default function ReceiptReportPage() {
                   <div className="mb-4">
                     <div className="grid grid-cols-2 ">
                       <div className="ml-20">
-                        <p className="text-base ">
+                        <p className="text-base text-black dark:text-white print:text-black">
                           {pageData[0]?.customerName || customerName || ""}
                         </p>
-                        <p className="text-base">
+                        <p className="text-base text-black dark:text-white print:text-black">
                           {pageData[0]?.customerAddress || ""}
                         </p>
                       </div>
                       <div className="flex justify-end items-start mt-4">
-                        <div className="text-right text-lg flex flex-col gap-5">
+                        <div className="text-right text-lg flex flex-col gap-5 text-black dark:text-white print:text-black">
                           <p className="font-semibold">{documentNo}</p>
                           <p>{thaiShortDate}</p>
                         </div>
@@ -317,7 +319,9 @@ export default function ReceiptReportPage() {
                 {/* Continue... label - แสดงเฉพาะหน้าที่ 2+ */}
                 {pageIndex > 0 && (
                   <div className="text-right mb-2">
-                    <p className="text-xl italic">continue...</p>
+                    <p className="text-xl italic text-black dark:text-white print:text-black">
+                      continue...
+                    </p>
                   </div>
                 )}
 
@@ -327,19 +331,19 @@ export default function ReceiptReportPage() {
                     {pageData.map((bill, index) => (
                       <tr key={bill.id}>
                         <td
-                          className="px-2 py-1 text-xl text-left"
+                          className="px-2 py-1 text-xl text-left text-black dark:text-white print:text-black"
                           style={{ width: "5%" }}
                         >
                           {startIndex + index + 1}
                         </td>
                         <td
-                          className="px-2 py-1 text-xl text-left"
+                          className="px-2 py-1 text-xl text-left text-black dark:text-white print:text-black"
                           style={{ width: "18%" }}
                         >
                           {bill.invoiceNo || "-"}
                         </td>
                         <td
-                          className="px-2 py-1 text-xl text-center"
+                          className="px-2 py-1 text-xl text-center text-black dark:text-white print:text-black"
                           style={{ width: "30%" }}
                         >
                           {new Date(bill.createdAt).toLocaleDateString(
@@ -352,7 +356,7 @@ export default function ReceiptReportPage() {
                           )}
                         </td>
                         <td
-                          className="px-2 py-1 text-xl text-right"
+                          className="px-2 py-1 text-xl text-right text-black dark:text-white print:text-black"
                           style={{ width: "17%" }}
                         >
                           ฿{bill.grandTotal.toLocaleString("en-US")}
@@ -366,10 +370,10 @@ export default function ReceiptReportPage() {
                 {isLastPage && (
                   <div className="fixed-footer">
                     <div className="flex justify-between items-center">
-                      <div className="text-xl font-bold">
+                      <div className="text-xl font-bold text-black dark:text-white print:text-black">
                         {numberToThaiText(meta?.totalAmount || 0)}
                       </div>
-                      <div className="text-xl font-bold">
+                      <div className="text-xl font-bold text-black dark:text-white print:text-black">
                         ฿{(meta?.totalAmount || 0).toLocaleString("en-US")}
                       </div>
                     </div>
@@ -406,20 +410,22 @@ export default function ReceiptReportPage() {
             box-sizing: border-box;
             background: white;
             position: relative;
+            page-break-after: always;
           }
 
           .page-content {
             width: 100%;
             height: 100%;
             position: relative;
+            display: flex;
+            flex-direction: column;
+            min-height: 277mm;
           }
 
           .fixed-footer {
-            position: absolute;
-            bottom: 15mm;
-            left: 0;
-            right: 0;
-            padding: 0 10mm;
+            position: static;
+            margin-top: auto;
+            padding: 20mm 0 0 0;
           }
 
           .bill-table {
@@ -452,6 +458,12 @@ export default function ReceiptReportPage() {
             box-sizing: border-box;
           }
 
+          @media (max-width: 768px) {
+            .page-container {
+              margin: 10px auto;
+            }
+          }
+
           .page-content {
             width: 100%;
             position: relative;
@@ -469,6 +481,14 @@ export default function ReceiptReportPage() {
           .bill-table {
             width: 100%;
             border-collapse: collapse;
+          }
+        }
+
+        /* Dark mode styles for page container */
+        @media screen {
+          .dark .page-container {
+            background: rgb(24 24 27);
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.1);
           }
         }
       `}</style>

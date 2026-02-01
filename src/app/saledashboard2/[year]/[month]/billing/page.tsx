@@ -238,9 +238,9 @@ export default function BillingReportPage() {
 
   return (
     // ✅ บังคับสีตาม mode
-    <div className="min-h-screen bg-white text-black dark:bg-zinc-950 dark:text-white print:bg-white print:text-black">
+    <div className="min-h-screen bg-white text-black dark:bg-zinc-950 dark:text-white print:bg-white print:text-black mt-10 md:mt-0 lg:mt-0">
       {/* Controls */}
-      <div className="print:hidden fixed top-4 right-4 z-50 flex gap-2">
+      <div className="print:hidden fixed top-20 md:top-4 right-4 z-30 flex gap-2">
         <Button
           className="hover:cursor-pointer"
           variant="outline"
