@@ -1,21 +1,29 @@
 import { Card, CardContent } from "../../components/ui/card";
 import { Button } from "../../components/ui/button";
 import { Separator } from "../../components/ui/separator";
-import { Employee, Payslip } from "../../types/payroll";
+import { Employee, Payslip, PayslipItem } from "../../types/payroll";
 import { format } from "date-fns";
 import { useRef } from "react";
 import { Printer, Download, ArrowLeft, Loader2 } from "lucide-react";
 import Logo from "../../components/Logo";
 import { useState, useEffect } from "react";
 
+// Position mapping with Thai translations
+const POSITION_ROLES = {
+  superadmin: "ผู้จัดการระบบ",
+  supervisor: "หัวหน้างาน",
+  clerk: "เจ้าหน้าที่",
+  cutter: "ช่างตัด",
+  delivery: "ผู้จัดส่ง",
+} as const;
+
+type PositionRole = keyof typeof POSITION_ROLES;
+
 interface PayslipGeneratorProps {
   employee: Employee;
   onClose: () => void;
 }
-type PayslipItem = {
-  description: string;
-  amount: number;
-};
+
 export const PayslipGenerator = ({
   employee,
   onClose,
@@ -25,7 +33,7 @@ export const PayslipGenerator = ({
   const currentYear = format(currentDate, "yyyy");
   const dueDate = format(
     new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0),
-    "dd/MM/yyyy"
+    "dd/MM/yyyy",
   );
   const slipRef = useRef<HTMLDivElement>(null);
   const [income, setIncome] = useState<PayslipItem[]>([]);
@@ -39,8 +47,7 @@ export const PayslipGenerator = ({
   };
   const fetchIncome = async () => {
     const res = await fetch(`/api/staffIncome/${employee.id}/staffId`);
-    const data: { detail?: string; nameIncome?: string; amount?: number }[] =
-      await res.json();
+    const data: { nameIncome?: string; amount?: number }[] = await res.json();
 
     // Map income types from database
     type IncomeType =
@@ -81,12 +88,13 @@ export const PayslipGenerator = ({
     // Track which items have been found in database
     const usedIncomeNames = new Set<string>();
     const usedDeductionNames = new Set<string>();
-    const otherIncomeItems: PayslipItem[] = [];
-    const otherDeductionItems: PayslipItem[] = [];
+    // ใช้ Map เพื่อรวมยอดของ nameIncome ที่ซ้ำกัน
+    const otherIncomeMap = new Map<string, number>();
+    const otherDeductionMap = new Map<string, number>();
 
     // Process database items
     data.forEach((item) => {
-      const itemName = item.detail || item.nameIncome || "";
+      const itemName = item.nameIncome || "";
       const amount = item.amount ?? 0;
 
       if (amount > 0) {
@@ -97,48 +105,59 @@ export const PayslipGenerator = ({
             itemName.toLowerCase().includes(key.toLowerCase()) ||
             key.toLowerCase().includes(itemName.toLowerCase())
           ) {
-            standardIncomeItems[key] = amount;
+            standardIncomeItems[key] += amount; // รวมยอดถ้ามีหลายรายการ
             usedIncomeNames.add(key);
             found = true;
             break;
           }
         }
 
-        // If not found in standard items, add to other items
+        // If not found in standard items, add to other items (รวมยอดถ้า nameIncome ซ้ำ)
         if (!found && amount > 0) {
-          otherIncomeItems.push({
-            description: itemName,
-            amount: amount,
-          });
+          const currentAmount = otherIncomeMap.get(itemName) || 0;
+          otherIncomeMap.set(itemName, currentAmount + amount);
           usedIncomeNames.add(itemName);
         }
       } else if (amount < 0) {
         // Check if it matches standard deduction types
         let found = false;
         for (const key of Object.keys(
-          standardDeductionItems
+          standardDeductionItems,
         ) as DeductionType[]) {
           if (
             itemName.toLowerCase().includes(key.toLowerCase()) ||
             key.toLowerCase().includes(itemName.toLowerCase())
           ) {
-            standardDeductionItems[key] = Math.abs(amount);
+            standardDeductionItems[key] += Math.abs(amount); // รวมยอดถ้ามีหลายรายการ
             usedDeductionNames.add(key);
             found = true;
             break;
           }
         }
 
-        // If not found in standard items, add to other items
+        // If not found in standard items, add to other items (รวมยอดถ้า nameIncome ซ้ำ)
         if (!found) {
-          otherDeductionItems.push({
-            description: itemName,
-            amount: Math.abs(amount),
-          });
+          const currentAmount = otherDeductionMap.get(itemName) || 0;
+          otherDeductionMap.set(itemName, currentAmount + Math.abs(amount));
           usedDeductionNames.add(itemName);
         }
       }
     });
+
+    // แปลง Map เป็น Array
+    const otherIncomeItems: PayslipItem[] = Array.from(
+      otherIncomeMap.entries(),
+    ).map(([nameIncome, amount]) => ({
+      nameIncome,
+      amount,
+    }));
+
+    const otherDeductionItems: PayslipItem[] = Array.from(
+      otherDeductionMap.entries(),
+    ).map(([nameIncome, amount]) => ({
+      nameIncome,
+      amount,
+    }));
 
     // Build income array with standard items (showing "-" for zero amounts)
     const incomeItems: PayslipItem[] = [];
@@ -153,7 +172,7 @@ export const PayslipGenerator = ({
 
     incomeOrder.forEach((incomeType) => {
       incomeItems.push({
-        description: incomeType,
+        nameIncome: incomeType,
         amount: standardIncomeItems[incomeType],
       });
     });
@@ -174,7 +193,7 @@ export const PayslipGenerator = ({
 
     deductionOrder.forEach((deductionType) => {
       deductionItems.push({
-        description: deductionType,
+        nameIncome: deductionType,
         amount: standardDeductionItems[deductionType],
       });
     });
@@ -206,7 +225,7 @@ export const PayslipGenerator = ({
 
     const totalDeductions = deductions.reduce(
       (sum, item) => sum + item.amount,
-      0
+      0,
     );
     const netIncome = grossIncome - totalDeductions;
 
@@ -239,8 +258,8 @@ export const PayslipGenerator = ({
     const baseHref = location.origin;
     const styleTags = Array.from(
       document.querySelectorAll<HTMLLinkElement | HTMLStyleElement>(
-        'link[rel="stylesheet"], style'
-      )
+        'link[rel="stylesheet"], style',
+      ),
     )
       .map((el) => {
         if (el.tagName.toLowerCase() === "link") {
@@ -442,7 +461,8 @@ export const PayslipGenerator = ({
                 </p>
                 <p>
                   <span className="font-medium">ตำแหน่ง:</span>{" "}
-                  {employee.position}
+                  {POSITION_ROLES[employee.position as PositionRole] ||
+                    employee.position}
                 </p>
                 <p>
                   <span className="font-medium">เลขที่บัญชี:</span>{" "}
@@ -470,7 +490,7 @@ export const PayslipGenerator = ({
                   <div className="flex-1">
                     {payslip.income.map((item, idx) => (
                       <div key={idx} className="flex justify-between">
-                        <span>{item.description}</span>
+                        <span>{item.nameIncome}</span>
                         <span>
                           {item.amount > 0
                             ? `฿${item.amount.toLocaleString()}`
@@ -501,7 +521,7 @@ export const PayslipGenerator = ({
                   <div className="flex-1">
                     {payslip.deductions.map((item, idx) => (
                       <div key={idx} className="flex justify-between">
-                        <span>{item.description}</span>
+                        <span>{item.nameIncome}</span>
                         <span>
                           {item.amount > 0
                             ? `฿${item.amount.toLocaleString()}`

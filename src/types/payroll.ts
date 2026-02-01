@@ -20,6 +20,7 @@ export interface Employee {
 export interface SalaryAdjustment {
   id: string;
   name?: string;
+  nameIncome?: string;
   createdAt?: string;
   effectiveDate?: string;
   staffId: string;
@@ -30,7 +31,7 @@ export interface SalaryAdjustment {
 }
 
 export interface PayslipItem {
-  description: string;
+  nameIncome: string;
   amount: number;
 }
 
