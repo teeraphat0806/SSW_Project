@@ -14,6 +14,8 @@ export type SteelItem = {
   detail?: string;
   density: number;
   job?: number;
+  discount?: number | null;
+  total?: number | null;
   cuttingMethod: "normal" | "FB" | "steelDisc" | "CNC";
   shape: string;
 };
@@ -37,14 +39,30 @@ const calculateWeightDetails = (item: SteelItem) => {
   const length = safeNum(item.length);
   const thickness = safeNum(item.thickness);
   const density = safeNum(item.density) || 7860;
+
   const pricePerUnit = safeNum(item.price);
   const manualWeight = safeNum(item.weight);
+  const cuttingMethod = item.cuttingMethod || "normal";
+
+  const lineDiscount = safeNum(item.discount) || 0;
+  const total = safeNum(item.total) || 0;
 
   // 1. ถ้ามี weight ส่งมา (มากกว่า 0) ให้ใช้ค่านั้นเลย (Manual / Pre-calculated)
+
+  if (cuttingMethod === "CNC" && manualWeight > 0) {
+    return {
+      weight: manualWeight,
+      totalPrice: total,
+      lineDiscount,
+      isManual: true,
+      dimensions: { width, length, thickness },
+    };
+  }
   if (manualWeight > 0) {
     return {
       weight: manualWeight,
       totalPrice: manualWeight * pricePerUnit,
+      lineDiscount,
       isManual: true,
       dimensions: { width, length, thickness },
     };
@@ -66,6 +84,7 @@ const calculateWeightDetails = (item: SteelItem) => {
   return {
     weight: totalWeight,
     totalPrice: totalWeight * pricePerUnit,
+    lineDiscount,
     isManual: false,
     dimensions: { width, length, thickness },
   };
@@ -89,10 +108,15 @@ export default function SteelTable({ steel = [], vatRate }: SteelTableProps) {
   const summary = processedItems.reduce(
     (acc, curr) => ({
       totalWeight: acc.totalWeight + curr.weight,
-      grandTotal: acc.grandTotal + curr.totalPrice,
+      subtotal: acc.subtotal + curr.totalPrice,
+      discount: acc.discount + curr.lineDiscount,
     }),
-    { totalWeight: 0, grandTotal: 0 },
+    { totalWeight: 0, subtotal: 0, discount: 0 },
   );
+
+  const net = Math.max(0, summary.subtotal - summary.discount); //  หลังหักส่วนลด
+  const vat = net * (safeNum(vatRate) / 100); // ภาษีมูลค่าเพิ่ม
+  const grandTotal = net + vat; // ราคารวมทั้งหมด
 
   return (
     <Card className="overflow-hidden rounded-xl shadow-md border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 transition-colors duration-300">
@@ -155,118 +179,161 @@ export default function SteelTable({ steel = [], vatRate }: SteelTableProps) {
                 <span className="font-medium">ไม่พบรายการเหล็ก</span>
               </div>
             ) : (
-              processedItems.map((item, idx) => (
-                <div
-                  key={idx}
-                  className="group px-6 py-4 grid grid-cols-12 gap-4 items-center hover:bg-zinc-50 dark:hover:bg-zinc-900/40 transition-colors duration-200"
-                >
-                  {/* Col 1: Detail (Span 2) */}
-                  <div className="col-span-2 flex flex-col justify-center pr-2 gap-1">
-                    <div className="flex flex-wrap items-center gap-2">
-                      {/* ชื่อเหล็ก */}
-                      <span className="font-semibold text-zinc-800 dark:text-zinc-200 text-sm group-hover:text-black dark:group-hover:text-white transition-colors">
-                        {item.original.steelType}
-                      </span>
+              processedItems.map((item, idx) => {
+                const detail = (item.original.detail ?? "").trim();
+                const discount = safeNum(item.original.discount);
+                const hasNoteRow = discount > 0 || detail.length > 0;
 
-                      {item.original.cuttingMethod !== "normal" && (
-                        <span
-                          className={` px-1.5 py-0.5 rounded border font-medium bg-zinc-100 border-zinc-200 text-zinc-500 dark:bg-zinc-900 dark:border-zinc-800 dark:text-zinc-500`}
-                        >
-                          {item.original.cuttingMethod == "FB"
-                            ? "F/P"
-                            : item.original.cuttingMethod == "steelDisc"
-                              ? "แบนกลม"
-                              : "CNC"}
-                        </span>
-                      )}
+                return (
+                  <div
+                    key={idx}
+                    className="group hover:bg-zinc-50 dark:hover:bg-zinc-900/40 transition-colors duration-200"
+                  >
+                    {/* ✅ แถวหลักเดิม (ไม่เปลี่ยน layout col) */}
+                    <div className="px-6 py-3 grid grid-cols-12 gap-4 items-center">
+                      {/* Col 1 */}
+                      <div className="col-span-2 flex flex-col justify-center pr-2 gap-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="font-semibold text-zinc-800 dark:text-zinc-200 text-sm group-hover:text-black dark:group-hover:text-white transition-colors">
+                            {item.original.steelType}
+                          </span>
 
-                      <span
-                        className={` px-1.5 py-0.5 rounded border font-medium bg-zinc-100 border-zinc-200 text-zinc-500 dark:bg-zinc-900 dark:border-zinc-800 dark:text-zinc-500`}
-                      >
-                        {item.isManual ? "ระบุเอง" : "สูตร"}
-                      </span>
-                    </div>
+                          {item.original.cuttingMethod !== "normal" && (
+                            <span className="px-1.5 py-0.5 rounded border font-medium bg-zinc-100 border-zinc-200 text-zinc-500 dark:bg-zinc-900 dark:border-zinc-800 dark:text-zinc-500">
+                              {item.original.cuttingMethod == "FB"
+                                ? "F/P"
+                                : item.original.cuttingMethod == "steelDisc"
+                                  ? "แบนกลม"
+                                  : "CNC"}
+                            </span>
+                          )}
 
-                    {item.original.detail && (
-                      <span className="text-xs text-zinc-400 dark:text-zinc-500 italic truncate pl-0.5">
-                        {item.original.detail}
-                      </span>
-                    )}
-                  </div>
+                          <span className="px-1.5 py-0.5 rounded border font-medium bg-zinc-100 border-zinc-200 text-zinc-500 dark:bg-zinc-900 dark:border-zinc-800 dark:text-zinc-500">
+                            {item.isManual ? "ระบุเอง" : "สูตร"}
+                          </span>
+                        </div>
+                      </div>
 
-                  {/* Col 2: Dimensions (Span 2) */}
-                  <div className="col-span-2 flex items-center font-mono text-sm text-zinc-500 dark:text-zinc-400">
-                    <span className="font-bold text-zinc-700 dark:text-zinc-300">
-                      {item.dimensions.thickness}
-                    </span>
-                    <span className="text-zinc-500 dark:text-zinc-500 mx-1.5">
-                      ×
-                    </span>
-
-                    {item.dimensions.width > 0 && (
-                      <>
+                      {/* Col 2 */}
+                      <div className="col-span-2 flex items-center font-mono text-sm text-zinc-500 dark:text-zinc-400">
                         <span className="font-bold text-zinc-700 dark:text-zinc-300">
-                          {item.dimensions.width}
+                          {item.dimensions.thickness}
                         </span>
-                        <span className=" text-zinc-500 dark:text-zinc-500  mx-1.5">
+                        <span className="text-zinc-500 dark:text-zinc-500 mx-1.5">
                           ×
                         </span>
-                      </>
+
+                        {item.dimensions.width > 0 && (
+                          <>
+                            <span className="font-bold text-zinc-700 dark:text-zinc-300">
+                              {item.dimensions.width}
+                            </span>
+                            <span className="text-zinc-500 dark:text-zinc-500 mx-1.5">
+                              ×
+                            </span>
+                          </>
+                        )}
+
+                        <span className="font-bold text-zinc-700 dark:text-zinc-300">
+                          {item.dimensions.length}
+                        </span>
+                      </div>
+
+                      {/* Col 3 */}
+                      <div className="col-span-1 text-center font-bold text-zinc-700 dark:text-zinc-300">
+                        x{safeNum(item.original.amount)}
+                      </div>
+
+                      <div className="col-span-1 text-center font-bold text-zinc-700 dark:text-zinc-300">
+                        {item.original.job ? item.original.job : "-"}
+                      </div>
+
+                      {/* Col 4 */}
+                      <div className="col-span-2 text-right font-bold text-zinc-700 dark:text-zinc-300">
+                        {fmt(item.weight)}
+                      </div>
+
+                      {/* Col 5 */}
+                      <div className="col-span-2 text-right font-bold text-zinc-700 dark:text-zinc-400">
+                        {fmt(item.original.price)}
+                      </div>
+
+                      {/* Col 6 */}
+                      <div className="col-span-2 text-right font-mono font-bold text-zinc-800 dark:text-zinc-200 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
+                        {fmt(item.totalPrice)}
+                      </div>
+                    </div>
+                    {/* ✅ แถวหมายเหตุเต็มความกว้าง (อยู่ด้านบนของเส้นแบ่ง) */}
+                    {hasNoteRow && (
+                      <div className="px-6  pb-1">
+                        <div className="text-sm leading-4 text-zinc-500 dark:text-zinc-400 whitespace-pre-wrap">
+                          {/* ส่วนลด */}
+                          {discount > 0 && (
+                            <span className="mr-2">
+                              •{" "}
+                              <span className="text-red-600 dark:text-red-400">
+                                ลด -{fmt(discount)}
+                              </span>{" "}
+                              บาท
+                            </span>
+                          )}
+
+                          {/* detail */}
+                          {detail && (
+                            <span>
+                              {" "}
+                              {discount > 0 ? " " : "• "} {detail}
+                            </span>
+                          )}
+                        </div>
+                      </div>
                     )}
 
-                    <span className="font-bold text-zinc-700 dark:text-zinc-300">
-                      {item.dimensions.length}
-                    </span>
+                    {/* ✅ เส้นแบ่งอยู่ท้าย item (เหมือนเดิม แต่เราเอาออกจาก divide-y) */}
+                    <div className="border-b border-zinc-100 dark:border-zinc-800/60" />
                   </div>
-
-                  {/* Col 3: Amount (Span 1) */}
-                  <div className=" col-span-1 text-center font-bold text-zinc-700 dark:text-zinc-300">
-                    x{safeNum(item.original.amount)}
-                  </div>
-
-                  <div className=" col-span-1 text-center font-bold text-zinc-700 dark:text-zinc-300">
-                    {item.original.job ? item.original.job : "-"}
-                  </div>
-
-                  {/* Col 4: Weight (Span 2) */}
-                  <div className="col-span-2 text-right font-bold text-zinc-700 dark:text-zinc-300">
-                    {fmt(item.weight)}
-                  </div>
-
-                  {/* Col 5: Price/Unit (Span 2) */}
-                  <div className="col-span-2 text-right font-bold text-zinc-700 dark:text-zinc-400">
-                    {fmt(item.original.price)}
-                  </div>
-
-                  {/* Col 6: Total Price (Span 2) */}
-                  <div className="col-span-2 text-right font-mono font-bold text-zinc-800 dark:text-zinc-200 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
-                    {fmt(item.totalPrice)}
-                  </div>
-                </div>
-              ))
+                );
+              })
             )}
           </div>
 
           {/* Table Footer */}
           {processedItems.length > 0 && (
-            <div className="bg-zinc-50/50 dark:bg-zinc-950 px-6 py-4 border-t border-zinc-200 dark:border-zinc-800 grid grid-cols-12 gap-4 items-center">
-              <div className="col-span-6 text-left font-bold text-zinc-600 dark:text-zinc-400 ">
-                น้ำหนักรวม
-              </div>
-              <div className="col-span-2 text-right">
-                <span className="font-mono font-bold text-zinc-600 dark:text-zinc-400 border-b border-zinc-300 dark:border-zinc-700 border-dotted pb-0.5">
-                  {fmt(summary.totalWeight)}
-                </span>
-              </div>
-
-              <div className="col-span-2 text-left">
-                <span className=" text-zinc-500 ml-1">Kg</span>
+            <div className="bg-zinc-50/50 dark:bg-zinc-950 px-6 py-4 border-t border-zinc-200 dark:border-zinc-800 space-y-2">
+              <div className="grid grid-cols-12 gap-4 items-center">
+                <div className="col-span-6 text-left font-bold text-zinc-600 dark:text-zinc-400">
+                  รวมก่อนส่วนลด
+                </div>
+                <div className="col-span-6 text-right font-mono font-bold text-zinc-700 dark:text-zinc-300">
+                  {fmt(summary.subtotal)}
+                </div>
               </div>
 
-              <div className="col-span-2 flex items-baseline justify-end gap-2">
-                <span className="font-mono text-lg font-bold text-emerald-600 dark:text-emerald-400">
-                  {fmt(summary.grandTotal)}
-                </span>
+              <div className="grid grid-cols-12 gap-4 items-center">
+                <div className="col-span-6 text-left font-bold text-zinc-600 dark:text-zinc-400">
+                  ส่วนลดรวม
+                </div>
+                <div className="col-span-6 text-right font-mono font-bold text-red-600 dark:text-red-400">
+                  -{fmt(summary.discount)}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-12 gap-4 items-center">
+                <div className="col-span-6 text-left font-bold text-zinc-600 dark:text-zinc-400">
+                  VAT {vatRate}%
+                </div>
+                <div className="col-span-6 text-right font-mono font-bold text-zinc-700 dark:text-zinc-300">
+                  {fmt(vat)}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-12 gap-4 items-center pt-2 border-t border-zinc-200 dark:border-zinc-800">
+                <div className="col-span-6 text-left font-bold text-zinc-800 dark:text-zinc-200">
+                  ยอดสุทธิ (Grand Total)
+                </div>
+                <div className="col-span-6 text-right font-mono text-lg font-bold text-emerald-600 dark:text-emerald-400">
+                  {fmt(grandTotal)}
+                </div>
               </div>
             </div>
           )}

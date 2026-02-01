@@ -47,6 +47,8 @@ export type JobStatus =
   | "completed"
   | "canceled";
 
+type cuttingMethod = "normal" | "FB" | "steelDisc" | "CNC";
+
 type ApiJobOrder = {
   id: number;
   billid: number;
@@ -74,7 +76,9 @@ type ApiJobOrder = {
     detail?: string | null;
     shape: string;
     job?: number | null;
-    cuttingMethod: "normal" | "FB" | "steelDisc" | "CNC" | null;
+    total?: number | null;
+    discount?: number | null;
+    cuttingMethod: cuttingMethod;
   }[];
 
   status: JobStatus;
@@ -110,7 +114,9 @@ export type JobOrder = {
     detail?: string;
     density: number;
     job?: number;
-    cuttingMethod: "normal" | "FB" | "steelDisc" | "CNC";
+    total?: number | null;
+    discount?: number | null;
+    cuttingMethod: cuttingMethod;
     shape: string;
   }>;
   status: JobStatus;
@@ -154,6 +160,8 @@ const tojobOrder = (api: ApiJobOrder): JobOrder => {
       job: s.job ?? undefined,
       cuttingMethod: (s.cuttingMethod ??
         "normal") as JobOrder["steel"][number]["cuttingMethod"],
+      total: s.total ?? 0,
+      discount: s.discount ?? undefined,
       shape: s.shape,
     })),
 
@@ -510,7 +518,10 @@ const JobOrderDetailPage = ({ id }: { id: string }) => {
             </Card>
 
             {/* Steel Order Table */}
-            <SteelOrderTable steel={jobOrder?.steel || []}  vatRate={jobOrder?.vatRate || 7} />
+            <SteelOrderTable
+              steel={jobOrder?.steel || []}
+              vatRate={jobOrder?.vatRate || 7}
+            />
 
             {/* Tabs Card */}
             <Card className="rounded-lg shadow-md ">

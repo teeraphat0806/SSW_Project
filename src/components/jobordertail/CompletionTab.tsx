@@ -274,13 +274,11 @@ export function CompletionTab({
                 </Button>
               )}
 
-              {!isConfirming &&
-                jobOrder.status !== "shipped" &&
-                jobOrder.status !== "ready" && (
-                  <p className="text-[10px] text-center text-red-500 bg-white/50 p-1 rounded">
-                    * ต้องเปลี่ยนสถานะเป็น Shipped หรือ Ready ก่อน
-                  </p>
-                )}
+              {!isConfirming && jobOrder.status !== "shipped" && (
+                <p className="text-sm text-center text-red-500 bg-white/50 p-1 rounded">
+                  * ต้องเปลี่ยนสถานะเป็นกำลังจัดส่งก่อน จึงจะสามารถปิดงานได้
+                </p>
+              )}
             </div>
           </div>
         </div>
