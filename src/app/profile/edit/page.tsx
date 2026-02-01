@@ -114,6 +114,7 @@ export default function EditProfilePage() {
       const response = await fetch("/api/user/upload-profile", {
         method: "POST",
         body: formData,
+        credentials: "include",
       });
 
       const data = await response.json();
