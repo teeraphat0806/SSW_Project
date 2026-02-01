@@ -3,7 +3,8 @@
 
 // ---------- CONFIG ----------
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY!;
-const OPENROUTER_MODEL = "deepseek/deepseek-chat-v3-0324";
+const OPENROUTER_MODEL =
+  process.env.OPENROUTER_MODEL || "deepseek/deepseek-chat-v3-0324";
 const INTERNAL_SECRET = process.env.INTERNAL_SQL_API_SECRET!;
 
 // ตารางและคอลัมน์ที่อนุญาต (ต้องตรงกับ Prisma schema)
@@ -177,7 +178,7 @@ General behavior:
 `;
 
 export async function narrateArrayWithOpenRouter(
-  dataArray: unknown[]
+  dataArray: unknown[],
 ): Promise<string> {
   if (!OPENROUTER_API_KEY) {
     throw new Error("Missing OPENROUTER_API_KEY");
