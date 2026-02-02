@@ -333,8 +333,9 @@ export async function GETSQL(sql: string) {
   console.log("Executing SQL from chatbot (via internal proxy):", sql);
   const encodedSQL = encodeURIComponent(sql);
 
-  // ใช้ absolute URL สำหรับ server-side fetch
-  const baseUrl = process.env.NEXTAUTH_URL || "http://localhost:3000";
+  // ใช้ localhost สำหรับ server-side fetch (internal API call)
+  // ใน production Next.js จะรันบน localhost ของ container เดียวกัน
+  const baseUrl = "http://localhost:8080";
   const url = `${baseUrl}/api/chatbot?sql=${encodedSQL}`;
   console.log("Calling internal API:", url);
 

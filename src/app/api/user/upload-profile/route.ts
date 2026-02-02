@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { PutObjectCommand } from "@aws-sdk/client-s3";
-import { getToken } from "next-auth/jwt";
+import { cookies } from "next/headers";
+import { decode } from "next-auth/jwt";
 import { minioClient } from "@/lib/minio";
 import prisma from "@/lib/prisma";
 
@@ -10,17 +11,27 @@ export const runtime = "nodejs";
 
 export async function POST(req: NextRequest) {
   try {
-    // Check authentication
-    const token = await getToken({
-      req,
-      secret: process.env.NEXTAUTH_SECRET,
-    });
+    // Check authentication by reading session cookie manually
+    const cookieStore = await cookies();
+    const sessionToken =
+      cookieStore.get("next-auth.session-token") ||
+      cookieStore.get("__Secure-next-auth.session-token"); // For HTTPS
 
-    if (!token || !token.sub) {
+    if (!sessionToken) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const userId = parseInt(token.sub);
+    // Decode JWT token
+    const decoded = await decode({
+      token: sessionToken.value,
+      secret: process.env.NEXTAUTH_SECRET!,
+    });
+
+    if (!decoded || !decoded.sub) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const userId = parseInt(decoded.sub);
     const formData = await req.formData();
     const file = formData.get("file") as File;
 
@@ -32,7 +43,7 @@ export async function POST(req: NextRequest) {
     if (!file.type.startsWith("image/")) {
       return NextResponse.json(
         { error: "Only image files are allowed" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -50,7 +61,7 @@ export async function POST(req: NextRequest) {
         Key: key,
         Body: buffer,
         ContentType: file.type,
-      })
+      }),
     );
 
     // Build the MinIO URL path
@@ -67,7 +78,7 @@ export async function POST(req: NextRequest) {
         message: "Profile image uploaded successfully",
         imageUrl,
       },
-      { status: 200 }
+      { status: 200 },
     );
   } catch (error) {
     console.error("Upload error:", error);

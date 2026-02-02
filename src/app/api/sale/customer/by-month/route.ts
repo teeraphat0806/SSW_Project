@@ -84,26 +84,15 @@ export async function GET(req: NextRequest) {
     const startOfMonth = new Date(yearNumber, monthNumber - 1, 1);
     const endOfMonth = new Date(yearNumber, monthNumber, 1);
 
-    // Get all completed orders in the month
-    const orders = await prisma.orderPO.findMany({
+    // Get all bills with completed orders in the month
+    const bills = await prisma.bill.findMany({
       where: {
-        status: "completed",
-        OR: [
-          {
-            completedAt: {
-              gte: startOfMonth,
-              lt: endOfMonth,
-            },
-          },
-          {
-            createdAt: {
-              gte: startOfMonth,
-              lt: endOfMonth,
-            },
-          },
-        ],
-        customerId: {
-          not: null,
+        createdAt: {
+          gte: startOfMonth,
+          lt: endOfMonth,
+        },
+        OrderPO: {
+          status: "completed",
         },
       },
       include: {
@@ -111,7 +100,7 @@ export async function GET(req: NextRequest) {
       },
     });
 
-    // Group orders by customer
+    // Group bills by customer
     const customerMap = new Map<
       number,
       {
@@ -123,20 +112,20 @@ export async function GET(req: NextRequest) {
       }
     >();
 
-    orders.forEach((order) => {
-      if (order.Customer) {
-        const customerId = order.Customer.id;
+    bills.forEach((bill) => {
+      if (bill.Customer) {
+        const customerId = bill.Customer.id;
         const existing = customerMap.get(customerId);
 
         if (existing) {
-          existing.totalSales += order.total;
+          existing.totalSales += bill.grandTotal || 0;
           existing.orderCount += 1;
         } else {
           customerMap.set(customerId, {
-            id: order.Customer.id,
-            code: order.Customer.code || "",
-            name: order.Customer.name,
-            totalSales: order.total,
+            id: bill.Customer.id,
+            code: bill.Customer.code || "",
+            name: bill.Customer.name,
+            totalSales: bill.grandTotal || 0,
             orderCount: 1,
           });
         }

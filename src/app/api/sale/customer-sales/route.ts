@@ -146,21 +146,15 @@ export async function GET(req: NextRequest) {
 
     // Build where clause
     const whereClause: any = {
-      status: "completed",
-      OR: [
-        {
-          completedAt: {
-            gte: startOfMonth,
-            lt: endOfMonth,
-          },
+      createdAt: {
+        gte: startOfMonth,
+        lt: endOfMonth,
+      },
+      OrderPO: {
+        is: {
+          status: "completed",
         },
-        {
-          createdAt: {
-            gte: startOfMonth,
-            lt: endOfMonth,
-          },
-        },
-      ],
+      },
     };
 
     // Add customer filters
@@ -180,9 +174,9 @@ export async function GET(req: NextRequest) {
     // Build orderBy clause
     let orderByClause: any = {};
     if (sortBy === "date") {
-      orderByClause = { completedAt: sortOrder };
+      orderByClause = { createdAt: sortOrder };
     } else if (sortBy === "amount") {
-      orderByClause = { total: sortOrder };
+      orderByClause = { grandTotal: sortOrder };
     } else if (sortBy === "customer") {
       orderByClause = { Customer: { name: sortOrder } };
     } else if (sortBy === "quantity") {
@@ -191,18 +185,36 @@ export async function GET(req: NextRequest) {
     }
 
     // Get total count
-    const total = await prisma.orderPO.count({
+    const total = await prisma.bill.count({
       where: whereClause,
+    });
+
+    // Get bill count per customer
+    const billsByCustomer = await prisma.bill.groupBy({
+      by: ["customerId"],
+      where: whereClause,
+      _count: {
+        id: true,
+      },
+    });
+
+    // Create a map of customer ID to bill count
+    const customerBillCount = new Map<number, number>();
+    billsByCustomer.forEach((item) => {
+      customerBillCount.set(item.customerId, item._count.id);
     });
 
     // Get paginated data
     const skip = (page - 1) * limit;
-    const orders = await prisma.orderPO.findMany({
+    const bills = await prisma.bill.findMany({
       where: whereClause,
       include: {
         Customer: true,
-        bill: true,
-        Product: true,
+        OrderPO: {
+          include: {
+            Product: true,
+          },
+        },
       },
       orderBy: orderByClause,
       skip,
@@ -210,10 +222,10 @@ export async function GET(req: NextRequest) {
     });
 
     // Calculate totals for meta
-    const allOrders = await prisma.orderPO.aggregate({
+    const allBills = await prisma.bill.aggregate({
       where: whereClause,
       _sum: {
-        total: true,
+        grandTotal: true,
       },
       _count: {
         id: true,
@@ -221,36 +233,36 @@ export async function GET(req: NextRequest) {
     });
 
     // Format data
-    const formattedData = orders.map((order) => {
-      const date = order.completedAt || order.createdAt;
-      const quantity = order.Product.length;
+    const formattedData = bills.map((bill) => {
+      const date = bill.createdAt;
+      const quantity = customerBillCount.get(bill.customerId) || 1; // Number of bills for this customer
 
       return {
-        id: order.id,
+        id: bill.id,
         date: date.toLocaleDateString("th-TH", {
           day: "2-digit",
           month: "2-digit",
           year: "numeric",
         }),
         dateISO: date.toISOString().split("T")[0],
-        customer: order.Customer
+        customer: bill.Customer
           ? {
-              id: order.Customer.id,
-              code: order.Customer.code,
-              name: order.Customer.name,
+              id: bill.Customer.id,
+              code: bill.Customer.code,
+              name: bill.Customer.name,
             }
           : null,
-        amount: order.total,
+        amount: bill.grandTotal || 0,
         quantity,
-        billId: order.billId,
-        invoiceNo: order.bill?.invoiceNo ? `INV-${order.bill.invoiceNo}` : null,
+        billId: bill.id,
+        invoiceNo: bill.invoiceNo ? `INV-${bill.invoiceNo}` : null,
         formatted: {
           date: date.toLocaleDateString("th-TH", {
             day: "2-digit",
             month: "2-digit",
             year: "numeric",
           }),
-          amount: `฿${order.total.toLocaleString("en-US")}`,
+          amount: `฿${(bill.grandTotal || 0).toLocaleString("en-US")}`,
           quantity: `${quantity}`,
         },
       };
@@ -273,8 +285,8 @@ export async function GET(req: NextRequest) {
         year: yearNumber,
         month: monthNumber,
         monthName: monthNames[monthNumber - 1],
-        totalAmount: allOrders._sum.total || 0,
-        totalQuantity: allOrders._count.id || 0,
+        totalAmount: allBills._sum.grandTotal || 0,
+        totalQuantity: allBills._count.id || 0,
         currency: "THB",
       },
     };

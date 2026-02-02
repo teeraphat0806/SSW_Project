@@ -29,29 +29,38 @@ export async function GET(
     const startOfYear = new Date(yearNumber, 0, 1); // January 1st
     const endOfYear = new Date(yearNumber + 1, 0, 1); // January 1st of next year
 
-    // คำนวณยอดขายและจำนวนออเดอร์ที่สำเร็จ
-    const orderStats = await prisma.orderPO.aggregate({
+    // คำนวณยอดขายและจำนวนบิลที่มี OrderPO สำเร็จ
+    const billStats = await prisma.bill.aggregate({
       where: {
-        status: "completed",
-        completedAt: {
+        createdAt: {
           gte: startOfYear,
           lt: endOfYear,
         },
+        OrderPO: {
+          is: {
+            status: "completed",
+          },
+        },
       },
       _sum: {
-        total: true,
+        grandTotal: true,
       },
       _count: {
         id: true,
       },
     });
 
-    // คำนวณรายรับจาก Bill
+    // คำนวณรายรับจาก Bill ที่มี OrderPO completed
     const revenueStats = await prisma.bill.aggregate({
       where: {
         createdAt: {
           gte: startOfYear,
           lt: endOfYear,
+        },
+        OrderPO: {
+          is: {
+            status: "completed",
+          },
         },
       },
       _sum: {
@@ -72,7 +81,32 @@ export async function GET(
       },
     });
 
-    // คำนวณค่าเงินเดือนพนักงานทั้งหมดทั้งปี (12 เดือน)
+    // หาเดือนที่มี Bill (มีรายได้หรือยอดขาย)
+    const billsWithMonths = await prisma.bill.findMany({
+      where: {
+        createdAt: {
+          gte: startOfYear,
+          lt: endOfYear,
+        },
+        OrderPO: {
+          is: {
+            status: "completed",
+          },
+        },
+      },
+      select: {
+        createdAt: true,
+      },
+    });
+
+    // สร้าง Set ของเดือนที่มีข้อมูล (0-11)
+    const monthsWithData = new Set<number>();
+    billsWithMonths.forEach((bill) => {
+      const month = bill.createdAt.getMonth();
+      monthsWithData.add(month);
+    });
+
+    // คำนวณค่าเงินเดือนพนักงานเฉพาะเดือนที่มีข้อมูล
     // ดึงพนักงานทั้งหมดที่มีอยู่
     const allStaff = await prisma.staff.findMany({
       select: { id: true },
@@ -80,9 +114,9 @@ export async function GET(
 
     let totalSalaryAmount = 0;
 
-    // วนลูปคำนวณเงินเดือนของแต่ละคนในแต่ละเดือน
+    // วนลูปคำนวณเงินเดือนเฉพาะเดือนที่มีข้อมูล
     for (const staff of allStaff) {
-      for (let month = 0; month < 12; month++) {
+      for (const month of monthsWithData) {
         const monthDate = new Date(yearNumber, month, 1);
 
         // หาเงินเดือนที่มีผลในเดือนนั้น (effectiveDate ล่าสุดที่ <= วันแรกของเดือน)
@@ -104,8 +138,8 @@ export async function GET(
       }
     }
 
-    const totalSales = orderStats._sum.total || 0;
-    const orderCount = orderStats._count.id || 0;
+    const totalSales = billStats._sum.grandTotal || 0;
+    const orderCount = billStats._count.id || 0;
     const totalRevenue = revenueStats._sum.grandTotal || 0;
     const totalExpenseAmount = expenseStats._sum.amount || 0;
     const totalExpense = totalExpenseAmount + totalSalaryAmount;
