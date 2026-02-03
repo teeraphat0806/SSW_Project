@@ -49,14 +49,15 @@ type SteelItem = {
   shape: SteelShape;
   job?: number | null;
   cuttingMethod: CuttingMethod;
-  total: number | null; //ค่าส่งจริงส่งไปแค่ตอน CNC
-  cncTotalDraft?: number | null; // total จำค่าไว้ เฉพาะ UI
+  price: number;
   discount: number | null;
+  manualPrice?: boolean;
 };
 
 type SteelOption = {
   value: string;
   label: string;
+  price: number;
   quantity: number;
   shape: SteelShape;
 };
@@ -219,6 +220,7 @@ export default function DetailItem<T extends JobWithSteel>({
 
       const firstOpt = steelOptions?.[0];
       const firstType = firstOpt?.value ?? "";
+      const firstprice = firstOpt?.price ?? 0;
       const firstShape: ShapeSteel = firstOpt?.shape ?? "square";
 
       return {
@@ -236,8 +238,9 @@ export default function DetailItem<T extends JobWithSteel>({
             job: null,
             cuttingMethod: "normal",
             shape: firstShape,
-            total: null,
+            price: firstprice,
             discount: null,
+            manualPrice: false,
           },
         ],
       };
@@ -336,6 +339,7 @@ export default function DetailItem<T extends JobWithSteel>({
       <div className="space-y-3">
         {(job.steel ?? []).map((item, idx) => {
           const isLine = item.shape === "line";
+          const isManualPrice = Boolean(item.manualPrice);
 
           return (
             <div key={`${job.id}-${idx}`} className="group relative">
@@ -358,16 +362,18 @@ export default function DetailItem<T extends JobWithSteel>({
                       <SteelSearchSelect
                         value={item.steelType}
                         onChange={(v) => {
+                          // หา option ที่เลือก
                           const opt = steelOptions.find((o) => o.value === v);
 
-                          // คง logic เดิม: update steelType + shape + width null เมื่อเป็น line
+                          // ทำให้ค่าเริ่มต้นถูกต้อง
                           patchSteelItem(idx, {
                             steelType: v,
                             shape: opt?.shape ?? item.shape ?? "square",
                             width:
                               (opt?.shape ?? item.shape) === "line"
                                 ? null
-                                : (item.width ?? 0),
+                                : (item.width ?? 1),
+                            price: opt?.price ?? item.price,
                           });
                         }}
                         options={steelOptions}
@@ -539,20 +545,10 @@ export default function DetailItem<T extends JobWithSteel>({
                         <button
                           type="button"
                           onClick={() => {
-                            const nextMethod: CuttingMethod =
-                              item.cuttingMethod === "FB" ? "normal" : "FB";
-
                             patchSteelItem(idx, {
-                              cuttingMethod: nextMethod,
-
-                              // ถ้ากำลังออกจาก CNC ให้จำค่าที่เคยกรอกไว้ก่อน
-                              cncTotalDraft:
-                                item.cuttingMethod === "CNC"
-                                  ? (item.total ?? item.cncTotalDraft ?? null)
-                                  : (item.cncTotalDraft ?? null),
-
-                              // ไม่ใช่ CNC ต้องล้าง total เสมอ
-                              total: null,
+                              cuttingMethod:
+                                item.cuttingMethod === "FB" ? "normal" : "FB",
+                              manualPrice: false,
                             });
                           }}
                           disabled={isLine}
@@ -582,17 +578,12 @@ export default function DetailItem<T extends JobWithSteel>({
                         <button
                           type="button"
                           onClick={() => {
-                            const currentMethod =
-                              item.cuttingMethod === "steelDisc"
-                                ? "normal"
-                                : "steelDisc";
                             patchSteelItem(idx, {
-                              cuttingMethod: currentMethod,
-                              cncTotalDraft:
-                                item.cuttingMethod === "CNC"
-                                  ? (item.total ?? item.cncTotalDraft ?? null)
-                                  : (item.cncTotalDraft ?? null),
-                              total: null,
+                              cuttingMethod:
+                                item.cuttingMethod === "steelDisc"
+                                  ? "normal"
+                                  : "steelDisc",
+                              manualPrice: false,
                             });
                           }}
                           disabled={isLine}
@@ -622,21 +613,11 @@ export default function DetailItem<T extends JobWithSteel>({
                         <button
                           type="button"
                           onClick={() => {
-                            const currentMethod =
-                              item.cuttingMethod === "CNC" ? "normal" : "CNC";
-                            if (currentMethod === "CNC") {
-                              patchSteelItem(idx, {
-                                cuttingMethod: currentMethod,
-                                total: item.cncTotalDraft ?? null,
-                              });
-                            } else {
-                              patchSteelItem(idx, {
-                                cuttingMethod: "normal",
-                                cncTotalDraft:
-                                  item.total ?? item.cncTotalDraft ?? null,
-                                total: null,
-                              });
-                            }
+                            patchSteelItem(idx, {
+                              cuttingMethod:
+                                item.cuttingMethod === "CNC" ? "normal" : "CNC",
+                              manualPrice: false,
+                            });
                           }}
                           disabled={isLine}
                           className={`flex h-10 items-center gap-2 rounded-lg border px-3 text-sm transition-all
@@ -661,33 +642,57 @@ export default function DetailItem<T extends JobWithSteel>({
                           </div>
                           CNC
                         </button>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            patchSteelItem(idx, {
+                              cuttingMethod: "normal",
+                              manualPrice: !isManualPrice,
+                            });
+                          }}
+                          className={`flex h-10 items-center gap-2 rounded-lg border px-3 text-sm transition-all
+                          ${
+                            isManualPrice
+                              ? "border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
+                              : "border-zinc-200 bg-white text-zinc-600 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800"
+                          }`}
+                        >
+                          <div
+                            className={`flex h-4 w-4 items-center justify-center rounded border
+                            ${
+                              isManualPrice
+                                ? "border-blue-500 bg-blue-500"
+                                : "border-zinc-300 bg-white"
+                            }`}
+                          >
+                            {isManualPrice && (
+                              <CheckIcon className="h-3 w-3 text-white" />
+                            )}
+                          </div>
+                          ราคา/กิโล
+                        </button>
                       </div>
                     </div>
 
-                    {/* CNC Total (only when CNC) */}
-                    {item.cuttingMethod === "CNC" && (
+                    {/* เหล็กตัดพอเศษ Price  */}
+                    {(item.cuttingMethod !== "normal" || isManualPrice) && (
                       <div className="w-full lg:w-44 flex-none">
                         <label className="mb-1.5 block text-xs font-medium text-zinc-500 dark:text-zinc-400">
-                          ราคาตัด CNC
+                          {item.cuttingMethod === "normal"
+                            ? "ราคาต่อหน่วย (บาท)"
+                            : "ราคาต่อชิ้น (บาท)"}
                         </label>
                         <div className="relative">
                           <Input
                             type="number"
                             min="0"
-                            value={item.total ?? ""}
+                            value={item.price ?? 1}
                             onChange={(e) => {
-                              const v =
-                                e.target.value === ""
-                                  ? null
-                                  : Math.max(0, Number(e.target.value)); //ไม่ให้ติดลบ
                               patchSteelItem(idx, {
-                                //idx คือ index ของ item ที่จะแก้
-                                total: v,
-                                cncTotalDraft: v,
+                                price: Math.max(0, Number(e.target.value || 0)),
                               });
                             }}
-                            placeholder="0"
-                            className="h-10 border-zinc-200 bg-white text-right pr-10 font-mono dark:border-zinc-700 dark:bg-zinc-900"
                           />
                           <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-zinc-400">
                             ฿

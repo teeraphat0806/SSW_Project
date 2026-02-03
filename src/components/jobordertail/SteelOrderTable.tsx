@@ -17,7 +17,6 @@ export type SteelItem = {
   density: number;
   job?: number;
   discount?: number | null;
-  total?: number | null;
   cuttingMethod: "normal" | "FB" | "steelDisc" | "CNC";
   shape: string;
 };
@@ -47,14 +46,13 @@ const calculateWeightDetails = (item: SteelItem) => {
   const cuttingMethod = item.cuttingMethod || "normal";
 
   const lineDiscount = safeNum(item.discount) || 0;
-  const total = safeNum(item.total) || 0;
 
   // 1. ถ้ามี weight ส่งมา (มากกว่า 0) ให้ใช้ค่านั้นเลย (Manual / Pre-calculated)
 
-  if (cuttingMethod === "CNC" && manualWeight > 0) {
+  if (cuttingMethod !== "normal") {
     return {
       weight: manualWeight,
-      totalPrice: total,
+      totalPrice: pricePerUnit * amount,
       lineDiscount,
       isManual: true,
       dimensions: { width, length, thickness },
@@ -156,7 +154,7 @@ export default function SteelTable({ steel = [], vatRate }: SteelTableProps) {
               น้ำหนัก (Kg)
             </span>
             <span className="col-span-2 text-right font-bold text-zinc-700 dark:text-zinc-400">
-              ราคา/กก.
+              ราคา/กก./ชิ้น
             </span>
             <span className="col-span-2 text-right font-bold text-zinc-700 dark:text-zinc-400">
               ราคารวม
