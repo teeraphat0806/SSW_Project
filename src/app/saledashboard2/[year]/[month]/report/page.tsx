@@ -41,6 +41,14 @@ interface ApiResponse {
     year: number;
     month: number;
     monthName: string;
+    dateRange?: {
+      startDate: string;
+      endDate: string;
+      formatted: {
+        startDate: string;
+        endDate: string;
+      };
+    } | null;
     totalBills: number;
     totalAmount: number;
     formatted: {
@@ -60,6 +68,17 @@ export default function SalesReportPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Get query parameters for date range
+  const [searchParams, setSearchParams] = useState<URLSearchParams | null>(
+    null,
+  );
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setSearchParams(new URLSearchParams(window.location.search));
+    }
+  }, []);
+
   const monthName = MONTH_NAMES[parseInt(month) - 1];
   const buddhistYear = parseInt(year) + 543;
 
@@ -67,8 +86,26 @@ export default function SalesReportPage() {
     const fetchData = async () => {
       try {
         setLoading(true);
+
+        // Build query parameters
+        const queryParams = new URLSearchParams({
+          year,
+          month,
+        });
+
+        // Add date range if provided
+        if (searchParams) {
+          const startDate = searchParams.get("startDate");
+          const endDate = searchParams.get("endDate");
+
+          if (startDate && endDate) {
+            queryParams.append("startDate", startDate);
+            queryParams.append("endDate", endDate);
+          }
+        }
+
         const response = await fetch(
-          `/api/sale/reportOrder?year=${year}&month=${month}`,
+          `/api/sale/reportOrder?${queryParams.toString()}`,
         );
 
         if (!response.ok) {
@@ -90,8 +127,10 @@ export default function SalesReportPage() {
       }
     };
 
-    fetchData();
-  }, [year, month]);
+    if (searchParams !== null) {
+      fetchData();
+    }
+  }, [year, month, searchParams]);
 
   const handlePrint = () => {
     window.print();
@@ -143,7 +182,9 @@ export default function SalesReportPage() {
           <div className="text-center mb-8">
             <h1 className="text-4xl font-bold mb-3">ใบคุม INVOICE</h1>
             <p className="text-lg text-zinc-600">
-              {monthName} {buddhistYear}
+              {meta?.dateRange
+                ? `${meta.dateRange.formatted.startDate} - ${meta.dateRange.formatted.endDate}`
+                : `${monthName} ${buddhistYear}`}
             </p>
             <p className="text-lg text-zinc-600">ลูกค้า: ทั้งหมด</p>
           </div>

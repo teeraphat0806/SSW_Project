@@ -25,6 +25,9 @@ export async function GET(req: NextRequest) {
     const year = searchParams.get("year");
     const month = searchParams.get("month");
     const customerId = searchParams.get("customerId") || "";
+    const startDate = searchParams.get("startDate");
+    const endDate = searchParams.get("endDate");
+
     // Validate required parameter
     if (isNumericString(customerId) === false && customerId !== "") {
       return NextResponse.json(
@@ -115,15 +118,90 @@ export async function GET(req: NextRequest) {
       "ธันวาคม",
     ];
 
-    const startOfMonth = new Date(yearNumber, monthNumber - 1, 1);
-    const endOfMonth = new Date(yearNumber, monthNumber, 1);
+    // Determine date range
+    let startOfPeriod: Date;
+    let endOfPeriod: Date;
 
-    // Get all bills for the specified month
+    // Get today for validation
+    const today = new Date();
+    today.setHours(23, 59, 59, 999); // End of today
+
+    if (startDate && endDate) {
+      // Custom date range mode
+      const parsedStartDate = new Date(startDate);
+      const parsedEndDate = new Date(endDate);
+
+      // Validate dates
+      if (isNaN(parsedStartDate.getTime()) || isNaN(parsedEndDate.getTime())) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: {
+              code: "INVALID_DATE_FORMAT",
+              message: "รูปแบบวันที่ไม่ถูกต้อง",
+              details: {
+                provided: { startDate, endDate },
+                expected: "YYYY-MM-DD",
+              },
+            },
+          },
+          { status: 400 },
+        );
+      }
+
+      // Check if dates are not in the future
+      if (parsedStartDate > today || parsedEndDate > today) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: {
+              code: "FUTURE_DATE_NOT_ALLOWED",
+              message: "วันที่ต้องไม่เกินวันนี้",
+              details: {
+                today: today.toISOString().split("T")[0],
+                provided: { startDate, endDate },
+              },
+            },
+          },
+          { status: 400 },
+        );
+      }
+
+      // Check if start date is before or equal to end date
+      if (parsedStartDate > parsedEndDate) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: {
+              code: "INVALID_DATE_RANGE",
+              message: "วันที่เริ่มต้นต้องไม่เกินวันที่สิ้นสุด",
+              details: {
+                startDate,
+                endDate,
+              },
+            },
+          },
+          { status: 400 },
+        );
+      }
+
+      startOfPeriod = parsedStartDate;
+      startOfPeriod.setHours(0, 0, 0, 0);
+
+      endOfPeriod = parsedEndDate;
+      endOfPeriod.setHours(23, 59, 59, 999);
+    } else {
+      // Default to month range
+      startOfPeriod = new Date(yearNumber, monthNumber - 1, 1);
+      endOfPeriod = new Date(yearNumber, monthNumber, 0, 23, 59, 59, 999);
+    }
+
+    // Get all bills for the specified period
     const bills = await prisma.bill.findMany({
       where: {
         createdAt: {
-          gte: startOfMonth,
-          lt: endOfMonth,
+          gte: startOfPeriod,
+          lte: endOfPeriod,
         },
         grandTotal: {
           not: null,
@@ -192,6 +270,25 @@ export async function GET(req: NextRequest) {
         year: yearNumber,
         month: monthNumber,
         monthName: monthNames[monthNumber - 1],
+        dateRange:
+          startDate && endDate
+            ? {
+                startDate,
+                endDate,
+                formatted: {
+                  startDate: new Date(startDate).toLocaleDateString("th-TH", {
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
+                  }),
+                  endDate: new Date(endDate).toLocaleDateString("th-TH", {
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
+                  }),
+                },
+              }
+            : null,
         totalBills,
         totalAmount,
         formatted: {
