@@ -144,7 +144,6 @@ export async function GET(
         cuttingMethod: p.cuttingMethod,
         job: p.job ?? undefined,
         weight: p.actualWeight ?? 0,
-        total: p.total ?? 0,
         discount: p.discount ?? undefined,
       })),
       status: jobOrder.status,

@@ -65,11 +65,12 @@ type ApiJobOrder = {
     thickness: number;
     detail?: string | null;
     weight?: number | null;
+    unitPrice: number;
     shape: SteelShape;
     job?: number | null;
     cuttingMethod: CuttingMethod;
     discount: number | null;
-    total: number | null;
+    price: number;
   }[];
   status: Status;
 };
@@ -94,11 +95,12 @@ type Joborder = {
     thickness: number;
     detail?: string | null;
     weight?: number | null;
+    unitPrice: number;
     shape: SteelShape;
     job?: number | null;
     cuttingMethod: CuttingMethod;
     discount: number | null;
-    total: number | null;
+    price: number;
   }[];
   status: Status;
 };
@@ -125,11 +127,12 @@ const toJoborder = (api: ApiJobOrder): Joborder => ({
     thickness: s.thickness ?? 0,
     detail: s.detail ?? null,
     weight: s.weight ?? null,
+    unitPrice: s.unitPrice,
     shape: s.shape,
     job: s.job ?? null,
     cuttingMethod: s.cuttingMethod ?? "normal",
     discount: s.discount ?? null,
-    total: s.total ?? null,
+    price: s.price ?? 1,
   })),
   status: api.status,
 });
@@ -158,15 +161,19 @@ type SteelOption = {
   value: string;
   label: string;
   quantity: number;
+  price: number;
   shape: "square" | "line";
 };
 
 type SteelStockApiItem = {
   id: number;
   codeSteel: string;
+  price: number;
   amount: number;
   shape: "square" | "line";
 };
+
+
 function mergeOrderSteelIntoOptions(
   options: SteelOption[],
   job: Joborder | null,
@@ -177,11 +184,11 @@ function mergeOrderSteelIntoOptions(
 
   for (const s of job.steel) {
     const code = s.steelType?.trim();
-    if (!code) continue;
+    if (!code) continue;  
 
     // ถ้าไม่มีใน options ให้เติมเข้าไป (quantity=0) เพื่อให้ Select แสดงได้
     if (!map.has(code)) {
-      map.set(code, { value: code, label: code, quantity: 0, shape: "square" });
+      map.set(code, { value: code, label: code, quantity: 0,price:0, shape: "square" });
     }
   }
 
@@ -219,10 +226,11 @@ type PatchPayload = {
     thickness: number;
     weight?: number | null;
     detail?: string | null;
+
     job?: number | null;
     cuttingMethod?: CuttingMethod;
     discount?: number | null;
-    total?: number | null;
+    price?: number;
   }[];
 };
 
@@ -241,7 +249,7 @@ function buildPatchPayload(job: Joborder): PatchPayload {
       job: l.job ?? null,
       cuttingMethod: l.cuttingMethod ?? "normal",
       discount: l.discount ?? null,
-      total: l.cuttingMethod === "CNC" ? (l.total ?? null) : null,
+      price: l.price ?? 1,
     })),
   };
 }
@@ -298,6 +306,7 @@ const UpdateOrderPage = ({ id }: { id: string }) => {
       const options: SteelOption[] = data.map((x) => ({
         value: x.codeSteel,
         label: x.codeSteel,
+        price: x.price,
         quantity: x.amount ?? 0,
         shape: x.shape,
       }));
@@ -367,14 +376,12 @@ const UpdateOrderPage = ({ id }: { id: string }) => {
     if (itemCount > 15)
       return "ไม่สามารถบันทึกคำสั่งซื้อที่มีรายการเหล็กเกิน 15 รายการได้";
     if (hasMissingJob) return "กรุณากรอกหมายเลขงาน (Job No.) ให้ครบทุกบรรทัด";
+
     if (isAtLeast(job.status, "weighing")) {
       const hasZeroWeight = job.steel.some((s) => !s.weight || s.weight <= 0);
       if (hasZeroWeight) return "กรุณากรอกน้ำหนักเหล็กก่อนบันทึกคำสั่งซื้อ";
-      const hasZeroprice = job.steel
-        .filter((s) => s.cuttingMethod == "CNC")
-        .some((s) => !s.total || s.total <= 0);
-      if (hasZeroprice)
-        return "กรุณากรอกราคาต่อหน่วยเหล็ก CNC ก่อนบันทึกคำสั่งซื้อ";
+      const hasZeroprice = job.steel.some((s) => !s.price || s.price <= 0);
+      if (hasZeroprice) return "กรุณากรอกราคาเหล็กก่อนบันทึกคำสั่งซื้อ";
     }
 
     if (
@@ -485,7 +492,7 @@ const UpdateOrderPage = ({ id }: { id: string }) => {
 
   if (error || !job) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-background to-steel/20 flex items-center justify-center">
+      <div className="min-h-screen bg-linear-to-br from-background to-steel/20 flex items-center justify-center">
         <div className="text-center">
           <p className="text-red-600">Error ไม่พบข้อมูลคำสั่งซื้อ</p>
         </div>
@@ -542,7 +549,7 @@ const UpdateOrderPage = ({ id }: { id: string }) => {
   return (
     <div>
       {/*Header*/}
-      <header className="sticky top-0 z-50 border-b border-border/40 bg-background/80 backdrop-blur-md supports-[backdrop-filter]:bg-background/60">
+      <header className="sticky top-0 z-50 border-b border-border/40 bg-background/80 backdrop-blur-md supports-backdrop-filter:bg-background/60">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
           <div className="flex items-center gap-4">
             <Button

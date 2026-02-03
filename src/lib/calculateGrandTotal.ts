@@ -38,7 +38,7 @@ export function calculateBillSummary(
   );
   const subtotal = steel.reduce((sum, s) => {
     // CNC uses total field explicitly
-    if (s.cuttingMethod === "CNC") {
+    if (s.cuttingMethod !== "normal") {
       return sum + safeNum(s.total);
     }
     if (safeNum(s.weight) > 0) {
