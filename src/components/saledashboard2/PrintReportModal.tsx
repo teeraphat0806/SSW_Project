@@ -94,7 +94,7 @@ export function PrintReportModal({
                 checked={printType === "receipt"}
                 onChange={() => setPrintType("receipt")}
               />
-              ใบเสร็จรับเงิน
+              ใบกำกับภาษี
             </label>
             <label className="flex items-center gap-2 cursor-pointer">
               <input
