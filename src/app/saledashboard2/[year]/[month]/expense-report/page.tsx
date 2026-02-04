@@ -58,6 +58,14 @@ interface ApiResponse {
     year: number;
     month: number;
     monthName: string;
+    dateRange?: {
+      startDate: string;
+      endDate: string;
+      formatted: {
+        startDate: string;
+        endDate: string;
+      };
+    } | null;
     totalAmount: number;
     categoryBreakdown: any[];
   };
@@ -74,6 +82,17 @@ export default function ExpenseReportPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Get query parameters for date range
+  const [searchParams, setSearchParams] = useState<URLSearchParams | null>(
+    null,
+  );
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setSearchParams(new URLSearchParams(window.location.search));
+    }
+  }, []);
+
   const monthName = MONTH_NAMES[parseInt(month) - 1];
   const buddhistYear = parseInt(year) + 543;
 
@@ -81,9 +100,37 @@ export default function ExpenseReportPage() {
     const fetchData = async () => {
       try {
         setLoading(true);
+
+        // Build query parameters
+        const queryParams = new URLSearchParams();
+
+        // Add date range if provided
+        if (searchParams) {
+          const startDate = searchParams.get("startDate");
+          const endDate = searchParams.get("endDate");
+
+          if (startDate && endDate) {
+            // When date range is provided, don't use month filtering
+            queryParams.append("year", year);
+            queryParams.append("month", month);
+            queryParams.append("startDate", startDate);
+            queryParams.append("endDate", endDate);
+          } else {
+            // Default to month range
+            queryParams.append("year", year);
+            queryParams.append("month", month);
+          }
+        } else {
+          // Default to month range
+          queryParams.append("year", year);
+          queryParams.append("month", month);
+        }
+
+        queryParams.append("limit", "999999");
+
         // Fetch all expenses without pagination
         const response = await fetch(
-          `/api/sale/expenses?year=${year}&month=${month}&limit=999999`,
+          `/api/sale/expenses?${queryParams.toString()}`,
         );
 
         if (!response.ok) {
@@ -105,8 +152,10 @@ export default function ExpenseReportPage() {
       }
     };
 
-    fetchData();
-  }, [year, month]);
+    if (searchParams !== null) {
+      fetchData();
+    }
+  }, [year, month, searchParams]);
 
   const handlePrint = () => {
     window.print();
@@ -158,7 +207,9 @@ export default function ExpenseReportPage() {
           <div className="text-center mb-8">
             <h1 className="text-4xl font-bold mb-3">รายงานค่าใช้จ่าย</h1>
             <p className="text-lg text-zinc-600">
-              {monthName} {buddhistYear}
+              {meta?.dateRange
+                ? `${meta.dateRange.formatted.startDate} - ${meta.dateRange.formatted.endDate}`
+                : `${monthName} ${buddhistYear}`}
             </p>
           </div>
 

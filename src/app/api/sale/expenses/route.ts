@@ -28,6 +28,8 @@ export async function GET(req: NextRequest) {
     const category = searchParams.get("category");
     const sortBy = searchParams.get("sortBy") || "date";
     const sortOrder = searchParams.get("sortOrder") || "desc";
+    const startDate = searchParams.get("startDate");
+    const endDate = searchParams.get("endDate");
 
     // Validate required parameters
     if (!year || !month) {
@@ -141,14 +143,89 @@ export async function GET(req: NextRequest) {
       "ธันวาคม",
     ];
 
-    const startOfMonth = new Date(yearNumber, monthNumber - 1, 1);
-    const endOfMonth = new Date(yearNumber, monthNumber, 1);
+    // Determine date range
+    let startOfPeriod: Date;
+    let endOfPeriod: Date;
+
+    // Get today for validation
+    const today = new Date();
+    today.setHours(23, 59, 59, 999); // End of today
+
+    if (startDate && endDate) {
+      // Custom date range mode
+      const parsedStartDate = new Date(startDate);
+      const parsedEndDate = new Date(endDate);
+
+      // Validate dates
+      if (isNaN(parsedStartDate.getTime()) || isNaN(parsedEndDate.getTime())) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: {
+              code: "INVALID_DATE_FORMAT",
+              message: "รูปแบบวันที่ไม่ถูกต้อง",
+              details: {
+                provided: { startDate, endDate },
+                expected: "YYYY-MM-DD",
+              },
+            },
+          },
+          { status: 400 },
+        );
+      }
+
+      // Check if dates are not in the future
+      if (parsedStartDate > today || parsedEndDate > today) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: {
+              code: "FUTURE_DATE_NOT_ALLOWED",
+              message: "วันที่ต้องไม่เกินวันนี้",
+              details: {
+                today: today.toISOString().split("T")[0],
+                provided: { startDate, endDate },
+              },
+            },
+          },
+          { status: 400 },
+        );
+      }
+
+      // Check if start date is before or equal to end date
+      if (parsedStartDate > parsedEndDate) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: {
+              code: "INVALID_DATE_RANGE",
+              message: "วันที่เริ่มต้นต้องไม่เกินวันที่สิ้นสุด",
+              details: {
+                startDate,
+                endDate,
+              },
+            },
+          },
+          { status: 400 },
+        );
+      }
+
+      startOfPeriod = parsedStartDate;
+      startOfPeriod.setHours(0, 0, 0, 0);
+
+      endOfPeriod = parsedEndDate;
+      endOfPeriod.setHours(23, 59, 59, 999);
+    } else {
+      // Default to month range
+      startOfPeriod = new Date(yearNumber, monthNumber - 1, 1);
+      endOfPeriod = new Date(yearNumber, monthNumber, 0, 23, 59, 59, 999);
+    }
 
     // Build where clause
     const whereClause: any = {
       expenseDate: {
-        gte: startOfMonth,
-        lt: endOfMonth,
+        gte: startOfPeriod,
+        lte: endOfPeriod,
       },
     };
 
@@ -188,8 +265,8 @@ export async function GET(req: NextRequest) {
     const salariesFromDB = await prisma.staffSalary.findMany({
       where: {
         effectiveDate: {
-          gte: startOfMonth,
-          lt: endOfMonth,
+          gte: startOfPeriod,
+          lte: endOfPeriod,
         },
       },
       include: {
@@ -218,7 +295,7 @@ export async function GET(req: NextRequest) {
       const amount = salaryRecord ? salaryRecord.amount : staff.currentSalary;
       const effectiveDate = salaryRecord
         ? salaryRecord.effectiveDate
-        : new Date(yearNumber, monthNumber - 1, 1); // First day of month if using currentSalary
+        : startOfPeriod; // Use start of period instead of first day of month
 
       return {
         id: -1000000 - index, // Negative ID to distinguish from real expenses
@@ -413,6 +490,25 @@ export async function GET(req: NextRequest) {
         year: yearNumber,
         month: monthNumber,
         monthName: monthNames[monthNumber - 1],
+        dateRange:
+          startDate && endDate
+            ? {
+                startDate,
+                endDate,
+                formatted: {
+                  startDate: new Date(startDate).toLocaleDateString("th-TH", {
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
+                  }),
+                  endDate: new Date(endDate).toLocaleDateString("th-TH", {
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
+                  }),
+                },
+              }
+            : null,
         totalAmount,
         categoryBreakdown: categoryBreakdown.sort(
           (a, b) => b.amount - a.amount,
