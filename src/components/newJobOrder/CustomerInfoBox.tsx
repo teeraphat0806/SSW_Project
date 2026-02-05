@@ -13,7 +13,6 @@ import { cn } from "@/lib/utils"; // ถ้าไม่มีให้ลบอ�
 
 interface Customer {
   id: string;
-  code: string;
   name: string;
   address: string;
   tel: string;
@@ -112,7 +111,7 @@ export default function CustomerInfoCard({
                 {customer.name}
               </h1>
               <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-700 font-mono">
-                #{customer.code}
+                #{customer.id}
               </span>
             </div>
             {customer.taxNumber && (

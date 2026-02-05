@@ -27,11 +27,12 @@ import SelectCustomer from "@/components/SelectCustomer";
 
 import type { CustomerFormData } from "@/components/newJobOrder/CustomerForm";
 import { cn } from "@/lib/utils";
-import { CuttingMethod, ShapeSteel } from "@prisma/client";
+import { CuttingMethod, ShapeSteel } from "@/types";
 import {
   OcrResultModal,
   type OcrSummary,
 } from "@/components/newJobOrder/OcrResultModel";
+import { is } from "date-fns/locale";
 
 type CustomerApiItem = {
   id: number;
@@ -52,6 +53,8 @@ type SteelItem = {
   thickness: number;
   notes: string;
   cuttingMethod?: CuttingMethod;
+  isOD: boolean;
+  isServices: boolean;
   job?: number | null;
 };
 
@@ -69,7 +72,6 @@ type OcrParseResponse = {
     matchedBy: "taxNumber" | "tel" | "faxNumber" | "email" | null;
   };
   customerDraft: {
-    code: string | null;
     name: string;
     address: string;
     tel: string;
@@ -81,7 +83,6 @@ type OcrParseResponse = {
     poNumber: string | null;
     poDate: string | null;
     deliveryDate: string | null;
-    yourRef: string | null;
   };
   items: Array<{
     raw: {
@@ -95,6 +96,8 @@ type OcrParseResponse = {
       cuttingMethod: CuttingMethod;
       job: number | null;
       notes: string | null;
+      isOD: boolean | null;
+      isServices: boolean | null;
       confidence: number | null;
     };
     match: {
@@ -160,12 +163,12 @@ const NewJobOrder = () => {
   // เก็บ ID ลูกค้าที่เลือกจาก SelectCustomer
   const [headOrder, setheadOrder] = useState<{
     poNumber: string | null;
+    credit: number;
     deliveryDate: string;
-    yourRef: string;
   }>({
     poNumber: null,
+    credit: 30,
     deliveryDate: new Date().toISOString().split("T")[0],
-    yourRef: "",
   });
 
   const [steelTypes, setSteelTypes] = useState<SteelType[]>([]);
@@ -178,6 +181,8 @@ const NewJobOrder = () => {
       width: null,
       length: 1,
       thickness: 1,
+      isOD: false,
+      isServices: false,
       cuttingMethod: "normal",
       notes: "",
     },
@@ -277,7 +282,6 @@ const NewJobOrder = () => {
 
   // Form data customer
   const [formData, setFormData] = useState<CustomerFormData>({
-    code: null,
     customerName: "",
     customerEmail: "",
     customerPhone: "",
@@ -338,13 +342,12 @@ const NewJobOrder = () => {
     try {
       if (showForm) {
         const payloadNewcustomer = {
-          code: formData.code ? formData.code : undefined,
           name: formData.customerName,
           address: formData.deliveryAddress,
-          tel: formData.customerPhone,
+          tel: formData.customerPhone || "",
           taxNumber: formData.taxNumber,
-          faxNumber: formData.faxNumber,
-          email: formData.customerEmail,
+          faxNumber: formData.faxNumber || "",
+          email: formData.customerEmail || "",
         };
         const customerRes = await fetch(`api/customer`, {
           method: "POST",
@@ -372,10 +375,10 @@ const NewJobOrder = () => {
 
       const payloadBill = {
         customerId: Number(customerId),
-        yourRef: headOrder.yourRef,
         deliveryDate: new Date(headOrder.deliveryDate).toISOString(),
         orderPO: {
           poNumber: headOrder.poNumber ?? null,
+          credit: headOrder.credit,
           urlPo: poKeys,
 
           products: steelItems.map((item) => ({
@@ -385,11 +388,13 @@ const NewJobOrder = () => {
             thickness: item.thickness,
             amount: item.quantity,
 
+            detail: item.notes || undefined, // optional ส่ง undefined ได้
+            job: item.job ?? null,
             cuttingMethod: item.cuttingMethod ?? "normal",
 
-            job: item.job ?? null,
-
-            detail: item.notes || undefined, // optional ส่ง undefined ได้
+            isOD: item.isOD || false,
+            isServices: item.isServices || false,
+            isPerAmount: item.isServices || false,
           })),
         },
       };
@@ -468,6 +473,8 @@ const NewJobOrder = () => {
       notes: "",
       cuttingMethod: "normal",
       job: null,
+      isOD: false,
+      isServices: false,
     };
     setSteelItems((prev) => [...prev, newItem]);
   };
@@ -484,7 +491,6 @@ const NewJobOrder = () => {
       ...prev,
       poNumber: data.orderDraft?.poNumber ?? prev.poNumber,
       deliveryDate: data.orderDraft?.deliveryDate ?? prev.deliveryDate,
-      yourRef: data.orderDraft?.yourRef ?? prev.yourRef,
     }));
 
     // 2) customer: match -> select / else -> showForm + fill
@@ -498,7 +504,6 @@ const NewJobOrder = () => {
       const c = data.customerDraft;
       setFormData((prev) => ({
         ...prev,
-        code: c.code ?? null,
         customerName: c.name ?? "",
         deliveryAddress: c.address ?? "",
         customerPhone: c.tel ?? "",
@@ -520,6 +525,8 @@ const NewJobOrder = () => {
       notes: x.raw?.notes ?? "",
       cuttingMethod: x.raw?.cuttingMethod ?? "normal",
       job: x.raw?.job ?? null,
+      isOD: x.raw?.isOD ?? false,
+      isServices: x.raw?.isServices ?? false,
     }));
     if (mapped.length) setSteelItems(mapped);
     const customerLine = data.customerMatch?.matched
@@ -593,15 +600,11 @@ const NewJobOrder = () => {
       if (!formData.customerName.trim()) return "กรุณากรอกชื่อลูกค้า";
       if (!formData.deliveryAddress.trim())
         return "กรุณากรอกที่อยู่สำหรับจัดส่ง";
-      if (!formData.customerPhone.trim()) return "กรุณากรอกเบอร์ลูกค้า";
       if (!formData.taxNumber.trim()) return "กรุณากรอกเลข Tax";
-      if (!formData.faxNumber.trim()) return "กรุณากรอกเลข Fax";
     }
 
-    if (!headOrder.poNumber?.trim() && UploadFile.length > 0)
-      return "ออเดอร์นี้มีไฟล์แนบ กรุณากรอกหมายเลข PO";
     if (!headOrder.deliveryDate) return "กรุณากรอกวันที่ต้องการสินค้า";
-    if (!headOrder.yourRef.trim()) return "กรุณากรอกช่อง Your Ref";
+
     if (useJob == true && steelItems.some((item) => !item.job)) {
       return "กรุณากรอกหมายเลข Job ในรายการเหล็กที่เลือก";
     }
@@ -766,7 +769,7 @@ const NewJobOrder = () => {
                       >
                         {file.name}
                       </a>
-                      <p className="text-[10px] text-slate-400 dark:text-slate-500 uppercase mt-0.5">
+                      <p className="textxs text-slate-400 dark:text-slate-500 uppercase mt-0.5">
                         {file.name.split(".").pop() || "FILE"}
                       </p>
                     </div>

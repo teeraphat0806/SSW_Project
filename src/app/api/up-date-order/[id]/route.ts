@@ -3,29 +3,20 @@ import prisma from "@/lib/prisma";
 import type { Prisma } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 import z from "zod";
-
-type statusType =
-  | "pending"
-  | "cutting"
-  | "weighing"
-  | "ready"
-  | "shipped"
-  | "completed"
-  | "canceled";
-
-type cuttingMethodType = "normal" | "FB" | "steelDisc" | "CNC";
+import { ShapeSteel, CuttingMethod, status } from "@/types";
+import { calculateWeightDetails } from "@/lib/calculateGrandTotal";
 
 type ApiJobOrder = {
   id: number;
   poNumber: string | null;
   customerId: number;
   customerName: string;
-  customerEmail: string;
-  customerPhone: string;
+  customerEmail: string | null;
+  customerPhone: string | null;
   customerAddress: string;
   customerTaxId: string;
-  customerCode: string | null;
-  customerFax: string;
+  customerFax: string | null;
+  credit: number;
   steel: {
     id: number;
     steelType: string;
@@ -35,17 +26,25 @@ type ApiJobOrder = {
     thickness: number;
     detail?: string | null;
     weight?: number | null;
-    shape: "square" | "line";
+    shape: ShapeSteel;
     job: number | null;
-    cuttingMethod: cuttingMethodType;
+    cuttingMethod: CuttingMethod;
     discount?: number | null;
     price: number;
+    isOD: boolean;
+    isServices: boolean;
+    isPerAmount: boolean;
   }[];
-  status: statusType;
+  status: status;
 };
 
+//ตัวช่วยแปลงข้อมูลจาก Prisma เป็น ApiJobOrder
 type OrderWithRelations = Prisma.OrderPOGetPayload<{
-  include: { Product: { include: { SteelType: true } }; Customer: true };
+  include: {
+    Product: { include: { SteelType: true } };
+    Customer: true;
+    bill: { select: { credit: true } };
+  };
 }>;
 
 function toApiJobOrder(order: OrderWithRelations): ApiJobOrder {
@@ -63,8 +62,8 @@ function toApiJobOrder(order: OrderWithRelations): ApiJobOrder {
     customerPhone: customer.tel,
     customerAddress: customer.address,
     customerTaxId: customer.taxNumber,
-    customerCode: customer.code ?? null,
     customerFax: customer.faxNumber,
+    credit: order.bill?.credit ?? 30,
     steel: order.Product.map((p) => ({
       id: p.id,
       steelType: p.SteelType.codeSteel,
@@ -74,13 +73,16 @@ function toApiJobOrder(order: OrderWithRelations): ApiJobOrder {
       thickness: p.thickness ?? 0,
       detail: p.detail ?? null,
       weight: p.actualWeight ?? null,
-      shape: p.SteelType.shape as "square" | "line",
+      shape: p.SteelType.shape as ShapeSteel,
       job: p.job ?? null,
-      cuttingMethod: (p.cuttingMethod ?? "normal") as cuttingMethodType,
+      cuttingMethod: (p.cuttingMethod ?? "normal") as CuttingMethod,
       discount: p.discount ?? null,
       price: p.unitPrice ?? 0,
+      isOD: p.isOD,
+      isServices: p.isServices,
+      isPerAmount: p.isPerAmount,
     })),
-    status: order.status as statusType,
+    status: order.status as status,
   };
 }
 
@@ -111,6 +113,7 @@ export async function GET(
           },
         },
         Customer: true,
+        bill: { select: { credit: true } },
       },
     });
 
@@ -149,14 +152,19 @@ const SteelLineSchema = z.object({
   thickness: z.number().nonnegative(),
   weight: z.number().nonnegative().nullable().optional(),
   detail: z.string().nullable().optional(),
-  cuttingMethod: z.enum(["normal", "FB", "steelDisc", "CNC"]).optional(),
+  cuttingMethod: z.enum(["normal", "FB", "RM", "CNC"]).optional(),
   job: z.number().int().nullable().optional(),
   discount: z.number().nonnegative().nullable().optional(),
   price: z.number().nonnegative(),
+  isOD: z.boolean().optional(),
+  isServices: z.boolean().optional(),
+  isPerAmount: z.boolean().optional(),
 });
 
 const PatchSchema = z.object({
   status: StatusSchema.optional(),
+  // credit (days) must be a positive integer; allow coercion from string inputs.
+  credit: z.coerce.number().int().positive().optional(),
   customerId: z.string().trim().optional(),
   steel: z.array(SteelLineSchema).optional(),
 });
@@ -183,74 +191,6 @@ const safeNum = (v: unknown) => {
   return Number.isFinite(n) ? n : 0;
 };
 
-type SteelShape = "square" | "line";
-
-function calcComputedWeightKg(params: {
-  shape: SteelShape;
-  amount: number;
-  width?: number | null;
-  length: number;
-  thickness: number;
-  density: number; // kg/m3
-}) {
-  const amount = safeNum(params.amount);
-  const width = safeNum(params.width);
-  const length = safeNum(params.length);
-  const thickness = safeNum(params.thickness);
-  const density = safeNum(params.density) || 7860;
-
-  if (amount <= 0 || length <= 0 || thickness <= 0) return 0;
-
-  // ใช้ shape เป็นหลัก ถ้า square = แผ่น, line = กลม/เส้น
-  let weightPerPieceKg = 0;
-
-  if (params.shape === "square") {
-    // ถ้าไม่ได้ส่ง width มาให้ถือว่า 0 -> จะได้ weight 0 (กันพัง)
-    if (width <= 0) return 0;
-    weightPerPieceKg = width * length * thickness * density * 0.1;
-  } else {
-    weightPerPieceKg = length * length * thickness * density * 0.1;
-  }
-
-  const totalWeightKg = weightPerPieceKg * amount;
-  return totalWeightKg;
-}
-
-function calcLine(params: {
-  amount: number;
-  weight?: number | null; // น้ำหนักจริงที่กรอกมา (ถ้ามี)
-  width?: number | null;
-  length: number;
-  thickness: number;
-  steel: {
-    price: number;
-    density: number;
-    shape: SteelShape;
-  };
-}) {
-  const price = safeNum(params.steel.price);
-  const manualWeight = safeNum(params.weight);
-
-  // 1) มีน้ำหนักจริง -> ใช้น้ำหนักจริง (ถือว่าเป็น "น้ำหนักรวมของรายการ" แล้ว)
-  if (manualWeight > 0) {
-    const totalCalculate = round2(manualWeight * price);
-
-    return { weightKg: manualWeight, totalCalculate };
-  }
-
-  // 2) ไม่มีน้ำหนักจริง -> คำนวณจากมิติ + density + shape + amount
-  const computedWeightKg = calcComputedWeightKg({
-    shape: params.steel.shape,
-    amount: params.amount,
-    width: params.width ?? null,
-    length: params.length,
-    thickness: params.thickness,
-    density: params.steel.density,
-  });
-
-  const totalCalculate = round2(computedWeightKg * price);
-  return { weightKg: round2(computedWeightKg), totalCalculate };
-}
 export async function PATCH(
   req: NextRequest,
   context: { params: Promise<{ id: string }> },
@@ -283,9 +223,14 @@ export async function PATCH(
     const updated = await prisma.$transaction(async (tx) => {
       const existing = await tx.orderPO.findUnique({
         where: { id: poId },
-        select: { id: true },
+        select: { id: true, billId: true },
       });
       if (!existing) throw new Error("Order not found");
+
+      const credit = patch.credit;
+      if (credit !== undefined && existing.billId == null) {
+        throw new Error("No bill associated with this order");
+      }
 
       // customerId (ถ้ามีส่งมา)
       let nextCustomerId: number | undefined = undefined;
@@ -308,14 +253,24 @@ export async function PATCH(
         where: { id: poId },
         data: {
           ...(patch.status ? { status: patch.status } : {}),
-          ...(patch.status === "completed"
-            ? { completedAt: new Date() }
-            : { completedAt: null }),
+          ...(patch.status
+            ? patch.status === "completed"
+              ? { completedAt: new Date() }
+              : { completedAt: null }
+            : {}),
           ...(nextCustomerId !== undefined
             ? { customerId: nextCustomerId }
             : {}),
         },
       });
+
+      // If we're only updating credit (no steel changes), update the bill here.
+      if (credit !== undefined && !patch.steel) {
+        await tx.bill.update({
+          where: { id: existing.billId! },
+          data: { credit },
+        });
+      }
 
       // update steel
       if (patch.steel) {
@@ -359,17 +314,21 @@ export async function PATCH(
             //st คือ steelType จาก database
             const st = codeToSteel.get(l.codeSteel.trim())!;
 
-            const { totalCalculate } = calcLine({
+            const { total } = calculateWeightDetails({
+              shape: st.shape as ShapeSteel,
               amount: l.amount,
-              weight: l.weight ?? null,
-              width: l.width ?? null,
+              width: l.width ?? undefined,
               length: l.length,
               thickness: l.thickness,
-              steel: {
-                price: l.price,
-                density: st.density,
-                shape: st.shape as "square" | "line",
-              },
+
+              density: st.density,
+              weight: l.weight ?? null,
+              price: l.price,
+              discount: l.discount ?? null,
+
+              isOD: l.isOD ?? false,
+              isServices: l.isServices ?? false,
+              isPerAmount: l.isPerAmount ?? false,
             });
 
             return {
@@ -385,10 +344,10 @@ export async function PATCH(
               job: l.job ?? null,
               cuttingMethod: l.cuttingMethod ?? "normal",
               discount: l.discount ?? null,
-              total:
-                l.cuttingMethod !== "normal"
-                  ? l.price * l.amount
-                  : totalCalculate,
+              isOD: l.isOD ?? false,
+              isServices: l.isServices ?? false,
+              isPerAmount: l.isPerAmount ?? false,
+              total: l.isPerAmount ? l.price * l.amount : total,
             };
           }),
         });
@@ -442,6 +401,7 @@ export async function PATCH(
               discount,
               vat,
               grandTotal,
+              ...(credit !== undefined ? { credit } : {}),
             },
           });
         } else {
@@ -455,6 +415,7 @@ export async function PATCH(
         include: {
           Product: { include: { SteelType: true } },
           Customer: true,
+          bill: { select: { credit: true } },
         },
       });
 

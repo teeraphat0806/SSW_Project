@@ -177,7 +177,7 @@ export function OcrResultModal({
                               {item.codeSteel}
                             </span>
                             {item.description && (
-                              <span className="hidden sm:inline-flex px-1.5 py-0.5 rounded-md bg-muted text-[10px] text-muted-foreground truncate max-w-[150px]">
+                              <span className="hidden sm:inline-flex px-1.5 py-0.5 rounded-md bg-muted textxs text-muted-foreground truncate max-w-[150px]">
                                 {item.description}
                               </span>
                             )}

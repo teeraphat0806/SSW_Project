@@ -19,11 +19,10 @@ import CustomerViewEditModal from "@/components/customer-Dashboard/CustomerViewE
 
 type Customer = {
   id: number;
-  code: string;
   name: string;
-  tel: string;
-  email: string;
-  taxNumber: string | null; // เผื่อบางรายว่าง
+  tel: string | null;
+  email: string | null;
+  taxNumber: string;
   createdAt: string;
   updatedAt: string;
   billCount: number;
@@ -345,7 +344,7 @@ export default function CustomerDashboard() {
                               {customer.name}
                             </span>
                             <span className="text-xs text-zinc-500 dark:text-zinc-400">
-                              รหัส: {customer.code}
+                              id: {customer.id}
                             </span>
                           </div>
                         </td>

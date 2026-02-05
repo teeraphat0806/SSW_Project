@@ -25,10 +25,10 @@ import {
   Hash,
   Edit3,
   Layers,
-  Ruler,
+  CalendarClock,
   CheckIcon,
 } from "lucide-react";
-import { ShapeSteel } from "@/types/enums";
+import { ShapeSteel, CuttingMethod } from "@/types";
 
 // --- Types (คงเดิม) ---
 export type SteelItemType = {
@@ -39,9 +39,11 @@ export type SteelItemType = {
   width: number | null;
   length: number;
   thickness: number;
-  cuttingMethod?: "normal" | "FB" | "steelDisc" | "CNC";
+  cuttingMethod?: CuttingMethod;
   job?: number | null;
   notes: string;
+  isOD: boolean;
+  isServices: boolean;
 };
 
 export type SteelTypeOption = {
@@ -52,7 +54,7 @@ export type SteelTypeOption = {
 
 export type HeadOrderType = {
   poNumber: string | null;
-  yourRef: string;
+  credit: number;
   deliveryDate: string;
 };
 
@@ -178,19 +180,24 @@ export default function AddItem({
             {/* 2. Your Ref */}
             <div className="space-y-2 group">
               <Label
-                htmlFor="yourRef"
+                htmlFor="credit"
                 className="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 group-focus-within:text-blue-600 dark:group-focus-within:text-blue-400 transition-colors"
               >
-                Your Ref / อ้างอิง<span className="text-red-500">*</span>
+                เครดิต Credit<span className="text-red-500">*</span>
               </Label>
               <div className="relative transition-all duration-200 ease-in-out transform group-focus-within:-translate-y-0.5">
-                <Edit3 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400 group-focus-within:text-blue-500 transition-colors" />
+                <CalendarClock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400 group-focus-within:text-blue-500 transition-colors" />
                 <Input
-                  id="yourRef"
-                  placeholder="ระบุรหัสอ้างอิง"
-                  value={headOrder.yourRef}
+                  id="credit"
+                  placeholder="ระบุเครดิต ( 30 )"
+                  type="number"
+                  min="1"
+                  value={headOrder.credit}
                   onChange={(e) =>
-                    setheadOrder({ ...headOrder, yourRef: e.target.value })
+                    setheadOrder({
+                      ...headOrder,
+                      credit: Number(e.target.value),
+                    })
                   }
                   className="pl-10 h-11 bg-zinc-50/50 dark:bg-zinc-950/50 border-zinc-200 dark:border-zinc-800 focus:bg-white dark:focus:bg-zinc-950 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
                 />
@@ -213,10 +220,9 @@ export default function AddItem({
                   min={today}
                   value={headOrder.deliveryDate}
                   onChange={handleDateChange}
-                  className="
-    pl-10 h-11 
-    bg-zinc-50/50 dark:bg-zinc-950/50 
-    border-zinc-200 dark:border-zinc-800 
+                  className="pl-10 h-11 
+                bg-zinc-50/50 dark:bg-zinc-950/50 
+                border-zinc-200 dark:border-zinc-800 
     
     /* 1. กำหนดสีตัวอักษรให้ชัดเจน */
     text-zinc-900 dark:text-zinc-100 
@@ -405,9 +411,7 @@ export default function AddItem({
                           {!isLine && (
                             <div>
                               <label className="mb-1.5 block text-center text-xs font-medium text-zinc-500 dark:text-zinc-400">
-                                {item.cuttingMethod === "steelDisc"
-                                  ? "วงใน"
-                                  : "กว้าง"}
+                                {item.isOD === true ? "วงใน" : "กว้าง"}
                               </label>
                               <div className="relative">
                                 <Input
@@ -433,9 +437,7 @@ export default function AddItem({
                           {/* Length */}
                           <div>
                             <label className="mb-1.5 block text-center text-xs font-medium text-zinc-500 dark:text-zinc-400">
-                              {item.cuttingMethod === "steelDisc"
-                                ? "วงนอก"
-                                : "ยาว"}
+                              {item.isOD === true ? "วงนอก" : "ยาว"}
                             </label>
                             <div className="relative">
                               <Input
@@ -490,90 +492,46 @@ export default function AddItem({
                         <label className="mb-1.5 block text-xs font-medium text-zinc-500 dark:text-zinc-400">
                           วิธีตัด
                         </label>
-                        <div className="flex gap-2">
-                          {/* ใช้ className แบบ condition เพื่อเปลี่ยนสีเมื่อถูกเลือก */}
-                          <button
-                            type="button"
-                            onClick={() =>
-                              updateSteelItem(
-                                item.id,
-                                "cuttingMethod",
-                                item.cuttingMethod === "FB" ? "normal" : "FB",
-                              )
-                            }
-                            disabled={isLine}
-                            className={`flex h-10 items-center gap-2 rounded-lg border px-3 text-sm transition-all
-                                     ${
-                                       item.cuttingMethod === "FB"
-                                         ? "border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
-                                         : "border-zinc-200 bg-white text-zinc-600 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800"
-                                     }
-                                      ${isLine ? "opacity-50 cursor-not-allowed" : ""}`}
-                          >
-                            <div
-                              className={`h-4 w-4 rounded border flex items-center justify-center
-                                ${
-                                  item.cuttingMethod === "FB"
-                                    ? "border-blue-500 bg-blue-500"
-                                    : "border-zinc-300 bg-white"
-                                }`}
-                            >
-                              {item.cuttingMethod === "FB" && (
-                                <CheckIcon className="w-3 h-3 text-white" />
-                              )}
-                            </div>
-                            F/P
-                          </button>
+                        <Select
+                          value={item.cuttingMethod ?? "normal"}
+                          onValueChange={(value) =>
+                            updateSteelItem(
+                              item.id,
+                              "cuttingMethod",
+                              value as CuttingMethod,
+                            )
+                          }
+                        >
+                          <SelectTrigger className="h-10 w-full min-w-[160px] border-zinc-200 bg-white text-sm focus:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100">
+                            <SelectValue placeholder="เลือกวิธีตัด" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="normal">ตัดปกติ</SelectItem>
+                            <SelectItem value="FB">F/P</SelectItem>
+                            <SelectItem value="RM">R/M</SelectItem>
+                            <SelectItem value="CNC">CNC</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
 
+                      {!isLine && (
+                        <div className="flex-none">
+                          <label className="mb-1.5 block text-xs font-medium text-zinc-500 dark:text-zinc-400">
+                            OD
+                          </label>
                           <button
                             type="button"
                             onClick={() =>
                               updateSteelItem(
                                 item.id,
-                                "cuttingMethod",
-                                item.cuttingMethod === "steelDisc"
-                                  ? "normal"
-                                  : "steelDisc",
+                                "isOD",
+                                item.isOD === true ? false : true,
                               )
                             }
                             disabled={isLine}
                             className={`flex h-10 items-center gap-2 rounded-lg border px-3 text-sm transition-all
                             ${
-                              item.cuttingMethod === "steelDisc"
-                                ? "border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
-                                : "border-zinc-200 bg-white text-zinc-600 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800/40"
-                            }
-                            ${isLine ? "opacity-50 cursor-not-allowed" : ""}`}
-                          >
-                            <div
-                              className={`h-4 w-4 rounded border flex items-center justify-center
-                              ${
-                                item.cuttingMethod === "steelDisc"
-                                  ? "border-blue-500 bg-blue-500"
-                                  : "border-zinc-300 bg-white"
-                              }`}
-                            >
-                              {item.cuttingMethod === "steelDisc" && (
-                                <CheckIcon className="w-3 h-3 text-white" />
-                              )}
-                            </div>
-                            หนากลม
-                          </button>
-
-                          {/* CNC */}
-                          <button
-                            type="button"
-                            onClick={() =>
-                              updateSteelItem(
-                                item.id,
-                                "cuttingMethod",
-                                item.cuttingMethod === "CNC" ? "normal" : "CNC",
-                              )
-                            }
-                            disabled={isLine}
-                            className={`flex h-10 items-center gap-2 rounded-lg border px-3 text-sm transition-all
-                            ${
-                              item.cuttingMethod === "CNC"
+                              item.isOD === true
                                 ? "border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
                                 : "border-zinc-200 bg-white text-zinc-600 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800"
                             }
@@ -582,18 +540,56 @@ export default function AddItem({
                             <div
                               className={`h-4 w-4 rounded border flex items-center justify-center
                               ${
-                                item.cuttingMethod === "CNC"
+                                item.isOD === true
                                   ? "border-blue-500 bg-blue-500"
                                   : "border-zinc-300 bg-white"
                               }`}
                             >
-                              {item.cuttingMethod === "CNC" && (
+                              {item.isOD === true && (
                                 <CheckIcon className="w-3 h-3 text-white" />
                               )}
                             </div>
-                            CNC
+                            OD
                           </button>
                         </div>
+                      )}
+
+                      <div className="flex-none">
+                        <label className="mb-1.5 block text-xs font-medium text-zinc-500 dark:text-zinc-400">
+                          Services
+                        </label>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            updateSteelItem(
+                              item.id,
+                              "isServices",
+                              item.isServices === true ? false : true,
+                            )
+                          }
+                          
+                          className={`flex h-10 items-center gap-2 rounded-lg border px-3 text-sm transition-all
+                            ${
+                              item.isServices === true
+                                ? "border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
+                                : "border-zinc-200 bg-white text-zinc-600 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800"
+                            }
+                           `}
+                        >
+                          <div
+                            className={`h-4 w-4 rounded border flex items-center justify-center
+                              ${
+                                item.isServices === true
+                                  ? "border-blue-500 bg-blue-500"
+                                  : "border-zinc-300 bg-white"
+                              }`}
+                          >
+                            {item.isServices === true && (
+                              <CheckIcon className="w-3 h-3 text-white" />
+                            )}
+                          </div>
+                          M/S
+                        </button>
                       </div>
 
                       {/* 5. Job (แสดงเฉพาะตอน useJob เป็น true) */}

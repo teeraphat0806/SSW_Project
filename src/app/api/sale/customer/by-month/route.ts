@@ -105,7 +105,6 @@ export async function GET(req: NextRequest) {
       number,
       {
         id: number;
-        code: string;
         name: string;
         totalSales: number;
         orderCount: number;
@@ -123,7 +122,6 @@ export async function GET(req: NextRequest) {
         } else {
           customerMap.set(customerId, {
             id: bill.Customer.id,
-            code: bill.Customer.code || "",
             name: bill.Customer.name,
             totalSales: bill.grandTotal || 0,
             orderCount: 1,

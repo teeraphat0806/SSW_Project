@@ -116,7 +116,7 @@ function SteelSearchSelect({
                   <span className="font-medium text-zinc-900 dark:text-zinc-100">
                     {s.codeSteel} ({s.shape === "square" ? "แผ่น" : "เส้น"})
                   </span>
-                  <span className="text-[10px] text-zinc-500">
+                  <span className="textxs text-zinc-500">
                     Density: {s.density} | Price: {s.price}
                   </span>
                 </div>

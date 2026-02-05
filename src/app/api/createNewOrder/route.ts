@@ -1,9 +1,12 @@
+import { randomBytes } from "crypto";
+import { z } from "zod";
 import { NextRequest, NextResponse } from "next/server";
+
+import { calculateWeightDetails } from "@/lib/calculateGrandTotal";
+import { requireAuth } from "@/lib/permissions";
 import prisma from "@/lib/prisma";
 import { CreateNewOrderSchema } from "@/lib/schemas/createNewOrder.shema";
-import { randomBytes } from "crypto";
-import { requireAuth } from "@/lib/permissions";
-import { z } from "zod";
+import { ShapeSteel } from "@/types";
 
 // ✅ สร้าง type จาก Zod เพื่อกัน implicit any ทั้งไฟล์
 type CreateNewOrderInput = z.infer<typeof CreateNewOrderSchema>;
@@ -35,90 +38,15 @@ function generateCode(
   return result.join("");
 }
 
-const round2 = (n: number) => Math.round(n * 100) / 100;
-
-const safeNum = (v: unknown) => {
-  const n = typeof v === "number" ? v : Number(v);
-  return Number.isFinite(n) ? n : 0;
-};
-
-type SteelShape = "square" | "line";
-
-function calcComputedWeightKg(params: {
-  shape: SteelShape;
-  amount: number;
-  width?: number | null;
-  length: number;
-  thickness: number;
-  density: number;
-}) {
-  const amount = safeNum(params.amount);
-  const width = safeNum(params.width);
-  const length = safeNum(params.length);
-  const thickness = safeNum(params.thickness);
-  const density = safeNum(params.density) || 7860;
-
-  if (amount <= 0 || length <= 0 || thickness <= 0) return 0;
-
-  let weightPerPieceKg = 0;
-
-  if (params.shape === "square") {
-    if (width <= 0) return 0;
-    const volume = width * length * thickness;
-    weightPerPieceKg = volume * density * 0.1;
-  } else {
-    const volume = length * length * thickness;
-    weightPerPieceKg = volume * density * 0.1;
-  }
-
-  return weightPerPieceKg * amount;
-}
-
-function calcLine(params: {
-  amount: number;
-  weight?: number | null;
-  width?: number | null;
-  length: number;
-  thickness: number;
-  steel: { price: number; density: number; shape: SteelShape };
-}) {
-  const price = safeNum(params.steel.price);
-  const amount = safeNum(params.amount);
-  const manualWeight = safeNum(params.weight);
-
-  if (manualWeight > 0) {
-    const totalWeightKg = manualWeight * amount;
-    return {
-      weightKg: round2(totalWeightKg),
-      total: round2(totalWeightKg * price),
-      isManual: true as const,
-    };
-  }
-
-  const computedWeightKg = calcComputedWeightKg({
-    shape: params.steel.shape,
-    amount,
-    width: params.width ?? null,
-    length: params.length,
-    thickness: params.thickness,
-    density: params.steel.density,
-  });
-
-  return {
-    weightKg: round2(computedWeightKg),
-    total: round2(computedWeightKg * price),
-    isManual: false as const,
-  };
-}
-
 type SteelFromDB = {
   id: number;
   codeSteel: string;
   price: number;
   density: number;
-  shape: "square" | "line";
+  shape: ShapeSteel;
 };
 
+const round2 = (n: number) => Math.round(n * 100) / 100;
 export async function POST(req: NextRequest) {
   const authResult = await requireAuth([
     "superadmin",
@@ -182,15 +110,24 @@ export async function POST(req: NextRequest) {
       const computed = po.products.map((product: ProductInput) => {
         const code = String(product.steelType).trim();
         const steel = mapSteel.get(code)!;
+        const shape = steel.shape as unknown as ShapeSteel;
 
-        const shape = steel.shape as unknown as SteelShape;
-
-        const steelline = calcLine({
+        const steelline = calculateWeightDetails({
+          shape,
           amount: product.amount,
-          width: product.wide ?? null,
+          width: product.wide ?? undefined,
           length: product.length,
           thickness: product.thickness,
-          steel: { price: steel.price, density: steel.density, shape },
+          density: steel.density,
+
+          price: steel.price,
+          weight: null,
+          total: null,
+          discount: null,
+
+          isOD: product.isOD ?? false,
+          isServices: product.isServices ?? false,
+          isPerAmount: product.isPerAmount ?? false,
         });
 
         return { steel, product, steelline };
@@ -203,7 +140,6 @@ export async function POST(req: NextRequest) {
       const bill = await tx.bill.create({
         data: {
           Customer: { connect: { id: data.customerId } },
-          yourRef: data.yourRef,
           codeCustomer: generateCode(),
           deliveryDate: new Date(data.deliveryDate),
 
@@ -232,12 +168,15 @@ export async function POST(req: NextRequest) {
                   thickness: product.thickness,
                   amount: product.amount,
 
-                  unitPrice: steel.price, // ✅ snapshot ราคา ณ ตอนนั้น
+                  unitPrice: steel.price, //  snapshot ราคา ณ ตอนนั้น
                   detail: product.detail ?? null,
                   job: product.job ?? null,
                   cuttingMethod: product.cuttingMethod ?? "normal",
 
-                  total: steelline.total, // ✅ เป็น number แน่นอน
+                  isOD: product.isOD ?? false,
+                  isServices: product.isServices ?? false,
+                  isPerAmount: product.isPerAmount ?? false,
+                  total: steelline.total, //  เป็น number แน่นอน
                 })),
               },
             },

@@ -13,11 +13,10 @@ import { Building2 } from "lucide-react";
 
 export type CustomerFormData = {
   customerName: string;
-  code: string | null;
-  customerEmail: string;
-  customerPhone: string;
+  customerEmail: string | null;
+  customerPhone: string | null;
   taxNumber: string;
-  faxNumber: string;
+  faxNumber: string | null;
   deliveryAddress: string;
 };
 
@@ -58,7 +57,7 @@ export default function CustomerForm({
               className="mt-1"
             />
           </div>
-          <div>
+          {/* <div>
             <Label htmlFor="code">เลข Code</Label>
             <Input
               id="code"
@@ -72,23 +71,28 @@ export default function CustomerForm({
               placeholder="1001"
               className="mt-1"
             />
-          </div>
+          </div> */}
           <div>
             <Label htmlFor="customerEmail">
-              Email <span className="text-red-500">*</span>
+              Email 
             </Label>
             <Input
               id="customerEmail"
               type="email"
-              value={formData.customerEmail}
-              onChange={(e) => updateFormData("customerEmail", e.target.value)}
+              value={formData.customerEmail ?? ""}
+              onChange={(e) =>
+                updateFormData(
+                  "customerEmail",
+                  e.target.value.trim() === "" ? null : e.target.value,
+                )
+              }
               placeholder="sompong@gmail.com"
               className="mt-1"
             />
           </div>
           <div>
             <Label htmlFor="customerPhone">
-              เบอร์โทร<span className="text-red-500">*</span>
+              เบอร์โทร
             </Label>
             <Input
               id="customerPhone"
@@ -96,8 +100,13 @@ export default function CustomerForm({
               pattern="[0-9]*"
               minLength={10}
               maxLength={10}
-              value={formData.customerPhone}
-              onChange={(e) => updateFormData("customerPhone", e.target.value)}
+              value={formData.customerPhone ?? ""}
+              onChange={(e) =>
+                updateFormData(
+                  "customerPhone",
+                  e.target.value.trim() === "" ? null : e.target.value,
+                )
+              }
               placeholder="0699857458"
               className="mt-1"
             />
@@ -122,7 +131,7 @@ export default function CustomerForm({
           </div>
           <div>
             <Label htmlFor="faxNumber">
-              Fax<span className="text-red-500">*</span>
+              Fax
             </Label>
             <Input
               id="faxNumber"
@@ -131,8 +140,13 @@ export default function CustomerForm({
               pattern="[0-9]*"
               minLength={7}
               maxLength={12}
-              value={formData.faxNumber}
-              onChange={(e) => updateFormData("faxNumber", e.target.value)}
+              value={formData.faxNumber ?? ""}
+              onChange={(e) =>
+                updateFormData(
+                  "faxNumber",
+                  e.target.value.trim() === "" ? null : e.target.value,
+                )
+              }
               placeholder="3101234567890"
               className="mt-1"
             />

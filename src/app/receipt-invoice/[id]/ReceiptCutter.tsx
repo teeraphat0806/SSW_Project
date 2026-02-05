@@ -3,6 +3,7 @@
 import * as React from "react";
 import { InvoiceExcelCutter } from "@/components/receipt-invoice/InvoiceExcelCutter";
 import { LoadingScreen } from "@/components/Loading";
+import { CuttingMethod } from "@/types";
 
 type ApiReceipt = {
   invoiceNo: number;
@@ -27,7 +28,7 @@ type ApiReceipt = {
     amount: number;
     weight: number;
     price: number;
-    cuttingMethod?: "normal" | "FB" | "steelDisc" | "CNC";
+    cuttingMethod?: CuttingMethod;
     job?: number | null;
     total: number;
   }[];

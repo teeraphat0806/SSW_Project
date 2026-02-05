@@ -32,23 +32,13 @@ import { LoadingScreen } from "@/components/Loading";
 import { toast } from "react-toastify";
 import { CompletionTab } from "@/components/jobordertail/CompletionTab";
 import { calculateBillSummary } from "@/lib/calculateGrandTotal";
+import { CuttingMethod, ShapeSteel, status } from "@/types";
 
 type StaffMember = {
   id: number;
   name: string;
   role: "supervisor" | "cutter";
 };
-
-export type JobStatus =
-  | "pending"
-  | "cutting"
-  | "weighing"
-  | "ready"
-  | "shipped"
-  | "completed"
-  | "canceled";
-
-type cuttingMethod = "normal" | "FB" | "steelDisc" | "CNC";
 
 type ApiJobOrder = {
   id: number;
@@ -75,13 +65,16 @@ type ApiJobOrder = {
     weight: number | null;
     density: number | null;
     detail?: string | null;
-    shape: string;
+    shape: ShapeSteel;
     job?: number | null;
     discount?: number | null;
-    cuttingMethod: cuttingMethod;
+    cuttingMethod: CuttingMethod;
+    isOD?: boolean | null;
+    isServices?: boolean | null;
+    isPerAmount?: boolean | null;
   }[];
 
-  status: JobStatus;
+  status: status;
   createdAt: string;
   updatedAt: string;
   deliveryDate: string;
@@ -115,10 +108,13 @@ export type JobOrder = {
     density: number;
     job?: number;
     discount?: number | null;
-    cuttingMethod: cuttingMethod;
-    shape: string;
+    cuttingMethod: CuttingMethod;
+    shape: ShapeSteel;
+    isOD: boolean;
+    isServices: boolean;
+    isPerAmount: boolean;
   }>;
-  status: JobStatus;
+  status: status;
   createdAt: Date;
   deliveryDate: Date;
   updatedAt: Date;
@@ -160,7 +156,10 @@ const tojobOrder = (api: ApiJobOrder): JobOrder => {
       cuttingMethod: (s.cuttingMethod ??
         "normal") as JobOrder["steel"][number]["cuttingMethod"],
       discount: s.discount ?? undefined,
-      shape: s.shape,
+      shape: s.shape as ShapeSteel,
+      isOD: s.isOD ?? false,
+      isServices: s.isServices ?? false,
+      isPerAmount: s.isPerAmount ?? false,
     })),
 
     // ✅ Type Assertion สำหรับ Status และ fallback เป็น pending
@@ -199,8 +198,6 @@ const JobOrderDetailPage = ({ id }: { id: string }) => {
   const [isUpdating, setIsUpdating] = useState(false);
 
   const router = useRouter();
-
- 
 
   useEffect(() => {
     const fetchJobOrder = async () => {
@@ -384,7 +381,7 @@ const JobOrderDetailPage = ({ id }: { id: string }) => {
     }
   };
 
-  const toThaiStatus = (s: JobStatus): string => {
+  const toThaiStatus = (s: status): string => {
     switch (s) {
       case "pending":
         return "รอตัด";

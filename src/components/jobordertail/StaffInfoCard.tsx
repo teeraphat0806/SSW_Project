@@ -58,7 +58,7 @@ export function StaffInfoCard({
   // State
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalType, setModalType] = useState<"supervisor" | "cutter" | null>(
-    null
+    null,
   );
   const [availableStaff, setAvailableStaff] = useState<StaffMember[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -92,7 +92,7 @@ export function StaffInfoCard({
 
     try {
       const res = await fetch(
-        `/api/job-order-detail/${jobOrderId}/staff?role=${role}`
+        `/api/job-order-detail/${jobOrderId}/staff?role=${role}`,
       );
 
       if (!res.ok) {
@@ -227,7 +227,7 @@ export function StaffInfoCard({
     })
     .filter((s) =>
       // กรองตามคำค้นหา (Search Term)
-      (s?.name ?? "").toLowerCase().includes((searchTerm ?? "").toLowerCase())
+      (s?.name ?? "").toLowerCase().includes((searchTerm ?? "").toLowerCase()),
     );
 
   return (
@@ -236,10 +236,9 @@ export function StaffInfoCard({
       <div
         className={cn(
           "overflow-hidden rounded-xl  shadow-sm dark:bg-zinc-900/50 dark:border-zinc-800",
-          className
+          className,
         )}
       >
-        
         {/* Header */}
         <div className="border-b bg-muted/40 px-6 py-4 dark:bg-zinc-900/80 dark:border-zinc-800">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -464,11 +463,11 @@ const StatBadge = ({
     <div
       className={cn(
         "flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition-colors",
-        colorStyle
+        colorStyle,
       )}
     >
       <span>{label}</span>
-      <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-white/50 px-1 text-[10px] font-bold shadow-sm dark:bg-black/20">
+      <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-white/50 px-1 textxs font-bold shadow-sm dark:bg-black/20">
         {count}
       </span>
     </div>
@@ -489,7 +488,7 @@ function SectionHeader({
       <div
         className={cn(
           "flex h-8 w-8 items-center justify-center rounded-lg shadow-sm",
-          colorClass
+          colorClass,
         )}
       >
         {icon}
@@ -526,7 +525,7 @@ function PersonItem({
         <div
           className={cn(
             "flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-bold shadow-sm",
-            avatarColor
+            avatarColor,
           )}
         >
           {getInitials(name)}

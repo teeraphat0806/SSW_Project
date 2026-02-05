@@ -218,21 +218,13 @@ export async function GET(req: NextRequest) {
         Customer: {
           select: {
             id: true,
-            code: true,
             name: true,
+            address: true,
           },
         },
       },
       orderBy: {
         createdAt: "desc",
-      },
-    });
-    const customerAddress = await prisma.customer.findUnique({
-      where: {
-        id: Number(customerId),
-      },
-      select: {
-        address: true,
       },
     });
     // Format the data
@@ -241,8 +233,7 @@ export async function GET(req: NextRequest) {
       createdAt: bill.createdAt?.toISOString() || null,
       invoiceNo: bill.invoiceNo || "",
       customerName: bill.Customer?.name || "ไม่ระบุ",
-      customerCode: bill.Customer?.code || "",
-      customerAddress: customerAddress?.address || "",
+      customerAddress: bill.Customer?.address || "",
       grandTotal: bill.grandTotal || 0,
       formatted: {
         createdAt: bill.createdAt
