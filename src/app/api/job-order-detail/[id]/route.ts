@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { requireAuth } from "@/lib/permissions";
+import { CuttingMethod, ShapeSteel, status } from "@/types";
 
 type ApiStaffMember = {
   id: number;
@@ -15,9 +16,8 @@ type ApiJobOrder = {
   poNumber: string | null;
   customerId: string;
   customerName: string;
-  customerEmail: string;
-  customerPhone: string;
-  customercode: string | null;
+  customerEmail: string | null;
+  customerPhone: string | null;
   deliveryAddress: string;
   key: string[];
   supervisors: ApiStaffMember[];
@@ -30,22 +30,16 @@ type ApiJobOrder = {
     length?: number;
     thickness?: number;
     price: number;
-    weight: number;
+    weight: number | null;
     density: number;
     detail?: string;
-    shape: string;
+    shape: ShapeSteel;
     job?: number;
-    cuttingMethod: "normal" | "FB" | "steelDisc" | "CNC";
+    cuttingMethod: CuttingMethod;
+    discount?: number | null;
   }[];
   updatedAt: Date;
-  status:
-    | "pending"
-    | "cutting"
-    | "weighing"
-    | "ready"
-    | "shipped"
-    | "completed"
-    | "canceled";
+  status: status;
   createdAt: Date;
   deliveryDate: Date;
 };
@@ -77,7 +71,6 @@ export async function GET(
         Customer: {
           select: {
             id: true,
-            code: true,
             name: true,
             email: true,
             tel: true,
@@ -125,7 +118,6 @@ export async function GET(
       customerName: customer.name,
       customerEmail: customer.email,
       customerPhone: customer.tel,
-      customercode: customer.code,
       deliveryAddress: customer.address,
       key: jobOrder.urlPo.length ? jobOrder.urlPo : [],
       supervisors: supervisors ?? [],
@@ -140,11 +132,11 @@ export async function GET(
         price: p.unitPrice,
         density: p.SteelType.density,
         detail: p.detail ?? undefined,
-        shape: p.SteelType.shape,
-        cuttingMethod: p.cuttingMethod,
+        shape: p.SteelType.shape as ShapeSteel,
+        cuttingMethod: (p.cuttingMethod ?? "normal") as CuttingMethod,
         job: p.job ?? undefined,
-        weight: p.actualWeight ?? 0,
-        discount: p.discount ?? undefined,
+        weight: p.actualWeight ?? null,
+        discount: p.discount ?? null,
       })),
       status: jobOrder.status,
       // createdAt จาก OrderPO เอง (ตาม schema)

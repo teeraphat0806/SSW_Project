@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { CuttingMethod } from "@/types";
 
 type InvoiceItem = {
   steelType: string; // SS400
@@ -13,7 +14,7 @@ type InvoiceItem = {
   weight: number; // 233.00
   price: number; // 34.00
   total: number; // 7922.00
-  cuttingMethod?: "normal" | "FB" | "steelDisc"|"CNC";
+  cuttingMethod?: CuttingMethod;
 };
 
 type Inv71LikeInvoiceProps = {
@@ -207,7 +208,7 @@ export const InvoiceExcelSample: React.FC<Inv71LikeInvoiceProps> = ({
 
               // Format dimensions based on cutting method
               let dimensionsDisplay;
-              if (item.cuttingMethod === "steelDisc") {
+              if (item.cuttingMethod === "RM") {
                 // For circular cutting: use t OD and ID format
                 dimensionsDisplay = `${item.thickness} t OD ${item.width} ID ${item.length} ${item.unit || "mm."}`;
               } else {

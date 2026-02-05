@@ -2,6 +2,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { calculateBillSummary } from "@/lib/calculateGrandTotal";
 import { FileText } from "lucide-react";
 import { useMemo } from "react";
+import { ShapeSteel, CuttingMethod } from "@/types";
 
 // --- Types ---
 // กำหนด Type ตามที่คุณระบุมา
@@ -17,8 +18,11 @@ export type SteelItem = {
   density: number;
   job?: number;
   discount?: number | null;
-  cuttingMethod: "normal" | "FB" | "steelDisc" | "CNC";
-  shape: string;
+  cuttingMethod: CuttingMethod;
+  shape: ShapeSteel;
+  isOD: boolean;
+  isServices: boolean;
+  isPerAmount: boolean;
 };
 
 // --- Helper Functions ---
@@ -194,8 +198,8 @@ export default function SteelTable({ steel = [], vatRate }: SteelTableProps) {
                             <span className="px-1.5 py-0.5 rounded border font-medium bg-zinc-100 border-zinc-200 text-zinc-500 dark:bg-zinc-900 dark:border-zinc-800 dark:text-zinc-500">
                               {item.original.cuttingMethod == "FB"
                                 ? "F/P"
-                                : item.original.cuttingMethod == "steelDisc"
-                                  ? "แบนกลม"
+                                : item.original.cuttingMethod == "RM"
+                                  ? "R/M"
                                   : "CNC"}
                             </span>
                           )}

@@ -1,8 +1,8 @@
+import { is } from "date-fns/locale";
 import { z } from "zod";
 
 export const CreateNewOrderSchema = z.object({
   customerId: z.number().int().positive(),
-  yourRef: z.string(),
   credit: z.coerce.date().optional(),
   deliveryDate: z.coerce.date(),
   deliveryOrderNo: z.string().optional(),
@@ -22,11 +22,13 @@ export const CreateNewOrderSchema = z.object({
           length: z.number(),
           thickness: z.number(),
           amount: z.number().int().positive(),
-          cuttingMethod: z
-            .enum(["normal", "FB", "steelDisc", "CNC"])
-            .optional(),
-          job: z.number().int().nullable().optional(),
           detail: z.string().optional(),
+          cuttingMethod: z.enum(["normal", "FB", "RM", "CNC"]).optional(),
+          job: z.number().int().nullable().optional(),
+
+          isOD: z.boolean().optional(),
+          isServices: z.boolean().optional(),
+          isPerAmount: z.boolean().optional(),
         }),
       )
       .min(1, "ต้องมีสินค้าอย่างน้อย 1 รายการ")

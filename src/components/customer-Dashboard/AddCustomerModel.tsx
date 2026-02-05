@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import * as React from "react";
 import {
@@ -56,26 +56,41 @@ const CustomerFormSchema = z.object({
     .trim()
     .min(1, "กรุณากรอกที่อยู่")
     .min(10, "ที่อยู่สั้นเกินไป (อย่างน้อย 10 ตัวอักษร)"),
-  tel: z
-    .string()
-    .transform((v) => digitsOnly(v))
-    .refine((v) => v.length === 10, "เบอร์โทรต้องเป็นตัวเลข 10 หลัก"),
-  email: z
-    .string()
-    .trim()
-    .min(1, "กรุณากรอกอีเมล")
-    .email("รูปแบบอีเมลไม่ถูกต้อง"),
+
+  // Optional: allow empty => null, but validate if provided.
+  tel: z.preprocess(
+    (v) => {
+      if (v == null) return undefined;
+      const s = digitsOnly(String(v));
+      return s.length ? s : null;
+    },
+    z.string().length(10, "เบอร์โทรต้องเป็นตัวเลข 10 หลัก").nullable().optional(),
+  ),
+  email: z.preprocess(
+    (v) => {
+      if (v == null) return undefined;
+      const s = String(v).trim();
+      return s.length ? s : null;
+    },
+    z.union([z.string().email("รูปแบบอีเมลไม่ถูกต้อง"), z.null()]).optional(),
+  ),
   taxNumber: z
     .string()
     .transform((v) => digitsOnly(v))
     .refine((v) => v.length === 13, "เลขผู้เสียภาษีต้องเป็นตัวเลข 13 หลัก"),
-  faxNumber: z
-    .string()
-    .transform((v) => digitsOnly(v))
-    .refine(
-      (v) => v.length >= 7 && v.length <= 13,
-      "แฟกซ์ควรเป็นตัวเลข 7–13 หลัก",
-    ),
+  faxNumber: z.preprocess(
+    (v) => {
+      if (v == null) return undefined;
+      const s = digitsOnly(String(v));
+      return s.length ? s : null;
+    },
+    z
+      .string()
+      .min(7, "แฟกซ์ควรเป็นตัวเลข 7–13 หลัก")
+      .max(13, "แฟกซ์ควรเป็นตัวเลข 7–13 หลัก")
+      .nullable()
+      .optional(),
+  ),
 });
 //
 type FieldErrors = Partial<Record<keyof CustomerPayload, string>>;
@@ -286,7 +301,6 @@ export default function AddCustomerModal({ open, onClose, onCreated }: Props) {
               error={fieldErrors.faxNumber}
               inputMode="numeric"
               icon={<FileText size={16} />}
-              required
             />
 
             {/* Section 2: การติดต่อ */}
@@ -304,7 +318,6 @@ export default function AddCustomerModal({ open, onClose, onCreated }: Props) {
               error={fieldErrors.email}
               type="email"
               icon={<Mail size={16} />}
-              required
             />
 
             <InputField
@@ -315,7 +328,6 @@ export default function AddCustomerModal({ open, onClose, onCreated }: Props) {
               error={fieldErrors.tel}
               inputMode="numeric"
               icon={<Phone size={16} />}
-              required
             />
 
             {/* Address (Full Width) */}
@@ -450,3 +462,4 @@ function InputField({
     </div>
   );
 }
+
