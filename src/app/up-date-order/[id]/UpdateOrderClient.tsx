@@ -20,19 +20,9 @@ import Stepper from "@/components/up-date-order/stepper";
 import { LoadingScreen } from "@/components/Loading";
 import { toast } from "react-toastify";
 
-export type Status =
-  | "pending"
-  | "cutting"
-  | "weighing"
-  | "ready"
-  | "shipped"
-  | "completed"
-  | "canceled";
+import { CuttingMethod, ShapeSteel, status } from "@/types";
 
-export type CuttingMethod = "normal" | "FB" | "steelDisc" | "CNC";
-export type SteelShape = "square" | "line";
-
-const STATUS_ORDER: Record<Status, number> = {
+const STATUS_ORDER: Record<status, number> = {
   pending: 0,
   cutting: 1,
   weighing: 2,
@@ -42,7 +32,7 @@ const STATUS_ORDER: Record<Status, number> = {
   canceled: 6,
 };
 
-const isAtLeast = (s: Status, atLeast: Status) =>
+const isAtLeast = (s: status, atLeast: status) =>
   STATUS_ORDER[s] >= STATUS_ORDER[atLeast];
 
 type ApiJobOrder = {
@@ -50,12 +40,12 @@ type ApiJobOrder = {
   poNumber: string | null;
   customerId: string;
   customerName: string;
-  customerEmail: string;
-  customerPhone: string;
+  customerEmail: string | null;
+  customerPhone: string | null;
   customerAddress: string;
   customerTaxId: string;
-  customerCode: string | null;
-  customerFax: string;
+  customerFax: string | null;
+  credit: number;
   steel: {
     id: number;
     steelType: string;
@@ -66,13 +56,17 @@ type ApiJobOrder = {
     detail?: string | null;
     weight?: number | null;
     unitPrice: number;
-    shape: SteelShape;
+    shape: ShapeSteel;
     job?: number | null;
     cuttingMethod: CuttingMethod;
+    density: number;
+    isOD: boolean;
+    isServices: boolean;
+    isPerAmount: boolean;
     discount: number | null;
     price: number;
   }[];
-  status: Status;
+  status: status;
 };
 
 type Joborder = {
@@ -80,48 +74,50 @@ type Joborder = {
   poNumber: string;
   customerId: string;
   customerName: string;
-  customerEmail: string;
-  customerPhone: string;
+  customerEmail: string | null;
+  customerPhone: string | null;
   customerAddress: string;
   customerTaxId: string;
-  customerCode: string | null;
-  customerFax: string;
+  customerFax: string | null;
+  credit: number;
   steel: {
     id: number;
     steelType: string;
-    quantity: number;
+    amount: number;
     width?: number | null;
     length: number;
     thickness: number;
     detail?: string | null;
     weight?: number | null;
     unitPrice: number;
-    shape: SteelShape;
+    shape: ShapeSteel;
+    density: number;
     job?: number | null;
     cuttingMethod: CuttingMethod;
+    isOD: boolean;
+    isServices: boolean;
+    isPerAmount: boolean;
     discount: number | null;
     price: number;
   }[];
-  status: Status;
+  status: status;
 };
 
 const toJoborder = (api: ApiJobOrder): Joborder => ({
   id: api.id.toString(),
   poNumber: api.poNumber ?? "",
-
+  credit: api.credit ?? 30,
   customerId: api.customerId ?? "",
   customerName: api.customerName ?? "",
-  customerEmail: api.customerEmail ?? "",
-  customerPhone: api.customerPhone ?? "",
+  customerEmail: api.customerEmail ?? null,
+  customerPhone: api.customerPhone ?? null,
   customerAddress: api.customerAddress ?? "",
   customerTaxId: api.customerTaxId ?? "",
-  customerCode: api.customerCode ?? null,
-  customerFax: api.customerFax ?? "",
-
+  customerFax: api.customerFax ?? null,
   steel: (api.steel ?? []).map((s) => ({
     id: s.id,
     steelType: s.steelType,
-    quantity: s.amount,
+    amount: s.amount,
     width: s.width ?? null,
     length: s.length ?? 0,
     thickness: s.thickness ?? 0,
@@ -131,8 +127,12 @@ const toJoborder = (api: ApiJobOrder): Joborder => ({
     shape: s.shape,
     job: s.job ?? null,
     cuttingMethod: s.cuttingMethod ?? "normal",
-    discount: s.discount ?? null,
+    isOD: s.isOD ?? false,
+    isServices: s.isServices ?? false,
+    isPerAmount: s.isPerAmount ?? false,
+    discount: s.discount ?? null  ,
     price: s.price ?? 1,
+    density: s.density ?? 0.0000079,
   })),
   status: api.status,
 });
@@ -160,9 +160,9 @@ const STATUS_ICONS: Record<OrderStatus, React.ReactNode> = {
 type SteelOption = {
   value: string;
   label: string;
-  quantity: number;
+  amount: number;
   price: number;
-  shape: "square" | "line";
+  shape: ShapeSteel;
 };
 
 type SteelStockApiItem = {
@@ -170,9 +170,8 @@ type SteelStockApiItem = {
   codeSteel: string;
   price: number;
   amount: number;
-  shape: "square" | "line";
+  shape: ShapeSteel;
 };
-
 
 function mergeOrderSteelIntoOptions(
   options: SteelOption[],
@@ -184,11 +183,17 @@ function mergeOrderSteelIntoOptions(
 
   for (const s of job.steel) {
     const code = s.steelType?.trim();
-    if (!code) continue;  
+    if (!code) continue;
 
-    // ถ้าไม่มีใน options ให้เติมเข้าไป (quantity=0) เพื่อให้ Select แสดงได้
+    // ถ้าไม่มีใน options ให้เติมเข้าไป (amount=0) เพื่อให้ Select แสดงได้
     if (!map.has(code)) {
-      map.set(code, { value: code, label: code, quantity: 0,price:0, shape: "square" });
+      map.set(code, {
+        value: code,
+        label: code,
+        amount: 0,
+        price: 0,
+        shape: "square",
+      });
     }
   }
 
@@ -216,8 +221,9 @@ const toThaiStatus = (s: Joborder["status"]): OrderStatus => {
 };
 
 type PatchPayload = {
-  status?: Status;
+  status?: status;
   customerId?: string;
+  credit: number;
   steel?: {
     codeSteel: string;
     amount: number;
@@ -226,6 +232,10 @@ type PatchPayload = {
     thickness: number;
     weight?: number | null;
     detail?: string | null;
+
+    isOD: boolean;
+    isServices: boolean;
+    isPerAmount: boolean;
 
     job?: number | null;
     cuttingMethod?: CuttingMethod;
@@ -238,9 +248,10 @@ function buildPatchPayload(job: Joborder): PatchPayload {
   return {
     status: job.status,
     customerId: String(job.customerId),
+    credit: job.credit,
     steel: job.steel.map((l) => ({
       codeSteel: l.steelType?.trim(),
-      amount: Number(l.quantity),
+      amount: Number(l.amount),
       width: l.width ?? null,
       length: Number(l.length),
       thickness: Number(l.thickness),
@@ -250,6 +261,9 @@ function buildPatchPayload(job: Joborder): PatchPayload {
       cuttingMethod: l.cuttingMethod ?? "normal",
       discount: l.discount ?? null,
       price: l.price ?? 1,
+      isOD: l.isOD,
+      isServices: l.isServices,
+      isPerAmount: l.isPerAmount,
     })),
   };
 }
@@ -307,7 +321,7 @@ const UpdateOrderPage = ({ id }: { id: string }) => {
         value: x.codeSteel,
         label: x.codeSteel,
         price: x.price,
-        quantity: x.amount ?? 0,
+        amount: x.amount ?? 0,
         shape: x.shape,
       }));
 
@@ -378,12 +392,14 @@ const UpdateOrderPage = ({ id }: { id: string }) => {
     if (hasMissingJob) return "กรุณากรอกหมายเลขงาน (Job No.) ให้ครบทุกบรรทัด";
 
     if (isAtLeast(job.status, "weighing")) {
-      const hasZeroWeight = job.steel.some((s) => !s.weight || s.weight <= 0);
-      if (hasZeroWeight) return "กรุณากรอกน้ำหนักเหล็กก่อนบันทึกคำสั่งซื้อ";
-      const hasZeroprice = job.steel.some((s) => !s.price || s.price <= 0);
-      if (hasZeroprice) return "กรุณากรอกราคาเหล็กก่อนบันทึกคำสั่งซื้อ";
+      const hasZeroWeight = job.steel.some(
+        (s) => s.isPerAmount === false && (!s.weight || s.weight <= 0),
+      );
+      if (hasZeroWeight)
+        return "กรุณากรอกน้ำหนักเหล็กกในรายการที่คิดราคาตามน้ำหนัก";
+      const hasZeroPrice = job.steel.some((s) => !s.price || s.price <= 0);
+      if (hasZeroPrice) return "กรุณากรอกราคาเหล็กก่อนบันทึกคำสั่งซื้อ";
     }
-
     if (
       job.steel.some(
         (s) =>
@@ -516,13 +532,13 @@ const UpdateOrderPage = ({ id }: { id: string }) => {
   const itemCount = job.steel.length;
   const uniqueTypeCount = new Set(job.steel.map((i) => i.steelType)).size;
   const totalQty = job.steel.reduce(
-    (sum, i) => sum + (Number(i.quantity) || 0),
+    (sum, i) => sum + (Number(i.amount) || 0),
     0,
   );
 
   const totalWeight = weightEnabled
     ? job.steel.reduce(
-        (sum, i) => sum + (Number(i.weight) || 0) * (Number(i.quantity) || 0),
+        (sum, i) => sum + (Number(i.weight) || 0) * (Number(i.amount) || 0),
         0,
       )
     : 0;
@@ -532,8 +548,8 @@ const UpdateOrderPage = ({ id }: { id: string }) => {
       const key = i.steelType || "ไม่ระบุ";
       if (!acc[key]) acc[key] = { lines: 0, qty: 0, weight: 0 };
       acc[key].lines += 1;
-      acc[key].qty += Number(i.quantity) || 0;
-      acc[key].weight += (Number(i.weight) || 0) * (Number(i.quantity) || 0);
+      acc[key].qty += Number(i.amount) || 0;
+      acc[key].weight += (Number(i.weight) || 0) * (Number(i.amount) || 0);
       return acc;
     },
     {} as Record<string, { lines: number; qty: number; weight: number }>,

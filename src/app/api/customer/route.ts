@@ -86,7 +86,6 @@ export async function GET(req: NextRequest) {
         orderBy,
         select: {
           id: true,
-          code: true,
           name: true,
           tel: true,
           email: true,
@@ -149,6 +148,8 @@ export async function GET(req: NextRequest) {
     );
   }
 }
+
+
 
 export async function POST(req: NextRequest) {
   const authResult = await requireAuth(["superadmin", "supervisor", "clerk"]);

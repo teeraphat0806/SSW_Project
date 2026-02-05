@@ -3,7 +3,7 @@ import { Boxes, Calculator, ListChecks } from "lucide-react";
 
 type SteelItem = {
   steelType: string;
-  quantity: number;
+  amount: number;
   weight?: number | null;
 };
 
@@ -56,7 +56,7 @@ export default function Summary<T extends JobWithSteel>({
         const type = (it.steelType || "").trim();
         if (type) typeSet.add(type);
 
-        const qty = Number(it.quantity || 0);
+        const qty = Number(it.amount || 0);
         totalQty += qty;
 
         const wPerPiece = Number(it.weight ?? 0);

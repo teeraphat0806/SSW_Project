@@ -2,6 +2,7 @@
 import prisma from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/permissions";
+import { CuttingMethod } from "@/types";
 
 function ThaiBaht(numberStr: string) {
   //ตัดสิ่งที่ไม่ต้องการทิ้งลงโถส้วม
@@ -99,8 +100,8 @@ type ApiReceipt = {
     name: string;
     address: string;
     taxNumber: string;
-    tel: string;
-    faxNumber: string;
+    tel: string | null;
+    faxNumber: string | null;
   };
   steel: {
     steelType: string;
@@ -112,7 +113,7 @@ type ApiReceipt = {
     weight: number | null;
     total: number;
     job?: number | null;
-    cuttingMethod?: "normal" | "FB" | "steelDisc" | "CNC";
+    cuttingMethod?: CuttingMethod;
   }[];
 };
 

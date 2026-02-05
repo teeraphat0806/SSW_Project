@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useEffect, useMemo, useState } from "react";
 import {
@@ -24,10 +24,10 @@ type Customer = {
   code: string;
   name: string;
   address: string;
-  tel: string;
-  email: string;
+  tel: string | null;
+  email: string | null;
   taxNumber: string;
-  faxNumber: string;
+  faxNumber: string | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -66,26 +66,41 @@ const CustomerFormSchema = z.object({
     .trim()
     .min(1, "กรุณากรอกที่อยู่")
     .min(10, "ที่อยู่สั้นเกินไป (อย่างน้อย 10 ตัวอักษร)"),
-  tel: z
-    .string()
-    .transform((v) => digitsOnly(v))
-    .refine((v) => v.length === 10, "เบอร์โทรต้องเป็นตัวเลข 10 หลัก"),
-  email: z
-    .string()
-    .trim()
-    .min(1, "กรุณากรอกอีเมล")
-    .email("รูปแบบอีเมลไม่ถูกต้อง"),
+
+  // Optional: allow empty => null, but validate if provided.
+  tel: z.preprocess(
+    (v) => {
+      if (v == null) return undefined;
+      const s = digitsOnly(String(v));
+      return s.length ? s : null;
+    },
+    z.string().length(10, "เบอร์โทรต้องเป็นตัวเลข 10 หลัก").nullable().optional(),
+  ),
+  email: z.preprocess(
+    (v) => {
+      if (v == null) return undefined;
+      const s = String(v).trim();
+      return s.length ? s : null;
+    },
+    z.union([z.string().email("รูปแบบอีเมลไม่ถูกต้อง"), z.null()]).optional(),
+  ),
   taxNumber: z
     .string()
     .transform((v) => digitsOnly(v))
     .refine((v) => v.length === 13, "เลขผู้เสียภาษีต้องเป็นตัวเลข 13 หลัก"),
-  faxNumber: z
-    .string()
-    .transform((v) => digitsOnly(v))
-    .refine(
-      (v) => v.length >= 7 && v.length <= 13,
-      "แฟกซ์ควรเป็นตัวเลข 7–13 หลัก",
-    ),
+  faxNumber: z.preprocess(
+    (v) => {
+      if (v == null) return undefined;
+      const s = digitsOnly(String(v));
+      return s.length ? s : null;
+    },
+    z
+      .string()
+      .min(7, "แฟกซ์ควรเป็นตัวเลข 7–13 หลัก")
+      .max(13, "แฟกซ์ควรเป็นตัวเลข 7–13 หลัก")
+      .nullable()
+      .optional(),
+  ),
 });
 
 const FieldRow = ({
@@ -155,7 +170,6 @@ export default function CustomerViewEditModal({
   const [customer, setCustomer] = useState<Customer | null>(null);
 
   const [form, setForm] = useState({
-    code: "",
     name: "",
     address: "",
     tel: "",
@@ -170,7 +184,6 @@ export default function CustomerViewEditModal({
   const dirty = useMemo(() => {
     if (!customer) return false;
     return (
-      form.code !== (customer.code ?? "") ||
       form.name !== (customer.name ?? "") ||
       form.address !== (customer.address ?? "") ||
       form.tel !== (customer.tel ?? "") ||
@@ -196,7 +209,6 @@ export default function CustomerViewEditModal({
 
       setCustomer(body);
       setForm({
-        code: body.code ?? "",
         name: body.name ?? "",
         address: body.address ?? "",
         tel: body.tel ?? "",
@@ -257,7 +269,7 @@ export default function CustomerViewEditModal({
       const res = await fetch(`/api/customer/${customerId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify(parsed.data),
       });
 
       const body = await res.json();
@@ -343,9 +355,9 @@ export default function CustomerViewEditModal({
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <FieldRow
                     label="รหัสลูกค้า"
-                    value={mode === "view" ? customer.code : form.code}
-                    isEditing={mode === "edit"}
-                    onChange={(v) => setForm((p) => ({ ...p, code: v }))}
+                    value={customer.id.toString()}
+                    isEditing={false}
+                    onChange={(v) => setForm((p) => ({ ...p, id: v }))}
                     icon={<Hash size={14} />}
                   />
                   <FieldRow
@@ -370,12 +382,13 @@ export default function CustomerViewEditModal({
                   <FieldRow
                     label="เลขแฟกซ์"
                     value={
-                      mode === "view" ? customer.faxNumber : form.faxNumber
+                      mode === "view"
+                        ? customer.faxNumber ?? ""
+                        : form.faxNumber
                     }
                     isEditing={mode === "edit"}
                     onChange={(v) => setForm((p) => ({ ...p, faxNumber: v }))}
                     icon={<Phone size={14} />}
-                    required
                   />
                 </div>
               </div>
@@ -388,19 +401,17 @@ export default function CustomerViewEditModal({
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <FieldRow
                     label="เบอร์โทรศัพท์"
-                    value={mode === "view" ? customer.tel : form.tel}
+                    value={mode === "view" ? customer.tel ?? "" : form.tel}
                     isEditing={mode === "edit"}
                     onChange={(v) => setForm((p) => ({ ...p, tel: v }))}
                     icon={<Phone size={14} />}
-                    required
                   />
                   <FieldRow
                     label="อีเมล"
-                    value={mode === "view" ? customer.email : form.email}
+                    value={mode === "view" ? customer.email ?? "" : form.email}
                     isEditing={mode === "edit"}
                     onChange={(v) => setForm((p) => ({ ...p, email: v }))}
                     icon={<Mail size={14} />}
-                    required
                   />
                 </div>
               </div>
@@ -469,13 +480,12 @@ export default function CustomerViewEditModal({
                     setMode("view");
                     setForm({
                       // Reset form
-                      code: customer!.code,
                       name: customer!.name,
                       address: customer!.address,
-                      tel: customer!.tel,
-                      email: customer!.email,
+                      tel: customer!.tel ?? "",
+                      email: customer!.email ?? "",
                       taxNumber: customer!.taxNumber,
-                      faxNumber: customer!.faxNumber,
+                      faxNumber: customer!.faxNumber ?? "",
                     });
                   }}
                   disabled={saving}
@@ -503,3 +513,4 @@ export default function CustomerViewEditModal({
     </div>
   );
 }
+

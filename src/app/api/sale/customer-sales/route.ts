@@ -248,7 +248,6 @@ export async function GET(req: NextRequest) {
         customer: bill.Customer
           ? {
               id: bill.Customer.id,
-              code: bill.Customer.code,
               name: bill.Customer.name,
             }
           : null,

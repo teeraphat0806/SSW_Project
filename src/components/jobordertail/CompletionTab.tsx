@@ -14,10 +14,8 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import {
-  JobOrder,
-  JobStatus,
-} from "@/app/job-order-detail/[id]/JobOrderDetailClient"; // ปรับ path ตามจริง
+import { JobOrder } from "@/app/job-order-detail/[id]/JobOrderDetailClient";
+import type { status } from "@/types";
 import { calculateBillSummary } from "@/lib/calculateGrandTotal";
 
 // Helper function to format date/time
@@ -34,7 +32,7 @@ const formatDate = (date: Date | string | undefined) => {
 
 interface CompletionTabProps {
   jobOrder: JobOrder | null;
-  onUpdateStatus: (newStatus: JobStatus) => void;
+  onUpdateStatus: (newStatus: status) => void;
 }
 
 export function CompletionTab({

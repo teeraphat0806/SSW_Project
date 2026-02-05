@@ -1,18 +1,22 @@
 // src/lib/calculations/pricing.ts
+import { ShapeSteel } from "@/types";
 
-export type CuttingMethod = "normal" | "FB" | "steelDisc" | "CNC";
-
-export type SteelItemForCalc = {
+export type SteelItem = {
+  shape: ShapeSteel;
   amount: number;
   width?: number;
   length?: number;
   thickness?: number;
   density: number;
+
   price: number;
   weight?: number | null;
-  total?: number | null; // CNC ใช้ช่องนี้
+  total?: number | null;
   discount?: number | null;
-  cuttingMethod: CuttingMethod;
+
+  isOD: boolean;
+  isServices: boolean;
+  isPerAmount: boolean;
 };
 
 const safeNum = (v: unknown) => {
@@ -26,56 +30,90 @@ const fmt = (n: number) =>
     maximumFractionDigits: 2,
   });
 
-export function calculateBillSummary(
-  steel: SteelItemForCalc[],
-  vatRate: number,
-) {
-  console.log(
-    "Calculating bill summary with steel items:",
-    steel,
-    "and VAT rate:",
-    vatRate,
-  );
-  const subtotal = steel.reduce((sum, s) => {
-    // CNC uses total field explicitly
-    if (s.cuttingMethod !== "normal") {
-      return sum + safeNum(s.total);
-    }
-    if (safeNum(s.weight) > 0) {
-      return sum + safeNum(s.weight) * safeNum(s.price);
-    }
-    if (safeNum(s.width) > 0) {
-      return (
-        sum +
-        safeNum(s.amount) *
-          safeNum(s.width) *
-          safeNum(s.length) *
-          safeNum(s.thickness) *
-          safeNum(s.density) *
-          safeNum(s.price) *
-          0.1
-      );
-    } else {
-      return (
-        sum +
-        safeNum(s.amount) *
-          safeNum(s.length) *
-          safeNum(s.length) *
-          safeNum(s.thickness) *
-          safeNum(s.density) *
-          safeNum(s.price) *
-          0.1
-      );
-    }
+const round2 = (n: number) => Math.round(n * 100) / 100;
 
-    return sum;
+type WeightDetails = {
+  weight: number;
+  total: number;
+  discount: number;
+  isManual: boolean;
+};
+
+export function calculateWeightDetails(steel: SteelItem): WeightDetails {
+  const amount = safeNum(steel.amount);
+  const width = safeNum(steel.width);
+  const length = safeNum(steel.length);
+  const thickness = safeNum(steel.thickness);
+
+  const density = safeNum(steel.density) || 7860;
+  const weight = safeNum(steel.weight);
+  const price = safeNum(steel.price);
+  const discount = safeNum(steel.discount);
+
+  if (steel.isServices || steel.isPerAmount) {
+    return {
+      weight,
+      total: round2(amount * price),
+      discount,
+      isManual: true,
+    };
+  }
+
+  if (amount <= 0 || length <= 0 || thickness <= 0)
+    return {
+      weight: 0,
+      total: 0,
+      discount,
+      isManual: false,
+    };
+
+  if (weight > 0) {
+    return {
+      weight: round2(weight * amount),
+      total: round2(weight * amount * price),
+      discount,
+      isManual: true,
+    };
+  }
+  let weightPerPieceKg = 0;
+
+  if (steel.isOD) {
+    if (steel.shape !== "square") {
+      return {
+        weight: 0,
+        total: 0,
+        discount,
+        isManual: false,
+      };
+    }
+    weightPerPieceKg = (width * width * length * density * 0.14) / 4;
+  } else if (steel.shape === "square") {
+    weightPerPieceKg = thickness * width * length * density;
+  } else {
+    weightPerPieceKg = (thickness * length * length * density * 0.14) / 4;
+  }
+
+  return {
+    //คือนหนักรวมเป็นกิโลกรัมโดย/1000 คือ
+    weight: round2(weightPerPieceKg * amount),
+    total: round2(weightPerPieceKg * amount * price),
+    discount,
+    isManual: false,
+  };
+}
+
+export function calculateBillSummary(steel: SteelItem[], vatRate: number) {
+  const subtotal = steel.reduce((sum, steel) => {
+    return sum + safeNum(calculateWeightDetails(steel).total);
   }, 0);
 
-  const discount = steel.reduce((sum, s) => sum + safeNum(s.discount), 0);
-
+  const discount = steel.reduce(
+    (sum, steel) => sum + safeNum(steel.discount),
+    0,
+  );
   const net = Math.max(0, subtotal - discount);
   const vat = net * (safeNum(vatRate) / 100);
-  const grandTotal = net + vat;
+  const grandTotal = round2(net + vat);
 
   return {
     subtotal,

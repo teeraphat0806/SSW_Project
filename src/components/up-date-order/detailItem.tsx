@@ -29,42 +29,55 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
-import { tr } from "date-fns/locale";
 import { ToastContainer, toast } from "react-toastify";
+
+// import { ShapeSteel } from "@prisma/client";
+import { ShapeSteel, CuttingMethod } from "@/types";
 import {
-  SteelShape,
-  CuttingMethod,
-} from "@/app/up-date-order/[id]/UpdateOrderClient";
-import { ShapeSteel } from "@prisma/client";
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  calculateBillSummary,
+  calculateWeightDetails,
+} from "@/lib/calculateGrandTotal";
 
 type SteelItem = {
   id: number;
   steelType: string;
-  quantity: number;
+  amount: number;
   width?: number | null;
   length: number;
   thickness: number;
   detail?: string | null;
   weight?: number | null;
-  shape: SteelShape;
+  shape: ShapeSteel;
   job?: number | null;
   cuttingMethod: CuttingMethod;
   price: number;
   discount: number | null;
   manualPrice?: boolean;
+  density: number;
+  isOD: boolean;
+  isServices: boolean;
+  isPerAmount: boolean;
 };
 
 type SteelOption = {
   value: string;
   label: string;
   price: number;
-  quantity: number;
-  shape: SteelShape;
+  amount: number;
+  shape: ShapeSteel;
 };
 
 //  job ต้องมีอย่างน้อย id + steel
 type JobWithSteel = {
   id: string | number;
+  credit: number;
   steel: SteelItem[];
 };
 
@@ -79,7 +92,13 @@ type Props<T extends JobWithSteel> = {
   setUseJob: React.Dispatch<React.SetStateAction<boolean>>;
 };
 
-const shapeText = (s: SteelShape) => (s === "line" ? "เพลา" : "แผ่น");
+const shapeText = (s: ShapeSteel) => (s === "line" ? "เพลา" : "แผ่น");
+
+const fmtKg = (n: number) =>
+  Intl.NumberFormat(undefined, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(n);
 
 function SteelSearchSelect({
   value,
@@ -158,7 +177,7 @@ function SteelSearchSelect({
                     </div>
 
                     <span className="ml-3 shrink-0 text-sm text-zinc-400 dark:text-zinc-500">
-                      (คงเหลือ {opt.quantity})
+                      (คงเหลือ {opt.amount})
                     </span>
                   </CommandItem>
                 );
@@ -241,6 +260,9 @@ export default function DetailItem<T extends JobWithSteel>({
             price: firstprice,
             discount: null,
             manualPrice: false,
+            isOD: false,
+            isServices: false,
+            isPerAmount: false,
           },
         ],
       };
@@ -288,12 +310,12 @@ export default function DetailItem<T extends JobWithSteel>({
         <h2 className="flex items-center gap-2 text-lg font-semibold text-zinc-900 dark:text-zinc-50">
           <ListChecks className="h-5 w-5 text-blue-600 dark:text-blue-500" />
           รายการเหล็ก
-          <span className="ml-2 inline-flex items-center rounded-full bg-zinc-100 px-2.5 py-0.5 text-xs font-medium text-zinc-900 dark:bg-zinc-800 dark:text-zinc-200">
+          <span className="ml-2 inline-flex items-center rounded-full bg-zinc-100 px-2.5 py-0.5 text-sm font-medium text-zinc-900 dark:bg-zinc-800 dark:text-zinc-200">
             {itemCount} รายการ
           </span>
         </h2>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-end gap-2">
           {/* Toggle Job */}
           <Button
             type="button"
@@ -302,7 +324,7 @@ export default function DetailItem<T extends JobWithSteel>({
               setUseJob((prev) => !prev);
             }}
             className={[
-              "h-10 rounded-xl",
+              "h-10 shrink-0 rounded-xl",
               useJob
                 ? "bg-blue-600 text-white hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-500"
                 : "border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:bg-zinc-800/40",
@@ -312,6 +334,24 @@ export default function DetailItem<T extends JobWithSteel>({
             {useJob ? "กำลังกรอก Job" : "กรอก Job"}
           </Button>
 
+          {/* credit */}
+          <div className="w-[120px] shrink-0">
+            <label className="mb-1.5 block text-sm font-medium text-zinc-500 dark:text-zinc-400">
+              Credit (วัน)
+            </label>
+            <Input
+              type="number"
+              min={1}
+              inputMode="numeric"
+              value={job.credit ?? 30}
+              onChange={(e) => {
+                const next = Math.max(1, Number(e.target.value || 1));
+                setJob((prev) => (prev ? { ...prev, credit: next } : prev));
+              }}
+              className="h-10 w-full border-zinc-200 bg-white text-center font-semibold tabular-nums focus-visible:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-900"
+            />
+          </div>
+
           {/* Add */}
           <Button
             type="button"
@@ -319,7 +359,7 @@ export default function DetailItem<T extends JobWithSteel>({
             disabled={
               steelOptions.length === 0 || job.steel.length >= MAX_ITEMS
             }
-            className="bg-zinc-900 text-white shadow-sm hover:bg-zinc-800 dark:bg-blue-600 dark:hover:bg-blue-500 dark:shadow-none"
+            className="h-10 shrink-0 rounded-xl bg-zinc-900 text-white shadow-sm hover:bg-zinc-800 dark:bg-blue-600 dark:hover:bg-blue-500 dark:shadow-none"
             title={"เพิ่มรายการใหม่ (สูงสุด " + MAX_ITEMS + " รายการ)"}
           >
             <Plus className="mr-1.5 h-4 w-4" />
@@ -355,7 +395,7 @@ export default function DetailItem<T extends JobWithSteel>({
                   <div className="grid grid-cols-1 gap-4 lg:grid-cols-12 lg:items-start">
                     {/* 1) Steel Type */}
                     <div className="lg:col-span-3">
-                      <label className="mb-1.5 block text-xs font-medium text-zinc-500 dark:text-zinc-400">
+                      <label className="mb-1.5 block text-sm font-medium text-zinc-500 dark:text-zinc-400">
                         ชนิดเหล็ก
                       </label>
 
@@ -391,7 +431,7 @@ export default function DetailItem<T extends JobWithSteel>({
                       >
                         {/* Thickness */}
                         <div>
-                          <label className="mb-1.5 block text-center text-xs font-medium text-zinc-500 dark:text-zinc-400">
+                          <label className="mb-1.5 block text-center text-sm font-medium text-zinc-500 dark:text-zinc-400">
                             หนา
                           </label>
                           <div className="relative">
@@ -409,7 +449,7 @@ export default function DetailItem<T extends JobWithSteel>({
                                 })
                               }
                             />
-                            <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-zinc-400">
+                            <span className="absolute right-2 top-1/2 -translate-y-1/2 text-sm text-zinc-400">
                               mm
                             </span>
                           </div>
@@ -418,10 +458,8 @@ export default function DetailItem<T extends JobWithSteel>({
                         {/* Width (only square) */}
                         {!isLine && (
                           <div>
-                            <label className="mb-1.5 block text-center text-xs font-medium text-zinc-500 dark:text-zinc-400">
-                              {item.cuttingMethod === "steelDisc"
-                                ? "วงใน"
-                                : "กว้าง"}
+                            <label className="mb-1.5 block text-center text-sm font-medium text-zinc-500 dark:text-zinc-400">
+                              {item.isOD === true ? "วงใน" : "กว้าง"}
                             </label>
                             <div className="relative">
                               <Input
@@ -438,7 +476,7 @@ export default function DetailItem<T extends JobWithSteel>({
                                   })
                                 }
                               />
-                              <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-zinc-400">
+                              <span className="absolute right-2 top-1/2 -translate-y-1/2 text-sm text-zinc-400">
                                 mm
                               </span>
                             </div>
@@ -447,10 +485,8 @@ export default function DetailItem<T extends JobWithSteel>({
 
                         {/* Length */}
                         <div>
-                          <label className="mb-1.5 block text-center text-xs font-medium text-zinc-500 dark:text-zinc-400">
-                            {item.cuttingMethod === "steelDisc"
-                              ? "วงนอก"
-                              : "ยาว"}
+                          <label className="mb-1.5 block text-center text-sm font-medium text-zinc-500 dark:text-zinc-400">
+                            {item.isOD === true ? "วงนอก" : "ยาว"}
                           </label>
                           <div className="relative">
                             <Input
@@ -467,7 +503,7 @@ export default function DetailItem<T extends JobWithSteel>({
                                 })
                               }
                             />
-                            <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-zinc-400">
+                            <span className="absolute right-2 top-1/2 -translate-y-1/2 text-sm text-zinc-400">
                               mm
                             </span>
                           </div>
@@ -477,17 +513,17 @@ export default function DetailItem<T extends JobWithSteel>({
 
                     {/* 3) Quantity */}
                     <div className="lg:col-span-2">
-                      <label className="mb-1.5 block text-center text-xs font-medium text-zinc-500 dark:text-zinc-400">
+                      <label className="mb-1.5 block text-center text-sm font-medium text-zinc-500 dark:text-zinc-400">
                         จำนวน
                       </label>
                       <Input
                         type="number"
                         min={1}
                         className="h-10 w-full border-blue-200 bg-blue-50 text-center font-bold text-blue-700 shadow-sm focus-visible:ring-blue-500 dark:border-blue-900 dark:bg-blue-900/20 dark:text-blue-400"
-                        value={item.quantity ?? 1}
+                        value={item.amount ?? 1}
                         onChange={(e) =>
                           patchSteelItem(idx, {
-                            quantity: Math.max(1, Number(e.target.value || 1)),
+                            amount: Math.max(1, Number(e.target.value || 1)),
                           })
                         }
                       />
@@ -495,39 +531,58 @@ export default function DetailItem<T extends JobWithSteel>({
 
                     {/* 4) Weight */}
                     <div className="lg:col-span-2">
-                      {weightEnabled ? (
-                        <div>
-                          <label className="mb-1.5 block text-center text-xs font-medium text-zinc-500 dark:text-zinc-400">
-                            น้ำหนักท/กก.
-                          </label>
-                          <div className="relative">
-                            <Input
-                              type="number"
-                              min="0"
-                              className="h-10 border-zinc-200 bg-white pr-8 text-right font-mono text-sm hover:border-blue-400 focus-visible:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
-                              value={item.weight ?? 0}
-                              onChange={(e) =>
-                                patchSteelItem(idx, {
-                                  weight: Math.max(
-                                    0,
-                                    Number(e.target.value || 0),
-                                  ),
-                                })
-                              }
-                            />
-                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-zinc-400">
-                              Kg.
+                      {(() => {
+                        const estKg = calculateWeightDetails({
+                          shape: item.shape,
+                          amount: item.amount,
+                          width: item.width ?? undefined,
+                          length: item.length,
+                          thickness: item.thickness,
+                          density: item.density,
+                          price: item.price,
+                          discount: item.discount ?? null,
+                          isOD: item.isOD,
+                          isServices: item.isServices,
+                          isPerAmount: item.isPerAmount,
+                          weight: null,
+                        }).weight;
+                        return weightEnabled ? (
+                          <div>
+                            <label className="mb-1.5 block text-center text-sm font-medium text-zinc-500 dark:text-zinc-400">
+                              น้ำหนักประมาณ {fmtKg(estKg)} Kg.
+                            </label>
+                            <div className="relative">
+                              <Input
+                                type="number"
+                                min="0"
+                                className="h-10 border-zinc-200 bg-white pr-8 text-right font-mono text-sm hover:border-blue-400 focus-visible:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
+                                value={item.weight ?? 0}
+                                onChange={(e) =>
+                                  patchSteelItem(idx, {
+                                    weight: Math.max(
+                                      0,
+                                      Number(e.target.value || 0),
+                                    ),
+                                  })
+                                }
+                              />
+                              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-zinc-400">
+                                Kg.
+                              </span>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="flex h-full flex-col justify-end pb-2 lg:items-center">
+                            <div className="mb-1 h-4 w-full" />
+                            <span className="text-sm text-zinc-500 dark:text-zinc-400">
+                              น้ำหนักประมาณ {fmtKg(estKg)} Kg.
+                            </span>
+                            <span className="text-sm italic text-zinc-300 dark:text-zinc-600">
+                              รอชั่ง
                             </span>
                           </div>
-                        </div>
-                      ) : (
-                        <div className="flex h-full flex-col justify-end pb-2 lg:items-center">
-                          <div className="mb-1 h-4 w-full" />
-                          <span className="text-sm italic text-zinc-300 dark:text-zinc-600">
-                            รอชั่ง
-                          </span>
-                        </div>
-                      )}
+                        );
+                      })()}
                     </div>
                   </div>
 
@@ -535,175 +590,168 @@ export default function DetailItem<T extends JobWithSteel>({
                   <div className="border-t border-dashed border-zinc-200 dark:border-zinc-800" />
 
                   {/* --- ROW 2: Job + Note + Delete --- */}
-                  <div className="flex flex-col gap-4 lg:flex-row lg:items-end">
+                  <div className="flex flex-col gap-4 lg:flex-row lg:flex-wrap lg:items-end">
                     <div className="flex-none">
-                      <label className="mb-1.5 block text-xs font-medium text-zinc-500 dark:text-zinc-400">
+                      <label className="mb-1.5 block text-sm font-medium text-zinc-500 dark:text-zinc-400">
                         วิธีตัด
                       </label>
 
-                      <div className="flex gap-2">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            patchSteelItem(idx, {
-                              cuttingMethod:
-                                item.cuttingMethod === "FB" ? "normal" : "FB",
-                              manualPrice: false,
-                            });
-                          }}
-                          disabled={isLine}
-                          className={`flex h-10 items-center gap-2 rounded-lg border px-3 text-sm transition-all
-                          ${
-                            item.cuttingMethod === "FB"
-                              ? "border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
-                              : "border-zinc-200 bg-white text-zinc-600 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800"
-                          }
-                          ${isLine ? "cursor-not-allowed opacity-50" : ""}`}
-                        >
-                          <div
-                            className={`flex h-4 w-4 items-center justify-center rounded border
-                            ${
-                              item.cuttingMethod === "FB"
-                                ? "border-blue-500 bg-blue-500"
-                                : "border-zinc-300 bg-white"
-                            }`}
-                          >
-                            {item.cuttingMethod === "FB" && (
-                              <CheckIcon className="h-3 w-3 text-white" />
-                            )}
-                          </div>
-                          F/P
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => {
-                            patchSteelItem(idx, {
-                              cuttingMethod:
-                                item.cuttingMethod === "steelDisc"
-                                  ? "normal"
-                                  : "steelDisc",
-                              manualPrice: false,
-                            });
-                          }}
-                          disabled={isLine}
-                          className={`flex h-10 items-center gap-2 rounded-lg border px-3 text-sm transition-all
-                          ${
-                            item.cuttingMethod === "steelDisc"
-                              ? "border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
-                              : "border-zinc-200 bg-white text-zinc-600 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800"
-                          }
-                          ${isLine ? "cursor-not-allowed opacity-50" : ""}`}
-                        >
-                          <div
-                            className={`flex h-4 w-4 items-center justify-center rounded border
-                            ${
-                              item.cuttingMethod === "steelDisc"
-                                ? "border-blue-500 bg-blue-500"
-                                : "border-zinc-300 bg-white"
-                            }`}
-                          >
-                            {item.cuttingMethod === "steelDisc" && (
-                              <CheckIcon className="h-3 w-3 text-white" />
-                            )}
-                          </div>
-                          หนากลม
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => {
-                            patchSteelItem(idx, {
-                              cuttingMethod:
-                                item.cuttingMethod === "CNC" ? "normal" : "CNC",
-                              manualPrice: false,
-                            });
-                          }}
-                          disabled={isLine}
-                          className={`flex h-10 items-center gap-2 rounded-lg border px-3 text-sm transition-all
-                          ${
-                            item.cuttingMethod === "CNC"
-                              ? "border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
-                              : "border-zinc-200 bg-white text-zinc-600 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800"
-                          }
-                          ${isLine ? "cursor-not-allowed opacity-50" : ""}`}
-                        >
-                          <div
-                            className={`flex h-4 w-4 items-center justify-center rounded border
-                            ${
-                              item.cuttingMethod === "CNC"
-                                ? "border-blue-500 bg-blue-500"
-                                : "border-zinc-300 bg-white"
-                            }`}
-                          >
-                            {item.cuttingMethod === "CNC" && (
-                              <CheckIcon className="h-3 w-3 text-white" />
-                            )}
-                          </div>
-                          CNC
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => {
-                            patchSteelItem(idx, {
-                              cuttingMethod: "normal",
-                              manualPrice: !isManualPrice,
-                            });
-                          }}
-                          className={`flex h-10 items-center gap-2 rounded-lg border px-3 text-sm transition-all
-                          ${
-                            isManualPrice
-                              ? "border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
-                              : "border-zinc-200 bg-white text-zinc-600 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800"
-                          }`}
-                        >
-                          <div
-                            className={`flex h-4 w-4 items-center justify-center rounded border
-                            ${
-                              isManualPrice
-                                ? "border-blue-500 bg-blue-500"
-                                : "border-zinc-300 bg-white"
-                            }`}
-                          >
-                            {isManualPrice && (
-                              <CheckIcon className="h-3 w-3 text-white" />
-                            )}
-                          </div>
-                          ราคา/กิโล
-                        </button>
-                      </div>
+                      <Select
+                        value={item.cuttingMethod ?? "normal"}
+                        onValueChange={(value) => {
+                          patchSteelItem(idx, {
+                            cuttingMethod: value as CuttingMethod,
+                          });
+                        }}
+                      >
+                        <SelectTrigger className="h-10 w-full min-w-[140px] border-zinc-200 bg-white text-sm focus:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100">
+                          <SelectValue placeholder="เลือกวิธีตัด" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="normal">ตัดปกติ</SelectItem>
+                          <SelectItem value="FB">F/P</SelectItem>
+                          <SelectItem value="RM">R/M</SelectItem>
+                          <SelectItem value="CNC">CNC</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
 
-                    {/* เหล็กตัดพอเศษ Price  */}
-                    {(item.cuttingMethod !== "normal" || isManualPrice) && (
-                      <div className="w-full lg:w-44 flex-none">
-                        <label className="mb-1.5 block text-xs font-medium text-zinc-500 dark:text-zinc-400">
-                          {item.cuttingMethod === "normal"
-                            ? "ราคาต่อหน่วย (บาท)"
-                            : "ราคาต่อชิ้น (บาท)"}
+                    {/* od */}
+                    {!isLine && (
+                      <div className="flex-none">
+                        <label className="mb-1.5 block text-sm font-medium text-zinc-500 dark:text-zinc-400">
+                          OD
                         </label>
-                        <div className="relative">
-                          <Input
-                            type="number"
-                            min="0"
-                            value={item.price ?? 1}
-                            onChange={(e) => {
-                              patchSteelItem(idx, {
-                                price: Math.max(0, Number(e.target.value || 0)),
-                              });
-                            }}
-                          />
-                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-zinc-400">
-                            ฿
-                          </span>
-                        </div>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            patchSteelItem(idx, { isOD: !item.isOD })
+                          }
+                          disabled={isLine}
+                          className={`flex h-10 items-center gap-2 rounded-lg border px-3 text-sm transition-all
+                                                ${
+                                                  item.isOD === true
+                                                    ? "border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
+                                                    : "border-zinc-200 bg-white text-zinc-600 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800"
+                                                }
+                                                ${isLine ? "opacity-50 cursor-not-allowed" : ""}`}
+                        >
+                          <div
+                            className={`h-4 w-4 rounded border flex items-center justify-center
+                                                  ${
+                                                    item.isOD === true
+                                                      ? "border-blue-500 bg-blue-500"
+                                                      : "border-zinc-300 bg-white"
+                                                  }`}
+                          >
+                            {item.isOD === true && (
+                              <CheckIcon className="w-3 h-3 text-white" />
+                            )}
+                          </div>
+                          OD
+                        </button>
                       </div>
                     )}
 
+                    <div className="flex-none">
+                      <label className="mb-1.5 block text-sm font-medium text-zinc-500 dark:text-zinc-400">
+                        Service
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          patchSteelItem(idx, { isServices: !item.isServices })
+                        }
+                        disabled={isLine}
+                        className={`flex h-10 items-center gap-2 rounded-lg border px-3 text-sm transition-all
+                                                ${
+                                                  item.isServices === true
+                                                    ? "border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
+                                                    : "border-zinc-200 bg-white text-zinc-600 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800"
+                                                }
+                                                ${isLine ? "opacity-50 cursor-not-allowed" : ""}`}
+                      >
+                        <div
+                          className={`h-4 w-4 rounded border flex items-center justify-center
+                                                  ${
+                                                    item.isServices === true
+                                                      ? "border-blue-500 bg-blue-500"
+                                                      : "border-zinc-300 bg-white"
+                                                  }`}
+                        >
+                          {item.isServices === true && (
+                            <CheckIcon className="w-3 h-3 text-white" />
+                          )}
+                        </div>
+                        M/S
+                      </button>
+                    </div>
+
+                    <div className="flex-none">
+                      <label className="mb-1.5 block text-sm font-medium text-zinc-500 dark:text-zinc-400">
+                        การคิดราคา
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          patchSteelItem(idx, {
+                            isPerAmount: !item.isPerAmount,
+                          })
+                        }
+                        disabled={isLine}
+                        className={`flex h-10 items-center gap-2 rounded-lg border px-3 text-sm transition-all
+                                                ${
+                                                  item.isPerAmount === true
+                                                    ? "border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
+                                                    : "border-zinc-200 bg-white text-zinc-600 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800"
+                                                }
+                                                ${isLine ? "opacity-50 cursor-not-allowed" : ""}`}
+                      >
+                        <div
+                          className={`h-4 w-4 rounded border flex items-center justify-center
+                                                  ${
+                                                    item.isPerAmount === true
+                                                      ? "border-blue-500 bg-blue-500"
+                                                      : "border-zinc-300 bg-white"
+                                                  }`}
+                        >
+                          {item.isPerAmount === true && (
+                            <CheckIcon className="w-3 h-3 text-white" />
+                          )}
+                        </div>
+                        ต่อชิ้น
+                      </button>
+                    </div>
+
+                    {/* Price */}
+                    <div className="w-full sm:w-40 lg:w-32 flex-none">
+                      <label className="mb-1.5 block text-sm font-medium text-zinc-500 dark:text-zinc-400">
+                        {item.isPerAmount === false
+                          ? "ราคาต่อหน่วย (บาท)"
+                          : "ราคาต่อชิ้น (บาท)"}
+                      </label>
+                      <div className="relative">
+                        <Input
+                          type="number"
+                          min="0"
+                          value={item.price ?? 1}
+                          onChange={(e) => {
+                            patchSteelItem(idx, {
+                              price: Math.max(0, Number(e.target.value || 0)),
+                            });
+                          }}
+                          placeholder="0"
+                          className="h-10 border-zinc-200 bg-white text-right pr-8 dark:border-zinc-700 dark:bg-zinc-900"
+                        />
+                        <span className="absolute right-2 top-1/2 -translate-y-1/2 text-sm text-zinc-400">
+                          ฿
+                        </span>
+                      </div>
+                    </div>
+
                     {/* Discount */}
-                    <div className="w-full lg:w-40 flex-none">
-                      <label className="mb-1.5 block text-xs font-medium text-zinc-500 dark:text-zinc-400">
+                    <div className="w-full sm:w-40 lg:w-32 flex-none">
+                      <label className="mb-1.5 block text-sm font-medium text-zinc-500 dark:text-zinc-400">
                         ส่วนลด (บาท)
                       </label>
                       <div className="relative">
@@ -720,9 +768,9 @@ export default function DetailItem<T extends JobWithSteel>({
                             })
                           }
                           placeholder="0"
-                          className="h-10 border-zinc-200 bg-white text-right pr-10 dark:border-zinc-700 dark:bg-zinc-900"
+                          className="h-10 border-zinc-200 bg-white text-right pr-8 dark:border-zinc-700 dark:bg-zinc-900"
                         />
-                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-zinc-400">
+                        <span className="absolute right-2 top-1/2 -translate-y-1/2 text-sm text-zinc-400">
                           ฿
                         </span>
                       </div>
@@ -730,8 +778,8 @@ export default function DetailItem<T extends JobWithSteel>({
 
                     {/* Job */}
                     {useJob && (
-                      <div className="w-full lg:w-32 flex-none">
-                        <label className="mb-1.5 block text-xs font-medium text-zinc-500 dark:text-zinc-400">
+                      <div className="w-full sm:w-28 lg:w-24 flex-none">
+                        <label className="mb-1.5 block text-sm font-medium text-zinc-500 dark:text-zinc-400">
                           Job No.
                         </label>
                         <Input
@@ -753,7 +801,7 @@ export default function DetailItem<T extends JobWithSteel>({
 
                     {/* Note */}
                     <div className="flex-1 min-w-[150px]">
-                      <label className="mb-1.5 block text-xs font-medium text-zinc-500 dark:text-zinc-400">
+                      <label className="mb-1.5 block text-sm font-medium text-zinc-500 dark:text-zinc-400">
                         หมายเหตุ
                       </label>
                       <Input
@@ -767,7 +815,7 @@ export default function DetailItem<T extends JobWithSteel>({
                     </div>
 
                     {/* Delete */}
-                    <div className="flex-none pb-1">
+                    <div className="flex-none pb-1 lg:ml-auto">
                       <Button
                         variant="ghost"
                         size="icon"

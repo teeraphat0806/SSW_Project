@@ -35,22 +35,20 @@ import { Separator } from "@/components/ui/separator"; // ถ้ามี compon
 type CustomerApiItem = {
   id: string | number;
   name: string;
-  code?: string | null;
-  taxNumber?: string | null;
+  taxNumber: string;
   tel?: string | null;
   email?: string | null;
   faxNumber?: string | null;
-  address?: string | null;
+  address: string;
 };
 
 type JobCustomerFields = {
   customerId: string;
   customerName: string;
-  customerCode: string | null;
   customerTaxId: string;
-  customerPhone: string;
-  customerEmail: string;
-  customerFax: string;
+  customerPhone: string | null;
+  customerEmail: string | null;
+  customerFax: string | null;
   customerAddress: string;
 };
 
@@ -68,11 +66,10 @@ function mapCustomerToJobFields(c: CustomerApiItem) {
   return {
     customerId: String(c.id),
     customerName: c.name ?? "",
-    customerCode: c.code ?? null,
     customerTaxId: c.taxNumber ?? "",
-    customerPhone: c.tel ?? "",
-    customerEmail: c.email ?? "",
-    customerFax: c.faxNumber ?? "",
+    customerPhone: c.tel ?? null,
+    customerEmail: c.email ?? null,
+    customerFax: c.faxNumber ?? null,
     customerAddress: c.address ?? "",
   };
 }
@@ -89,14 +86,23 @@ const InfoItem = ({
   value?: string | null;
   className?: string;
 }) => {
-  if (!value || value === "-") return null;
+  const hasValue =
+    value != null && (typeof value !== "string" || value.trim() !== "");
+  const displayValue = hasValue ? value : "ไม่พบข้อมูล";
   return (
     <div className={cn("flex items-start gap-2 text-sm", className)}>
       <Icon className="mt-0.5 h-4 w-4 shrink-0 text-zinc-400" />
       <div className="flex flex-col">
         <span className="text-xs font-medium text-zinc-500">{label}</span>
-        <span className="text-zinc-900 dark:text-zinc-100 break-words font-medium">
-          {value}
+        <span
+          className={cn(
+            "break-words font-medium",
+            hasValue
+              ? "text-zinc-900 dark:text-zinc-100"
+              : "text-zinc-400 dark:text-zinc-500 font-normal",
+          )}
+        >
+          {displayValue}
         </span>
       </div>
     </div>
@@ -272,8 +278,8 @@ export default function DetailCustomer<T extends JobCustomerFields>({
                             >
                               <div className="flex flex-col truncate">
                                 <span className="font-medium">{c.name}</span>
-                                <span className="text-[10px] text-zinc-400">
-                                  {c.code ? `Code: ${c.code}` : ""}{" "}
+                                <span className="textxs text-zinc-400">
+                                  id: {c.id}
                                 </span>
                               </div>
                               {isSelected && (
@@ -298,11 +304,7 @@ export default function DetailCustomer<T extends JobCustomerFields>({
           <div className="flex flex-col gap-4">
             {/* Row 1: Primary Info (Code & Tax) */}
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-              <InfoItem
-                icon={Hash}
-                label="รหัสลูกค้า"
-                value={job.customerCode}
-              />
+              <InfoItem icon={Hash} label="รหัสลูกค้า" value={job.customerId} />
               <InfoItem
                 icon={FileBadge}
                 label="เลขผู้เสียภาษี"
@@ -316,45 +318,33 @@ export default function DetailCustomer<T extends JobCustomerFields>({
               <InfoItem icon={Mail} label="อีเมล" value={job.customerEmail} />
             </div>
 
-            {/* ถ้ามี Fax หรือ ที่อยู่ ให้แสดงแยกออกมา */}
-            {(job.customerFax || job.customerAddress) && (
-              <div className="grid grid-cols-1 gap-4 border-t border-dashed border-zinc-200 pt-3 sm:grid-cols-12 dark:border-zinc-800">
-                {job.customerFax && (
-                  <div className="sm:col-span-3">
-                    <InfoItem
-                      icon={Printer}
-                      label="แทกซ์"
-                      value={job.customerTaxId}
-                    />
-                  </div>
-                )}
-
-                {job.customerFax && (
-                  <div className="sm:col-span-3">
-                    <InfoItem
-                      icon={Printer}
-                      label="แฟกซ์"
-                      value={job.customerFax}
-                    />
-                  </div>
-                )}
-                {job.customerAddress && (
-                  <div
-                    className={cn(
-                      "sm:col-span-6",
-                      !job.customerFax && "sm:col-span-12",
-                    )}
-                  >
-                    <InfoItem
-                      icon={MapPin}
-                      label="ที่อยู่จัดส่ง"
-                      value={job.customerAddress}
-                      className="items-start"
-                    />
-                  </div>
-                )}
+            {/* Fax / ที่อยู่: ถ้าไม่มีข้อมูลให้แสดงเป็น "-" */}
+            <div className="grid grid-cols-1 gap-4 border-t border-dashed border-zinc-200 pt-3 sm:grid-cols-12 dark:border-zinc-800">
+              <div className="sm:col-span-3">
+                <InfoItem
+                  icon={Printer}
+                  label="แทกซ์"
+                  value={job.customerTaxId}
+                />
               </div>
-            )}
+
+              <div className="sm:col-span-3">
+                <InfoItem
+                  icon={Printer}
+                  label="แฟกซ์"
+                  value={job.customerFax}
+                />
+              </div>
+
+              <div className="sm:col-span-6">
+                <InfoItem
+                  icon={MapPin}
+                  label="ที่อยู่จัดส่ง"
+                  value={job.customerAddress}
+                  className="items-start"
+                />
+              </div>
+            </div>
           </div>
         ) : (
           // Empty State แบบสวยๆ

@@ -176,7 +176,7 @@ export function QuickAction({
                   </div>
                   <div className="text-left flex flex-col">
                     <span className="text-sm font-medium">ใบสั่งซื้อ (PO)</span>
-                    <span className="text-[10px] text-zinc-400 font-normal">
+                    <span className="textxs text-zinc-400 font-normal">
                       คลิกเพื่อเปิดไฟล์
                     </span>
                   </div>
@@ -204,13 +204,13 @@ export function QuickAction({
                         <span className="text-sm font-medium">
                           ใบสั่งซื้อ (PO)
                         </span>
-                        <span className="text-[10px] text-zinc-400 font-normal">
+                        <span className="textxs text-zinc-400 font-normal">
                           มีทั้งหมด {poKeys.length} ไฟล์
                         </span>
                       </div>
                     </div>
                     {/* Badge นับจำนวน */}
-                    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-blue-100 text-[10px] font-bold text-blue-600 dark:bg-blue-900 dark:text-blue-300">
+                    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-blue-100 textxs font-bold text-blue-600 dark:bg-blue-900 dark:text-blue-300">
                       {poKeys.length}
                     </span>
                   </Button>
