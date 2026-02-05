@@ -335,7 +335,7 @@ export async function GETSQL(sql: string) {
 
   // ใช้ localhost สำหรับ server-side fetch (internal API call)
   // ใน production Next.js จะรันบน localhost ของ container เดียวกัน
-  const baseUrl = "http://localhost:8080";
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
   const url = `${baseUrl}/api/chatbot?sql=${encodedSQL}`;
   console.log("Calling internal API:", url);
 
