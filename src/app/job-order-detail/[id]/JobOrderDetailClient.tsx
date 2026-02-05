@@ -77,7 +77,6 @@ type ApiJobOrder = {
     detail?: string | null;
     shape: string;
     job?: number | null;
-    total?: number | null;
     discount?: number | null;
     cuttingMethod: cuttingMethod;
   }[];
@@ -115,7 +114,6 @@ export type JobOrder = {
     detail?: string;
     density: number;
     job?: number;
-    total?: number | null;
     discount?: number | null;
     cuttingMethod: cuttingMethod;
     shape: string;
@@ -161,7 +159,6 @@ const tojobOrder = (api: ApiJobOrder): JobOrder => {
       job: s.job ?? undefined,
       cuttingMethod: (s.cuttingMethod ??
         "normal") as JobOrder["steel"][number]["cuttingMethod"],
-      total: s.total ?? 0,
       discount: s.discount ?? undefined,
       shape: s.shape,
     })),

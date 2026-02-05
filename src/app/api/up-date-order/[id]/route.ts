@@ -39,7 +39,7 @@ type ApiJobOrder = {
     job: number | null;
     cuttingMethod: cuttingMethodType;
     discount?: number | null;
-    total: number | null;
+    price: number;
   }[];
   status: statusType;
 };
@@ -78,7 +78,7 @@ function toApiJobOrder(order: OrderWithRelations): ApiJobOrder {
       job: p.job ?? null,
       cuttingMethod: (p.cuttingMethod ?? "normal") as cuttingMethodType,
       discount: p.discount ?? null,
-      total: p.total ?? null,
+      price: p.unitPrice ?? 0,
     })),
     status: order.status as statusType,
   };
@@ -152,7 +152,7 @@ const SteelLineSchema = z.object({
   cuttingMethod: z.enum(["normal", "FB", "steelDisc", "CNC"]).optional(),
   job: z.number().int().nullable().optional(),
   discount: z.number().nonnegative().nullable().optional(),
-  total: z.number().nonnegative().nullable().optional(),
+  price: z.number().nonnegative(),
 });
 
 const PatchSchema = z.object({
@@ -303,21 +303,21 @@ export async function PATCH(
         nextCustomerId = cid;
       }
 
-      // update header
+      // update status + customerId
       await tx.orderPO.update({
         where: { id: poId },
         data: {
           ...(patch.status ? { status: patch.status } : {}),
           ...(patch.status === "completed"
             ? { completedAt: new Date() }
-            : { completedAt: undefined }),
+            : { completedAt: null }),
           ...(nextCustomerId !== undefined
             ? { customerId: nextCustomerId }
             : {}),
         },
       });
 
-      // update lines
+      // update steel
       if (patch.steel) {
         const codes = Array.from(
           new Set(
@@ -338,7 +338,7 @@ export async function PATCH(
           select: {
             id: true,
             codeSteel: true,
-            price: true,
+            // price: true,
             density: true,
             shape: true,
           },
@@ -354,7 +354,9 @@ export async function PATCH(
 
         // สร้างใหม่รายการเหล็กทั้งหมด
         await tx.product.createMany({
+          // l คือ line item ที่ส่งมาใน patch
           data: patch.steel.map((l) => {
+            //st คือ steelType จาก database
             const st = codeToSteel.get(l.codeSteel.trim())!;
 
             const { totalCalculate } = calcLine({
@@ -364,7 +366,7 @@ export async function PATCH(
               length: l.length,
               thickness: l.thickness,
               steel: {
-                price: st.price,
+                price: l.price,
                 density: st.density,
                 shape: st.shape as "square" | "line",
               },
@@ -378,12 +380,15 @@ export async function PATCH(
               thickness: l.thickness ?? null,
               amount: l.amount,
               detail: l.detail ?? null,
-              unitPrice: st.price,
+              unitPrice: l.price,
               actualWeight: l.weight ?? null,
               job: l.job ?? null,
               cuttingMethod: l.cuttingMethod ?? "normal",
               discount: l.discount ?? null,
-              total: l.cuttingMethod === "CNC" ? l.total : totalCalculate,
+              total:
+                l.cuttingMethod !== "normal"
+                  ? l.price * l.amount
+                  : totalCalculate,
             };
           }),
         });
@@ -455,8 +460,6 @@ export async function PATCH(
 
       if (!order || !order.Customer)
         throw new Error("Order not found after update");
-
-      const customer = order.Customer;
 
       return toApiJobOrder(order);
     });

@@ -41,13 +41,12 @@ model Staff {
 
 model Customer {
   id        Int       @id @default(autoincrement())
-  code      String?    @unique
   name      String
   address   String
-  tel       String    @unique
+  tel       String?    @unique
   taxNumber String    @unique
-  faxNumber String    @unique
-  email     String    @unique
+  faxNumber String?    @unique
+  email     String?    @unique
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   Bill      Bill[]
@@ -57,7 +56,6 @@ model Customer {
 model Bill {
   id                            Int       @id @default(autoincrement())
   customerId                    Int
-  yourRef                       String
   invoiceNo                     Int       @unique @default(autoincrement())
   codeCustomer                  String    @unique
   deliveryDate                  DateTime
@@ -127,16 +125,23 @@ model Product {
   id            Int           @id @default(autoincrement())
   orderPOId     Int
   steelId       Int
+
   wide          Float?
   length        Float
   thickness     Float
   amount        Int
   detail        String?
+
+  cuttingMethod CuttingMethod @default(normal)
+  isOD          Boolean  @default(false)
+  isServices    Boolean  @default(false)
+  isPerAmount   Boolean  @default(false)
+
   actualWeight  Float?
   unitPrice     Float         @default(0)
   discount      Float?
   total         Float?
-  cuttingMethod CuttingMethod @default(normal)
+ 
   job           Int?
   OrderPO       OrderPO       @relation(fields: [orderPOId], references: [id], onDelete: Cascade)
   SteelType     SteelType     @relation(fields: [steelId], references: [id])
@@ -263,7 +268,7 @@ enum CuttingMethod {
   normal
   FB
   CNC
-  steelDisc
+  RM
 }
 
 enum StockStatus {
