@@ -31,18 +31,33 @@ interface KPISummaryData {
     formatted: string;
     percentage: number;
   };
+  topCustomer?: {
+    id: number;
+    name: string;
+    taxNumber: string;
+    purchaseCount: number;
+    totalAmount: number;
+    formatted: {
+      purchaseCount: string;
+      totalAmount: string;
+    };
+  } | null;
 }
 
 interface MonthlyDataItem {
   month: number;
   monthName: string;
   salesAmt: number;
+  subtotal: number;
+  vat: number;
   salesQty: number;
   income: number;
   expense: number;
   net: number;
   formatted: {
     salesAmt: string;
+    subtotal: string;
+    vat: string;
     salesQty: string;
     income: string;
     expense: string;

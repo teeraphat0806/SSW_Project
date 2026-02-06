@@ -5,6 +5,7 @@ import {
   ShoppingCart,
   CreditCard,
   Percent,
+  Award,
 } from "lucide-react";
 import { KPIStatCard } from "../../components/saleDashboard/kpi-stat-card";
 interface MonthSummaryData {
@@ -29,6 +30,17 @@ interface MonthSummaryData {
     percentage: number;
     profitMargin: number;
   };
+  topCustomer?: {
+    id: number;
+    name: string;
+    taxNumber: string;
+    purchaseCount: number;
+    totalAmount: number;
+    formatted: {
+      purchaseCount: string;
+      totalAmount: string;
+    };
+  } | null;
 }
 
 interface MonthSummaryCardsProps {
@@ -89,16 +101,17 @@ export function MonthSummaryCards({ data }: MonthSummaryCardsProps) {
         subtitle="รายการค่าใช้จ่าย"
       />
 
-      {/* Profit Margin Card */}
-      <KPIStatCard
-        title="อัตรากำไร"
-        value={data.net.profitMargin}
-        format="percentage"
-        variant="info"
-        icon={Percent}
-        colorCode={data.net.profitMargin >= 0 ? "profit" : "loss"}
-        subtitle="อัตรากำไรสุทธิ"
-      />
+      {/* Top Customer Card */}
+      {data.topCustomer && (
+        <KPIStatCard
+          title="ลูกค้ายอดซื้อสูงสุด"
+          value={data.topCustomer.name}
+          format="text"
+          variant="gradient-red"
+          icon={Award}
+          subtitle={`${data.topCustomer.formatted.purchaseCount} ออเดอร์ • ${data.topCustomer.formatted.totalAmount}`}
+        />
+      )}
     </div>
   );
 }
