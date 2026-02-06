@@ -1,8 +1,12 @@
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { calculateBillSummary } from "@/lib/calculateGrandTotal";
+import {
+  calculateBillSummary,
+  calculateWeightDetails,
+} from "@/lib/calculateGrandTotal";
 import { FileText } from "lucide-react";
 import { useMemo } from "react";
 import { ShapeSteel, CuttingMethod } from "@/types";
+import { de } from "date-fns/locale";
 
 // --- Types ---
 // กำหนด Type ตามที่คุณระบุมา
@@ -38,62 +42,6 @@ const fmt = (n: number) =>
     maximumFractionDigits: 2,
   });
 
-const calculateWeightDetails = (item: SteelItem) => {
-  const amount = safeNum(item.amount);
-  const width = safeNum(item.width);
-  const length = safeNum(item.length);
-  const thickness = safeNum(item.thickness);
-  const density = safeNum(item.density) || 7860;
-
-  const pricePerUnit = safeNum(item.price);
-  const manualWeight = safeNum(item.weight);
-  const cuttingMethod = item.cuttingMethod || "normal";
-
-  const lineDiscount = safeNum(item.discount) || 0;
-
-  // 1. ถ้ามี weight ส่งมา (มากกว่า 0) ให้ใช้ค่านั้นเลย (Manual / Pre-calculated)
-
-  if (cuttingMethod !== "normal") {
-    return {
-      weight: manualWeight,
-      totalPrice: pricePerUnit * amount,
-      lineDiscount,
-      isManual: true,
-      dimensions: { width, length, thickness },
-    };
-  }
-  if (manualWeight > 0) {
-    return {
-      weight: manualWeight,
-      totalPrice: manualWeight * pricePerUnit,
-      lineDiscount,
-      isManual: true,
-      dimensions: { width, length, thickness },
-    };
-  }
-
-  // 2. ถ้า weight = 0 ให้คำนวณตามสูตร
-  let weightPerPiece = 0;
-
-  if (width > 0) {
-    // เหล็กแผ่น (Plate)
-    weightPerPiece = width * length * thickness * density * 0.1;
-  } else {
-    // เหล็กเส้น/กลม (Round Bar) -> thickness คือ diameter
-    weightPerPiece = length * length * thickness * density * 0.1;
-  }
-
-  const totalWeight = weightPerPiece * amount;
-
-  return {
-    weight: totalWeight,
-    totalPrice: totalWeight * pricePerUnit,
-    lineDiscount,
-    isManual: false,
-    dimensions: { width, length, thickness },
-  };
-};
-
 // --- Main Component ---
 
 interface SteelTableProps {
@@ -102,11 +50,14 @@ interface SteelTableProps {
 }
 
 export default function SteelTable({ steel = [], vatRate }: SteelTableProps) {
-  // Pre-calculate logic
-  const processedItems = steel.map((item) => ({
-    original: item,
-    ...calculateWeightDetails(item),
-  }));
+  const processedItems = useMemo(
+    () =>
+      steel.map((item) => ({
+        item,
+        details: calculateWeightDetails(item),
+      })),
+    [steel],
+  );
 
   // Summary logic
   const { subtotal, discount, vat, grandTotal } = useMemo(
@@ -167,7 +118,7 @@ export default function SteelTable({ steel = [], vatRate }: SteelTableProps) {
 
           {/* Table Body */}
           <div className="divide-y divide-zinc-100 dark:divide-zinc-800/60">
-            {processedItems.length === 0 ? (
+            {steel.length === 0 ? (
               <div className="py-16 flex flex-col items-center justify-center text-zinc-400 dark:text-zinc-600 gap-3">
                 <div className="w-14 h-14 rounded-full bg-zinc-50 dark:bg-zinc-900 flex items-center justify-center border border-zinc-100 dark:border-zinc-800">
                   <FileText className="h-6 w-6 opacity-30" />
@@ -175,9 +126,9 @@ export default function SteelTable({ steel = [], vatRate }: SteelTableProps) {
                 <span className="font-medium">ไม่พบรายการเหล็ก</span>
               </div>
             ) : (
-              processedItems.map((item, idx) => {
-                const detail = (item.original.detail ?? "").trim();
-                const discount = safeNum(item.original.discount);
+              processedItems.map(({ item, details }, idx) => {
+                const detail = (item.detail ?? "").trim();
+                const discount = safeNum(item.discount);
                 const hasNoteRow = discount > 0 || detail.length > 0;
 
                 return (
@@ -191,21 +142,21 @@ export default function SteelTable({ steel = [], vatRate }: SteelTableProps) {
                       <div className="col-span-2 flex flex-col justify-center pr-2 gap-1">
                         <div className="flex flex-wrap items-center gap-2">
                           <span className="font-semibold text-zinc-800 dark:text-zinc-200 text-sm group-hover:text-black dark:group-hover:text-white transition-colors">
-                            {item.original.steelType}
+                            {item.steelType}
                           </span>
 
-                          {item.original.cuttingMethod !== "normal" && (
+                          {item.cuttingMethod !== "normal" && (
                             <span className="px-1.5 py-0.5 rounded border font-medium bg-zinc-100 border-zinc-200 text-zinc-500 dark:bg-zinc-900 dark:border-zinc-800 dark:text-zinc-500">
-                              {item.original.cuttingMethod == "FB"
+                              {item.cuttingMethod == "FB"
                                 ? "F/P"
-                                : item.original.cuttingMethod == "RM"
+                                : item.cuttingMethod == "RM"
                                   ? "R/M"
                                   : "CNC"}
                             </span>
                           )}
 
                           <span className="px-1.5 py-0.5 rounded border font-medium bg-zinc-100 border-zinc-200 text-zinc-500 dark:bg-zinc-900 dark:border-zinc-800 dark:text-zinc-500">
-                            {item.isManual ? "ระบุเอง" : "สูตร"}
+                            {item.isPerAmount ? "ต่อชิ้น" : "ต่อหน่วย"}
                           </span>
                         </div>
                       </div>
@@ -213,16 +164,16 @@ export default function SteelTable({ steel = [], vatRate }: SteelTableProps) {
                       {/* Col 2 */}
                       <div className="col-span-2 flex items-center font-mono text-sm text-zinc-500 dark:text-zinc-400">
                         <span className="font-bold text-zinc-700 dark:text-zinc-300">
-                          {item.dimensions.thickness}
+                          {item.thickness}
                         </span>
                         <span className="text-zinc-500 dark:text-zinc-500 mx-1.5">
                           ×
                         </span>
 
-                        {item.dimensions.width > 0 && (
+                        {safeNum(item.width) > 0 && (
                           <>
                             <span className="font-bold text-zinc-700 dark:text-zinc-300">
-                              {item.dimensions.width}
+                              {item.width}
                             </span>
                             <span className="text-zinc-500 dark:text-zinc-500 mx-1.5">
                               ×
@@ -231,32 +182,34 @@ export default function SteelTable({ steel = [], vatRate }: SteelTableProps) {
                         )}
 
                         <span className="font-bold text-zinc-700 dark:text-zinc-300">
-                          {item.dimensions.length}
+                          {item.length}
                         </span>
                       </div>
 
                       {/* Col 3 */}
                       <div className="col-span-1 text-center font-bold text-zinc-700 dark:text-zinc-300">
-                        x{safeNum(item.original.amount)}
+                        x{safeNum(item.amount)}
                       </div>
 
                       <div className="col-span-1 text-center font-bold text-zinc-700 dark:text-zinc-300">
-                        {item.original.job ? item.original.job : "-"}
+                        {item.job ? item.job : "-"}
                       </div>
 
                       {/* Col 4 */}
                       <div className="col-span-2 text-right font-bold text-zinc-700 dark:text-zinc-300">
-                        {fmt(item.weight)}
+                        {details.weight === 0 || details.weight == null
+                          ? "-"
+                          : fmt(details.weight)}
                       </div>
 
                       {/* Col 5 */}
                       <div className="col-span-2 text-right font-bold text-zinc-700 dark:text-zinc-400">
-                        {fmt(item.original.price)}
+                        {fmt(item.price)}
                       </div>
 
                       {/* Col 6 */}
                       <div className="col-span-2 text-right font-mono font-bold text-zinc-800 dark:text-zinc-200 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
-                        {fmt(item.totalPrice)}
+                        {fmt(details.total)}
                       </div>
                     </div>
                     {/* ✅ แถวหมายเหตุเต็มความกว้าง (อยู่ด้านบนของเส้นแบ่ง) */}
@@ -294,7 +247,7 @@ export default function SteelTable({ steel = [], vatRate }: SteelTableProps) {
           </div>
 
           {/* Table Footer */}
-          {processedItems.length > 0 && (
+          {steel.length > 0 && (
             <div className="bg-zinc-50/50 dark:bg-zinc-950 px-6 py-4 border-t border-zinc-200 dark:border-zinc-800 space-y-2">
               <div className="grid grid-cols-12 gap-4 items-center">
                 <div className="col-span-6 text-left font-bold text-zinc-600 dark:text-zinc-400">

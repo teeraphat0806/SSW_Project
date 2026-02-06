@@ -44,22 +44,27 @@ export async function GET(req: NextRequest) {
       where.codeSteel = { contains: search, mode: "insensitive" };
     }
 
-    const allowedSort: Array<keyof Prisma.SteelTypeOrderByWithRelationInput> = [
+    const allowedSort = [
       "createdAt",
       "amount",
       "codeSteel",
       "price",
       "shape",
-    ];
+      "products",
+    ] as const;
 
-    const sortField = allowedSort.includes(sortParam as any)
-      ? (sortParam as any)
+    const sortField = allowedSort.includes(sortParam as (typeof allowedSort)[number])
+      ? (sortParam as (typeof allowedSort)[number])
       : "createdAt";
     const order: Prisma.SortOrder = orderParam === "asc" ? "asc" : "desc";
+    const orderBy: Prisma.SteelTypeOrderByWithRelationInput =
+      sortField === "products"
+        ? { Product: { _count: order } }
+        : { [sortField]: order };
 
     const result = await prisma.steelType.findMany({
       where,
-      orderBy: { [sortField]: order },
+      orderBy,
       select: {
         id: true,
         codeSteel: true,

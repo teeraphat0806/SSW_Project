@@ -214,7 +214,7 @@ const SteelListPage = () => {
       {/* Table Section */}
       <div className="max-w-7xl mx-auto bg-white dark:bg-zinc-900/50 rounded-xl shadow-lg overflow-hidden border border-gray-100 dark:border-zinc-800 min-h-[400px]">
         <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse min-w-[800px]">
+          <table className="w-full text-left border-collapse min-w-[900px]">
             <thead>
               <tr className="bg-gray-100 dark:bg-zinc-900 border-b border-gray-200 dark:border-zinc-800 text-gray-600 dark:text-zinc-300">
                 <th
@@ -280,6 +280,21 @@ const SteelListPage = () => {
                     />
                   </div>
                 </th>
+                <th
+                  className="p-4 font-semibold text-sm uppercase tracking-wider cursor-pointer group hover:bg-gray-200 dark:hover:bg-gray-700 transition"
+                  onClick={() => handleSort("products")}
+                >
+                  <div className="flex items-center justify-center gap-1">
+                    จำนวนการใช้
+                    <ArrowUpDown
+                      className={`w-3 h-3 ${
+                        sortConfig.key === "products"
+                          ? "text-blue-500"
+                          : "text-gray-400"
+                      }`}
+                    />
+                  </div>
+                </th>
 
                 <th className="p-4 font-semibold text-sm uppercase tracking-wider text-center">
                   สถานะ
@@ -293,7 +308,7 @@ const SteelListPage = () => {
             <tbody className="divide-y divide-gray-200 dark:divide-zinc-700/50 bg-white dark:bg-zinc-900 relative ">
               {isLoading && steels.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="p-12 text-center text-zinc-400">
+                  <td colSpan={7} className="p-12 text-center text-zinc-400">
                     <div className="flex flex-col items-center gap-2">
                       <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
                       <span>กำลังโหลดข้อมูล...</span>
@@ -304,7 +319,7 @@ const SteelListPage = () => {
 
               {error && !isLoading && (
                 <tr>
-                  <td colSpan={6} className="p-12 text-center text-red-500">
+                  <td colSpan={7} className="p-12 text-center text-red-500">
                     <div className="flex flex-col items-center gap-2">
                       <AlertCircle className="w-8 h-8" />
                       <span>เกิดข้อผิดพลาด: {error}</span>
@@ -326,7 +341,7 @@ const SteelListPage = () => {
                           {item.codeSteel}
                         </span>
                         <span className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
-                          Product: {item._count?.Product || 0}
+                          ID: {item.id}
                         </span>
                       </div>
                     </td>
@@ -356,6 +371,10 @@ const SteelListPage = () => {
 
                     <td className="p-4 font-mono text-gray-600 dark:text-gray-300">
                       {Number(item.price).toFixed(2)} ฿
+                    </td>
+
+                    <td className="p-4 text-center font-medium text-gray-700 dark:text-gray-300">
+                      {item._count?.Product || 0}
                     </td>
 
                     <td className="p-4 text-center">
