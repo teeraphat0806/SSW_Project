@@ -25,7 +25,8 @@ interface KPIStatCardProps {
     | "gradient-blue"
     | "gradient-green"
     | "gradient-purple"
-    | "gradient-orange";
+    | "gradient-orange"
+    | "gradient-red";
   icon?: LucideIcon;
 }
 
