@@ -252,10 +252,10 @@ const JobOrderDetailPage = ({ id }: { id: string }) => {
     if (!jobOrder) return;
 
     if (newStatus === "ready") {
-      const ok =
-        jobOrder.steel.length > 0 &&
-        jobOrder.steel.every((s) => (s.weight ?? 0) > 0);
-      if (!ok) {
+      const hasInvalidWeight = jobOrder.steel.some(
+        (s) => s.isPerAmount === false && (!s.weight || s.weight <= 0),
+      );
+      if (!hasInvalidWeight) {
         toast.error(
           "ยังไปขั้นตอนถัดไปไม่ได้: ต้องกรอกน้ำหนักเหล็กก่อน แล้วจึงเปลี่ยนเป็น READY ได้",
           {
