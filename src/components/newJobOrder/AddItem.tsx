@@ -411,7 +411,7 @@ export default function AddItem({
                           {!isLine && (
                             <div>
                               <label className="mb-1.5 block text-center text-xs font-medium text-zinc-500 dark:text-zinc-400">
-                                {item.isOD === true ? "วงใน" : "กว้าง"}
+                                {item.isOD === true ? "OD." : "กว้าง"}
                               </label>
                               <div className="relative">
                                 <Input
@@ -437,7 +437,7 @@ export default function AddItem({
                           {/* Length */}
                           <div>
                             <label className="mb-1.5 block text-center text-xs font-medium text-zinc-500 dark:text-zinc-400">
-                              {item.isOD === true ? "วงนอก" : "ยาว"}
+                              {item.isOD === true ? "ID." : "ยาว"}
                             </label>
                             <div className="relative">
                               <Input
@@ -567,7 +567,6 @@ export default function AddItem({
                               item.isServices === true ? false : true,
                             )
                           }
-                          
                           className={`flex h-10 items-center gap-2 rounded-lg border px-3 text-sm transition-all
                             ${
                               item.isServices === true
