@@ -93,7 +93,9 @@ type ApiReceipt = {
   deliveryDate: Date;
   credit: number;
   selesName: string | null;
+  discount?: number | null;
   vat: number;
+  vatRate: number | null;
   totalTextThai: string;
   customer: {
     id: number;
@@ -114,6 +116,10 @@ type ApiReceipt = {
     total: number;
     job?: number | null;
     cuttingMethod?: CuttingMethod;
+    discount?: number | null;
+    isOD: boolean;
+    isServices: boolean;
+    isPerAmount: boolean;
   }[];
 };
 
@@ -170,7 +176,11 @@ export async function GET(
       weight: p.actualWeight,
       job: p.job,
       cuttingMethod: p.cuttingMethod,
+      discount: p.discount ?? undefined,
       total: p.total ?? 0,
+      isOD: p.isOD,
+      isServices: p.isServices,
+      isPerAmount: p.isPerAmount,
     }));
 
     const apiReceipt: ApiReceipt = {
@@ -181,6 +191,8 @@ export async function GET(
       deliveryDate: receipt.deliveryDate,
       credit: receipt.credit,
       vat: receipt.vat,
+      vatRate: receipt.vatRate,
+      discount: receipt.discount ?? undefined,
       totalTextThai: ThaiBaht(grandTotal.toString()),
       selesName: receipt.salesName,
       customer: {
@@ -188,8 +200,8 @@ export async function GET(
         name: customer.name,
         address: customer.address,
         taxNumber: customer.taxNumber,
-        tel: customer.tel,
-        faxNumber: customer.faxNumber,
+        tel: customer.tel ?? undefined,
+        faxNumber: customer.faxNumber ?? undefined,
       },
       steel,
     };
