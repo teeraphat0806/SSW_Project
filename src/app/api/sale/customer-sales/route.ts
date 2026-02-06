@@ -252,6 +252,8 @@ export async function GET(req: NextRequest) {
             }
           : null,
         amount: bill.grandTotal || 0,
+        subtotal: bill.subtotal || 0,
+        vat: bill.vat || 0,
         quantity,
         billId: bill.id,
         invoiceNo: bill.invoiceNo ? `INV-${bill.invoiceNo}` : null,
@@ -262,6 +264,8 @@ export async function GET(req: NextRequest) {
             year: "numeric",
           }),
           amount: `฿${(bill.grandTotal || 0).toLocaleString("en-US")}`,
+          subtotal: `฿${(bill.subtotal || 0).toLocaleString("en-US")}`,
+          vat: `฿${(bill.vat || 0).toLocaleString("en-US")}`,
           quantity: `${quantity}`,
         },
       };

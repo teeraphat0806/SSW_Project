@@ -68,6 +68,8 @@ export function KPIStatCard({
       "bg-gradient-to-br from-purple-500 to-purple-600 dark:from-purple-600 dark:to-purple-700 border-purple-600 text-white",
     "gradient-orange":
       "bg-gradient-to-br from-orange-500 to-orange-600 dark:from-orange-600 dark:to-orange-700 border-orange-600 text-white",
+    "gradient-red":
+      "bg-gradient-to-br from-red-500 to-red-600 dark:from-red-600 dark:to-red-700 border-red-600 text-white",
   };
 
   const iconColorStyles = {
@@ -81,6 +83,7 @@ export function KPIStatCard({
     "gradient-green": "text-white/80",
     "gradient-purple": "text-white/80",
     "gradient-orange": "text-white/80",
+    "gradient-red": "text-white/80",
   };
 
   const titleColorStyles = {
@@ -94,6 +97,7 @@ export function KPIStatCard({
     "gradient-green": "text-white/90",
     "gradient-purple": "text-white/90",
     "gradient-orange": "text-white/90",
+    "gradient-red": "text-white/90",
   };
 
   const isGradientVariant = variant.startsWith("gradient-");
