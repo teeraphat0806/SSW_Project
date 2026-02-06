@@ -36,6 +36,9 @@ type ApiJobOrder = {
     shape: ShapeSteel;
     job?: number;
     cuttingMethod: CuttingMethod;
+    isOD: boolean;
+    isServices: boolean;
+    isPerAmount: boolean;
     discount?: number | null;
   }[];
   updatedAt: Date;
@@ -137,6 +140,9 @@ export async function GET(
         job: p.job ?? undefined,
         weight: p.actualWeight ?? null,
         discount: p.discount ?? null,
+        isOD: p.isOD,
+        isServices: p.isServices,
+        isPerAmount: p.isPerAmount,
       })),
       status: jobOrder.status,
       // createdAt จาก OrderPO เอง (ตาม schema)
@@ -214,7 +220,7 @@ export async function PATCH(
         where: { id: poId },
         select: {
           status: true,
-          Product: { select: { actualWeight: true } },
+          Product: { select: { actualWeight: true, isPerAmount: true } },
         },
       });
 
@@ -226,14 +232,14 @@ export async function PATCH(
       }
 
       const hasMissingWeight = po.Product.some(
-        (p) => p.actualWeight == null || p.actualWeight <= 0,
+        (p) => p.isPerAmount === false && (p.actualWeight === null || p.actualWeight <= 0),
       );
 
       if (hasMissingWeight) {
         return NextResponse.json(
           {
             error:
-              "ไม่สามารถเปลี่ยนเป็น READY ได้: ต้องกรอกน้ำหนักเหล็กก่อน (Actual Weight ต้องมากกว่า 0)",
+              "ไม่สามารถเปลี่ยนเป็น READY ได้กรุณากรอกน้ำหนักเหล็กในรายการที่คิดราคาตามน้ำหนัก",
           },
           { status: 400 },
         );
