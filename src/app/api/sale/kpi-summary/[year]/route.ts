@@ -138,6 +138,62 @@ export async function GET(
       }
     }
 
+    // หาลูกค้าที่มียอดซื้อมากที่สุด
+    const customerPurchases = await prisma.bill.groupBy({
+      by: ["customerId"],
+      where: {
+        createdAt: {
+          gte: startOfYear,
+          lt: endOfYear,
+        },
+        OrderPO: {
+          is: {
+            status: "completed",
+          },
+        },
+      },
+      _count: {
+        id: true,
+      },
+      _sum: {
+        grandTotal: true,
+      },
+      orderBy: {
+        _sum: {
+          grandTotal: "desc",
+        },
+      },
+      take: 1,
+    });
+
+    // ดึงข้อมูลลูกค้าที่มียอดซื้อมากที่สุด
+    let topCustomer = null;
+    if (customerPurchases.length > 0) {
+      const topCustomerData = customerPurchases[0];
+      const customer = await prisma.customer.findUnique({
+        where: { id: topCustomerData.customerId },
+        select: {
+          id: true,
+          name: true,
+          taxNumber: true,
+        },
+      });
+
+      if (customer) {
+        topCustomer = {
+          id: customer.id,
+          name: customer.name,
+          taxNumber: customer.taxNumber,
+          purchaseCount: topCustomerData._count.id,
+          totalAmount: topCustomerData._sum.grandTotal || 0,
+          formatted: {
+            purchaseCount: topCustomerData._count.id.toLocaleString("en-US"),
+            totalAmount: `฿${(topCustomerData._sum.grandTotal || 0).toLocaleString("en-US")}`,
+          },
+        };
+      }
+    }
+
     const totalSales = billStats._sum.grandTotal || 0;
     const orderCount = billStats._count.id || 0;
     const totalRevenue = revenueStats._sum.grandTotal || 0;
@@ -177,6 +233,7 @@ export async function GET(
           total: totalSalaryAmount,
           formatted: `฿${totalSalaryAmount.toLocaleString("en-US")}`,
         },
+        topCustomer: topCustomer,
       },
       meta: {
         year: yearNumber,

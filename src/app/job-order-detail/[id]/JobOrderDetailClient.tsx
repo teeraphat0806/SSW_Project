@@ -252,10 +252,10 @@ const JobOrderDetailPage = ({ id }: { id: string }) => {
     if (!jobOrder) return;
 
     if (newStatus === "ready") {
-      const ok =
-        jobOrder.steel.length > 0 &&
-        jobOrder.steel.every((s) => (s.weight ?? 0) > 0);
-      if (!ok) {
+      const hasInvalidWeight = jobOrder.steel.some(
+        (s) => s.isPerAmount === false && (!s.weight || s.weight <= 0),
+      );
+      if (!hasInvalidWeight) {
         toast.error(
           "ยังไปขั้นตอนถัดไปไม่ได้: ต้องกรอกน้ำหนักเหล็กก่อน แล้วจึงเปลี่ยนเป็น READY ได้",
           {
@@ -523,24 +523,24 @@ const JobOrderDetailPage = ({ id }: { id: string }) => {
             {/* Tabs Card */}
             <Card className="rounded-lg shadow-md ">
               {/* Tabs Header */}
-              <Tabs defaultValue="StaffInfo" className="w-full  ">
+              <Tabs defaultValue="Production" className="w-full  ">
                 {/* mt-6 grid grid-cols-1 gap-6 xl:grid-cols-12 */}
                 {/* 1. Header Section: เพิ่มพื้นหลังจางๆ และเส้นขอบ */}
                 <div className=" border-b bg-muted/10 px-6 pt-2 dark:border-zinc-800 overflow-x-auto">
                   <TabsList className="flex mb-3 h-auto w-full justify-start gap-8 bg-transparent p-0">
                     {[
-                      { id: "StaffInfo", label: "ข้อมูลพนักงาน", icon: User2 },
-                      {
-                        id: "Customer",
-                        label: "ลูกค้า",
-                        icon: Building2,
-                      },
                       { id: "Production", label: "การผลิต", icon: Factory },
                       { id: "Delivery", label: "การจัดส่ง", icon: Truck },
                       {
                         id: "Completion",
                         label: "เสร็จสิ้น",
                         icon: CheckCircle2,
+                      },
+                      { id: "StaffInfo", label: "ข้อมูลพนักงาน", icon: User2 },
+                      {
+                        id: "Customer",
+                        label: "ลูกค้า",
+                        icon: Building2,
                       },
                     ].map((tab) => (
                       <TabsTrigger
@@ -561,27 +561,6 @@ const JobOrderDetailPage = ({ id }: { id: string }) => {
                   </TabsList>
                 </div>
                 {/* Specifications */}
-                <TabsContent value="StaffInfo" className="mt-1">
-                  <StaffInfoCard
-                    jobOrderId={id}
-                    supervisorName={jobOrder?.supervisors}
-                    technicians={jobOrder?.technicians}
-                  />
-                </TabsContent>
-
-                {/* Customer */}
-                <TabsContent value="Customer" className="mt-1">
-                  <CustomerTab
-                    customer={{
-                      // ✅ ใช้ ?? "" เพื่อบอกว่า ถ้าเป็น undefined ให้ส่ง "" ไปแทน
-                      name: jobOrder?.customerName ?? "",
-                      email: jobOrder?.customerEmail ?? "",
-                      code: jobOrder?.customercode ?? "",
-                      phone: jobOrder?.customerPhone ?? "",
-                      shippingAddress: jobOrder?.deliveryAddress ?? "",
-                    }}
-                  />
-                </TabsContent>
 
                 {/* Production */}
                 <TabsContent value="Production" className="mt-2">
@@ -622,6 +601,28 @@ const JobOrderDetailPage = ({ id }: { id: string }) => {
                   <CompletionTab
                     jobOrder={jobOrder}
                     onUpdateStatus={handleStatusUpdate}
+                  />
+                </TabsContent>
+
+                <TabsContent value="StaffInfo" className="mt-1">
+                  <StaffInfoCard
+                    jobOrderId={id}
+                    supervisorName={jobOrder?.supervisors}
+                    technicians={jobOrder?.technicians}
+                  />
+                </TabsContent>
+
+                {/* Customer */}
+                <TabsContent value="Customer" className="mt-1">
+                  <CustomerTab
+                    customer={{
+                      // ✅ ใช้ ?? "" เพื่อบอกว่า ถ้าเป็น undefined ให้ส่ง "" ไปแทน
+                      name: jobOrder?.customerName ?? "",
+                      email: jobOrder?.customerEmail ?? "",
+                      code: jobOrder?.customercode ?? "",
+                      phone: jobOrder?.customerPhone ?? "",
+                      shippingAddress: jobOrder?.deliveryAddress ?? "",
+                    }}
                   />
                 </TabsContent>
               </Tabs>

@@ -8,12 +8,16 @@ interface MonthlyDataItem {
   month: number;
   monthName: string;
   salesAmt: number;
+  subtotal: number;
+  vat: number;
   salesQty: number;
   income: number;
   expense: number;
   net: number;
   formatted: {
     salesAmt: string;
+    subtotal: string;
+    vat: string;
     salesQty: string;
     income: string;
     expense: string;
@@ -43,13 +47,16 @@ export function MonthlyDataTable({ data, year }: MonthlyDataTableProps) {
                 เดือน
               </th>
               <th className="py-4 px-6 text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider text-right">
-                ยอดขาย (เงิน)
-              </th>
-              <th className="py-4 px-6 text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider text-right">
                 ยอดขาย (จำนวน)
               </th>
               <th className="py-4 px-6 text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider text-right">
-                รายได้
+                ยอดสุทธิ
+              </th>
+              <th className="py-4 px-6 text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider text-right">
+                ยอดภาษี
+              </th>
+              <th className="py-4 px-6 text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider text-right">
+                ยอดรวม
               </th>
               <th className="py-4 px-6 text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider text-right">
                 รายจ่าย
@@ -81,19 +88,25 @@ export function MonthlyDataTable({ data, year }: MonthlyDataTableProps) {
 
                     <td className="py-4 px-6 text-right">
                       <span className="font-mono text-sm font-medium text-zinc-700 dark:text-zinc-200">
-                        {item.formatted.salesAmt}
-                      </span>
-                    </td>
-
-                    <td className="py-4 px-6 text-right">
-                      <span className="font-mono text-sm font-medium text-zinc-700 dark:text-zinc-200">
                         {item.formatted.salesQty}
                       </span>
                     </td>
 
                     <td className="py-4 px-6 text-right">
                       <span className="font-mono text-sm font-medium text-zinc-700 dark:text-zinc-200">
-                        {item.formatted.income}
+                        {item.formatted.subtotal}
+                      </span>
+                    </td>
+
+                    <td className="py-4 px-6 text-right">
+                      <span className="font-mono text-sm font-medium text-orange-600 dark:text-orange-400">
+                        {item.formatted.vat}
+                      </span>
+                    </td>
+
+                    <td className="py-4 px-6 text-right">
+                      <span className="font-mono text-sm font-semibold text-blue-600 dark:text-blue-400">
+                        {item.formatted.salesAmt}
                       </span>
                     </td>
 
@@ -131,7 +144,7 @@ export function MonthlyDataTable({ data, year }: MonthlyDataTableProps) {
                 ))
             ) : (
               <tr>
-                <td colSpan={7} className="py-12 text-center">
+                <td colSpan={8} className="py-12 text-center">
                   <div className="flex flex-col items-center justify-center text-zinc-400 dark:text-zinc-500">
                     <p className="text-sm">ไม่พบข้อมูล</p>
                   </div>

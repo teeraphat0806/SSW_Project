@@ -459,7 +459,7 @@ export default function DetailItem<T extends JobWithSteel>({
                         {!isLine && (
                           <div>
                             <label className="mb-1.5 block text-center text-sm font-medium text-zinc-500 dark:text-zinc-400">
-                              {item.isOD === true ? "วงใน" : "กว้าง"}
+                              {item.isOD === true ? "ID." : "กว้าง"}
                             </label>
                             <div className="relative">
                               <Input
@@ -486,7 +486,7 @@ export default function DetailItem<T extends JobWithSteel>({
                         {/* Length */}
                         <div>
                           <label className="mb-1.5 block text-center text-sm font-medium text-zinc-500 dark:text-zinc-400">
-                            {item.isOD === true ? "วงนอก" : "ยาว"}
+                            {item.isOD === true ? "OD." : "ยาว"}
                           </label>
                           <div className="relative">
                             <Input

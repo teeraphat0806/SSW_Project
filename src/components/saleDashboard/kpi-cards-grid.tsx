@@ -7,6 +7,7 @@ import {
   ShoppingCart,
   CreditCard,
   Package,
+  Award,
 } from "lucide-react";
 
 interface KPISummaryData {
@@ -31,6 +32,17 @@ interface KPISummaryData {
     formatted: string;
     percentage: number;
   };
+  topCustomer?: {
+    id: number;
+    name: string;
+    taxNumber: string;
+    purchaseCount: number;
+    totalAmount: number;
+    formatted: {
+      purchaseCount: string;
+      totalAmount: string;
+    };
+  } | null;
 }
 
 interface KPICardsGridProps {
@@ -85,14 +97,16 @@ export function KPICardsGrid({ data }: KPICardsGridProps) {
         subtitle="รายจ่ายทั้งหมด"
       />
 
-      <KPIStatCard
-        title="อัตรากำไร"
-        value={data.netProfit.percentage}
-        format="percentage"
-        variant="info"
-        icon={TrendingUp}
-        subtitle="Profit Margin"
-      />
+      {data.topCustomer && (
+        <KPIStatCard
+          title="ลูกค้าที่ซื้อมากที่สุด"
+          value={data.topCustomer.name}
+          format="text"
+          variant="gradient-orange"
+          icon={Award}
+          subtitle={`${data.topCustomer.formatted.purchaseCount} ออเดอร์ • ${data.topCustomer.formatted.totalAmount}`}
+        />
+      )}
     </div>
   );
 }

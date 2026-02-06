@@ -28,12 +28,16 @@ interface CustomerSale {
     name: string;
   } | null;
   amount: number;
+  subtotal: number;
+  vat: number;
   quantity: number;
   billId: number | null;
   invoiceNo: string | null;
   formatted: {
     date: string;
     amount: string;
+    subtotal: string;
+    vat: string;
     quantity: string;
   };
 }
@@ -439,12 +443,22 @@ export function CustomerSalesTable({ year, month }: CustomerSalesTableProps) {
                     <ArrowUpDown className="h-3 w-3" />
                   </div>
                 </th>
+                <th className="py-4 px-6 text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider text-right">
+                  <div className="flex items-center justify-end gap-2">
+                    ยอดสุทธิ
+                  </div>
+                </th>
+                <th className="py-4 px-6 text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider text-right">
+                  <div className="flex items-center justify-end gap-2">
+                    ภาษี
+                  </div>
+                </th>
                 <th
                   className="py-4 px-6 text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider text-right cursor-pointer hover:text-zinc-700 dark:hover:text-zinc-300"
                   onClick={() => handleSortChange("amount")}
                 >
                   <div className="flex items-center justify-end gap-2">
-                    ยอดขาย
+                    ยอดรวม
                     <ArrowUpDown className="h-3 w-3" />
                   </div>
                 </th>
@@ -463,7 +477,7 @@ export function CustomerSalesTable({ year, month }: CustomerSalesTableProps) {
             <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
               {loading ? (
                 <tr>
-                  <td colSpan={4} className="py-12 text-center">
+                  <td colSpan={6} className="py-12 text-center">
                     <div className="flex flex-col items-center justify-center text-zinc-400 dark:text-zinc-500">
                       <Loader2 className="mr-2 h-12 w-12 animate-spin" />
                       <p className="text-lg mt-4 ">กำลังโหลดข้อมูล...</p>
@@ -472,7 +486,7 @@ export function CustomerSalesTable({ year, month }: CustomerSalesTableProps) {
                 </tr>
               ) : data.length === 0 ? (
                 <tr>
-                  <td colSpan={4} className="py-12 text-center">
+                  <td colSpan={6} className="py-12 text-center">
                     <div className="flex flex-col items-center justify-center text-zinc-400 dark:text-zinc-500">
                       <p className="text-sm">ไม่พบข้อมูล</p>
                     </div>
@@ -503,6 +517,16 @@ export function CustomerSalesTable({ year, month }: CustomerSalesTableProps) {
                     <td className="py-4 px-6">
                       <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
                         {sale.formatted.date}
+                      </span>
+                    </td>
+                    <td className="py-4 px-6 text-right">
+                      <span className="font-mono text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                        {sale.formatted.subtotal}
+                      </span>
+                    </td>
+                    <td className="py-4 px-6 text-right">
+                      <span className="font-mono text-sm font-medium text-orange-600 dark:text-orange-400">
+                        {sale.formatted.vat}
                       </span>
                     </td>
                     <td className="py-4 px-6 text-right">

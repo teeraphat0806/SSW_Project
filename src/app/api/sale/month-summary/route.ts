@@ -115,6 +115,8 @@ export async function GET(req: NextRequest) {
       },
       _sum: {
         grandTotal: true,
+        subtotal: true,
+        vat: true,
       },
       _count: {
         id: true,
@@ -137,32 +139,48 @@ export async function GET(req: NextRequest) {
       },
     });
 
-    // Get staff salary data for the selected month
-    const salaryStats = await prisma.staffSalary.aggregate({
-      where: {
-        effectiveDate: {
-          gte: startOfMonth,
-          lt: endOfMonth,
-        },
-      },
-      _sum: {
-        amount: true,
-      },
-      _count: {
+    // Get all staff to calculate salaries for the month
+    const allStaff = await prisma.staff.findMany({
+      select: {
         id: true,
+        currentSalary: true,
       },
     });
 
+    // Calculate total salaries for the month
+    let totalSalary = 0;
+    let salaryItemCount = 0;
+
+    for (const staff of allStaff) {
+      // Find the latest salary that's effective for this month
+      const salary = await prisma.staffSalary.findFirst({
+        where: {
+          staffId: staff.id,
+          effectiveDate: {
+            lte: endOfMonth,
+          },
+        },
+        orderBy: {
+          effectiveDate: "desc",
+        },
+      });
+
+      // Use the salary from StaffSalary if found, otherwise use currentSalary
+      const salaryAmount = salary ? salary.amount : staff.currentSalary;
+      totalSalary += salaryAmount;
+      salaryItemCount++;
+    }
+
     const totalIncome = incomeStats._sum.grandTotal || 0;
+    const totalSubtotal = incomeStats._sum.subtotal || 0;
+    const totalTax = incomeStats._sum.vat || 0;
     const billCount = incomeStats._count.id || 0;
     const avgPerBill =
       billCount > 0 ? parseFloat((totalIncome / billCount).toFixed(2)) : 0;
 
     const totalExpenseFromExpense = expenseStats._sum.amount || 0;
-    const totalSalary = salaryStats._sum.amount || 0;
     const totalExpense = totalExpenseFromExpense + totalSalary;
     const expenseItemCount = expenseStats._count.id || 0;
-    const salaryItemCount = salaryStats._count.id || 0;
     const totalExpenseItemCount = expenseItemCount + salaryItemCount;
     const avgPerItem =
       totalExpenseItemCount > 0
@@ -175,6 +193,62 @@ export async function GET(req: NextRequest) {
         ? parseFloat(((netTotal / totalIncome) * 100).toFixed(1))
         : 0;
     const profitMargin = netPercentage;
+
+    // หาลูกค้าที่มียอดซื้อมากที่สุดในเดือนนี้
+    const customerPurchases = await prisma.bill.groupBy({
+      by: ["customerId"],
+      where: {
+        createdAt: {
+          gte: startOfMonth,
+          lt: endOfMonth,
+        },
+        OrderPO: {
+          is: {
+            status: "completed",
+          },
+        },
+      },
+      _count: {
+        id: true,
+      },
+      _sum: {
+        grandTotal: true,
+      },
+      orderBy: {
+        _sum: {
+          grandTotal: "desc",
+        },
+      },
+      take: 1,
+    });
+
+    // ดึงข้อมูลลูกค้าที่มียอดซื้อมากที่สุด
+    let topCustomer = null;
+    if (customerPurchases.length > 0) {
+      const topCustomerData = customerPurchases[0];
+      const customer = await prisma.customer.findUnique({
+        where: { id: topCustomerData.customerId },
+        select: {
+          id: true,
+          name: true,
+          taxNumber: true,
+        },
+      });
+
+      if (customer) {
+        topCustomer = {
+          id: customer.id,
+          name: customer.name,
+          taxNumber: customer.taxNumber,
+          purchaseCount: topCustomerData._count.id,
+          totalAmount: topCustomerData._sum.grandTotal || 0,
+          formatted: {
+            purchaseCount: topCustomerData._count.id.toLocaleString("en-US"),
+            totalAmount: `฿${(topCustomerData._sum.grandTotal || 0).toLocaleString("en-US")}`,
+          },
+        };
+      }
+    }
 
     // Calculate working days (excluding weekends)
     let workingDays = 0;
@@ -196,6 +270,10 @@ export async function GET(req: NextRequest) {
         income: {
           total: totalIncome,
           formatted: `฿${totalIncome.toLocaleString("en-US")}`,
+          subtotal: totalSubtotal,
+          subtotalFormatted: `฿${totalSubtotal.toLocaleString("en-US")}`,
+          totalTax: totalTax,
+          totalTaxFormatted: `฿${totalTax.toLocaleString("en-US")}`,
           billCount,
           avgPerBill,
         },
@@ -215,6 +293,7 @@ export async function GET(req: NextRequest) {
           percentage: netPercentage,
           profitMargin,
         },
+        topCustomer: topCustomer,
       },
       meta: {
         totalDays: daysInMonth,
