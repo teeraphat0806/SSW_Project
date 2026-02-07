@@ -192,7 +192,15 @@ export function EmployeeDirectory({ employees }: EmployeeDirectoryProps) {
 
                 <td className="py-4 px-6">
                   <span className="text-sm font-medium text-zinc-700 dark:text-zinc-200">
-                    {new Date(emp.startDate).toLocaleDateString("th-TH")}
+                    {(() => {
+                      const date = new Date(emp.startDate);
+                      const day = date.getDate();
+                      const month = date.toLocaleDateString("th-TH", {
+                        month: "long",
+                      });
+                      const year = date.getFullYear() + 543;
+                      return `${day} ${month} ${year}`;
+                    })()}
                   </span>
                 </td>
 
@@ -276,9 +284,15 @@ export function EmployeeDirectory({ employees }: EmployeeDirectoryProps) {
               <div className="col-span-2">
                 <p className="text-sm text-muted-foreground">วันที่เข้าทำงาน</p>
                 <p className="font-semibold">
-                  {new Date(selectedEmployee.startDate).toLocaleDateString(
-                    "th-TH",
-                  )}
+                  {(() => {
+                    const date = new Date(selectedEmployee.startDate);
+                    const day = date.getDate();
+                    const month = date.toLocaleDateString("th-TH", {
+                      month: "long",
+                    });
+                    const year = date.getFullYear() + 543;
+                    return `${day} ${month} พ.ศ. ${year}`;
+                  })()}
                 </p>
               </div>
             </div>

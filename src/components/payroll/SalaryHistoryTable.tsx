@@ -22,6 +22,7 @@ import {
   ChevronsUpDown,
   ChevronLeft,
   ChevronRight,
+  Search,
 } from "lucide-react";
 import { cn } from "../../lib/utils";
 import type { Employee } from "../../types/payroll";
@@ -188,102 +189,111 @@ export function SalaryHistoryTable() {
     <div className="space-y-4">
       {/* Filters */}
       <div className="space-y-2 flex flex-col">
-        <div className="flex gap-4 items-center justify-between">
-          <div className="flex gap-2 items-center">
-            <Label>เลือกพนักงาน</Label>
-            <Badge variant="secondary" className="rounded-full">
-              {pagination
-                ? `${pagination.total} รายการทั้งหมด`
-                : `${displayData.length} รายการ`}
+        <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-sm border border-zinc-200 dark:border-zinc-800 p-4">
+          <div className="flex items-center gap-4">
+            <div className="flex flex-col gap-2">
+              <Label className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+                เลือกพนักงาน
+              </Label>
+              <Popover open={open} onOpenChange={setOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={open}
+                    className="w-[300px] justify-start"
+                  >
+                    {selectedEmployee === "all" ? (
+                      <>
+                        <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
+                        <span className="text-muted-foreground">
+                          ชื่อพนักงาน
+                        </span>
+                      </>
+                    ) : (
+                      employees.find(
+                        (emp) => String(emp.id) === selectedEmployee,
+                      )?.name || "เลือกพนักงาน"
+                    )}
+                    <ChevronsUpDown className="ml-auto h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent
+                  className="w-[300px] p-0 bg-white dark:bg-zinc-900"
+                  align="start"
+                >
+                  <Command className="bg-white dark:bg-zinc-900">
+                    <CommandInput
+                      placeholder="ค้นหาพนักงาน..."
+                      className="bg-white dark:bg-zinc-900"
+                    />
+                    <CommandList className="bg-white dark:bg-zinc-900">
+                      <CommandEmpty className="text-center py-6 text-muted-foreground">
+                        ไม่พบพนักงาน
+                      </CommandEmpty>
+                      <CommandGroup>
+                        <CommandItem
+                          value="all"
+                          onSelect={() => {
+                            setSelectedEmployee("all");
+                            setOpen(false);
+                          }}
+                          className={cn(
+                            "cursor-pointer bg-white dark:bg-zinc-900",
+                            "hover:bg-blue-50 dark:hover:bg-blue-950",
+                            "aria-selected:bg-blue-100 dark:aria-selected:bg-blue-900",
+                            selectedEmployee === "all" &&
+                              "bg-blue-50 dark:bg-blue-950",
+                          )}
+                        >
+                          <Check
+                            className={cn(
+                              "mr-2 h-4 w-4",
+                              selectedEmployee === "all"
+                                ? "opacity-100"
+                                : "opacity-0",
+                            )}
+                          />
+                          <span className="font-medium">ทั้งหมด</span>
+                        </CommandItem>
+                        {employees.map((emp) => (
+                          <CommandItem
+                            key={emp.id}
+                            value={emp.name}
+                            onSelect={() => {
+                              setSelectedEmployee(String(emp.id));
+                              setOpen(false);
+                            }}
+                            className={cn(
+                              "cursor-pointer bg-white dark:bg-zinc-900",
+                              "hover:bg-blue-50 dark:hover:bg-blue-950",
+                              "aria-selected:bg-blue-100 dark:aria-selected:bg-blue-900",
+                              selectedEmployee === String(emp.id) &&
+                                "bg-blue-50 dark:bg-blue-950",
+                            )}
+                          >
+                            <Check
+                              className={cn(
+                                "mr-2 h-4 w-4",
+                                selectedEmployee === String(emp.id)
+                                  ? "opacity-100"
+                                  : "opacity-0",
+                              )}
+                            />
+                            {emp.name}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+            </div>
+            <Badge variant="secondary" className="rounded-full mt-6">
+              พบ {pagination.total} รายการ
             </Badge>
           </div>
         </div>
-
-        <Popover open={open} onOpenChange={setOpen}>
-          <PopoverTrigger asChild>
-            <Button
-              variant="outline"
-              role="combobox"
-              aria-expanded={open}
-              className="w-[200px] justify-between"
-            >
-              {selectedEmployee === "all"
-                ? "ทั้งหมด"
-                : employees.find((emp) => String(emp.id) === selectedEmployee)
-                    ?.name || "เลือกพนักงาน"}
-              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent
-            className="w-full p-0 bg-white dark:bg-zinc-900"
-            align="start"
-          >
-            <Command className="bg-white dark:bg-zinc-900">
-              <CommandInput
-                placeholder="ค้นหาพนักงาน..."
-                className="bg-white dark:bg-zinc-900"
-              />
-              <CommandList className="bg-white dark:bg-zinc-900">
-                <CommandEmpty className="text-center py-6 text-muted-foreground">
-                  ไม่พบพนักงาน
-                </CommandEmpty>
-                <CommandGroup>
-                  <CommandItem
-                    value="all"
-                    onSelect={() => {
-                      setSelectedEmployee("all");
-                      setOpen(false);
-                    }}
-                    className={cn(
-                      "cursor-pointer bg-white dark:bg-zinc-900",
-                      "hover:bg-blue-50 dark:hover:bg-blue-950",
-                      "aria-selected:bg-blue-100 dark:aria-selected:bg-blue-900",
-                      selectedEmployee === "all" &&
-                        "bg-blue-50 dark:bg-blue-950",
-                    )}
-                  >
-                    <Check
-                      className={cn(
-                        "mr-2 h-4 w-4",
-                        selectedEmployee === "all"
-                          ? "opacity-100"
-                          : "opacity-0",
-                      )}
-                    />
-                    <span className="font-medium">ทั้งหมด</span>
-                  </CommandItem>
-                  {employees.map((emp) => (
-                    <CommandItem
-                      key={emp.id}
-                      value={emp.name}
-                      onSelect={() => {
-                        setSelectedEmployee(String(emp.id));
-                        setOpen(false);
-                      }}
-                      className={cn(
-                        "cursor-pointer bg-white dark:bg-zinc-900",
-                        "hover:bg-blue-50 dark:hover:bg-blue-950",
-                        "aria-selected:bg-blue-100 dark:aria-selected:bg-blue-900",
-                        selectedEmployee === String(emp.id) &&
-                          "bg-blue-50 dark:bg-blue-950",
-                      )}
-                    >
-                      <Check
-                        className={cn(
-                          "mr-2 h-4 w-4",
-                          selectedEmployee === String(emp.id)
-                            ? "opacity-100"
-                            : "opacity-0",
-                        )}
-                      />
-                      {emp.name}
-                    </CommandItem>
-                  ))}
-                </CommandGroup>
-              </CommandList>
-            </Command>
-          </PopoverContent>
-        </Popover>
       </div>
 
       {/* Table */}
@@ -370,7 +380,7 @@ export function SalaryHistoryTable() {
                                 record.effectiveDate || record.createdAt,
                               ).toLocaleDateString("th-TH", {
                                 year: "numeric",
-                                month: "short",
+                                month: "long",
                                 day: "numeric",
                               })}
                             </span>

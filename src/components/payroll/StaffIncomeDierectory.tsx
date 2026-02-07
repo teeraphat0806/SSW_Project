@@ -1,5 +1,5 @@
 "use client";
-
+import { Badge } from "../ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -11,13 +11,28 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Eye, Edit, ChevronLeft, ChevronRight } from "lucide-react";
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Eye,
+  Edit,
+  ChevronLeft,
+  ChevronRight,
+  Check,
+  ChevronsUpDown,
+  Search,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
 
 // Types for StaffIncome
@@ -87,6 +102,7 @@ export function StaffIncomeDirectory() {
     null,
   );
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+  const [open, setOpen] = useState(false);
 
   const limit = 10; // Items per page
 
@@ -162,23 +178,103 @@ export function StaffIncomeDirectory() {
       {/* Filter Section */}
       <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-sm border border-zinc-200 dark:border-zinc-800 p-4">
         <div className="flex items-center gap-4">
-          <Label className="text-sm font-medium">เลือกพนักงาน:</Label>
-          <Select value={selectedStaffId} onValueChange={handleStaffChange}>
-            <SelectTrigger className="w-[300px]">
-              <SelectValue placeholder="แสดงทั้งหมด" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">แสดงทั้งหมด</SelectItem>
-              {staffList.map((staff) => (
-                <SelectItem key={staff.id} value={staff.id.toString()}>
-                  {staff.staffName || staff.user?.name || "ไม่ระบุชื่อ"}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <span className="text-sm text-muted-foreground">
+          <div className="flex flex-col gap-2">
+            <Label className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+              เลือกพนักงาน
+            </Label>
+            <Popover open={open} onOpenChange={setOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  role="combobox"
+                  aria-expanded={open}
+                  className="w-[300px] justify-start"
+                >
+                  {selectedStaffId === "all" ? (
+                    <>
+                      <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
+                      <span className="text-muted-foreground">ชื่อพนักงาน</span>
+                    </>
+                  ) : (
+                    staffList.find(
+                      (staff) => staff.id.toString() === selectedStaffId,
+                    )?.staffName ||
+                    staffList.find(
+                      (staff) => staff.id.toString() === selectedStaffId,
+                    )?.user?.name ||
+                    "เลือกพนักงาน"
+                  )}
+                  <ChevronsUpDown className="ml-auto h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent
+                className="w-[300px] p-0 bg-white dark:bg-zinc-900"
+                align="start"
+              >
+                <Command className="bg-white dark:bg-zinc-900">
+                  <CommandInput
+                    placeholder="ค้นหาพนักงาน..."
+                    className="bg-white dark:bg-zinc-900"
+                  />
+                  <CommandList className="bg-white dark:bg-zinc-900">
+                    <CommandEmpty>ไม่พบพนักงาน</CommandEmpty>
+                    <CommandGroup>
+                      <CommandItem
+                        value="all"
+                        onSelect={() => {
+                          handleStaffChange("all");
+                          setOpen(false);
+                        }}
+                        className={cn(
+                          "cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-950",
+                          selectedStaffId === "all" &&
+                            "bg-blue-50 dark:bg-blue-950",
+                        )}
+                      >
+                        <Check
+                          className={cn(
+                            "mr-2 h-4 w-4",
+                            selectedStaffId === "all"
+                              ? "opacity-100"
+                              : "opacity-0",
+                          )}
+                        />
+                        แสดงทั้งหมด
+                      </CommandItem>
+                      {staffList.map((staff) => (
+                        <CommandItem
+                          key={staff.id}
+                          value={staff.staffName || staff.user?.name || ""}
+                          onSelect={() => {
+                            handleStaffChange(staff.id.toString());
+                            setOpen(false);
+                          }}
+                          className={cn(
+                            "cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-950",
+                            selectedStaffId === staff.id.toString() &&
+                              "bg-blue-50 dark:bg-blue-950",
+                          )}
+                        >
+                          <Check
+                            className={cn(
+                              "mr-2 h-4 w-4",
+                              selectedStaffId === staff.id.toString()
+                                ? "opacity-100"
+                                : "opacity-0",
+                            )}
+                          />
+                          {staff.staffName || staff.user?.name || "ไม่ระบุชื่อ"}
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
+          </div>
+          <Badge variant="secondary" className="rounded-full mt-6">
             พบ {pagination.total} รายการ
-          </span>
+          </Badge>
         </div>
       </div>
 
@@ -267,7 +363,15 @@ export function StaffIncomeDirectory() {
 
                     <td className="py-4 px-6">
                       <span className="text-sm font-medium text-zinc-700 dark:text-zinc-200">
-                        {new Date(income.date).toLocaleDateString("th-TH")}
+                        {(() => {
+                          const date = new Date(income.date);
+                          const day = date.getDate();
+                          const month = date.toLocaleDateString("th-TH", {
+                            month: "long",
+                          });
+                          const year = date.getFullYear() + 543;
+                          return `${day} ${month} ${year}`;
+                        })()}
                       </span>
                     </td>
 
@@ -382,11 +486,15 @@ export function StaffIncomeDirectory() {
               <div>
                 <p className="text-sm text-muted-foreground">วันที่</p>
                 <p className="font-semibold">
-                  {new Date(selectedIncome.date).toLocaleDateString("th-TH", {
-                    year: "numeric",
-                    month: "long",
-                    day: "numeric",
-                  })}
+                  {(() => {
+                    const date = new Date(selectedIncome.date);
+                    const day = date.getDate();
+                    const month = date.toLocaleDateString("th-TH", {
+                      month: "long",
+                    });
+                    const year = date.getFullYear() + 543;
+                    return `${day} ${month} พ.ศ. ${year}`;
+                  })()}
                 </p>
               </div>
               {selectedIncome.detail && (
