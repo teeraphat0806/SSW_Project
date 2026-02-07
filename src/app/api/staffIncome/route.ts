@@ -19,7 +19,29 @@ export async function GET(req: NextRequest) {
   console.log(session);
 
   try {
-    const result = await prisma.staffIncome.findMany({
+    // Get query parameters
+    const { searchParams } = new URL(req.url);
+    const limitParam = searchParams.get("limit");
+    const pageParam = searchParams.get("page");
+    const staffIdParam = searchParams.get("staffId");
+
+    // Parse pagination parameters
+    const limit = limitParam ? parseInt(limitParam, 10) : undefined;
+    const page = pageParam ? parseInt(pageParam, 10) : 1;
+    const staffId = staffIdParam ? parseInt(staffIdParam, 10) : undefined;
+
+    // Build where clause for filtering
+    const where: Prisma.StaffIncomeWhereInput = {};
+    if (staffId) {
+      where.staffId = staffId;
+    }
+
+    // Count total records for pagination
+    const total = await prisma.staffIncome.count({ where });
+
+    // Build query with pagination if limit is specified
+    const queryOptions: any = {
+      where,
       include: {
         Staff: {
           select: {
@@ -35,18 +57,39 @@ export async function GET(req: NextRequest) {
           },
         },
       },
-    });
+      orderBy: [{ staffId: "asc" as const }, { date: "desc" as const }],
+    };
 
-    const payload = result.map((income) => ({
+    // Add pagination if limit is specified
+    if (limit) {
+      queryOptions.skip = (page - 1) * limit;
+      queryOptions.take = limit;
+    }
+
+    const result = await prisma.staffIncome.findMany(queryOptions);
+
+    const payload = result.map((income: any) => ({
       ...income,
       staffName: income.Staff?.user?.name ?? null,
     }));
 
-    return NextResponse.json(payload, { status: 200 });
+    // Return with pagination metadata
+    return NextResponse.json(
+      {
+        data: payload,
+        pagination: {
+          total,
+          page,
+          limit: limit || total,
+          totalPages: limit ? Math.ceil(total / limit) : 1,
+        },
+      },
+      { status: 200 },
+    );
   } catch (error) {
     return NextResponse.json(
-      { error: "Failed to fetch payrolls " + String(error) },
-      { status: 500 }
+      { error: "Failed to fetch staff income " + String(error) },
+      { status: 500 },
     );
   }
 }
@@ -71,7 +114,7 @@ export async function POST(req: NextRequest) {
   if (!parsed.success) {
     return NextResponse.json(
       { error: "Invalid data format", details: parsed.error.flatten() },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
@@ -95,7 +138,7 @@ export async function POST(req: NextRequest) {
     console.error(error);
     return NextResponse.json(
       { error: "Failed to create staff income" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

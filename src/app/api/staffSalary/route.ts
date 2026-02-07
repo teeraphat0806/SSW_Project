@@ -17,8 +17,27 @@ export async function GET(req: NextRequest) {
   }
   const { session } = authResult;
   console.log(session);
+
+  // Get pagination params from query
+  const { searchParams } = new URL(req.url);
+  const page = parseInt(searchParams.get("page") || "1");
+  const limit = searchParams.get("limit")
+    ? parseInt(searchParams.get("limit")!)
+    : undefined;
+
   try {
+    // Count total records
+    const total = await prisma.staffSalary.count();
+
+    // Fetch with or without pagination
     const raw = await prisma.staffSalary.findMany({
+      ...(limit && {
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+      orderBy: {
+        effectiveDate: "desc",
+      },
       include: {
         Staff: {
           select: {
@@ -35,6 +54,7 @@ export async function GET(req: NextRequest) {
         },
       },
     });
+
     const result = raw.map((item) => {
       if (!item.Staff) return item;
 
@@ -49,11 +69,29 @@ export async function GET(req: NextRequest) {
         name: user?.name ?? null,
       };
     });
+
+    // Return with pagination metadata if limit is specified
+    if (limit) {
+      return NextResponse.json(
+        {
+          data: result,
+          pagination: {
+            page,
+            limit,
+            total,
+            totalPages: Math.ceil(total / limit),
+          },
+        },
+        { status: 200 },
+      );
+    }
+
+    // Return all data without pagination
     return NextResponse.json(result, { status: 200 });
   } catch (error) {
     return NextResponse.json(
       { error: "Failed to fetch staffSalary: " + error },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -78,7 +116,7 @@ export async function POST(req: NextRequest) {
   if (!userName) {
     return NextResponse.json(
       { error: "Missing user name for creator lookup" },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
@@ -87,13 +125,13 @@ export async function POST(req: NextRequest) {
     {
       method: "GET",
       headers: { "Content-Type": "application/json" },
-    }
+    },
   );
 
   if (!res.ok) {
     return NextResponse.json(
       { error: "Failed to fetch user data" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 
@@ -103,7 +141,7 @@ export async function POST(req: NextRequest) {
   if (!creatorId) {
     return NextResponse.json(
       { error: "Creator user not found" },
-      { status: 404 }
+      { status: 404 },
     );
   }
 
@@ -126,7 +164,7 @@ export async function POST(req: NextRequest) {
         error: "Invalid data format",
         details: parsed.error.format(),
       },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
@@ -159,7 +197,7 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     return NextResponse.json(
       { error: "Failed to create staffSalary: " + error },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
