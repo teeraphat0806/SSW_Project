@@ -9,12 +9,15 @@ type InvoiceItem = {
   width: number; // 430
   length: number; // 2745
   unit?: string; // mm.
-  job: string; // 1
+  job: string | null; // 1
   amount?: number;
-  weight: number; // 233.00
+  weight: number | null; // 233.00
   price: number; // 34.00
   total: number; // 7922.00
   cuttingMethod?: CuttingMethod;
+  isOD?: boolean; // true สำหรับ OD/ID format
+  isServices?: boolean; // true สำหรับบริการ (ย้ายน้ำหนักไป Job)
+  isPerAmount?: boolean; // true สำหรับคิดราคาต่อชิ้น
 };
 
 type Inv71LikeInvoiceProps = {
@@ -152,8 +155,8 @@ export const InvoiceExcelSample: React.FC<Inv71LikeInvoiceProps> = ({
           {/* กำหนดความกว้างแต่ละคอลัมน์ให้ฟีลเหมือน Excel */}
           <colgroup>
             <col className="w-[35px]" /> {/* ลำดับ (ไม่โชว์หัว) */}
-            <col className="w-[330px]" /> {/* เกรดเหล็ก + หนา x กว้าง x ยาว */}
-            <col className="w-[50px]" /> {/* JOB */}
+            <col className="w-[300px]" /> {/* เกรดเหล็ก + หนา x กว้าง x ยาว */}
+            <col className="w-[100px]" /> {/* JOB */}
             <col className="w-[60px]" /> {/* จำนวน */}
             <col className="w-[80px]" /> {/* น้ำหนัก */}
             <col className="w-[80px]" /> {/* ราคา */}
@@ -197,58 +200,91 @@ export const InvoiceExcelSample: React.FC<Inv71LikeInvoiceProps> = ({
           {/* เนื้อหารายการ ต่อจากหัวคอลัมน์ลงมาเลย */}
           <tbody>
             {items.map((item, idx) => {
-              // Format steel type with F/P if cuttingMethod is FB
-              let steelTypeDisplay = `เหล็ก ${item.steelType}`;
-              if (item.cuttingMethod === "FB") {
-                steelTypeDisplay += " F/P";
-              }
-              // Add @ symbol if width is 0 or null (เพลา/line shape)
-              if (item.width === 0 || item.width === null) {
-                steelTypeDisplay += " @";
+              // สร้างแสดงรายการตาม cuttingMethod, isOD, isServices
+              let steelDisplay = "";
+
+              if (item.isOD) {
+                // กรณี isOD = true: เหล็ก SS400 28 t OD 154 ID 121 mm.
+                steelDisplay = `เหล็ก ${item.steelType} ${item.thickness} t OD ${item.width} ID ${item.length} ${item.unit || "mm."}`;
+              } else {
+                // กรณีปกติ
+                let prefix = `เหล็ก ${item.steelType}`;
+
+                // ตรวจสอบ cuttingMethod
+                if (item.cuttingMethod === "FB") {
+                  prefix += " F/P";
+                } else if (item.cuttingMethod === "RM") {
+                  prefix += " R/M";
+                }
+
+                // Add @ symbol if width is 0 or null (เพลา/line shape)
+                if (item.width === 0 || item.width === null) {
+                  prefix += " @";
+                }
+
+                // สร้างมิติ
+                const dimensions = `${item.thickness} x ${item.width} x ${item.length} ${item.unit || "mm."}`;
+
+                // ถ้า CNC เพิ่ม (แบบ) ท้าย
+                const suffix = item.cuttingMethod === "CNC" ? "(แบบ)" : "";
+
+                steelDisplay = `${prefix} ${dimensions}${suffix}`;
               }
 
-              // Format dimensions based on cutting method
-              let dimensionsDisplay;
-              if (item.cuttingMethod === "RM") {
-                // For circular cutting: use t OD and ID format
-                dimensionsDisplay = `${item.thickness} t OD ${item.width} ID ${item.length} ${item.unit || "mm."}`;
-              } else {
-                // Normal format: thickness x width x length
-                dimensionsDisplay = `${item.thickness} x ${item.width} x ${item.length} ${item.unit || "mm."}`;
+              // กำหนด Job field
+              let jobDisplay = "";
+              if (
+                item.isServices === true &&
+                item.weight != null &&
+                item.weight > 0
+              ) {
+                // ถ้า isServices = true ย้ายน้ำหนักมาแสดงที่ Job
+                jobDisplay = `[${formatNumber(item.weight)} kg]`;
+              } else if (item.job) {
+                // แสดง job ปกติ
+                jobDisplay = item.job;
               }
+
+              // กำหนด Weight field
+              let weightDisplay = "";
+              if (
+                item.isServices !== true &&
+                item.weight != null &&
+                item.weight > 0
+              ) {
+                // ถ้า isServices ไม่ใช่ true (false หรือ undefined) แสดงน้ำหนักปกติ
+                weightDisplay = formatNumber(item.weight);
+              }
+              // ถ้า isServices = true น้ำหนักจะว่างเปล่า
+
+              // กำหนด Price และ Total field - แสดงเสมอยกเว้นเป็นบริการที่ไม่มีน้ำหนัก
+              const showPriceAndTotal =
+                item.isServices === true
+                  ? item.weight != null && item.weight > 0
+                  : true;
 
               return (
                 <tr key={idx} className="align-top">
                   {/* ลำดับ (โชว์เฉพาะเลข ไม่ต้องมีหัวข้อ) */}
                   <td className="pt-0.5 pr-1 pl-0">{idx + 1}</td>
 
-                  <td className="pt-0.5 pr-1">
-                    {steelTypeDisplay} {dimensionsDisplay}
-                  </td>
+                  <td className="pt-0.5 pr-1">{steelDisplay}</td>
 
-                  <td className="pt-0.5 pr-1 text-left pl-5">{item.job}</td>
+                  <td className="pt-0.5 pr-1 text-left pl-1">{jobDisplay}</td>
 
                   <td className="pt-0.5 pr-1 text-left pl-5">{item.amount}</td>
 
-                  <td className="pt-0.5 pr-1 text-left">
-                    {item.weight == null || item.weight === 0
-                      ? ""
-                      : formatNumber(item.weight)}
-                  </td>
+                  <td className="pt-0.5 pr-1 text-left">{weightDisplay}</td>
 
                   <td className="pt-0.5 pr-1 text-left pl-5">
-                    {item.weight == null || item.weight === 0
-                      ? ""
-                      : formatNumber(item.price)}
+                    {showPriceAndTotal ? formatNumber(item.price) : ""}
                   </td>
                   <td className="pt-0.5 pr-0 text-left">
                     {/* ส่วนลด คอลัมน์นี้เว้นว่าง */}
                   </td>
 
                   <td className="pt-0.5 pr-8 pl-4 text-left">
-                    {item.weight == null || item.weight === 0
-                      ? ""
-                      : formatNumber(item.total)}
+                    {showPriceAndTotal ? formatNumber(item.total) : ""}
                   </td>
                 </tr>
               );
