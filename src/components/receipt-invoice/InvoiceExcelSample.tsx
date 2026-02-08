@@ -97,7 +97,7 @@ export const InvoiceExcelSample: React.FC<Inv71LikeInvoiceProps> = ({
         mx-auto 
         w-full 
         max-w-[21cm]
-        min-h-[29.7cm]
+        h-[29.7cm]
         bg-white
         px-4 
         py-3 
@@ -116,40 +116,30 @@ export const InvoiceExcelSample: React.FC<Inv71LikeInvoiceProps> = ({
         <div className="flex justify-between gap-4">
           {/* ซ้าย: ข้อมูลบริษัท */}
           <div className="space-y-2 max-w-[10cm]">
-            <div className="font-semibold">{companyName}</div>
+            <div className="font-base">{companyName}</div>
             <div className="mt-1">{addressLine1}</div>
             <div>{addressLine2}</div>
             <div className="mt-1">
-              Tel. {tel} &nbsp;&nbsp;&nbsp; Fax : {fax}
+              โทร.{tel} &nbsp;&nbsp;&nbsp; แฟกซ์.{fax}
             </div>
             <div className="mt-1">เลขประจำตัวผู้เสียภาษี {taxId}</div>
           </div>
 
-          <div className="min-w-[170px] text-sm space-y-3">
-            <div className="flex justify-between">
-              <span></span>
-              {/* <span>เลขที่</span> */}
+          <div className="min-w-[170px] text-sm space-y-3 mr-20 text-center">
+            <div className="">
               <span className="">HS{invoiceNo}</span>
             </div>
-            <div className="flex justify-between">
-              <span></span>
-              {/* <span>วันที่</span> */}
+            <div className="">
               <span className="">{date} </span>
             </div>
-            <div className="flex justify-between">
-              <span></span>
-              {/* <span>เครดิต</span> */}
+            <div className="ml-20">
               <span className="">{credit}&nbsp;วัน</span>
             </div>
-            <div className="flex justify-between">
-              <span></span>
-              {/* <span>เลขที่ PO</span> */}
+            <div className="">
               <span className="">{poNumber || "0"}</span>
             </div>
-            <div className="flex justify-between">
-              <span></span>
-              {/* <span>ผู้จัดทำ</span> */}
-              <span className="">{selesName}</span>
+            <div className="">
+              <span className="">J.Sirikran</span>
             </div>
           </div>
         </div>
@@ -267,10 +257,22 @@ export const InvoiceExcelSample: React.FC<Inv71LikeInvoiceProps> = ({
         </table>
 
         {/* เว้นบรรทัดก่อนโซนรวมยอด */}
-        <div className="mt-35" />
+        <div className="h-[40mm] shrink-0" />
 
         {/* รวมเงิน, ส่วนลด, ภาษี, VAT, รวมทั้งสิ้น (จัดขวาเหมือนในใบ) */}
         <div className="space-y-[2px]">
+          <div className="flex justify-between">
+            <span className="flex-1" />
+            <span className="w-[160px] text-right">
+              {items[0].weight == null || items[0].weight === 0
+                ? ""
+                : formatNumber(subtotal)}
+            </span>
+          </div>
+          <div className="flex justify-between">
+            <span className="flex-1" />
+            <span className="w-[160px] text-right">&nbsp; </span>
+          </div>
           <div className="flex justify-between">
             <span className="flex-1" />
             <span className="w-[160px] text-right">
@@ -301,7 +303,7 @@ export const InvoiceExcelSample: React.FC<Inv71LikeInvoiceProps> = ({
         </div>
 
         {/* แถว: ข้อความตัวหนังสือ & รวมทั้งสิ้น */}
-        <div className="mt-2 flex">
+        <div className="mt-6 flex">
           <div className="flex-1">
             {items[0].weight == null || items[0].weight === 0
               ? ""

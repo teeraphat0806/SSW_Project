@@ -284,7 +284,7 @@ export function CustomerSalesTable({ year, month }: CustomerSalesTableProps) {
                     checked={printType === "receipt"}
                     onChange={() => setPrintType("receipt")}
                   />
-                  ใบกำกับภาษี
+                  ใบเสร็จรับเงิน
                 </label>
                 <label className="flex items-center gap-2 cursor-pointer mt-2">
                   <input
