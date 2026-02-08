@@ -226,9 +226,9 @@ export const InvoiceExcelSample: React.FC<Inv71LikeInvoiceProps> = ({
                     {steelTypeDisplay} {dimensionsDisplay}
                   </td>
 
-                  <td className="pt-0.5 pr-1 text-left">{item.job}</td>
+                  <td className="pt-0.5 pr-1 text-left pl-5">{item.job}</td>
 
-                  <td className="pt-0.5 pr-1 text-left">{item.amount}</td>
+                  <td className="pt-0.5 pr-1 text-left pl-5">{item.amount}</td>
 
                   <td className="pt-0.5 pr-1 text-left">
                     {item.weight == null || item.weight === 0
@@ -236,7 +236,7 @@ export const InvoiceExcelSample: React.FC<Inv71LikeInvoiceProps> = ({
                       : formatNumber(item.weight)}
                   </td>
 
-                  <td className="pt-0.5 pr-1 text-left">
+                  <td className="pt-0.5 pr-1 text-left pl-5">
                     {item.weight == null || item.weight === 0
                       ? ""
                       : formatNumber(item.price)}
