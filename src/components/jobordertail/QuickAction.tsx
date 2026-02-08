@@ -14,8 +14,17 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
 } from "../../components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "../../components/ui/dialog";
+import { Input } from "../../components/ui/input";
+import { Label } from "../../components/ui/label";
 
-type ActionKey = "edit" | "print" | "pofile" | "printcutter";
+type ActionKey = "edit" | "print" | "pofile" | "printcutter" | "printtemporary";
 
 type ActionItem = {
   key: ActionKey;
@@ -53,6 +62,9 @@ export function QuickAction({
 }) {
   const router = useRouter();
   const [loadingKey, setLoadingKey] = React.useState<ActionKey | null>(null);
+  const [tempReceiptDialog, setTempReceiptDialog] = React.useState(false);
+  const [orderData, setOrderData] = React.useState<any>(null);
+  const [deliveryAddress, setDeliveryAddress] = React.useState("");
 
   const poKeys = Array.isArray(keyPo) ? keyPo.filter(Boolean) : [];
   const hasPo = poKeys.length > 0;
@@ -61,24 +73,43 @@ export function QuickAction({
   const actions: ActionItem[] = [
     {
       key: "edit",
-      label: "แก้ไขออเดอร์ (Edit Order)",
+      label: "แก้ไขออเดอร์ ",
       disabled: isCanceled,
       icon: Edit,
       run: () => router.push(`/up-date-order/${orderId}`),
     },
     {
       key: "print",
-      label: "พิมพ์ใบสั่งซื้อ (Receipt)",
+      label: "พิมพ์ใบกำกับภาษี ",
       disabled: isCanceled,
       icon: Printer,
       run: () => router.push(`/receipt-invoice/${billid}?cutterKey=false`),
     },
     {
       key: "printcutter",
-      label: "พิมพ์ให้คนตัด (Cutter Slip)",
+      label: "พิมพ์ให้คนตัด ",
       disabled: isCanceled,
       icon: Printer,
       run: () => router.push(`/receipt-invoice/${billid}?cutterKey=true`),
+    },
+    {
+      key: "printtemporary",
+      label: "พิมพ์ใบส่งสินค้าชั่วคราว",
+      disabled: isCanceled,
+      icon: Printer,
+      run: async () => {
+        try {
+          const res = await fetch(`/api/receipt/${billid}`);
+          const data = await res.json();
+          setOrderData(data);
+          setDeliveryAddress(data.customer?.address || "");
+          setTempReceiptDialog(true);
+        } catch (error) {
+          toast.error("ไม่สามารถโหลดข้อมูลได้", {
+            position: "bottom-right",
+          });
+        }
+      },
     },
 
     // NOTE: pofile จะ render แยกเป็น dropdown ด้านล่าง (เพราะต้องรองรับหลายไฟล์)
@@ -103,6 +134,19 @@ export function QuickAction({
     toast.success("เปิดใบ PO แล้ว: ", {
       position: "bottom-right",
     });
+  };
+
+  const handleConfirmTempReceipt = () => {
+    if (!deliveryAddress.trim()) {
+      toast.error("กรุณากรอกที่อยู่จัดส่ง", {
+        position: "bottom-right",
+      });
+      return;
+    }
+    setTempReceiptDialog(false);
+    router.push(
+      `/receipt-invoice/${billid}?isTemporary=true&deliveryAddress=${encodeURIComponent(deliveryAddress)}`,
+    );
   };
 
   // const openAll = () => {
@@ -253,6 +297,84 @@ export function QuickAction({
           </div>
         )}
       </div>
+
+      {/* Temporary Receipt Dialog */}
+      <Dialog open={tempReceiptDialog} onOpenChange={setTempReceiptDialog}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>พิมพ์ใบส่งสินค้าชั่วคราว</DialogTitle>
+          </DialogHeader>
+
+          {orderData && (
+            <div className="space-y-4">
+              {/* Customer Info */}
+              <div>
+                <Label className="text-sm font-semibold">ชื่อลูกค้า</Label>
+                <div className="mt-1 text-sm">{orderData.customer?.name}</div>
+              </div>
+
+              {/* Items List */}
+              <div>
+                <Label className="text-sm font-semibold">รายการสินค้า</Label>
+                <div className="mt-2 border rounded-lg overflow-hidden">
+                  <table className="w-full text-sm">
+                    <thead className="bg-muted">
+                      <tr>
+                        <th className="p-2 text-left">ชนิดเหล็ก</th>
+                        <th className="p-2 text-left">ขนาด</th>
+                        <th className="p-2 text-center">จำนวน</th>
+                        <th className="p-2 text-right">น้ำหนัก</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {orderData.steel?.map((item: any, index: number) => (
+                        <tr key={index} className="border-t">
+                          <td className="p-2">{item.steelType}</td>
+                          <td className="p-2">
+                            {item.thickness} x {item.width || 0} x {item.length}{" "}
+                            mm
+                          </td>
+                          <td className="p-2 text-center">{item.amount}</td>
+                          <td className="p-2 text-right">
+                            {(item.weight ?? 0).toFixed(2)}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Delivery Address Input */}
+              <div>
+                <Label
+                  htmlFor="deliveryAddress"
+                  className="text-sm font-semibold"
+                >
+                  ที่อยู่จัดส่ง *
+                </Label>
+                <Input
+                  id="deliveryAddress"
+                  value={deliveryAddress}
+                  onChange={(e) => setDeliveryAddress(e.target.value)}
+                  placeholder="กรอกที่อยู่จัดส่ง"
+                  className="mt-1"
+                />
+              </div>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setTempReceiptDialog(false)}
+            >
+              ยกเลิก
+            </Button>
+            <Button onClick={handleConfirmTempReceipt}>ยืนยันและพิมพ์</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -61,7 +61,7 @@ export default function ReceiptCutter({ id }: { id: string }) {
           onClick={handlePrint}
           className="rounded-lg border border-border px-4 py-2 text-sm font-medium hover:bg-accent"
         >
-          Print
+          พิมพ์
         </button>
       </div>
       <InvoiceExcelCutter
