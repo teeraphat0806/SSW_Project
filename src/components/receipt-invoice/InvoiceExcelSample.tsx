@@ -304,7 +304,7 @@ export const InvoiceExcelSample: React.FC<Inv71LikeInvoiceProps> = ({
 
         {/* แถว: ข้อความตัวหนังสือ & รวมทั้งสิ้น */}
         <div className="mt-6 flex mr-5">
-          <div className="flex-1">
+          <div className="flex-1 ml-10">
             {items[0].weight == null || items[0].weight === 0
               ? ""
               : totalTextThai}
