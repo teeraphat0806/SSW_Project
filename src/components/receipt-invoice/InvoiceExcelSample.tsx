@@ -112,7 +112,7 @@ export const InvoiceExcelSample: React.FC<Inv71LikeInvoiceProps> = ({
       "
       >
         {/* แถวแรก: ซ้ายบริษัท, ขวาเลขที่/วันที่/เครดิต/ผู้จัดทำ */}
-        <div className="mt-20" />
+        <div className="mt-27" />
         <div className="flex justify-between gap-4">
           {/* ซ้าย: ข้อมูลบริษัท */}
           <div className="space-y-2 max-w-[8cm] ml-5">
@@ -164,7 +164,7 @@ export const InvoiceExcelSample: React.FC<Inv71LikeInvoiceProps> = ({
           <thead>
             <tr className="text-center">
               {/* ลำดับ: มีคอลัมน์แต่ไม่โชว์ข้อความ */}
-              <th className="pb-1 font-normal text-left">
+              <th className="pb-1 font-normal text-left ">
                 <span className="underline opacity-0">ลำดับ</span>
               </th>
               <th className="pb-1 font-normal text-left">
@@ -220,7 +220,7 @@ export const InvoiceExcelSample: React.FC<Inv71LikeInvoiceProps> = ({
               return (
                 <tr key={idx} className="align-top">
                   {/* ลำดับ (โชว์เฉพาะเลข ไม่ต้องมีหัวข้อ) */}
-                  <td className="pt-0.5 pr-1">{idx + 1}</td>
+                  <td className="pt-0.5 pr-1 pl-2">{idx + 1}</td>
 
                   <td className="pt-0.5 pr-1">
                     {steelTypeDisplay} {dimensionsDisplay}
@@ -241,11 +241,11 @@ export const InvoiceExcelSample: React.FC<Inv71LikeInvoiceProps> = ({
                       ? ""
                       : formatNumber(item.price)}
                   </td>
-                  <td className="pt-0.5 pr-1 text-left">
+                  <td className="pt-0.5 pr-0 text-left">
                     {/* ส่วนลด คอลัมน์นี้เว้นว่าง */}
                   </td>
 
-                  <td className="pt-0.5 pr-1 text-left">
+                  <td className="pt-0.5 pr-8 pl-4 text-left">
                     {item.weight == null || item.weight === 0
                       ? ""
                       : formatNumber(item.total)}
