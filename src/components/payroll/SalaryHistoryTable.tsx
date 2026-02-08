@@ -290,7 +290,7 @@ export function SalaryHistoryTable() {
               </Popover>
             </div>
             <Badge variant="secondary" className="rounded-full mt-6">
-              พบ {pagination.total} รายการ
+              พบ {pagination?.total ?? 0} รายการ
             </Badge>
           </div>
         </div>
