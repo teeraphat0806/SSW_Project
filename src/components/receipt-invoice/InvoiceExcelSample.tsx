@@ -97,7 +97,7 @@ export const InvoiceExcelSample: React.FC<Inv71LikeInvoiceProps> = ({
         mx-auto 
         w-full 
         max-w-[21cm]
-        h-[29.7cm]
+        min-h-[29.7cm]
         bg-white
         px-4 
         py-3 
