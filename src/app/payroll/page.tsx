@@ -7,7 +7,11 @@ import {
   TabsTrigger,
 } from "../../components/ui/tabs";
 import { Button } from "../../components/ui/button";
-import { Dialog, DialogTrigger } from "../../components/ui/dialog";
+import {
+  Dialog,
+  DialogTrigger,
+  DialogContent,
+} from "../../components/ui/dialog";
 import { Label } from "../../components/ui/label";
 import { Separator } from "../../components/ui/separator";
 import {
@@ -72,6 +76,8 @@ export default function PayrollPage() {
     "none",
   );
   const [manageOpen, setManageOpen] = useState(false);
+  const [salaryDialogOpen, setSalaryDialogOpen] = useState(false);
+  const [otherIncomeDialogOpen, setOtherIncomeDialogOpen] = useState(false);
 
   // Overview filters (not actively used but kept for future)
   const [overviewEmployee, setOverviewEmployee] = useState<string | "all">(
@@ -148,6 +154,7 @@ export default function PayrollPage() {
   /* Handlers */
   const handleSalaryAdjustment = async (
     adjustment: Omit<SalaryAdjustment, "id" | "date" | "type">,
+    type: "salary" | "other",
     nameIncome?: string,
   ) => {
     const amountNum = Number(adjustment.amount) || 0;
@@ -160,7 +167,7 @@ export default function PayrollPage() {
     };
 
     try {
-      if (adjustmentType === "other") {
+      if (type === "other") {
         await addStaffIncome(
           Number(newAdjustment.staffId),
           amountNum,
@@ -182,7 +189,7 @@ export default function PayrollPage() {
         // Add salary record
         await addStaffSalary(
           Number(newAdjustment.staffId),
-          Math.max(0, amountNum),
+          amountNum,
           newAdjustment.detail || "ปรับเงินเดือน",
         );
 
@@ -293,191 +300,192 @@ export default function PayrollPage() {
 
         {/* ========= ADJUSTMENT ========= */}
         <TabsContent value="adjustment" className="space-y-4 md:space-y-6">
-          <div className="pb-3 pt-6">
-            <h2 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-white flex items-center gap-2">
-              ประวัติการปรับเงินเดือน
-            </h2>
-            <p className="text-zinc-500 dark:text-zinc-400 mt-1">
-              ประวัติการปรับเงินเดือนย้อนหลังของพนักงานทั้งหมด
-            </p>
+          <div className="flex justify-between items-end ">
+            <div className="pb-3 pt-6">
+              <h2 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-white flex items-center gap-2">
+                ประวัติการปรับเงินเดือน
+              </h2>
+              <p className="text-zinc-500 dark:text-zinc-400 mt-1">
+                ประวัติการปรับเงินเดือนย้อนหลังของพนักงานทั้งหมด
+              </p>
+            </div>{" "}
+            <Button
+              onClick={() => setSalaryDialogOpen(true)}
+              className="bg-blue-600 hover:bg-blue-700 text-white"
+            >
+              <span className="text-sm font-medium">ปรับเงินเดือนพนักงาน</span>
+            </Button>
           </div>
-          
           <SalaryHistoryTable />
-          <div className="pb-3 pt-6">
-            <h2 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-white flex items-center gap-2">
-              ประวัติการรายได้อื่นพนักงาน
-            </h2>
-            <p className="text-zinc-500 dark:text-zinc-400 mt-1">
-              ประวัติรายได้อื่นย้อนหลังของพนักงานทั้งหมด
-            </p>
+          <div className="flex justify-between items-end ">
+            <div className="pb-3 pt-6">
+              <h2 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-white flex items-center gap-2">
+                ประวัติการรายได้อื่นพนักงาน
+              </h2>
+              <p className="text-zinc-500 dark:text-zinc-400 mt-1">
+                ประวัติรายได้อื่นย้อนหลังของพนักงานทั้งหมด
+              </p>
+            </div>
+            <Button
+              onClick={() => setOtherIncomeDialogOpen(true)}
+              className=" bg-amber-600 hover:bg-amber-700 text-white"
+              size="lg"
+            >
+              <span className="text-sm font-medium">ปรับรายได้พิเศษ</span>
+            </Button>
           </div>
           <StaffIncomeDirectory />
-          <div className="pb-3">
-            <h2 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-white">
-              ปรับรายได้พนักงาน
-            </h2>
-          </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
-            {/* Left column: Form */}
-            <div className="lg:col-span-2 space-y-4">
-              <div className="bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 rounded-lg p-4 border border-blue-200 dark:border-blue-800">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-base md:text-lg font-semibold flex items-center gap-2">
-                    <FileText className="h-5 w-5 text-blue-600" />
-                    {adjustmentType === "salary"
-                      ? "ฟอร์มปรับเงินเดือน"
-                      : "ฟอร์มปรับรายได้อื่น"}
-                  </h2>
-                  <Select
-                    value={adjustmentType}
-                    onValueChange={(v: "salary" | "other") =>
-                      setAdjustmentType(v)
-                    }
-                  >
-                    <SelectTrigger className="w-56">
-                      <SelectValue placeholder="เลือกประเภท" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="salary">
-                        <div className="flex items-center gap-2">
-                          ปรับเงินเดือน
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="other"> ปรับรายได้อื่น</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+          {/* Dialog: ปรับเงินเดือน */}
+          <Dialog open={salaryDialogOpen} onOpenChange={setSalaryDialogOpen}>
+            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-0">
+              <div className="bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 p-6 border-b border-blue-200 dark:border-blue-800 rounded-t-lg">
+                <h2 className="text-lg font-semibold flex items-center gap-2">
+                  <FileText className="h-5 w-5 text-blue-600" />
+                  ปรับรายได้พนักงาน
+                </h2>
               </div>
+              <div className="p-6">
+                <SalaryAdjustmentForm
+                  employees={employees}
+                  adjustmentType="salary"
+                  onEmployeeChange={(staffId) => setLatestEmployeeOnly(staffId)}
+                  onAdjustmentSubmit={(payload) => {
+                    handleSalaryAdjustment(payload, "salary");
+                    setSalaryDialogOpen(false);
+                  }}
+                />
+              </div>
+            </DialogContent>
+          </Dialog>
 
-              <div className="space-y-4">
-                {adjustmentType === "other" && (
-                  <div className="space-y-2 p-4 bg-amber-50 dark:bg-amber-950/20 rounded-lg border border-amber-200 dark:border-amber-700">
-                    <Label className="text-sm font-semibold text-amber-900 dark:text-amber-100 flex items-center gap-2">
-                      <ListChecks className="h-4 w-4" /> เลือกรายการรายได้อื่น
-                    </Label>
-                    <div className="flex gap-2">
-                      <Select
-                        defaultValue={otherIncomeTypes[0]?.name ?? "OT"}
-                        onValueChange={(v) => {
-                          const el = document.getElementById(
-                            "other-income-select",
-                          ) as HTMLInputElement | null;
-                          if (el) el.value = v;
+          {/* Dialog: ปรับรายได้อื่น */}
+          <Dialog
+            open={otherIncomeDialogOpen}
+            onOpenChange={setOtherIncomeDialogOpen}
+          >
+            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-0">
+              <div className="bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 p-6 border-b border-amber-200 dark:border-amber-800 rounded-t-lg">
+                <h2 className="text-lg font-semibold flex items-center gap-2">
+                  <ListChecks className="h-5 w-5 text-amber-600" />
+                  ปรับรายได้พิเศษพนักงาน
+                </h2>
+              </div>
+              <div className="p-6 space-y-4">
+                <div className="space-y-2 p-4 bg-amber-50 dark:bg-amber-950/20 rounded-lg border border-amber-200 dark:border-amber-700">
+                  <Label className="text-sm font-semibold text-amber-900 dark:text-amber-100 flex items-center gap-2">
+                    <ListChecks className="h-4 w-4" /> เลือกรายการรายได้อื่น
+                  </Label>
+                  <div className="flex gap-2">
+                    <Select
+                      defaultValue={otherIncomeTypes[0]?.name ?? "OT"}
+                      onValueChange={(v) => {
+                        const el = document.getElementById(
+                          "other-income-select",
+                        ) as HTMLInputElement | null;
+                        if (el) el.value = v;
+                      }}
+                    >
+                      <SelectTrigger className="flex-1">
+                        <SelectValue placeholder="เลือกรายการ" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {otherIncomeTypes.map((t) => (
+                          <SelectItem key={t.id} value={t.name}>
+                            {t.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+
+                    <Dialog open={manageOpen} onOpenChange={setManageOpen}>
+                      <DialogTrigger asChild>
+                        <Button
+                          variant="outline"
+                          title="จัดการรายการรายได้อื่น"
+                        >
+                          <Pencil className="h-4 w-4 mr-1" />
+                          แก้ไข
+                        </Button>
+                      </DialogTrigger>
+                      <ManageOtherIncomeModal
+                        types={otherIncomeTypes}
+                        onAdd={async (name, amount) => {
+                          try {
+                            const types = inferTypesFromAmount(amount);
+                            const created = await addOtherIncomeType(
+                              name,
+                              amount ?? 0,
+                              types,
+                            );
+                            setOtherIncomeTypes((prev) => [created, ...prev]);
+                          } catch (err) {
+                            console.error(err);
+                          }
                         }}
-                      >
-                        <SelectTrigger className="flex-1">
-                          <SelectValue placeholder="เลือกรายการ" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {otherIncomeTypes.map((t) => (
-                            <SelectItem key={t.id} value={t.name}>
-                              {t.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-
-                      <Dialog open={manageOpen} onOpenChange={setManageOpen}>
-                        <DialogTrigger asChild>
-                          <Button
-                            variant="outline"
-                            title="จัดการรายการรายได้อื่น"
-                          >
-                            <Pencil className="h-4 w-4 mr-1" />
-                            แก้ไข
-                          </Button>
-                        </DialogTrigger>
-                        <ManageOtherIncomeModal
-                          types={otherIncomeTypes}
-                          onAdd={async (name, amount) => {
-                            try {
-                              const types = inferTypesFromAmount(amount);
-                              const created = await addOtherIncomeType(
-                                name,
-                                amount ?? 0,
-                                types,
-                              );
-                              setOtherIncomeTypes((prev) => [created, ...prev]);
-                            } catch (err) {
-                              console.error(err);
-                            }
-                          }}
-                          onUpdate={async (id, name, amount) => {
-                            try {
-                              const types = inferTypesFromAmount(amount);
-                              const updated = await updateOtherIncomeType(
-                                id,
-                                name,
-                                amount ?? 0,
-                                types,
-                              );
-                              setOtherIncomeTypes((prev) =>
-                                prev.map((t) =>
-                                  t.id === id ? { ...t, ...updated } : t,
-                                ),
-                              );
-                            } catch (err) {
-                              console.error(err);
-                            }
-                          }}
-                          onRemove={async (id) => {
-                            try {
-                              await removeOtherIncomeType(id);
-                              setOtherIncomeTypes((prev) =>
-                                prev.filter((t) => t.id !== id),
-                              );
-                            } catch (err) {
-                              console.error(err);
-                            }
-                          }}
-                        />
-                      </Dialog>
-                    </div>
-                    {/* ซ่อนไว้ใช้ bridge ค่าให้กับฟอร์ม */}
-                    <input id="other-income-select" hidden />
-                    <p className="text-xs text-muted-foreground">
-                      * เพิ่ม/แก้ไข/ลบ รายการได้ผ่านปุ่ม “แก้ไข”
-                    </p>
+                        onUpdate={async (id, name, amount) => {
+                          try {
+                            const types = inferTypesFromAmount(amount);
+                            const updated = await updateOtherIncomeType(
+                              id,
+                              name,
+                              amount ?? 0,
+                              types,
+                            );
+                            setOtherIncomeTypes((prev) =>
+                              prev.map((t) =>
+                                t.id === id ? { ...t, ...updated } : t,
+                              ),
+                            );
+                          } catch (err) {
+                            console.error(err);
+                          }
+                        }}
+                        onRemove={async (id) => {
+                          try {
+                            await removeOtherIncomeType(id);
+                            setOtherIncomeTypes((prev) =>
+                              prev.filter((t) => t.id !== id),
+                            );
+                          } catch (err) {
+                            console.error(err);
+                          }
+                        }}
+                      />
+                    </Dialog>
                   </div>
-                )}
+                  {/* ซ่อนไว้ใช้ bridge ค่าให้กับฟอร์ม */}
+                  <input id="other-income-select" hidden />
+                  <p className="text-xs text-muted-foreground">
+                    * เพิ่ม/แก้ไข/ลบ รายการได้ผ่านปุ่ม "แก้ไข"
+                  </p>
+                </div>
 
                 <Separator />
 
                 <SalaryAdjustmentForm
                   employees={employees}
-                  adjustmentType={adjustmentType}
+                  adjustmentType="other"
                   onEmployeeChange={(staffId) => setLatestEmployeeOnly(staffId)}
                   onAdjustmentSubmit={(payload) => {
-                    if (adjustmentType === "other") {
-                      // ดึงชื่อประเภทรายได้จาก dropdown
-                      const el = document.getElementById(
-                        "other-income-select",
-                      ) as HTMLInputElement | null;
-                      const selectedIncomeName =
-                        el?.value || otherIncomeTypes[0]?.name || "OT";
-                      // ส่ง payload (มี detail จาก Textarea) พร้อม nameIncome จาก dropdown
-                      handleSalaryAdjustment(payload, selectedIncomeName);
-                    } else {
-                      handleSalaryAdjustment(payload);
-                    }
+                    // ดึงชื่อประเภทรายได้จาก dropdown
+                    const el = document.getElementById(
+                      "other-income-select",
+                    ) as HTMLInputElement | null;
+                    const selectedIncomeName =
+                      el?.value || otherIncomeTypes[0]?.name || "OT";
+                    // ส่ง payload (มี detail จาก Textarea) พร้อม nameIncome จาก dropdown
+                    handleSalaryAdjustment(
+                      payload,
+                      "other",
+                      selectedIncomeName,
+                    );
+                    setOtherIncomeDialogOpen(false);
                   }}
                 />
               </div>
-            </div>
-
-            {/* Right column: Latest */}
-            <LatestAdjustmentsPanel
-              adjustmentType={adjustmentType}
-              latestList={latestList}
-              employees={employees}
-              employeeById={employeeById}
-              otherIncomeTypes={otherIncomeTypes}
-              latestEmployeeOnly={latestEmployeeOnly}
-              onEmployeeChange={setLatestEmployeeOnly}
-              onDeleteStaffIncome={handleDeleteStaffIncome}
-            />
-          </div>
+            </DialogContent>
+          </Dialog>
         </TabsContent>
 
         {/* ========= DIRECTORY (Employees & Payslip) ========= */}

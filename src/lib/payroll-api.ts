@@ -105,7 +105,7 @@ export async function addStaffSalary(
     method: "POST",
     headers: { "Content-Type": "application/json" },
     credentials: "include",
-    body: JSON.stringify({ staffId, amount: Math.max(0, amount), detail }),
+    body: JSON.stringify({ staffId, amount, detail }),
   });
 
   const text = await res.text();

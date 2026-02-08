@@ -89,7 +89,6 @@ export const SalaryAdjustmentForm = ({
 
   return (
     <div>
-      <h2 className="text-xl font-semibold mb-4">ปรับรายได้พนักงาน</h2>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-2">
           <Label htmlFor="employee">เลือกพนักงาน</Label>
