@@ -14,10 +14,11 @@ import {
 } from "lucide-react";
 import { z } from "zod";
 import { toast } from "react-toastify";
+import { digitsOnly } from "@/lib/calculateGrandTotal";
+import { CustomerSchema } from "@/lib/schemas/customer.schema";
 
 // --- Types & Schema (คงเดิม) ---
 type CustomerPayload = {
-  code: string | null;
   name: string;
   address: string;
   tel: string;
@@ -33,7 +34,6 @@ type Props = {
 };
 
 const initialForm: CustomerPayload = {
-  code: "",
   name: "",
   address: "",
   tel: "",
@@ -42,57 +42,6 @@ const initialForm: CustomerPayload = {
   faxNumber: "",
 };
 
-const digitsOnly = (s: string) => s.replace(/\D/g, "");
-
-const CustomerFormSchema = z.object({
-  code: z.string().trim().max(50, "รหัสลูกค้ายาวเกินไป").nullable().optional(),
-  name: z
-    .string()
-    .trim()
-    .min(1, "กรุณากรอกชื่อลูกค้า")
-    .max(200, "ชื่อลูกค้ายาวเกินไป"),
-  address: z
-    .string()
-    .trim()
-    .min(1, "กรุณากรอกที่อยู่")
-    .min(10, "ที่อยู่สั้นเกินไป (อย่างน้อย 10 ตัวอักษร)"),
-
-  // Optional: allow empty => null, but validate if provided.
-  tel: z.preprocess(
-    (v) => {
-      if (v == null) return undefined;
-      const s = digitsOnly(String(v));
-      return s.length ? s : null;
-    },
-    z.string().length(10, "เบอร์โทรต้องเป็นตัวเลข 10 หลัก").nullable().optional(),
-  ),
-  email: z.preprocess(
-    (v) => {
-      if (v == null) return undefined;
-      const s = String(v).trim();
-      return s.length ? s : null;
-    },
-    z.union([z.string().email("รูปแบบอีเมลไม่ถูกต้อง"), z.null()]).optional(),
-  ),
-  taxNumber: z
-    .string()
-    .transform((v) => digitsOnly(v))
-    .refine((v) => v.length === 13, "เลขผู้เสียภาษีต้องเป็นตัวเลข 13 หลัก"),
-  faxNumber: z.preprocess(
-    (v) => {
-      if (v == null) return undefined;
-      const s = digitsOnly(String(v));
-      return s.length ? s : null;
-    },
-    z
-      .string()
-      .min(7, "แฟกซ์ควรเป็นตัวเลข 7–13 หลัก")
-      .max(13, "แฟกซ์ควรเป็นตัวเลข 7–13 หลัก")
-      .nullable()
-      .optional(),
-  ),
-});
-//
 type FieldErrors = Partial<Record<keyof CustomerPayload, string>>;
 
 // --- Component ---
@@ -111,7 +60,7 @@ export default function AddCustomerModal({ open, onClose, onCreated }: Props) {
       setFieldErrors({});
       // Focus logic remains
       const t = setTimeout(() => {
-        document.getElementById("customer-code")?.focus();
+        document.getElementById("customer-name")?.focus();
       }, 100);
       return () => clearTimeout(t);
     } else {
@@ -145,7 +94,7 @@ export default function AddCustomerModal({ open, onClose, onCreated }: Props) {
   const validateAll = () => {
     setErrorTop(null);
     setFieldErrors({});
-    const parsed = CustomerFormSchema.safeParse(form);
+    const parsed = CustomerSchema.safeParse(form);
     if (parsed.success) return { ok: true as const, value: parsed.data };
 
     const nextErrors: FieldErrors = {};
@@ -263,16 +212,6 @@ export default function AddCustomerModal({ open, onClose, onCreated }: Props) {
             </div>
 
             <InputField
-              id="customer-code"
-              label="รหัสลูกค้า"
-              value={form.code ?? ""}
-              onChange={setField("code")}
-              placeholder="เช่น C-001"
-              error={fieldErrors.code}
-              icon={<Hash size={16} />}
-            />
-
-            <InputField
               label="ชื่อบริษัท / ชื่อลูกค้า"
               value={form.name}
               onChange={setField("name")}
@@ -299,7 +238,6 @@ export default function AddCustomerModal({ open, onClose, onCreated }: Props) {
               onChange={setField("faxNumber")}
               placeholder="7-13 หลัก"
               error={fieldErrors.faxNumber}
-              inputMode="numeric"
               icon={<FileText size={16} />}
             />
 
@@ -326,7 +264,6 @@ export default function AddCustomerModal({ open, onClose, onCreated }: Props) {
               onChange={setField("tel")}
               placeholder="08X-XXX-XXXX"
               error={fieldErrors.tel}
-              inputMode="numeric"
               icon={<Phone size={16} />}
             />
 
@@ -462,4 +399,3 @@ function InputField({
     </div>
   );
 }
-

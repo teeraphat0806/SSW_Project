@@ -122,15 +122,16 @@ export async function POST(request: NextRequest) {
       deliveryDate: asNullIfEmpty(safe(result.header.deliveryDate)),
       yourRef: asNullIfEmpty(safe(result.header.yourRef)),
     };
-
+    //----3. ตรวจสอบลูกค้าว่าตรงกับในระบบหรือไม่ ----
     const customerOR: any[] = [];
     if (customerDraft.email) customerOR.push({ email: customerDraft.email });
-    if (customerDraft.tel) customerOR.push({ tel: customerDraft.tel });
+    if (customerDraft.tel) customerOR.push({ telSearch: customerDraft.tel });
     if (customerDraft.taxNumber)
       customerOR.push({ taxNumber: customerDraft.taxNumber });
     if (customerDraft.faxNumber)
-      customerOR.push({ faxNumber: customerDraft.faxNumber });
+      customerOR.push({ faxNumberSearch: customerDraft.faxNumber });
 
+    // ผลลัพธ์การแมตช์ลูกค้า
     let customerMatch: {
       matched: boolean;
       customerId: number | null;
@@ -144,7 +145,10 @@ export async function POST(request: NextRequest) {
           id: true,
           taxNumber: true,
           tel: true,
+          telSearch: true,
+
           faxNumber: true,
+          faxNumberSearch: true,
           email: true,
         },
       });
@@ -155,10 +159,10 @@ export async function POST(request: NextRequest) {
             foundCustomer.taxNumber === customerDraft.taxNumber &&
             "taxNumber") ||
           (customerDraft.tel &&
-            foundCustomer.tel === customerDraft.tel &&
+            foundCustomer.telSearch === customerDraft.tel &&
             "tel") ||
           (customerDraft.faxNumber &&
-            foundCustomer.faxNumber === customerDraft.faxNumber &&
+            foundCustomer.faxNumberSearch === customerDraft.faxNumber &&
             "faxNumber") ||
           (customerDraft.email &&
             foundCustomer.email === customerDraft.email &&
