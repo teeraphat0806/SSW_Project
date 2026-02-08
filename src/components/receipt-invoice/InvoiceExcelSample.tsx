@@ -220,7 +220,7 @@ export const InvoiceExcelSample: React.FC<Inv71LikeInvoiceProps> = ({
               return (
                 <tr key={idx} className="align-top">
                   {/* ลำดับ (โชว์เฉพาะเลข ไม่ต้องมีหัวข้อ) */}
-                  <td className="pt-0.5 pr-1 pl-2">{idx + 1}</td>
+                  <td className="pt-0.5 pr-1 pl-0">{idx + 1}</td>
 
                   <td className="pt-0.5 pr-1">
                     {steelTypeDisplay} {dimensionsDisplay}
@@ -257,7 +257,7 @@ export const InvoiceExcelSample: React.FC<Inv71LikeInvoiceProps> = ({
         </table>
 
         {/* เว้นบรรทัดก่อนโซนรวมยอด */}
-        <div className="h-[50mm] shrink-0 " />
+        <div className="h-[54mm] shrink-0 " />
 
         {/* รวมเงิน, ส่วนลด, ภาษี, VAT, รวมทั้งสิ้น (จัดขวาเหมือนในใบ) */}
         <div className="space-y-[2px] mr-5">
