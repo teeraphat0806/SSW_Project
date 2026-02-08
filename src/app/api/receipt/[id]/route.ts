@@ -200,8 +200,8 @@ export async function GET(
         name: customer.name,
         address: customer.address,
         taxNumber: customer.taxNumber,
-        tel: customer.tel ?? undefined,
-        faxNumber: customer.faxNumber ?? undefined,
+        tel: customer.tel ?? "",
+        faxNumber: customer.faxNumber ?? "",
       },
       steel,
     };
