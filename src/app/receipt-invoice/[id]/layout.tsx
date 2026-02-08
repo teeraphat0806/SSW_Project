@@ -14,7 +14,7 @@ export default function TestpageLayout({
 }) {
   return (
     <Layout>
-      <div className="bg-muted min-h-screen md:pl-25 ">
+      <div className="bg-muted min-h-screen md:pl-25 print:pl-0 print:bg-white print:min-h-0">
         <ThemeProvider attribute="class">{children}</ThemeProvider>;
       </div>
     </Layout>

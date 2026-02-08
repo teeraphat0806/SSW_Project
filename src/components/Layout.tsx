@@ -20,8 +20,8 @@ export default function Layout({ children }: LayoutProps) {
 
   return (
     <>
-      {isMobile ? <MenuBar /> : <Sidebar />}
-      <main>{children}</main>
+      <div className="print:hidden">{isMobile ? <MenuBar /> : <Sidebar />}</div>
+      <main className="print:m-0 print:p-0">{children}</main>
     </>
   );
 }
