@@ -61,7 +61,13 @@ const lastRowCellStyle = {
   printColorAdjust: "exact",
 } as React.CSSProperties;
 
-export default function ReceiptTemporary({ id }: { id: string }) {
+export default function ReceiptTemporary({
+  id,
+  deliveryAddress,
+}: {
+  id: string;
+  deliveryAddress?: string;
+}) {
   const [data, setData] = React.useState<ApiReceipt | null>(null);
 
   const handlePrint = () => {
@@ -83,7 +89,7 @@ export default function ReceiptTemporary({ id }: { id: string }) {
     );
 
   return (
-    <div className="min-h-screen bg-muted/40 px-4 py-6 text-black print:p-0 print:m-0 print:bg-white print:absolute print:top-0 print:left-0 print:w-full print:z-50 dark:bg-zinc-900 dark:text-zinc-100">
+    <div className="min-h-screen mt-5 md:mt-0 lg:mt-0 bg-muted/40 px-4 py-6 text-black print:p-0 print:m-0 print:bg-white print:absolute print:top-0 print:left-0 print:w-full print:z-50 dark:bg-zinc-900 dark:text-zinc-100">
       {/* Print Button */}
       <div className="mb-4 flex items-center justify-between p-4 print:hidden">
         <h1 className="text-lg font-semibold">ใบส่งสินค้าชั่วคราว</h1>
@@ -131,7 +137,7 @@ export default function ReceiptTemporary({ id }: { id: string }) {
             </div>
             <div className="flex gap-11">
               <div className="font-semibold">สถานที่จัดส่ง</div>
-              <span>{data.customer.address}</span>
+              <span>{deliveryAddress || data.customer.address}</span>
             </div>
           </div>
           <div className="space-y-1">
