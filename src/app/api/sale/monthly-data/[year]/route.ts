@@ -81,6 +81,8 @@ export async function GET(
         },
         _sum: {
           grandTotal: true,
+          subtotal: true,
+          vat: true,
         },
         _count: {
           id: true,
@@ -140,6 +142,8 @@ export async function GET(
       });
 
       const salesAmt = salesStats._sum.grandTotal || 0;
+      const subtotal = salesStats._sum.subtotal || 0;
+      const vat = salesStats._sum.vat || 0;
       const salesQty = salesStats._count.id || 0;
       const income = salesStats._sum.grandTotal || 0; // Income = Sales from Bill
       const expenseAmount = expenseStats._sum.amount || 0;
@@ -150,12 +154,16 @@ export async function GET(
         month,
         monthName: monthNames[month - 1],
         salesAmt,
+        subtotal,
+        vat,
         salesQty,
         income,
         expense,
         net,
         formatted: {
           salesAmt: `฿${salesAmt.toLocaleString("en-US")}`,
+          subtotal: `฿${subtotal.toLocaleString("en-US")}`,
+          vat: `฿${vat.toLocaleString("en-US")}`,
           salesQty: `${salesQty}`,
           income: `฿${income.toLocaleString("en-US")}`,
           expense: `฿${expense.toLocaleString("en-US")}`,
