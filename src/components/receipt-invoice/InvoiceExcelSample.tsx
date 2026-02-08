@@ -115,7 +115,7 @@ export const InvoiceExcelSample: React.FC<Inv71LikeInvoiceProps> = ({
         <div className="mt-20" />
         <div className="flex justify-between gap-4">
           {/* ซ้าย: ข้อมูลบริษัท */}
-          <div className="space-y-2 max-w-[10cm]">
+          <div className="space-y-2 max-w-[8cm] ml-5">
             <div className="font-base">{companyName}</div>
             <div className="mt-1">{addressLine1}</div>
             <div>{addressLine2}</div>
