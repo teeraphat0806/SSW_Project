@@ -94,7 +94,7 @@ model Bill {
 
 model OrderPO {
   id          Int            @id @default(autoincrement())
-  poNumber    String?        @unique
+  poNumber    String?        
   customerId  Int?
   billId      Int?           @unique
   status      JobStatus      @default(pending)
