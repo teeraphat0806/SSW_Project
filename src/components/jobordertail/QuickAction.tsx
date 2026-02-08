@@ -80,7 +80,7 @@ export function QuickAction({
     },
     {
       key: "print",
-      label: "พิมพ์ใบสั่งซื้อ ",
+      label: "พิมพ์ใบกำกับภาษี ",
       disabled: isCanceled,
       icon: Printer,
       run: () => router.push(`/receipt-invoice/${billid}?cutterKey=false`),
