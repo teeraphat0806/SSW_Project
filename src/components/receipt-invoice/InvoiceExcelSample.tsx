@@ -257,7 +257,7 @@ export const InvoiceExcelSample: React.FC<Inv71LikeInvoiceProps> = ({
         </table>
 
         {/* เว้นบรรทัดก่อนโซนรวมยอด */}
-        <div className="h-[39mm] shrink-0 " />
+        <div className="h-[50mm] shrink-0 " />
 
         {/* รวมเงิน, ส่วนลด, ภาษี, VAT, รวมทั้งสิ้น (จัดขวาเหมือนในใบ) */}
         <div className="space-y-[2px] mr-5">
