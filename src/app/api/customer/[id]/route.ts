@@ -3,18 +3,14 @@ import { requireAuth } from "@/lib/permissions";
 
 import prisma from "../../../../lib/prisma";
 import { CustomerSchema } from "../../../../lib/schemas/customer.schema";
+import { digitsOnly } from "@/lib/calculateGrandTotal";
 // GET /api/customer/[id]
 export async function GET(
   req: NextRequest,
   context: { params: Promise<{ id: string }> },
 ) {
   const { id } = await context.params;
-  const authResult = await requireAuth([
-    "superadmin",
-    "supervisor",
-    "clerk",
-    "delivery",
-  ]);
+  const authResult = await requireAuth(["superadmin", "clerk"]);
 
   if ("response" in authResult) {
     return authResult.response;
@@ -41,7 +37,7 @@ export async function PATCH(
   context: { params: Promise<{ id: string }> },
 ) {
   const { id } = await context.params;
-  const authResult = await requireAuth(["superadmin", "supervisor", "clerk"]);
+  const authResult = await requireAuth(["superadmin", "clerk"]);
 
   if ("response" in authResult) {
     return authResult.response;
@@ -63,10 +59,18 @@ export async function PATCH(
         { status: 404 },
       );
     }
+    let telSearch = null;
+    if (parsed.data.tel) {
+      telSearch = digitsOnly(parsed.data.tel);
+    }
+    let faxNumberSearch = null;
+    if (parsed.data.faxNumber) {
+      faxNumberSearch = digitsOnly(parsed.data.faxNumber);
+    }
 
     const result = await prisma.customer.update({
       where: { id: Number(id) },
-      data: parsed.data,
+      data: { ...parsed.data, telSearch, faxNumberSearch },
     });
 
     return NextResponse.json(result, { status: 200 });
@@ -84,7 +88,7 @@ export async function DELETE(
   context: { params: Promise<{ id: string }> },
 ) {
   const { id } = await context.params;
-  const authResult = await requireAuth(["superadmin", "supervisor", "clerk"]);
+  const authResult = await requireAuth(["superadmin", "clerk"]);
 
   if ("response" in authResult) {
     return authResult.response;

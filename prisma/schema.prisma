@@ -40,15 +40,23 @@ model Staff {
 }
 
 model Customer {
-  id        Int       @id @default(autoincrement())
+ id        Int       @id @default(autoincrement())
   name      String
   address   String
+
   tel       String?    @unique
+  telSearch      String?   @unique
+
   taxNumber String    @unique
+
   faxNumber String?    @unique
+  faxNumberSearch String?  @unique
+
   email     String?    @unique
+
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
+  
   Bill      Bill[]
   OrderPO   OrderPO[]
 }
@@ -86,7 +94,7 @@ model Bill {
 
 model OrderPO {
   id          Int            @id @default(autoincrement())
-  poNumber    String?        @unique
+  poNumber    String?        
   customerId  Int?
   billId      Int?           @unique
   status      JobStatus      @default(pending)
@@ -190,7 +198,7 @@ model TypeStaffIncome {
 
 model SteelType {
   id         Int          @id @default(autoincrement())
-  codeSteel  String       @unique
+  codeSteel  String       
   detail     String?
   amount     Int          @default(0)
   shape      ShapeSteel   @default(square)
@@ -201,6 +209,9 @@ model SteelType {
   density    Float
   Product    Product[]
   SteelStock SteelStock[]
+
+  @@unique([codeSteel, shape])
+
 }
 
 model SteelStock {

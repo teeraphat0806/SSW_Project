@@ -30,6 +30,7 @@ type Inv71LikeInvoiceProps = {
   invoiceNo: number; // 1003
   date: string; // 14/08/68
   credit: string; // 30 วัน
+  poNumber?: string; // เลขที่ใบ PO
   selesName: string; // J.Sirikran
 
   // รายการ
@@ -37,6 +38,7 @@ type Inv71LikeInvoiceProps = {
 
   // ยอดรวม
   subtotal: number; // 7,922.00
+  discount?: number; // ส่วนลด
   vat: number; // 554.54
   total: number; // 8,476.54
   totalTextThai: string; // แปดพันสี่ร้อยเจ็ดสิบหกบาทห้าสิบสี่สตางค์
@@ -52,9 +54,11 @@ export const InvoiceExcelSample: React.FC<Inv71LikeInvoiceProps> = ({
   invoiceNo,
   date,
   credit,
+  poNumber,
   selesName,
   items,
   subtotal,
+  discount,
   vat,
   total,
   totalTextThai,
@@ -98,8 +102,9 @@ export const InvoiceExcelSample: React.FC<Inv71LikeInvoiceProps> = ({
         px-4 
         py-3 
         pb-8
-        text-md
+        text-sm
         text-black
+        font-light
         print:w-[21cm]
         print:min-h-[29.7cm]
         flex
@@ -107,40 +112,34 @@ export const InvoiceExcelSample: React.FC<Inv71LikeInvoiceProps> = ({
       "
       >
         {/* แถวแรก: ซ้ายบริษัท, ขวาเลขที่/วันที่/เครดิต/ผู้จัดทำ */}
-        <div className="mt-20" />
+        <div className="mt-27" />
         <div className="flex justify-between gap-4">
           {/* ซ้าย: ข้อมูลบริษัท */}
-          <div className="space-y-[1px] max-w-[10cm]">
-            <div className="font-bold">{companyName}</div>
+          <div className="space-y-2 max-w-[8cm] ml-5">
+            <div className="font-base">{companyName}</div>
             <div className="mt-1">{addressLine1}</div>
             <div>{addressLine2}</div>
             <div className="mt-1">
-              Tel. {tel} &nbsp;&nbsp;&nbsp; Fax : {fax}
+              โทร.{tel} &nbsp;&nbsp;&nbsp; แฟกซ์.{fax}
             </div>
             <div className="mt-1">เลขประจำตัวผู้เสียภาษี {taxId}</div>
           </div>
 
-          {/* ขวา: HS เลขที่ / วันที่ / เครดิต / ผู้จัดทำ */}
-          <div className="min-w-[170px] text-md space-y-[2px] ">
-            <div className="flex justify-between">
-              <span></span>
-              {/* <span>เลขที่</span> */}
+          <div className="min-w-[170px] text-sm space-y-3 mr-20 text-center">
+            <div className="">
               <span className="">HS{invoiceNo}</span>
             </div>
-            <div className="flex justify-between">
-              <span></span>
-              {/* <span>วันที่</span> */}
-              <span className="mt-1">{date}</span>
+            <div className="">
+              <span className="">{date} </span>
             </div>
-            <div className="flex justify-between">
-              <span></span>
-              {/* <span>เครดิต</span> */}
-              <span className="mt-1">{credit}</span>
+            <div className="ml-20">
+              <span className="">{credit}&nbsp;วัน</span>
             </div>
-            <div className="flex justify-between">
-              <span></span>
-              {/* <span>ผู้จัดทำ</span> */}
-              <span className="mt-1">{selesName}</span>
+            <div className="">
+              <span className="">{poNumber || "0"}</span>
+            </div>
+            <div className="">
+              <span className="">J.Sirikran</span>
             </div>
           </div>
         </div>
@@ -149,12 +148,11 @@ export const InvoiceExcelSample: React.FC<Inv71LikeInvoiceProps> = ({
         <div className="mt-25" />
 
         {/* หัวคอลัมน์แบบ Excel (ไม่มีกรอบ) */}
-        <table className="w-full text-md">
+        <table className="w-full text-sm">
           {/* กำหนดความกว้างแต่ละคอลัมน์ให้ฟีลเหมือน Excel */}
           <colgroup>
             <col className="w-[35px]" /> {/* ลำดับ (ไม่โชว์หัว) */}
-            <col className="w-[120px]" /> {/* เกรดเหล็ก */}
-            <col className="w-[210px]" /> {/* หนา x กว้าง x ยาว */}
+            <col className="w-[330px]" /> {/* เกรดเหล็ก + หนา x กว้าง x ยาว */}
             <col className="w-[50px]" /> {/* JOB */}
             <col className="w-[60px]" /> {/* จำนวน */}
             <col className="w-[80px]" /> {/* น้ำหนัก */}
@@ -166,14 +164,14 @@ export const InvoiceExcelSample: React.FC<Inv71LikeInvoiceProps> = ({
           <thead>
             <tr className="text-center">
               {/* ลำดับ: มีคอลัมน์แต่ไม่โชว์ข้อความ */}
-              <th className="pb-1 font-normal text-left">
+              <th className="pb-1 font-normal text-left ">
                 <span className="underline opacity-0">ลำดับ</span>
               </th>
               <th className="pb-1 font-normal text-left">
-                <span className="underline">เกรดเหล็ก</span>
-              </th>
-              <th className="pb-1 font-normal text-left">
-                <span className="underline">หนา x กว้าง x ยาว</span>
+                <div className="flex gap-15">
+                  <span className="underline">เกรดเหล็ก </span>
+                  <span className="underline">หนา x กว้าง x ยาว</span>
+                </div>
               </th>
               <th className="pb-1 font-normal text-left">
                 <span className="underline">JOB</span>
@@ -182,13 +180,16 @@ export const InvoiceExcelSample: React.FC<Inv71LikeInvoiceProps> = ({
                 <span className="underline">จำนวน</span>
               </th>
               <th className="pb-1 font-normal text-left">
-                <span className="underline">น้ำหนัก</span>
+                <span className="underline"></span>
               </th>
               <th className="pb-1 font-normal text-left">
-                <span className="underline">ราคา</span>
+                <span className="underline"></span>
               </th>
               <th className="pb-1 font-normal text-left">
-                <span className="underline">จำนวนเงิน</span>
+                <span className="underline"></span>
+              </th>
+              <th className="pb-1 font-normal text-left">
+                <span className="underline"></span>
               </th>
             </tr>
           </thead>
@@ -219,29 +220,32 @@ export const InvoiceExcelSample: React.FC<Inv71LikeInvoiceProps> = ({
               return (
                 <tr key={idx} className="align-top">
                   {/* ลำดับ (โชว์เฉพาะเลข ไม่ต้องมีหัวข้อ) */}
-                  <td className="pt-1.5 pr-1">{idx + 1}</td>
+                  <td className="pt-0.5 pr-1 pl-2">{idx + 1}</td>
 
-                  <td className="pt-1.5 pr-1">{steelTypeDisplay}</td>
+                  <td className="pt-0.5 pr-1">
+                    {steelTypeDisplay} {dimensionsDisplay}
+                  </td>
 
-                  <td className="pt-1.5 pr-1">{dimensionsDisplay}</td>
+                  <td className="pt-0.5 pr-1 text-left">{item.job}</td>
 
-                  <td className="pt-1.5 pr-1 text-left">{item.job}</td>
+                  <td className="pt-0.5 pr-1 text-left">{item.amount}</td>
 
-                  <td className="pt-1.5 pr-1 text-left">{item.amount}</td>
-
-                  <td className="pt-1.5 pr-1 text-left">
+                  <td className="pt-0.5 pr-1 text-left">
                     {item.weight == null || item.weight === 0
                       ? ""
                       : formatNumber(item.weight)}
                   </td>
 
-                  <td className="pt-1.5 pr-1 text-left">
+                  <td className="pt-0.5 pr-1 text-left">
                     {item.weight == null || item.weight === 0
                       ? ""
                       : formatNumber(item.price)}
                   </td>
+                  <td className="pt-0.5 pr-0 text-left">
+                    {/* ส่วนลด คอลัมน์นี้เว้นว่าง */}
+                  </td>
 
-                  <td className="pt-1.5 pr-1 text-left">
+                  <td className="pt-0.5 pr-8 pl-4 text-left">
                     {item.weight == null || item.weight === 0
                       ? ""
                       : formatNumber(item.total)}
@@ -253,9 +257,9 @@ export const InvoiceExcelSample: React.FC<Inv71LikeInvoiceProps> = ({
         </table>
 
         {/* เว้นบรรทัดก่อนโซนรวมยอด */}
-        <div className="mt-35" />
+        <div className="h-[40mm] shrink-0" />
 
-        {/* รวมเงิน, ฐานภาษี, VAT, รวมทั้งสิ้น (จัดขวาเหมือนในใบ) */}
+        {/* รวมเงิน, ส่วนลด, ภาษี, VAT, รวมทั้งสิ้น (จัดขวาเหมือนในใบ) */}
         <div className="space-y-[2px]">
           <div className="flex justify-between">
             <span className="flex-1" />
@@ -265,6 +269,28 @@ export const InvoiceExcelSample: React.FC<Inv71LikeInvoiceProps> = ({
                 : formatNumber(subtotal)}
             </span>
           </div>
+          <div className="flex justify-between">
+            <span className="flex-1" />
+            <span className="w-[160px] text-right">&nbsp; </span>
+          </div>
+          <div className="flex justify-between">
+            <span className="flex-1" />
+            <span className="w-[160px] text-right">
+              {items[0].weight == null || items[0].weight === 0
+                ? ""
+                : formatNumber(subtotal)}
+            </span>
+          </div>
+
+          {/* ส่วนลด */}
+          {discount != null && discount > 0 && (
+            <div className="flex justify-between">
+              <span className="flex-1" />
+              <span className="w-[160px] text-right">
+                {formatNumber(discount)}
+              </span>
+            </div>
+          )}
 
           <div className="flex justify-between">
             <span className="flex-1" />
@@ -277,7 +303,7 @@ export const InvoiceExcelSample: React.FC<Inv71LikeInvoiceProps> = ({
         </div>
 
         {/* แถว: ข้อความตัวหนังสือ & รวมทั้งสิ้น */}
-        <div className="mt-2 flex">
+        <div className="mt-6 flex">
           <div className="flex-1">
             {items[0].weight == null || items[0].weight === 0
               ? ""

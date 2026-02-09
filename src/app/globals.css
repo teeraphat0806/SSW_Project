@@ -20,10 +20,8 @@
   --card: 0 0% 100%;
   --card-foreground: 215 25% 27%;
 
-  --muted: 240 4.8% 95.9%
-  --muted-foreground: 240 3.8% 46.1%
-
-  --popover: 0 0% 100%;
+  --muted: 240 4.8% 95.9% --muted-foreground: 240 3.8% 46.1% --popover: 0 0%
+    100%;
   --popover-foreground: 215 25% 27%;
 
   --primary: 210 100% 56%;
@@ -136,6 +134,43 @@ body {
 /* Optional: all borders in the app use your custom border color */
 * {
   border-color: hsl(var(--border));
+}
+
+@media print {
+  @page {
+    size: A4;
+    margin: 0;
+  }
+
+  html,
+  body {
+    margin: 0;
+    padding: 0;
+    background: #fff !important;
+  }
+
+  .print-a4 {
+    width: 210mm !important;
+    min-height: 297mm !important;
+  }
+
+  .print-force-color,
+  .print-force-color * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .print-black-borders,
+  .print-black-borders * {
+    border-color: #000 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  .print-black-borders .no-horizontal-borders {
+    border-top: 0 !important;
+    border-bottom: 0 !important;
+  }
 }
 
 /* Radix theme integration */

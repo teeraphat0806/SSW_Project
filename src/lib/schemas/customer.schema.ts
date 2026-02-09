@@ -1,6 +1,5 @@
 import { z } from "zod";
-
-const digitsOnly = (s: string) => s.replace(/\D/g, "");
+import { digitsOnly } from "@/lib/calculateGrandTotal";
 
 export const CustomerSchema = z.object({
   id: z.number().optional(),
@@ -13,15 +12,19 @@ export const CustomerSchema = z.object({
     (v) => {
       if (v === undefined) return undefined;
       if (v === null) return null;
-      const s = digitsOnly(String(v));
-      return s.length ? s : null;
+      const raw = String(v).trim();
+      return raw.length ? raw : null; // ✅ เก็บ raw มี "-" ได้
     },
     z
       .string()
-      .length(10, "เบอร์โทรต้องเป็นตัวเลข 10 หลัก")
+      .refine((raw) => {
+        const s = digitsOnly(raw);
+        return s.length >= 9 && s.length <= 13;
+      }, "เบอร์โทรควรเป็นตัวเลข 9–13 หลัก")
       .nullable()
       .optional(),
   ),
+
   taxNumber: z
     .preprocess((v) => digitsOnly(String(v ?? "")), z.string())
     .refine((v) => v.length === 13, "เลขผู้เสียภาษีต้องเป็นตัวเลข 13 หลัก"),
@@ -29,13 +32,15 @@ export const CustomerSchema = z.object({
     (v) => {
       if (v === undefined) return undefined;
       if (v === null) return null;
-      const s = digitsOnly(String(v));
-      return s.length ? s : null;
+      const raw = String(v).trim();
+      return raw.length ? raw : null;
     },
     z
       .string()
-      .min(7, "แฟกซ์ควรเป็นตัวเลข 7–13 หลัก")
-      .max(13, "แฟกซ์ควรเป็นตัวเลข 7–13 หลัก")
+      .refine((raw) => {
+        const s = digitsOnly(raw);
+        return s.length >= 7 && s.length <= 13;
+      }, "แฟกซ์ควรเป็นตัวเลข 7–13 หลัก")
       .nullable()
       .optional(),
   ),
