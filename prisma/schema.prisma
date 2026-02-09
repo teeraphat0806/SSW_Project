@@ -40,25 +40,25 @@ model Staff {
 }
 
 model Customer {
- id        Int       @id @default(autoincrement())
-  name      String
-  address   String
+  id      Int    @id @default(autoincrement())
+  name    String
+  address String
 
-  tel       String?    @unique
-  telSearch      String?   @unique
+  tel       String? @unique
+  telSearch String? @unique
 
-  taxNumber String    @unique
+  taxNumber String @unique
 
-  faxNumber String?    @unique
-  faxNumberSearch String?  @unique
+  faxNumber       String? @unique
+  faxNumberSearch String? @unique
 
-  email     String?    @unique
+  email String? @unique
 
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  
-  Bill      Bill[]
-  OrderPO   OrderPO[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  Bill    Bill[]
+  OrderPO OrderPO[]
 }
 
 model Bill {
@@ -94,7 +94,7 @@ model Bill {
 
 model OrderPO {
   id          Int            @id @default(autoincrement())
-  poNumber    String?        
+  poNumber    String?
   customerId  Int?
   billId      Int?           @unique
   status      JobStatus      @default(pending)
@@ -130,29 +130,29 @@ model OrderPOStaff {
 }
 
 model Product {
-  id            Int           @id @default(autoincrement())
-  orderPOId     Int
-  steelId       Int
+  id        Int @id @default(autoincrement())
+  orderPOId Int
+  steelId   Int
 
-  wide          Float?
-  length        Float
-  thickness     Float
-  amount        Int
-  detail        String?
+  wide      Float?
+  length    Float
+  thickness Float
+  amount    Int
+  detail    String?
 
   cuttingMethod CuttingMethod @default(normal)
-  isOD          Boolean  @default(false)
-  isServices    Boolean  @default(false)
-  isPerAmount   Boolean  @default(false)
+  isOD          Boolean       @default(false)
+  isServices    Boolean       @default(false)
+  isPerAmount   Boolean       @default(false)
 
-  actualWeight  Float?
-  unitPrice     Float         @default(0)
-  discount      Float?
-  total         Float?
- 
-  job           Int?
-  OrderPO       OrderPO       @relation(fields: [orderPOId], references: [id], onDelete: Cascade)
-  SteelType     SteelType     @relation(fields: [steelId], references: [id])
+  actualWeight Float?
+  unitPrice    Float  @default(0)
+  discount     Float?
+  total        Float?
+
+  job       Int?
+  OrderPO   OrderPO   @relation(fields: [orderPOId], references: [id], onDelete: Cascade)
+  SteelType SteelType @relation(fields: [steelId], references: [id])
 
   @@index([orderPOId])
   @@index([steelId])
