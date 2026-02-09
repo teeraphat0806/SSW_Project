@@ -198,7 +198,7 @@ model TypeStaffIncome {
 
 model SteelType {
   id         Int          @id @default(autoincrement())
-  codeSteel  String       @unique
+  codeSteel  String       
   detail     String?
   amount     Int          @default(0)
   shape      ShapeSteel   @default(square)
@@ -209,6 +209,9 @@ model SteelType {
   density    Float
   Product    Product[]
   SteelStock SteelStock[]
+
+  @@unique([codeSteel, shape])
+
 }
 
 model SteelStock {
