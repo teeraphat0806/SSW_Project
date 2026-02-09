@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { ExpenseSchema } from "@/lib/schemas/expense.schema";
 export async function GET(
   req: NextRequest,
-  context: { params: Promise<{ id: string }> }
+  context: { params: Promise<{ id: string }> },
 ) {
   const authResult = await requireAuth(["superadmin", "clerk", "supervisor"]);
   if ("response" in authResult) {
@@ -27,14 +27,14 @@ export async function GET(
     console.error("Error fetching expense:", error);
     return NextResponse.json(
       { error: "Internal Server Error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
 
 export async function PATCH(
   req: NextRequest,
-  context: { params: Promise<{ id: string }> }
+  context: { params: Promise<{ id: string }> },
 ) {
   const authRequest = await requireAuth(["superadmin", "clerk", "supervisor"]);
   if ("response" in authRequest) {
@@ -51,7 +51,7 @@ export async function PATCH(
   if (!parsed.success) {
     return NextResponse.json(
       { error: "Invalid expense data" },
-      { status: 400 }
+      { status: 400 },
     );
   }
   try {
@@ -65,36 +65,58 @@ export async function PATCH(
     console.error("Error updating expense:", error);
     return NextResponse.json(
       { error: "Internal Server Error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
 export async function DELETE(
   req: NextRequest,
-  context: { params: Promise<{ id: string }> }
+  context: { params: Promise<{ id: string }> },
 ) {
+  console.log("🔵 DELETE /api/expense/[id] - Request received");
+
   const authRequest = await requireAuth(["superadmin", "clerk", "supervisor"]);
   if ("response" in authRequest) {
+    console.log("❌ DELETE - Authorization failed");
     return authRequest.response;
   }
+
+  console.log("✅ DELETE - Authorization passed");
+
   try {
     const { id } = await context.params;
     const expenseId = Number(id);
+
+    console.log(`🆔 DELETE - Expense ID: ${id} (parsed: ${expenseId})`);
+
     if (Number.isNaN(expenseId)) {
+      console.log("❌ DELETE - Invalid expense ID");
       return NextResponse.json(
         { error: "Invalid expense id" },
-        { status: 400 }
+        { status: 400 },
       );
     }
+
+    console.log(`🗑️ DELETE - Attempting to delete expense ID: ${expenseId}`);
+
     const deletedExpense = await prisma.expense.delete({
       where: { id: expenseId },
     });
-    return NextResponse.json({ expense: deletedExpense }, { status: 200 });
+
+    console.log(`✅ DELETE - Successfully deleted expense:`, deletedExpense);
+
+    return NextResponse.json(
+      {
+        message: "ลบค่าใช้จ่ายสำเร็จ",
+        expense: deletedExpense,
+      },
+      { status: 200 },
+    );
   } catch (error) {
-    console.error("Error deleting expense:", error);
+    console.error("❌ DELETE - Error deleting expense:", error);
     return NextResponse.json(
       { error: "Internal Server Error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
