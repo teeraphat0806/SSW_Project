@@ -1,4 +1,4 @@
-import { PrismaClient } from "@prisma/client";
+import prisma from "../src/lib/prisma";
 import { userData } from "@/data/userData";
 import { customerData } from "@/data/customerData";
 import { staffData } from "@/data/staffData";
@@ -11,7 +11,6 @@ import { expenseData } from "@/data/expenseData";
 import { expenseCategoryData } from "@/data/expenseCategoryData";
 import { steelStockData } from "@/data/steelStockData";
 
-const prisma = new PrismaClient();
 async function main() {
   // 1. ลบข้อมูล
   await prisma.expense.deleteMany();
@@ -41,41 +40,41 @@ async function main() {
   // 2. รีเซต sequence
   await prisma.$executeRawUnsafe(`ALTER SEQUENCE "User_id_seq" RESTART WITH 1`);
   await prisma.$executeRawUnsafe(
-    `ALTER SEQUENCE "Customer_id_seq" RESTART WITH 1`
+    `ALTER SEQUENCE "Customer_id_seq" RESTART WITH 1`,
   );
   await prisma.$executeRawUnsafe(
-    `ALTER SEQUENCE "Staff_id_seq" RESTART WITH 1`
+    `ALTER SEQUENCE "Staff_id_seq" RESTART WITH 1`,
   );
   await prisma.$executeRawUnsafe(
-    `ALTER SEQUENCE "OrderPO_id_seq" RESTART WITH 1`
+    `ALTER SEQUENCE "OrderPO_id_seq" RESTART WITH 1`,
   );
   await prisma.$executeRawUnsafe(`ALTER SEQUENCE "Bill_id_seq" RESTART WITH 1`);
   await prisma.$executeRawUnsafe(
-    `ALTER SEQUENCE "StaffIncome_id_seq" RESTART WITH 1`
+    `ALTER SEQUENCE "StaffIncome_id_seq" RESTART WITH 1`,
   );
   await prisma.$executeRawUnsafe(
-    `ALTER SEQUENCE "StaffSalary_id_seq" RESTART WITH 1`
+    `ALTER SEQUENCE "StaffSalary_id_seq" RESTART WITH 1`,
   );
   await prisma.$executeRawUnsafe(
-    `ALTER SEQUENCE "TypeStaffIncome_id_seq" RESTART WITH 1`
+    `ALTER SEQUENCE "TypeStaffIncome_id_seq" RESTART WITH 1`,
   );
   await prisma.$executeRawUnsafe(
-    `ALTER SEQUENCE "TypeStaffIncome_id_seq" RESTART WITH 1`
+    `ALTER SEQUENCE "TypeStaffIncome_id_seq" RESTART WITH 1`,
   );
   await prisma.$executeRawUnsafe(
-    `ALTER SEQUENCE "ExpenseCategory_id_seq" RESTART WITH 1`
+    `ALTER SEQUENCE "ExpenseCategory_id_seq" RESTART WITH 1`,
   );
   await prisma.$executeRawUnsafe(
-    `ALTER SEQUENCE "Expense_id_seq" RESTART WITH 1`
+    `ALTER SEQUENCE "Expense_id_seq" RESTART WITH 1`,
   );
   await prisma.$executeRawUnsafe(
-    `ALTER SEQUENCE "SteelType_id_seq" RESTART WITH 1`
+    `ALTER SEQUENCE "SteelType_id_seq" RESTART WITH 1`,
   );
   await prisma.$executeRawUnsafe(
-    `ALTER SEQUENCE "Bill_invoiceNo_seq" RESTART WITH 00129326;`
+    `ALTER SEQUENCE "Bill_invoiceNo_seq" RESTART WITH 00129340;`,
   );
 
-   console.log("✅ reset sequences successfully.");
+  console.log("✅ reset sequences successfully.");
 
   //   // 3. ใส่ข้อมูล
   // await prisma.steelType.createMany({ data: steelTypeData });

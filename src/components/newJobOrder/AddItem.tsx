@@ -358,15 +358,21 @@ export default function AddItem({
                             ) : (
                               steelTypes.map((type) => (
                                 <SelectItem key={type.id} value={type.name}>
-                                  <span className="font-medium">
-                                    {type.name}
-                                  </span>
-                                  <span className="ml-2 text-xs text-muted-foreground">
+                                  {/* <span className="ml-2 text-xs text-muted-foreground">
                                     {type.shape === "square"
                                       ? "(แผ่น)"
                                       : type.shape === "line"
-                                        ? "(เพลา)"
+                                        ? "Ø"
                                         : ""}
+                                  </span> */}
+                                  {type.shape === "line" && (
+                                    <span className="ml-2 text-xs text-muted-foreground">
+                                      Ø
+                                    </span>
+                                  )}
+
+                                  <span className="font-medium">
+                                    {type.name}
                                   </span>
                                 </SelectItem>
                               ))
