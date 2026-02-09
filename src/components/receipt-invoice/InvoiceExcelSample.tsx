@@ -204,11 +204,15 @@ export const InvoiceExcelSample: React.FC<Inv71LikeInvoiceProps> = ({
               let steelDisplay = "";
 
               if (item.isOD) {
-                // กรณี isOD = true: เหล็ก SS400 28 t OD 154 ID 121 mm.
-                steelDisplay = `เหล็ก ${item.steelType} ${item.thickness} t OD ${item.width} ID ${item.length} ${item.unit || "mm."}`;
+                // กรณี isOD = true: เหล็ก SS400 28 t OD 154 ID 121 mm. หรือ machine services SS400 28 t OD 154 ID 121 mm.
+                const steelPrefix = item.isServices === true ? "" : "เหล็ก ";
+                steelDisplay = `${steelPrefix}${item.steelType} ${item.thickness} t OD ${item.width} ID ${item.length} ${item.unit || "mm."}`;
               } else {
-                // กรณีปกติ
-                let prefix = `เหล็ก ${item.steelType}`;
+                // กรณีปกติ - ถ้า isServices = true ไม่ใส่คำว่า "เหล็ก"
+                let prefix =
+                  item.isServices === true
+                    ? item.steelType
+                    : `เหล็ก ${item.steelType}`;
 
                 // ตรวจสอบ cuttingMethod
                 if (item.cuttingMethod === "FB") {
@@ -229,6 +233,11 @@ export const InvoiceExcelSample: React.FC<Inv71LikeInvoiceProps> = ({
                 const suffix = item.cuttingMethod === "CNC" ? "(แบบ)" : "";
 
                 steelDisplay = `${prefix} ${dimensions}${suffix}`;
+              }
+
+              // ถ้า isServices = true เพิ่ม "machine services" หน้าข้อความ
+              if (item.isServices === true) {
+                steelDisplay = `machine services ${steelDisplay}`;
               }
 
               // กำหนด Job field
