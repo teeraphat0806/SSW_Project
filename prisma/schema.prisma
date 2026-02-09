@@ -22,14 +22,14 @@ model Staff {
   id                           Int               @id @default(autoincrement())
   userId                       Int?              @unique
   position                     String            @default("พนักงานทั่วไป")
-  bankAccount                  String            @unique
-  bankName                     String
+  bankAccount                  String?           @unique
+  bankName                     String?
   startDate                    DateTime
   code                         String            @unique
-  social_security              String            @unique
+  social_security              String?           @unique
   currentSalary                Float
   updatedAt                    DateTime          @updatedAt
-  taxid                        String
+  taxid                        String?
   Bill_Bill_deliveredByToStaff Bill[]            @relation("Bill_deliveredByToStaff")
   Bill_Bill_salesNameToStaff   Bill[]            @relation("Bill_salesNameToStaff")
   ExpenseCategory              ExpenseCategory[]
