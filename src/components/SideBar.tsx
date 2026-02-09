@@ -10,6 +10,7 @@ import {
   Boxes,
   Moon,
   Sun,
+  BaggageClaim,
 } from "lucide-react";
 import { useSession, signOut } from "next-auth/react";
 import * as Avatar from "@radix-ui/react-avatar";
@@ -22,14 +23,29 @@ import { useEffect, useState } from "react";
 const MENU_ITEMS = [
   {
     category: "ภาพรวม",
-    items: [{ label: "แดชบอร์ด", icon: <Home size={20} />, href: "/dashboard" }],
+    items: [
+      { label: "แดชบอร์ด", icon: <Home size={20} />, href: "/dashboard" },
+    ],
   },
   {
     category: "บริหารจัดการ",
     items: [
-      { label: "ลูกค้า", icon: <UserRound size={20} />, href: "/customer-Dashboard" },
+      {
+        label: "ลูกค้า",
+        icon: <UserRound size={20} />,
+        href: "/customer-Dashboard",
+      },
       { label: "สินค้า", icon: <Boxes size={20} />, href: "/steel-Dashboard" },
-      { label: "ยอดขาย", icon: <ClipboardList size={20} />, href: "/saledashboard2" },
+      {
+        label: "ยอดขาย",
+        icon: <ClipboardList size={20} />,
+        href: "/saledashboard2",
+      },
+      {
+        label: "เบิกรายจ่าย",
+        icon: <BaggageClaim size={20} />,
+        href: "/expenseDashboard",
+      },
     ],
   },
   {
@@ -38,7 +54,13 @@ const MENU_ITEMS = [
   },
   {
     category: "ช่วยเหลือ",
-    items: [{ label: "คุยกับบอท", icon: <MessageCircle size={20} />, href: "/chatbot" }],
+    items: [
+      {
+        label: "คุยกับบอท",
+        icon: <MessageCircle size={20} />,
+        href: "/chatbot",
+      },
+    ],
   },
 ];
 
@@ -75,7 +97,9 @@ export default function Sidebar() {
     >
       <div className="h-24 shrink-0 overflow-hidden px-4 flex items-center justify-start">
         <div className="min-w-0 flex items-center gap-3">
-          <div className={`shrink-0 ${expanded ? "[&_svg]:w-16 [&_svg]:h-16" : "[&_svg]:w-14 [&_svg]:h-14"}`}>
+          <div
+            className={`shrink-0 ${expanded ? "[&_svg]:w-16 [&_svg]:h-16" : "[&_svg]:w-14 [&_svg]:h-14"}`}
+          >
             <Logo />
           </div>
           <span
@@ -92,7 +116,11 @@ export default function Sidebar() {
         {MENU_ITEMS.map((group, idx) => (
           <div
             key={group.category}
-            className={idx < MENU_ITEMS.length - 1 ? "pb-3 mb-1 border-b border-border/80" : ""}
+            className={
+              idx < MENU_ITEMS.length - 1
+                ? "pb-3 mb-1 border-b border-border/80"
+                : ""
+            }
           >
             {expanded && (
               <h3 className="mb-2 px-2 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
@@ -173,8 +201,12 @@ export default function Sidebar() {
                 className="block truncate"
                 onClick={(e) => e.stopPropagation()}
               >
-                <p className="truncate text-sm font-semibold hover:underline">{user.name}</p>
-                <p className="truncate text-sm text-muted-foreground">{user.role || "พนักงาน"}</p>
+                <p className="truncate text-sm font-semibold hover:underline">
+                  {user.name}
+                </p>
+                <p className="truncate text-sm text-muted-foreground">
+                  {user.role || "พนักงาน"}
+                </p>
               </Link>
             </div>
           )}
@@ -219,7 +251,13 @@ function SidebarItem({
           : "text-foreground hover:bg-accent hover:text-accent-foreground"
       } ${expanded ? "justify-start" : "justify-center"}`}
     >
-      <div className={active ? "text-primary-foreground" : "text-muted-foreground group-hover:text-accent-foreground"}>
+      <div
+        className={
+          active
+            ? "text-primary-foreground"
+            : "text-muted-foreground group-hover:text-accent-foreground"
+        }
+      >
         {icon}
       </div>
 

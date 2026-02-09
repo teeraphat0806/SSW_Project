@@ -25,11 +25,14 @@ type ApiReceipt = {
     width?: number;
     length: number;
     amount: number;
-    weight: number;
+    weight: number | null;
     price: number;
     cuttingMethod?: CuttingMethod;
     job?: number | null;
     total: number;
+    isOD?: boolean;
+    isServices?: boolean;
+    isPerAmount?: boolean;
   }[];
 };
 
@@ -79,12 +82,15 @@ export default function ReceiptClient({ id }: { id: string }) {
           thickness: s.thickness,
           width: s.width ?? 0,
           length: s.length,
-          job: s.job?.toString() ?? "-", // API ไม่มี job → ใส่ default
+          job: s.job?.toString() ?? null, // API ไม่มี job → ใส่ null
           amount: s.amount,
           weight: s.weight,
           price: s.price,
           total: s.total,
           cuttingMethod: s.cuttingMethod,
+          isOD: s.isOD,
+          isServices: s.isServices,
+          isPerAmount: s.isPerAmount,
         }))}
         subtotal={data.subtotal}
         vat={data.vat}

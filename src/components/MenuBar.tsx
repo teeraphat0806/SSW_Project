@@ -11,6 +11,7 @@ import {
   MessageCircle,
   UserRound,
   Boxes,
+  BaggageClaim,
 } from "lucide-react";
 import Link from "next/link";
 import { signOut, useSession } from "next-auth/react";
@@ -35,7 +36,7 @@ export default function NavbarWithSidebar() {
         </div>
         <button
           onClick={() => setOpen(true)}
-          className="p-2 rounded hover:bg-gray-100"
+          className="p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-800"
         >
           <Menu size={24} />
         </button>
@@ -51,7 +52,7 @@ export default function NavbarWithSidebar() {
 
       {/* Slide-in Sidebar */}
       <aside
-        className={`fixed top-0 left-0 h-full w-64 bg-background shadow-lg z-50 transform transition-transform duration-300 ${
+        className={`fixed top-0 left-0 h-full w-64 bg-background shadow-lg z-50 transform transition-transform duration-300  ${
           open ? "translate-x-0" : "-translate-x-full"
         }`}
       >
@@ -85,8 +86,13 @@ export default function NavbarWithSidebar() {
             href="/saledashboard2"
           />
           <SidebarItem
+            icon={<BaggageClaim size={20} />}
+            label="เบิกรายจ่าย"
+            href="/expenseDashboard"
+          />
+          <SidebarItem
             icon={<Users size={20} />}
-            label="จัดการพนักงาน"
+            label="พนักงาน"
             href="/payroll"
           />
           <SidebarItem
@@ -148,7 +154,7 @@ function SidebarItem({
   return (
     <Link
       href={href}
-      className="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-gray-100 text-sm text-foreground transition"
+      className="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 text-sm text-foreground transition"
     >
       {icon}
       {label}
