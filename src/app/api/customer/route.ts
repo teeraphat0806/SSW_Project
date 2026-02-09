@@ -4,6 +4,7 @@ import { NextResponse, NextRequest } from "next/server";
 import prisma from "../../../lib/prisma";
 import { CustomerSchema } from "../../../lib/schemas/customer.schema";
 import { Prisma } from "@prisma/client";
+import { digitsOnly } from "@/lib/calculateGrandTotal";
 
 //กำหนดชนิดของพารามิเตอร์ที่รับเข้ามา
 function toInt(value: string | null, fallback: number) {
@@ -64,7 +65,7 @@ export async function GET(req: NextRequest) {
             OR: [
               { name: { contains: search, mode: "insensitive" } },
 
-              { tel: { contains: search, mode: "insensitive" } },
+              { telSearch: { contains: search, mode: "insensitive" } },
             ],
           }
         : {};
@@ -149,8 +150,6 @@ export async function GET(req: NextRequest) {
   }
 }
 
-
-
 export async function POST(req: NextRequest) {
   const authResult = await requireAuth(["superadmin", "supervisor", "clerk"]);
 
@@ -171,8 +170,26 @@ export async function POST(req: NextRequest) {
     );
   }
   try {
+    let telSearch = null;
+    if (parsed.data.tel) {
+      telSearch = digitsOnly(parsed.data.tel);
+    }
+    let faxNumberSearch = null;
+    if (parsed.data.faxNumber) {
+      faxNumberSearch = digitsOnly(parsed.data.faxNumber);
+    }
+    const data = {
+      name: parsed.data.name,
+      address: parsed.data.address,
+      tel: parsed.data.tel,
+      telSearch: telSearch,
+      taxNumber: parsed.data.taxNumber,
+      faxNumber: parsed.data.faxNumber,
+      faxNumberSearch: faxNumberSearch,
+      email: parsed.data.email,
+    };
     const result = await prisma.customer.create({
-      data: parsed.data,
+      data: data,
     });
     return NextResponse.json(result, { status: 201 });
   } catch (error) {

@@ -122,3 +122,5 @@ export function calculateBillSummary(steel: SteelItem[], vatRate: number) {
     grandTotal,
   };
 }
+
+export const digitsOnly = (s: string) => s.replace(/\D/g, "");

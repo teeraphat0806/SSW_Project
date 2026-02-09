@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { toast } from "react-toastify";
 import z from "zod";
+import { CustomerSchema } from "@/lib/schemas/customer.schema";
 
 // --- Types ---
 type Customer = {
@@ -52,56 +53,7 @@ type FieldRowProps = {
   type?: string;
 };
 
-const digitsOnly = (s: string) => s.replace(/\D/g, "");
 
-const CustomerFormSchema = z.object({
-  code: z.string().trim().max(50, "รหัสลูกค้ายาวเกินไป").nullable().optional(),
-  name: z
-    .string()
-    .trim()
-    .min(1, "กรุณากรอกชื่อลูกค้า")
-    .max(200, "ชื่อลูกค้ายาวเกินไป"),
-  address: z
-    .string()
-    .trim()
-    .min(1, "กรุณากรอกที่อยู่")
-    .min(10, "ที่อยู่สั้นเกินไป (อย่างน้อย 10 ตัวอักษร)"),
-
-  // Optional: allow empty => null, but validate if provided.
-  tel: z.preprocess(
-    (v) => {
-      if (v == null) return undefined;
-      const s = digitsOnly(String(v));
-      return s.length ? s : null;
-    },
-    z.string().length(10, "เบอร์โทรต้องเป็นตัวเลข 10 หลัก").nullable().optional(),
-  ),
-  email: z.preprocess(
-    (v) => {
-      if (v == null) return undefined;
-      const s = String(v).trim();
-      return s.length ? s : null;
-    },
-    z.union([z.string().email("รูปแบบอีเมลไม่ถูกต้อง"), z.null()]).optional(),
-  ),
-  taxNumber: z
-    .string()
-    .transform((v) => digitsOnly(v))
-    .refine((v) => v.length === 13, "เลขผู้เสียภาษีต้องเป็นตัวเลข 13 หลัก"),
-  faxNumber: z.preprocess(
-    (v) => {
-      if (v == null) return undefined;
-      const s = digitsOnly(String(v));
-      return s.length ? s : null;
-    },
-    z
-      .string()
-      .min(7, "แฟกซ์ควรเป็นตัวเลข 7–13 หลัก")
-      .max(13, "แฟกซ์ควรเป็นตัวเลข 7–13 หลัก")
-      .nullable()
-      .optional(),
-  ),
-});
 
 const FieldRow = ({
   label,
@@ -257,7 +209,7 @@ export default function CustomerViewEditModal({
       toast.warn("กรุณากรอกชื่อลูกค้า", { position: "bottom-right" });
       return;
     }
-    const parsed = CustomerFormSchema.safeParse(form);
+    const parsed = CustomerSchema.safeParse(form);
     if (!parsed.success) {
       const firstError = parsed.error.issues[0];
       toast.warn(firstError.message, { position: "bottom-right" });
@@ -383,7 +335,7 @@ export default function CustomerViewEditModal({
                     label="เลขแฟกซ์"
                     value={
                       mode === "view"
-                        ? customer.faxNumber ?? ""
+                        ? (customer.faxNumber ?? "")
                         : form.faxNumber
                     }
                     isEditing={mode === "edit"}
@@ -401,14 +353,16 @@ export default function CustomerViewEditModal({
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <FieldRow
                     label="เบอร์โทรศัพท์"
-                    value={mode === "view" ? customer.tel ?? "" : form.tel}
+                    value={mode === "view" ? (customer.tel ?? "") : form.tel}
                     isEditing={mode === "edit"}
                     onChange={(v) => setForm((p) => ({ ...p, tel: v }))}
                     icon={<Phone size={14} />}
                   />
                   <FieldRow
                     label="อีเมล"
-                    value={mode === "view" ? customer.email ?? "" : form.email}
+                    value={
+                      mode === "view" ? (customer.email ?? "") : form.email
+                    }
                     isEditing={mode === "edit"}
                     onChange={(v) => setForm((p) => ({ ...p, email: v }))}
                     icon={<Mail size={14} />}
@@ -513,4 +467,3 @@ export default function CustomerViewEditModal({
     </div>
   );
 }
-

@@ -57,21 +57,7 @@ export default function CustomerForm({
               className="mt-1"
             />
           </div>
-          {/* <div>
-            <Label htmlFor="code">เลข Code</Label>
-            <Input
-              id="code"
-              type="text" // 1. เปลี่ยนเป็น text เพื่อรับเลข 0 นำหน้า
-              inputMode="numeric"
-              pattern="[0-9]*" // 2. เพิ่ม pattern เพื่อจำกัดให้กรอกเฉพาะตัวเลข
-              minLength={13}
-              maxLength={13}
-              value={formData.code ?? undefined}
-              onChange={(e) => updateFormData("code", e.target.value)}
-              placeholder="1001"
-              className="mt-1"
-            />
-          </div> */}
+         
           <div>
             <Label htmlFor="customerEmail">
               Email 
@@ -90,16 +76,16 @@ export default function CustomerForm({
               className="mt-1"
             />
           </div>
+          
           <div>
             <Label htmlFor="customerPhone">
               เบอร์โทร
             </Label>
             <Input
               id="customerPhone"
-              type="tel"
-              pattern="[0-9]*"
-              minLength={10}
-              maxLength={10}
+              type="text"
+              minLength={9}
+              maxLength={13}
               value={formData.customerPhone ?? ""}
               onChange={(e) =>
                 updateFormData(
@@ -136,10 +122,8 @@ export default function CustomerForm({
             <Input
               id="faxNumber"
               type="text"
-              inputMode="numeric"
-              pattern="[0-9]*"
               minLength={7}
-              maxLength={12}
+              maxLength={13}
               value={formData.faxNumber ?? ""}
               onChange={(e) =>
                 updateFormData(
