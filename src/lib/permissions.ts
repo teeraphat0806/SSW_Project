@@ -55,6 +55,7 @@ export async function requireAuth(
       ),
     };
   }
+  console.log("Session user role:", session.user.role);
 
   const role = normalizeRole(session.user.role ?? null);
 

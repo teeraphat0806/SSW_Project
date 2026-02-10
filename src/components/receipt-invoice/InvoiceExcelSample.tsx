@@ -223,7 +223,7 @@ export const InvoiceExcelSample: React.FC<Inv71LikeInvoiceProps> = ({
 
                 // Add @ symbol if width is 0 or null (เพลา/line shape)
                 if (item.width === 0 || item.width === null) {
-                  prefix += " @";
+                  prefix += " Ø";
                 }
 
                 // สร้างมิติ

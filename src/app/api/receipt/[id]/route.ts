@@ -87,9 +87,11 @@ function ThaiBaht(numberStr: string) {
 
 type ApiReceipt = {
   id: number;
-  invoiceNo: number;
   subtotal: number | null;
   grandTotal: number | null;
+  invoice: number | null;
+  dateCreateInvoice?: Date | null;
+  recentlyInvoice: number;
   deliveryDate: Date;
   credit: number;
   selesName: string | null;
@@ -97,6 +99,7 @@ type ApiReceipt = {
   vat: number;
   vatRate: number | null;
   totalTextThai: string;
+  
   customer: {
     id: number;
     name: string;
@@ -152,6 +155,7 @@ export async function GET(
         },
       },
     });
+
     if (!receipt) {
       return NextResponse.json({ error: "Receipt not found" }, { status: 404 });
     }
@@ -162,6 +166,15 @@ export async function GET(
         { status: 500 },
       );
     }
+
+    const invoice = await prisma.invoice.findUnique({
+      where: { codetoinvoice: receipt.OrderPO.codetoinvoice },
+      select: { invoiceNo: true, createdAt: true },
+    });
+    const latestInvoice = await prisma.invoice.findFirst({
+      orderBy: { invoiceNo: "desc" },
+      select: { invoiceNo: true },
+    });
     const customer = receipt.Customer;
     console.log("steel items:", receipt);
     const grandTotal = receipt.grandTotal ?? 0;
@@ -185,15 +198,17 @@ export async function GET(
 
     const apiReceipt: ApiReceipt = {
       id: receipt.id,
-      invoiceNo: receipt.invoiceNo,
       subtotal: receipt.subtotal,
       grandTotal: receipt.grandTotal,
       deliveryDate: receipt.deliveryDate,
+      invoice: invoice ? invoice.invoiceNo : null,
+      dateCreateInvoice: invoice ? invoice.createdAt : null,
       credit: receipt.credit,
       vat: receipt.vat,
       vatRate: receipt.vatRate,
       discount: receipt.discount ?? undefined,
       totalTextThai: ThaiBaht(grandTotal.toString()),
+      recentlyInvoice: latestInvoice?.invoiceNo ?? 0,
       selesName: receipt.salesName,
       customer: {
         id: customer.id,
