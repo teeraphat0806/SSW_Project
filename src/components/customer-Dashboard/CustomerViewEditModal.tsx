@@ -170,7 +170,9 @@ export default function CustomerViewEditModal({
       });
       setMode("view");
     } catch (e: any) {
-      toast.error(e.message || "เกิดข้อผิดพลาดในการโหลดข้อมูล");
+      toast.error(e.message || "เกิดข้อผิดพลาดในการโหลดข้อมูล", {
+        position: "bottom-right",
+      });
       setCustomer(null);
       //onClose();
     } finally {
