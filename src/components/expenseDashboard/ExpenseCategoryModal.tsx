@@ -70,9 +70,14 @@ const ExpenseCategoryModal = ({
 
       if (!staffId) {
         console.log("❌ No staffId found in session");
-        toast.error("ไม่พบข้อมูลพนักงาน กรุณา login ใหม่", {
-          position: "bottom-right",
-        });
+        console.log("Full session data:", JSON.stringify(session, null, 2));
+        toast.error(
+          "ไม่พบข้อมูลพนักงานในระบบ\nกรุณา logout แล้ว login ใหม่อีกครั้ง\nหากปัญหายังคงอยู่ กรุณาติดต่อผู้ดูแลระบบ",
+          {
+            position: "bottom-right",
+            autoClose: 7000,
+          },
+        );
         setIsSubmitting(false);
         return;
       }

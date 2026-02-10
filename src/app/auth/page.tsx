@@ -24,7 +24,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../../components/ui/select";
-import { Loader2, AlertCircle, CheckCircle } from "lucide-react";
+import { Loader2, AlertCircle, CheckCircle, Eye, EyeOff } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { ToastContainer, toast } from "react-toastify";
@@ -109,6 +109,8 @@ export default function Auth() {
 
   // Validation state
   const [showPasswordFeedback, setShowPasswordFeedback] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showSignupPassword, setShowSignupPassword] = useState(false);
 
   const backgroundStyle = useMemo(
     () => ({
@@ -118,7 +120,7 @@ export default function Auth() {
       backgroundPosition: "center",
       backgroundRepeat: "no-repeat",
     }),
-    []
+    [],
   );
 
   // Validation checks
@@ -220,7 +222,7 @@ export default function Auth() {
               : error?.message || "Something went wrong, please try again"),
           {
             position: "bottom-right",
-          }
+          },
         );
       } else {
         toast.success("สมัครสมาชิกสำเร็จ! กรุณาเข้าสู่ระบบ.", {
@@ -366,15 +368,28 @@ export default function Auth() {
                     <Label htmlFor="signin-password" className="text-slate-200">
                       Password
                     </Label>
-                    <Input
-                      id="signin-password"
-                      type="password"
-                      placeholder="รหัสผ่าน"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      required
-                      className="bg-slate-900/60 border-white/10 text-white placeholder:text-slate-500"
-                    />
+                    <div className="relative">
+                      <Input
+                        id="signin-password"
+                        type={showPassword ? "text" : "password"}
+                        placeholder="รหัสผ่าน"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        required
+                        className="bg-slate-900/60 border-white/10 text-white placeholder:text-slate-500 pr-10"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200 transition"
+                      >
+                        {showPassword ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
+                      </button>
+                    </div>
                     {!password && (
                       <p className="text-xs text-yellow-400 flex items-center gap-1">
                         <AlertCircle className="h-3 w-3" />
@@ -465,22 +480,37 @@ export default function Auth() {
                         >
                           รหัสผ่าน <span className="text-red-400">*</span>
                         </Label>
-                        <Input
-                          id="signup-password"
-                          type="password"
-                          placeholder="ตั้งรหัสผ่านที่มีความปลอดภัย"
-                          value={password}
-                          onChange={(e) => {
-                            setPassword(e.target.value);
-                            setShowPasswordFeedback(true);
-                          }}
-                          onBlur={() => setShowPasswordFeedback(false)}
-                          className={`bg-slate-900/60 border-white/10 text-white placeholder:text-slate-500 ${
-                            password && !passwordValid
-                              ? "border-red-500 border"
-                              : ""
-                          }`}
-                        />
+                        <div className="relative">
+                          <Input
+                            id="signup-password"
+                            type={showSignupPassword ? "text" : "password"}
+                            placeholder="ตั้งรหัสผ่านที่มีความปลอดภัย"
+                            value={password}
+                            onChange={(e) => {
+                              setPassword(e.target.value);
+                              setShowPasswordFeedback(true);
+                            }}
+                            onBlur={() => setShowPasswordFeedback(false)}
+                            className={`bg-slate-900/60 border-white/10 text-white placeholder:text-slate-500 pr-10 ${
+                              password && !passwordValid
+                                ? "border-red-500 border"
+                                : ""
+                            }`}
+                          />
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setShowSignupPassword(!showSignupPassword)
+                            }
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200 transition"
+                          >
+                            {showSignupPassword ? (
+                              <EyeOff className="h-4 w-4" />
+                            ) : (
+                              <Eye className="h-4 w-4" />
+                            )}
+                          </button>
+                        </div>
 
                         {showPasswordFeedback && password && (
                           <div className="mt-2 p-2 bg-slate-800/50 rounded text-xs space-y-1">
@@ -573,8 +603,8 @@ export default function Auth() {
                                       ? passwordStrength <= 2
                                         ? "bg-red-500"
                                         : passwordStrength <= 3
-                                        ? "bg-yellow-500"
-                                        : "bg-green-500"
+                                          ? "bg-yellow-500"
+                                          : "bg-green-500"
                                       : "bg-slate-600"
                                   }`}
                                 />

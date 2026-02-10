@@ -1,14 +1,22 @@
 "use client";
-import React from "react";
-import { Search, Trash2, Loader2, AlertCircle } from "lucide-react";
+import React, { useState } from "react";
+import { Search, Trash2, Loader2, AlertCircle, Edit2 } from "lucide-react";
 import { useExpenseContext } from "@/contexts/ExpenseContext";
 import { useConfirm } from "@/components/providers/confirm-dialog-provider";
 import { toast } from "react-toastify";
+import EditExpenseModal from "./EditExpenseModal";
 
 const ExpenseTable = () => {
   const { expenses, pagination, isLoading, error, refreshExpenses } =
     useExpenseContext();
   const confirm = useConfirm();
+  const [selectedExpense, setSelectedExpense] = useState<any>(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+
+  const handleEdit = (expense: any) => {
+    setSelectedExpense(expense);
+    setIsEditModalOpen(true);
+  };
 
   // ฟังก์ชันฟอร์แมตวันที่
   const formatDate = (dateString: string) => {
@@ -205,18 +213,27 @@ const ExpenseTable = () => {
                     </td>
 
                     <td className="p-4 text-center">
-                      <button
-                        className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition"
-                        title="ลบ"
-                        onClick={() =>
-                          handleDelete({
-                            expenseId: item.id,
-                            description: item.description,
-                          })
-                        }
-                      >
-                        <Trash2 className="w-5 h-5" />
-                      </button>
+                      <div className="flex items-center justify-center gap-2">
+                        <button
+                          className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition"
+                          title="แก้ไข"
+                          onClick={() => handleEdit(item)}
+                        >
+                          <Edit2 className="w-5 h-5" />
+                        </button>
+                        <button
+                          className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition"
+                          title="ลบ"
+                          onClick={() =>
+                            handleDelete({
+                              expenseId: item.id,
+                              description: item.description,
+                            })
+                          }
+                        >
+                          <Trash2 className="w-5 h-5" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 );
@@ -231,6 +248,16 @@ const ExpenseTable = () => {
           </div>
         )}
       </div>
+
+      {/* Edit Expense Modal */}
+      <EditExpenseModal
+        open={isEditModalOpen}
+        onClose={() => {
+          setIsEditModalOpen(false);
+          setSelectedExpense(null);
+        }}
+        expense={selectedExpense}
+      />
     </div>
   );
 };

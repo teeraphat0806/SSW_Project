@@ -18,7 +18,19 @@ export async function proxy(request: NextRequest) {
       allowedRoles: ["superadmin", "clerk", "supervisor"],
     },
     {
+      prefix: "/steel-Dashboard",
+      allowedRoles: ["superadmin", "clerk", "supervisor"],
+    },
+    {
+      prefix: "/customer-Dashboard",
+      allowedRoles: ["superadmin", "clerk", "supervisor"],
+    },
+    {
       prefix: "/saledashboard2",
+      allowedRoles: ["superadmin", "clerk", "supervisor"],
+    },
+    {
+      prefix: "/expenseDashboard",
       allowedRoles: ["superadmin", "clerk", "supervisor"],
     },
     { prefix: "/payroll", allowedRoles: ["superadmin", "clerk", "supervisor"] },

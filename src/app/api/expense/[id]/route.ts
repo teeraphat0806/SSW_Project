@@ -47,19 +47,26 @@ export async function PATCH(
     return NextResponse.json({ error: "Invalid expense id" }, { status: 400 });
   }
   const body = await req.json();
+  console.log("📥 PATCH /api/expense/[id] - Received body:", body);
+
   const parsed = ExpenseSchema.partial().safeParse(body);
   if (!parsed.success) {
+    console.log("❌ Validation failed:", parsed.error);
     return NextResponse.json(
       { error: "Invalid expense data" },
       { status: 400 },
     );
   }
+
+  console.log("✅ Validation passed. Updating with data:", parsed.data);
+
   try {
     const updatedExpense = await prisma.expense.update({
       where: { id: Number(expenseId) },
       data: parsed.data,
     });
 
+    console.log("✅ Expense updated successfully:", updatedExpense);
     return NextResponse.json({ expense: updatedExpense }, { status: 200 });
   } catch (error) {
     console.error("Error updating expense:", error);
