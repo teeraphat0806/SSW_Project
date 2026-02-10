@@ -222,16 +222,27 @@ export async function GET(req: NextRequest) {
             address: true,
           },
         },
+        OrderPO: {
+          select: {
+            codetoinvoice: true,
+          },
+        },
       },
       orderBy: {
         createdAt: "desc",
       },
     });
+
+    const invoiceNumber = await prisma.invoice.findFirst({
+      where: {codetoinvoice: bills[0]?.OrderPO?.codetoinvoice},
+      select: { invoiceNo: true },
+    })
+    
     // Format the data
     const formattedBills = bills.map((bill) => ({
       id: bill.id,
       createdAt: bill.createdAt?.toISOString() || null,
-      invoiceNo: bill.invoiceNo || "",
+      invoiceNo:invoiceNumber?.invoiceNo || null,
       customerName: bill.Customer?.name || "ไม่ระบุ",
       customerAddress: bill.Customer?.address || "",
       grandTotal: bill.grandTotal || 0,

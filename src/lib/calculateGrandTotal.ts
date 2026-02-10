@@ -86,11 +86,11 @@ export function calculateWeightDetails(steel: SteelItem): WeightDetails {
         isManual: false,
       };
     }
-    weightPerPieceKg = (width * width * length * density * 0.14) / 4;
+    weightPerPieceKg = (thickness * width * width * density * 3.14) / 4;
   } else if (steel.shape === "square") {
     weightPerPieceKg = thickness * width * length * density;
   } else {
-    weightPerPieceKg = (thickness * length * length * density * 0.14) / 4;
+    weightPerPieceKg = (thickness * thickness * length * density * 3.14) / 4;
   }
 
   return {

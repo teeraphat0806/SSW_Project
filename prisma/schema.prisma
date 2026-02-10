@@ -64,7 +64,6 @@ model Customer {
 model Bill {
   id                            Int       @id @default(autoincrement())
   customerId                    Int
-  invoiceNo                     Int       @unique @default(autoincrement())
   codeCustomer                  String    @unique
   deliveryDate                  DateTime
   deliveryOrderNo               String?
@@ -95,6 +94,7 @@ model Bill {
 model OrderPO {
   id          Int            @id @default(autoincrement())
   poNumber    String?
+  codetoinvoice   Int        @unique @default(autoincrement())
   customerId  Int?
   billId      Int?           @unique
   status      JobStatus      @default(pending)
@@ -113,6 +113,13 @@ model OrderPO {
   @@index([customerId, status])
   @@index([billId])
   @@index([customerId])
+}
+
+model Invoice{
+  id                Int  @id @default(autoincrement())
+  codetoinvoice     Int  @unique
+  invoiceNo         Int  @default(autoincrement())
+  createdAt         DateTime  @default(now())
 }
 
 model OrderPOStaff {

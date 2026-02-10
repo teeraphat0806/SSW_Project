@@ -211,6 +211,7 @@ export async function GET(req: NextRequest) {
       include: {
         Customer: true,
         OrderPO: {
+          select: { codetoinvoice: true },
           include: {
             Product: true,
           },
@@ -219,6 +220,11 @@ export async function GET(req: NextRequest) {
       orderBy: orderByClause,
       skip,
       take: limit,
+    });
+
+    const invoiceNumber = await prisma.invoice.findUnique({
+      where: { codetoinvoice: bills[0]?.OrderPO?.codetoinvoice },
+      select: { invoiceNo: true },
     });
 
     // Calculate totals for meta
@@ -256,7 +262,7 @@ export async function GET(req: NextRequest) {
         vat: bill.vat || 0,
         quantity,
         billId: bill.id,
-        invoiceNo: bill.invoiceNo ? `INV-${bill.invoiceNo}` : null,
+        invoiceNo: invoiceNumber?.invoiceNo || null,
         formatted: {
           date: date.toLocaleDateString("th-TH", {
             day: "2-digit",
