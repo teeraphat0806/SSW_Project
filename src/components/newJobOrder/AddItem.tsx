@@ -397,7 +397,7 @@ export default function AddItem({
                           {/* Thickness */}
                           <div>
                             <label className="mb-1.5 block text-center text-xs font-medium text-zinc-500 dark:text-zinc-400">
-                              {isLine ? "หนา/กลม" : "หนา"}
+                              {isLine ? "กลม" : "หนา"}
                             </label>
                             <div className="relative">
                               <Input
