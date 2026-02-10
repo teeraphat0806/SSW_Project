@@ -277,7 +277,7 @@ export function CompletionTab({
               )}
 
               {!isConfirming && jobOrder.status !== "shipped" && (
-                <p className="text-sm text-center text-red-500 bg-white/50 p-1 rounded">
+                <p className="text-sm text-center text-red-500  p-1 rounded">
                   * ต้องเปลี่ยนสถานะเป็นกำลังจัดส่งก่อน จึงจะสามารถปิดงานได้
                 </p>
               )}

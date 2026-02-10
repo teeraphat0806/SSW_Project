@@ -47,6 +47,8 @@ type SteelFromDB = {
 };
 
 const round2 = (n: number) => Math.round(n * 100) / 100;
+const steelKey = (codeSteel: string, shape: ShapeSteel) =>
+  `${codeSteel}::${shape}`;
 export async function POST(req: NextRequest) {
   const authResult = await requireAuth([
     "superadmin",
@@ -77,18 +79,32 @@ export async function POST(req: NextRequest) {
     const data: CreateNewOrderInput = parsed.data;
     const po: OrderPOInput = data.orderPO;
 
-    //  ดึง codeSteel ทั้งหมดที่เกี่ยวข้อง
-    const allCodes = Array.from(
+    //  ดึงคู่ codeSteel + shape ทั้งหมดที่เกี่ยวข้อง
+    const requestedSteels = Array.from(
       new Set(
         po.products.map((product: ProductInput) =>
-          String(product.steelType).trim(),
+          steelKey(
+            String(product.steelType).trim(),
+            product.shape as unknown as ShapeSteel,
+          ),
         ),
       ),
-    );
+    ).map((k) => {
+      const [codeSteel, shape] = k.split("::");
+      return {
+        codeSteel: codeSteel ?? "",
+        shape: (shape ?? "square") as ShapeSteel,
+      };
+    });
 
     const newBill = await prisma.$transaction(async (tx) => {
       const steelTypes = await tx.steelType.findMany({
-        where: { codeSteel: { in: allCodes } },
+        where: {
+          OR: requestedSteels.map(({ codeSteel, shape }) => ({
+            codeSteel,
+            shape,
+          })),
+        },
         select: {
           id: true,
           codeSteel: true,
@@ -99,18 +115,27 @@ export async function POST(req: NextRequest) {
       });
 
       const mapSteel = new Map<string, SteelFromDB>(
-        steelTypes.map((s) => [s.codeSteel, s]),
+        steelTypes.map((s) => [
+          steelKey(s.codeSteel, s.shape as unknown as ShapeSteel),
+          s,
+        ]),
       );
 
-      const missing = allCodes.filter((c) => !mapSteel.has(c));
+      const missing = requestedSteels.filter(
+        ({ codeSteel, shape }) => !mapSteel.has(steelKey(codeSteel, shape)),
+      );
       if (missing.length)
-        throw new Error(`SteelType not found: ${missing.join(", ")}`);
+        throw new Error(
+          `SteelType not found: ${missing
+            .map(({ codeSteel, shape }) => `${codeSteel} (${shape})`)
+            .join(", ")}`,
+        );
 
       // เตรียมข้อมูล
       const computed = po.products.map((product: ProductInput) => {
         const code = String(product.steelType).trim();
-        const steel = mapSteel.get(code)!;
-        const shape = steel.shape as unknown as ShapeSteel;
+        const shape = product.shape as unknown as ShapeSteel;
+        const steel = mapSteel.get(steelKey(code, shape))!;
 
         const steelline = calculateWeightDetails({
           shape,

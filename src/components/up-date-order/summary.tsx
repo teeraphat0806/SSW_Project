@@ -3,6 +3,7 @@ import { Boxes, Calculator, ListChecks } from "lucide-react";
 
 type SteelItem = {
   steelType: string;
+  shape: "square" | "line";
   amount: number;
   weight?: number | null;
 };
@@ -54,7 +55,10 @@ export default function Summary<T extends JobWithSteel>({
 
       for (const it of steel) {
         const type = (it.steelType || "").trim();
-        if (type) typeSet.add(type);
+        const shape = it.shape === "line" ? "line" : "square";
+        const shapeLabel = shape === "line" ? "เพลา" : "แผ่น";
+        const key = `${type || "-"} (${shapeLabel})`;
+        if (type) typeSet.add(`${type}::${shape}`);
 
         const qty = Number(it.amount || 0);
         totalQty += qty;
@@ -64,11 +68,11 @@ export default function Summary<T extends JobWithSteel>({
 
         if (weightEnabled) totalWeight += wSum;
 
-        if (!summaryByType[type || "-"]) {
-          summaryByType[type || "-"] = { qty: 0, weight: 0 };
+        if (!summaryByType[key]) {
+          summaryByType[key] = { qty: 0, weight: 0 };
         }
-        summaryByType[type || "-"].qty += qty;
-        summaryByType[type || "-"].weight += wSum;
+        summaryByType[key].qty += qty;
+        summaryByType[key].weight += wSum;
       }
 
       return {

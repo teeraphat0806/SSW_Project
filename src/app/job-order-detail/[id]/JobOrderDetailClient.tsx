@@ -255,7 +255,7 @@ const JobOrderDetailPage = ({ id }: { id: string }) => {
       const hasInvalidWeight = jobOrder.steel.some(
         (s) => s.isPerAmount === false && (!s.weight || s.weight <= 0),
       );
-      if (!hasInvalidWeight) {
+      if (hasInvalidWeight) {
         toast.error(
           "ยังไปขั้นตอนถัดไปไม่ได้: ต้องกรอกน้ำหนักเหล็กก่อน แล้วจึงเปลี่ยนเป็น READY ได้",
           {

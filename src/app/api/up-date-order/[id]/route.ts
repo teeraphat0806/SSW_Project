@@ -146,6 +146,7 @@ const StatusSchema = z.enum([
 
 const SteelLineSchema = z.object({
   codeSteel: z.string().trim().min(1),
+  shape: z.enum(["square", "line"]),
   amount: z.number().int().min(1),
   width: z.number().nonnegative().nullable().optional(),
   length: z.number().nonnegative(),
@@ -160,6 +161,9 @@ const SteelLineSchema = z.object({
   isServices: z.boolean().optional(),
   isPerAmount: z.boolean().optional(),
 });
+
+const steelKey = (codeSteel: string, shape: ShapeSteel) =>
+  `${codeSteel}::${shape}`;
 
 const PatchSchema = z.object({
   status: StatusSchema.optional(),
@@ -274,13 +278,24 @@ export async function PATCH(
 
       // update steel
       if (patch.steel) {
-        const codes = Array.from(
+        const requestedSteels = Array.from(
           new Set(
             patch.steel
-              .map((l) => l.codeSteel?.trim())
-              .filter((x): x is string => !!x),
+              .map((l) =>
+                steelKey(
+                  l.codeSteel.trim(),
+                  (l.shape ?? "square") as ShapeSteel,
+                ),
+              )
+              .filter(Boolean),
           ),
-        );
+        ).map((k) => {
+          const [codeSteel, shape] = k.split("::");
+          return {
+            codeSteel: codeSteel ?? "",
+            shape: (shape ?? "square") as ShapeSteel,
+          };
+        });
 
         if (patch.steel.length === 0) {
           throw new Error("ต้องมีรายการเหล็กอย่างน้อย 1 รายการ");
@@ -289,7 +304,12 @@ export async function PATCH(
           throw new Error("เพิ่มสินค้าได้ไม่เกิน 15 รายการ");
         }
         const steelTypes = await tx.steelType.findMany({
-          where: { codeSteel: { in: codes } },
+          where: {
+            OR: requestedSteels.map(({ codeSteel, shape }) => ({
+              codeSteel,
+              shape,
+            })),
+          },
           select: {
             id: true,
             codeSteel: true,
@@ -299,12 +319,22 @@ export async function PATCH(
           },
         });
 
-        const codeToSteel = new Map<string, (typeof steelTypes)[0]>(
-          steelTypes.map((s) => [s.codeSteel, s]),
+        const codeShapeToSteel = new Map<string, (typeof steelTypes)[0]>(
+          steelTypes.map((s) => [
+            steelKey(s.codeSteel, s.shape as unknown as ShapeSteel),
+            s,
+          ]),
         );
-        const missing = codes.filter((c) => !codeToSteel.has(c));
+        const missing = requestedSteels.filter(
+          ({ codeSteel, shape }) =>
+            !codeShapeToSteel.has(steelKey(codeSteel, shape)),
+        );
         if (missing.length)
-          throw new Error(`SteelType not found: ${missing.join(", ")}`);
+          throw new Error(
+            `SteelType not found: ${missing
+              .map(({ codeSteel, shape }) => `${codeSteel} (${shape})`)
+              .join(", ")}`,
+          );
         await tx.product.deleteMany({ where: { orderPOId: poId } });
 
         // สร้างใหม่รายการเหล็กทั้งหมด
@@ -312,7 +342,9 @@ export async function PATCH(
           // l คือ line item ที่ส่งมาใน patch
           data: patch.steel.map((l) => {
             //st คือ steelType จาก database
-            const st = codeToSteel.get(l.codeSteel.trim())!;
+            const code = l.codeSteel.trim();
+            const shape = (l.shape ?? "square") as ShapeSteel;
+            const st = codeShapeToSteel.get(steelKey(code, shape))!;
 
             const { total } = calculateWeightDetails({
               shape: st.shape as ShapeSteel,

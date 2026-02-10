@@ -18,6 +18,7 @@ export const CreateNewOrderSchema = z.object({
       .array(
         z.object({
           steelType: z.string(),
+          shape: z.enum(["square", "line"]),
           wide: z.number().nullable(),
           length: z.number(),
           thickness: z.number(),

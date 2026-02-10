@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import {
   Search,
@@ -15,6 +15,7 @@ import {
   CheckCircle,
   Clock,
   Package,
+  X,
 } from "lucide-react";
 import { date } from "zod";
 
@@ -79,6 +80,7 @@ const toThaiStatus = (s: JobStatus): string => {
 };
 
 export default function Dashboard() {
+  const didInitFilterEffect = useRef(false);
   const [loading, setLoading] = useState(false);
   const [orders, setOrders] = useState<Order[]>([]);
 
@@ -100,6 +102,7 @@ export default function Dashboard() {
 
   // filters
   const [searchTerm, setSearchTerm] = useState("");
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
@@ -116,7 +119,7 @@ export default function Dashboard() {
     try {
       const params = new URLSearchParams();
 
-      const q = searchTerm.trim();
+      const q = debouncedSearchTerm.trim();
       if (q) params.set("q", q);
 
       if (statusFilter) params.set("status", statusFilter);
@@ -161,9 +164,29 @@ export default function Dashboard() {
 
   // เปลี่ยน filter → กลับไปหน้า 1 (แล้วค่อยให้ effect ของ page ยิง fetch)
   useEffect(() => {
-    setPagination((p) => ({ ...p, page: 1 }));
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 350);
+
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  useEffect(() => {
+    if (!didInitFilterEffect.current) {
+      didInitFilterEffect.current = true;
+      return;
+    }
+
+    setPagination((p) => {
+      if (p.page !== 1) return { ...p, page: 1 };
+      return p;
+    });
+
+    if (pagination.page === 1) {
+      fetchOrders(1);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [statusFilter, dateFrom, dateTo]);
+  }, [debouncedSearchTerm, statusFilter, dateFrom, dateTo]);
 
   // โหลดข้อมูลเมื่อ page เปลี่ยน (รวมถึงรอบแรก)
   useEffect(() => {
@@ -316,16 +339,10 @@ export default function Dashboard() {
               />
               <input
                 type="text"
-                placeholder="ชื่อลูกค้า, เลข PO... (กด Enter)"
+                placeholder="ชื่อลูกค้า, เลข PO... "
                 className="w-full pl-10 pr-4 py-2.5 bg-zinc-50 dark:bg-zinc-950/50 border border-zinc-200 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    setPagination((p) => ({ ...p, page: 1 }));
-                    fetchOrders(1);
-                  }
-                }}
               />
             </div>
           </div>
@@ -398,13 +415,18 @@ export default function Dashboard() {
 
             <button
               onClick={() => {
+                setSearchTerm("");
+                setDebouncedSearchTerm("");
+                setStatusFilter("");
+                setDateFrom("");
+                setDateTo("");
                 setPagination((p) => ({ ...p, page: 1 }));
-                fetchOrders(1);
               }}
-              className="mb-[1px] p-2.5 rounded-xl border border-zinc-200 dark:border-zinc-700 text-zinc-500 hover:text-blue-600 dark:text-zinc-400 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all active:scale-95 flex-shrink-0"
-              title="Refresh"
+              className="h-10 self-end px-3.5 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-950/50 text-red-500 hover:text-red-600 dark:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all active:scale-95 inline-flex shrink-0 items-center justify-center gap-1.5 text-sm font-medium whitespace-nowrap"
+              title="ล้างตัวกรอง"
             >
-              <RefreshCw size={20} className={loading ? "animate-spin" : ""} />
+              <X size={16} />
+              <span>ล้าง</span>
             </button>
           </div>
         </div>

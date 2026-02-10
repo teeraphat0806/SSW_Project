@@ -301,6 +301,10 @@ export default function AddItem({
         <div className="space-y-3">
           {steelItems.map((item, idx) => {
             const isLine = item.shape === "line";
+            const selectedType = steelTypes.find(
+              (t) => t.name === item.steelType && t.shape === item.shape,
+            );
+            const selectedValue = selectedType ? String(selectedType.id) : "";
             return (
               <div key={item.id} className="group relative">
                 <div className="absolute -left-2 top-4 z-10 hidden h-6 w-6 items-center justify-center rounded-full bg-zinc-800 text-sm font-bold text-white shadow-sm dark:bg-blue-600 lg:flex">
@@ -317,10 +321,10 @@ export default function AddItem({
                           ประเภทเหล็ก
                         </label>
                         <Select
-                          value={item.steelType || ""}
+                          value={selectedValue}
                           onValueChange={(value) => {
                             const selected = steelTypes.find(
-                              (t) => t.name === value,
+                              (t) => String(t.id) === value,
                             );
                             if (selected) {
                               updateSteelItem(
@@ -357,7 +361,10 @@ export default function AddItem({
                               </div>
                             ) : (
                               steelTypes.map((type) => (
-                                <SelectItem key={type.id} value={type.name}>
+                                <SelectItem
+                                  key={type.id}
+                                  value={String(type.id)}
+                                >
                                   <span className="font-medium">
                                     {type.name}
                                   </span>
@@ -368,6 +375,11 @@ export default function AddItem({
                                         ? "(เพลา)"
                                         : ""}
                                   </span>
+                                  {/* {type.shape === "line" && (
+                                    <span className="ml-2 text-xs text-muted-foreground">
+                                      Ø
+                                    </span>
+                                  )} */}
                                 </SelectItem>
                               ))
                             )}
