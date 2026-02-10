@@ -41,7 +41,7 @@ export const authOptions = {
 
         const isValid = await bcrypt.compare(
           credentials.password,
-          user.password
+          user.password,
         );
 
         if (!isValid) {
@@ -85,7 +85,7 @@ export const authOptions = {
         (token as any).id = u.id;
         (token as any).role = u.role;
 
-        // Fetch full user data including image
+        // Fetch full user data including image and staff
         const userId = typeof u.id === "string" ? parseInt(u.id) : u.id;
         const fullUser = await prisma.user.findUnique({
           where: { id: userId },
@@ -95,6 +95,13 @@ export const authOptions = {
             email: true,
             image: true,
             role: true,
+            staff: {
+              select: {
+                id: true,
+                position: true,
+                code: true,
+              },
+            },
           },
         });
 
@@ -103,6 +110,7 @@ export const authOptions = {
           token.email = fullUser.email;
           token.picture = fullUser.image;
           (token as any).role = fullUser.role;
+          (token as any).staff = fullUser.staff;
         }
       }
 
@@ -118,6 +126,13 @@ export const authOptions = {
               email: true,
               image: true,
               role: true,
+              staff: {
+                select: {
+                  id: true,
+                  position: true,
+                  code: true,
+                },
+              },
             },
           });
           if (freshUser) {
@@ -125,6 +140,7 @@ export const authOptions = {
             token.email = freshUser.email;
             token.picture = freshUser.image;
             (token as any).role = freshUser.role;
+            (token as any).staff = freshUser.staff;
           }
         }
       }
@@ -151,6 +167,7 @@ export const authOptions = {
           name: token.name,
           email: token.email,
           image: token.picture, // image is stored in token.picture
+          staff: (token as any).staff,
         },
       };
     },
