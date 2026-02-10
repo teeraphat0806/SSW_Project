@@ -365,22 +365,21 @@ export default function AddItem({
                                   key={type.id}
                                   value={String(type.id)}
                                 >
-                                  {/* <span className="ml-2 text-xs text-muted-foreground">
-                                    {type.shape === "square"
-                                      ? "(แผ่น)"
-                                      : type.shape === "line"
-                                        ? "Ø"
-                                        : ""}
-                                  </span> */}
-
                                   <span className="font-medium">
                                     {type.name}
                                   </span>
-                                  {type.shape === "line" && (
+                                  <span className="ml-2 text-xs text-muted-foreground">
+                                    {type.shape === "square"
+                                      ? "(แผ่น)"
+                                      : type.shape === "line"
+                                        ? "(เพลา)"
+                                        : ""}
+                                  </span>
+                                  {/* {type.shape === "line" && (
                                     <span className="ml-2 text-xs text-muted-foreground">
                                       Ø
                                     </span>
-                                  )}
+                                  )} */}
                                 </SelectItem>
                               ))
                             )}
