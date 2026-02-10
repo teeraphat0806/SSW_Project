@@ -10,7 +10,7 @@ export async function GET(
   context: { params: Promise<{ id: string }> },
 ) {
   const { id } = await context.params;
-  const authResult = await requireAuth(["superadmin", "clerk"]);
+  const authResult = await requireAuth(["superadmin", "clerk", "superadmin"]);
 
   if ("response" in authResult) {
     return authResult.response;
