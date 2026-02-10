@@ -8,5 +8,5 @@ export const ExpenseSchema = z.object({
     .int()
     .positive("Category ID must be a positive integer")
     .optional(),
-  receiptURL: z.string().optional(),
+  receiptUrl: z.string().optional(),
 });

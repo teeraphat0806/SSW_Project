@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import { X, DollarSign, FileText, Calendar, Plus } from "lucide-react";
+import { X, DollarSign, FileText, Calendar, Plus, Upload } from "lucide-react";
 import { useExpenseContext, ExpenseCategory } from "@/contexts/ExpenseContext";
 import { toast } from "react-toastify";
 import ExpenseCategoryModal from "./ExpenseCategoryModal";
@@ -14,6 +14,8 @@ const AddExpenseModal = ({ open, onClose }: AddExpenseModalProps) => {
   const { categories, refreshExpenses } = useExpenseContext();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showCategoryModal, setShowCategoryModal] = useState(false);
+  const [receiptFile, setReceiptFile] = useState<File | null>(null);
+  const [uploadProgress, setUploadProgress] = useState(false);
 
   const [formData, setFormData] = useState({
     description: "",
@@ -35,6 +37,33 @@ const AddExpenseModal = ({ open, onClose }: AddExpenseModalProps) => {
         return;
       }
 
+      let receiptKey = null;
+
+      // Upload receipt image if selected
+      if (receiptFile) {
+        setUploadProgress(true);
+        const uploadFormData = new FormData();
+        uploadFormData.append("file", receiptFile);
+
+        const uploadResponse = await fetch("/api/upload/expense", {
+          method: "POST",
+          body: uploadFormData,
+        });
+
+        if (uploadResponse.ok) {
+          const uploadResult = await uploadResponse.json();
+          receiptKey = uploadResult.key;
+        } else {
+          toast.error("ไม่สามารถอัพโหลดรูปภาพได้", {
+            position: "bottom-right",
+          });
+          setIsSubmitting(false);
+          setUploadProgress(false);
+          return;
+        }
+        setUploadProgress(false);
+      }
+
       const response = await fetch("/api/expense", {
         method: "POST",
         headers: {
@@ -45,7 +74,7 @@ const AddExpenseModal = ({ open, onClose }: AddExpenseModalProps) => {
           amount: parseFloat(formData.amount),
           expenseDate: formData.expenseDate,
           categoryId: parseInt(formData.categoryId),
-          receiptUrl: formData.receiptUrl || null,
+          receiptUrl: receiptKey ? `/api/upload/expense/${receiptKey}` : null,
         }),
       });
 
@@ -77,6 +106,7 @@ const AddExpenseModal = ({ open, onClose }: AddExpenseModalProps) => {
       categoryId: "",
       receiptUrl: "",
     });
+    setReceiptFile(null);
     onClose();
   };
 
@@ -199,20 +229,28 @@ const AddExpenseModal = ({ open, onClose }: AddExpenseModalProps) => {
               </div>
             </div>
 
-            {/* URL ใบเสร็จ (ไม่บังคับ) */}
+            {/* อัพโหลดรูปภาพใบเสร็จ (ไม่บังคับ) */}
             <div>
               <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-zinc-300">
-                URL ใบเสร็จ (ไม่บังคับ)
+                <Upload className="w-4 h-4 inline mr-1" />
+                อัพโหลดรูปภาพใบเสร็จ (ไม่บังคับ)
               </label>
               <input
-                type="url"
-                value={formData.receiptUrl}
-                onChange={(e) =>
-                  setFormData({ ...formData, receiptUrl: e.target.value })
-                }
-                placeholder="https://example.com/receipt.pdf"
-                className="w-full px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-zinc-950/60 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-colors text-sm"
+                type="file"
+                accept="image/*"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    setReceiptFile(file);
+                  }
+                }}
+                className="w-full px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-zinc-950/60 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-colors text-sm file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 dark:file:bg-blue-900/20 dark:file:text-blue-400"
               />
+              {receiptFile && (
+                <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+                  ไฟล์ที่เลือก: {receiptFile.name}
+                </p>
+              )}
             </div>
 
             {/* Buttons */}
@@ -230,7 +268,11 @@ const AddExpenseModal = ({ open, onClose }: AddExpenseModalProps) => {
                 disabled={isSubmitting}
                 className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isSubmitting ? "กำลังบันทึก..." : "บันทึก"}
+                {uploadProgress
+                  ? "กำลังอัพโหลดรูปภาพ..."
+                  : isSubmitting
+                    ? "กำลังบันทึก..."
+                    : "บันทึก"}
               </button>
             </div>
           </form>
