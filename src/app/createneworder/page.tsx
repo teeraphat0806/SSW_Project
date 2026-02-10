@@ -383,6 +383,7 @@ const NewJobOrder = () => {
 
           products: steelItems.map((item) => ({
             steelType: item.steelType,
+            shape: item.shape,
             wide: item.width ?? null,
             length: item.length,
             thickness: item.thickness,

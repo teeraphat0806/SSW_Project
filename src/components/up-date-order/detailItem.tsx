@@ -68,6 +68,7 @@ type SteelItem = {
 
 type SteelOption = {
   value: string;
+  codeSteel: string;
   label: string;
   price: number;
   amount: number;
@@ -102,11 +103,13 @@ const fmtKg = (n: number) =>
 
 function SteelSearchSelect({
   value,
+  fallbackLabel,
   onChange,
   options,
   disabled,
 }: {
   value: string;
+  fallbackLabel?: string;
   onChange: (v: string) => void;
   options: SteelOption[];
   disabled?: boolean;
@@ -116,8 +119,8 @@ function SteelSearchSelect({
   const selectedOpt = options.find((o) => o.value === value);
   const selectedLabel = selectedOpt
     ? `${selectedOpt.label} (${shapeText(selectedOpt.shape)})`
-    : value
-      ? value
+    : fallbackLabel
+      ? fallbackLabel
       : "เลือกชนิด";
 
   return (
@@ -380,6 +383,9 @@ export default function DetailItem<T extends JobWithSteel>({
         {(job.steel ?? []).map((item, idx) => {
           const isLine = item.shape === "line";
           const isManualPrice = Boolean(item.manualPrice);
+          const selectedSteelOption = steelOptions.find(
+            (o) => o.codeSteel === item.steelType && o.shape === item.shape,
+          );
 
           return (
             <div key={`${job.id}-${idx}`} className="group relative">
@@ -400,14 +406,13 @@ export default function DetailItem<T extends JobWithSteel>({
                       </label>
 
                       <SteelSearchSelect
-                        value={item.steelType}
+                        value={selectedSteelOption?.value ?? ""}
+                        fallbackLabel={item.steelType}
                         onChange={(v) => {
-                          // หา option ที่เลือก
                           const opt = steelOptions.find((o) => o.value === v);
 
-                          // ทำให้ค่าเริ่มต้นถูกต้อง
                           patchSteelItem(idx, {
-                            steelType: v,
+                            steelType: opt?.codeSteel ?? item.steelType,
                             shape: opt?.shape ?? item.shape ?? "square",
                             width:
                               (opt?.shape ?? item.shape) === "line"

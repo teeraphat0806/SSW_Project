@@ -51,9 +51,12 @@ export default function SelectCustomer({
           variant="outline"
           role="combobox"
           aria-expanded={open}
-          className=" w-[200px] justify-between "
+          className="w-[200px] justify-between overflow-hidden"
+          title={selectedCustomer ? selectedCustomer.name : "เลือกบริษัทลูกค้า"}
         >
-          {selectedCustomer ? selectedCustomer.name : "เลือกบริษัทลูกค้า"}
+          <span className="block w-full truncate text-left">
+            {selectedCustomer ? selectedCustomer.name : "เลือกบริษัทลูกค้า"}
+          </span>
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-[200px] p-0">

@@ -159,6 +159,7 @@ const STATUS_ICONS: Record<OrderStatus, React.ReactNode> = {
 
 type SteelOption = {
   value: string;
+  codeSteel: string;
   label: string;
   amount: number;
   price: number;
@@ -173,26 +174,32 @@ type SteelStockApiItem = {
   shape: ShapeSteel;
 };
 
+const steelKey = (codeSteel: string, shape: ShapeSteel) =>
+  `${codeSteel}::${shape}`;
+
 function mergeOrderSteelIntoOptions(
   options: SteelOption[],
   job: Joborder | null,
 ): SteelOption[] {
   if (!job?.steel?.length) return options;
 
-  const map = new Map(options.map((o) => [o.value, o]));
+  const map = new Map(options.map((o) => [steelKey(o.codeSteel, o.shape), o]));
 
   for (const s of job.steel) {
     const code = s.steelType?.trim();
+    const shape = s.shape ?? "square";
     if (!code) continue;
+    const key = steelKey(code, shape);
 
     // ถ้าไม่มีใน options ให้เติมเข้าไป (amount=0) เพื่อให้ Select แสดงได้
-    if (!map.has(code)) {
-      map.set(code, {
-        value: code,
+    if (!map.has(key)) {
+      map.set(key, {
+        value: key,
+        codeSteel: code,
         label: code,
         amount: 0,
         price: 0,
-        shape: "square",
+        shape,
       });
     }
   }
@@ -226,6 +233,7 @@ type PatchPayload = {
   credit: number;
   steel?: {
     codeSteel: string;
+    shape: ShapeSteel;
     amount: number;
     width?: number | null;
     length: number;
@@ -251,6 +259,7 @@ function buildPatchPayload(job: Joborder): PatchPayload {
     credit: job.credit,
     steel: job.steel.map((l) => ({
       codeSteel: l.steelType?.trim(),
+      shape: l.shape,
       amount: Number(l.amount),
       width: l.width ?? null,
       length: Number(l.length),
@@ -318,7 +327,8 @@ const UpdateOrderPage = ({ id }: { id: string }) => {
       if (cancelledRef?.()) return;
 
       const options: SteelOption[] = data.map((x) => ({
-        value: x.codeSteel,
+        value: steelKey(x.codeSteel, x.shape),
+        codeSteel: x.codeSteel,
         label: x.codeSteel,
         price: x.price,
         amount: x.amount ?? 0,
