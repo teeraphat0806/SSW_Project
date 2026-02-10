@@ -540,7 +540,9 @@ const UpdateOrderPage = ({ id }: { id: string }) => {
 
   // ✅ คำนวณจาก job.steel โดยตรง
   const itemCount = job.steel.length;
-  const uniqueTypeCount = new Set(job.steel.map((i) => i.steelType)).size;
+  const uniqueTypeCount = new Set(
+    job.steel.map((i) => `${i.steelType}::${i.shape}`),
+  ).size;
   const totalQty = job.steel.reduce(
     (sum, i) => sum + (Number(i.amount) || 0),
     0,
@@ -555,7 +557,9 @@ const UpdateOrderPage = ({ id }: { id: string }) => {
 
   const summaryByType = job.steel.reduce(
     (acc, i) => {
-      const key = i.steelType || "ไม่ระบุ";
+      const steelLabel = i.steelType || "-";
+      const shapeLabel = i.shape === "line" ? "เพลา" : "แผ่น";
+      const key = `${steelLabel} (${shapeLabel})`;
       if (!acc[key]) acc[key] = { lines: 0, qty: 0, weight: 0 };
       acc[key].lines += 1;
       acc[key].qty += Number(i.amount) || 0;
