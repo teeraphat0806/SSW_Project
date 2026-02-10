@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { CuttingMethod, ShapeSteel } from "@prisma/client";
+import { CuttingMethod, ShapeSteel } from "@/types";
 import { email } from "zod";
 
 export const runtime = "nodejs"; // ต้องใช้ node runtime สำหรับ file + fetch
@@ -8,6 +8,10 @@ export const runtime = "nodejs"; // ต้องใช้ node runtime สำห
 const onlyDigits = (str: string | null) => (str ? str.replace(/\D/g, "") : "");
 const safe = (str?: string | null) => (str ?? "").trim();
 const asNullIfEmpty = (str: string) => (str.trim() ? str.trim() : null);
+const steelKey = (codeSteel: string, shape: ShapeSteel) =>
+  `${codeSteel}::${shape}`;
+const normalizeShape = (shape: unknown): ShapeSteel | null =>
+  shape === "square" || shape === "line" ? shape : null;
 
 type OcrUpstreamResponse = {
   result: {
@@ -176,15 +180,34 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const rawCodes = result.items
-      .map((it) => safe(it.codeSteel))
-      .filter(Boolean);
+    const rawCodeShapes = Array.from(
+      new Set(
+        result.items
+          .map((it) => {
+            const codeSteel = safe(it.codeSteel);
+            const shape = normalizeShape(it.shape);
+            return codeSteel && shape ? steelKey(codeSteel, shape) : null;
+          })
+          .filter((x): x is string => !!x),
+      ),
+    ).map((k) => {
+      const [codeSteel, shape] = k.split("::");
+      return {
+        codeSteel: codeSteel ?? "",
+        shape: (shape ?? "square") as ShapeSteel,
+      };
+    });
 
     // query steelTypes ที่ match
     const steelTypeRows =
-      rawCodes.length > 0
+      rawCodeShapes.length > 0
         ? await prisma.steelType.findMany({
-            where: { codeSteel: { in: rawCodes } },
+            where: {
+              OR: rawCodeShapes.map(({ codeSteel, shape }) => ({
+                codeSteel,
+                shape,
+              })),
+            },
             select: { id: true, codeSteel: true, shape: true, status: true },
           })
         : [];
@@ -193,20 +216,27 @@ export async function POST(request: NextRequest) {
       string,
       { id: number; codeSteel: string; shape: ShapeSteel }
     >();
-
-    for (const steel of steelTypeRows)
-      steelMap.set(steel.codeSteel, {
+    for (const steel of steelTypeRows) {
+      const key = steelKey(steel.codeSteel, steel.shape);
+      const item = {
         id: steel.id,
         codeSteel: steel.codeSteel,
         shape: steel.shape,
-      });
+      };
+
+      steelMap.set(key, item);
+    }
 
     const items = result.items.map((it) => {
       const codeSteel = safe(it.codeSteel);
-      const matchedSteel = codeSteel ? steelMap.get(codeSteel) : null;
+      const itemShape = normalizeShape(it.shape);
+
+      // Strict match by code+shape only.
+      const matchedSteel =
+        codeSteel && itemShape ? steelMap.get(steelKey(codeSteel, itemShape)) : null;
 
       // normalize shape and cuttingMethod
-      const shape = matchedSteel ? matchedSteel.shape : "square";
+      const shape = itemShape ?? "square";
       const cuttingMethod = (it.cuttingMethod as CuttingMethod) || "normal";
 
       return {

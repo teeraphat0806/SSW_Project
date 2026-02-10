@@ -195,7 +195,9 @@ const NewJobOrder = () => {
   );
   //จำนวนประเภทเหล็ก
   const totalTypes = new Set(
-    steelItems.filter((item) => item.steelType).map((item) => item.steelType),
+    steelItems
+      .filter((item) => item.steelType)
+      .map((item) => `${item.steelType}::${item.shape}`),
   ).size;
 
   useEffect(() => {
@@ -383,6 +385,7 @@ const NewJobOrder = () => {
 
           products: steelItems.map((item) => ({
             steelType: item.steelType,
+            shape: item.shape,
             wide: item.width ?? null,
             length: item.length,
             thickness: item.thickness,
