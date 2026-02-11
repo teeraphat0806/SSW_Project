@@ -32,39 +32,43 @@ const POSITION_ROLES = {
 
 type PositionRole = keyof typeof POSITION_ROLES;
 
-// Thai banks list
 const THAI_BANKS = [
   { code: "BBL", name: "ธนาคารกรุงเทพ" },
   { code: "KBANK", name: "ธนาคารกสิกรไทย" },
   { code: "KTB", name: "ธนาคารกรุงไทย" },
-  { code: "BAY", name: "ธนาคารกรุงเทพ (ยูฟ่า)" },
-  { code: "BEC", name: "ธนาคารเบสิค" },
-  { code: "CIMB", name: "ธนาคารซีไอเอ็มบี ไทย" },
-  { code: "TMRW", name: "ธนาคาร TMRW" },
-  { code: "UOB", name: "ธนาคารยูโอบี" },
   { code: "SCB", name: "ธนาคารไทยพาณิชย์" },
-  { code: "TTB", name: "ธนาคารทหารไทย" },
+  { code: "BAY", name: "ธนาคารกรุงศรีอยุธยา" },
+  { code: "TTB", name: "ธนาคารทหารไทยธนชาต" },
+  { code: "UOB", name: "ธนาคารยูโอบี" },
+  { code: "CIMBT", name: "ธนาคารซีไอเอ็มบี ไทย" },
+  { code: "TISCO", name: "ธนาคารทิสโก้" },
+  { code: "KKP", name: "ธนาคารเกียรตินาคินภัทร" },
+  { code: "LHBANK", name: "ธนาคารแลนด์ แอนด์ เฮ้าส์" },
+  { code: "ICBC", name: "ธนาคารไอซีบีซี (ไทย)" },
+  { code: "TCD", name: "ธนาคารไทยเครดิต" },
+
   { code: "GSB", name: "ธนาคารออมสิน" },
+  { code: "BAAC", name: "ธนาคารเพื่อการเกษตรและสหกรณ์การเกษตร (ธ.ก.ส.)" },
+  { code: "GHB", name: "ธนาคารอาคารสงเคราะห์" },
   { code: "ISBT", name: "ธนาคารอิสลามแห่งประเทศไทย" },
-  { code: "LHBANK", name: "ธนาคารลาดหญ้า" },
-  { code: "AYUDHYA", name: "ธนาคารพัฒนาวิสาหกิจขนาดกลางและขนาดย่อม" },
-  { code: "TBANK", name: "ธนาคารไทยร่วมทุน" },
-  { code: "TBANK2", name: "ธนาคารไทยเวธนะ" },
-  { code: "TCAP", name: "ธนาคารซูมิโตโม มิตซูย ทrust" },
-  { code: "ICBC", name: "ธนาคารอิศบร" },
-  { code: "BCHT", name: "ธนาคารจีนแรนดส์" },
-  { code: "JPYUAB", name: "ธนาคารยูเอเอ็บ" },
-  { code: "RBS", name: "ธนาคารรอยัล แบงก์ ออฟ สกอตแลนด์" },
-  { code: "AKBANK", name: "ธนาคารหาจัก" },
-  { code: "MIZUHO", name: "ธนาคารมิซูโฮ" },
-  { code: "MUFG", name: "ธนาคารมูฟจิ" },
-  { code: "SUMITOMO", name: "ธนาคารซูมิโตโม มิตซูย ทรัสต์" },
-  { code: "DBS", name: "ธนาคารดีบีเอส" },
-  { code: "BOA", name: "ธนาคารบางกรรมการของอเมริกา" },
-  { code: "ANZ", name: "ธนาคารเอเอ็นแซด" },
+  { code: "EXIM", name: "ธนาคารเพื่อการส่งออกและนำเข้าแห่งประเทศไทย" },
+  { code: "SME", name: "ธนาคารพัฒนาวิสาหกิจขนาดกลางและขนาดย่อมแห่งประเทศไทย" },
+
   { code: "CITI", name: "ธนาคารซิตี้แบงก์" },
   { code: "HSBC", name: "ธนาคารเอชเอสบีซี" },
-  { code: "KDB", name: "ธนาคารเคดีบี" },
+  { code: "SMBC", name: "ธนาคารซูมิโตโม มิตซุย แบงกิ้ง คอร์ปอเรชั่น" },
+  { code: "MIZUHO", name: "ธนาคารมิซูโฮ" },
+  { code: "MUFG", name: "ธนาคารมูฟจิ (ธนาคารแห่งโตเกียว-มิตซูบิชิ ยูเอฟเจ)" },
+  { code: "DB", name: "ธนาคารดอยซ์แบงก์" },
+  { code: "BNPP", name: "ธนาคารบีเอ็นพี พารีบาส์" },
+  { code: "BOA", name: "ธนาคารแห่งอเมริกา (Bank of America)" },
+  { code: "ANZ", name: "ธนาคารออสเตรเลียและนิวซีแลนด์ (ANZ)" },
+  { code: "OCBC", name: "ธนาคารโอซีบีซี" },
+  { code: "DBS", name: "ธนาคารดีบีเอส" },
+  { code: "MEGA", name: "ธนาคารเมกะ สากลพาณิชย์" },
+  { code: "SHINHAN", name: "ธนาคารชินฮัน" },
+  { code: "BOC", name: "ธนาคารแห่งประเทศจีน (ไทย)" },
+  { code: "KDB", name: "ธนาคารเพื่อการพัฒนาแห่งเกาหลี (KDB)" },
 ] as const;
 
 interface EmployeeDirectoryProps {
@@ -111,7 +115,6 @@ export function EmployeeDirectory({ employees }: EmployeeDirectoryProps) {
 
       if (response.ok) {
         setIsEditOpen(false);
-        // Refresh data
         window.location.reload();
       }
     } catch (error) {
