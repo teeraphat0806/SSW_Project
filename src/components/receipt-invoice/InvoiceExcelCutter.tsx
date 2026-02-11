@@ -25,7 +25,7 @@ type Inv71LikeInvoiceProps = {
   taxId: string;
 
   // ส่วนเอกสารขวาบน
-  invoiceNo: number; // 1003
+  invoice: number; // 1003
   date: string; // 14/08/68
   credit: string; // 30 วัน
   selesName: string; // J.Sirikran
@@ -42,7 +42,7 @@ type Inv71LikeInvoiceProps = {
 
 export const InvoiceExcelCutter: React.FC<Inv71LikeInvoiceProps> = ({
   companyName,
-  invoiceNo,
+  invoice,
   items,
 }) => {
   const rowsPerPage = 5;
@@ -68,9 +68,7 @@ export const InvoiceExcelCutter: React.FC<Inv71LikeInvoiceProps> = ({
         >
           <div className="mb-8 flex items-start justify-between">
             <div className="text-4xl font-bold">{companyName}</div>
-            <div className="text-right text-4xl font-semibold">
-              HS{invoiceNo}
-            </div>
+            <div className="text-right text-4xl font-semibold">HS{invoice}</div>
           </div>
 
           <table className="w-full table-fixed text-[24px] leading-9">

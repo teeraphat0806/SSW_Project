@@ -340,7 +340,7 @@ export default function ReceiptReportPage() {
                           className="px-2 py-1 text-xl text-left text-black dark:text-white print:text-black"
                           style={{ width: "18%" }}
                         >
-                          {bill.invoiceNo || "-"}
+                          HS{bill.invoiceNo || "-"}
                         </td>
                         <td
                           className="px-2 py-1 text-xl text-center text-black dark:text-white print:text-black"

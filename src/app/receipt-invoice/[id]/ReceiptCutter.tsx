@@ -6,7 +6,7 @@ import { LoadingScreen } from "@/components/Loading";
 import { CuttingMethod } from "@/types";
 
 type ApiReceipt = {
-  invoiceNo: number;
+  invoice: number;
   subtotal: number;
   vat: number;
   grandTotal: number;
@@ -71,7 +71,7 @@ export default function ReceiptCutter({ id }: { id: string }) {
         tel={data.customer.tel}
         fax={data.customer.faxNumber}
         taxId={data.customer.taxNumber}
-        invoiceNo={data.invoiceNo}
+        invoice={data.invoice}
         date={new Date().toLocaleDateString("th-TH")}
         credit={data.credit}
         selesName={data.selesName}

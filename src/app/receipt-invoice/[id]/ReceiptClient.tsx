@@ -49,6 +49,7 @@ export default function ReceiptClient({ id }: { id: string }) {
     fetch(`/api/invoice/${data.poId}`, {
       method: "POST",
     });
+    window.location.reload();
   };
   React.useEffect(() => {
     fetch(`/api/receipt/${id}`)
@@ -76,7 +77,7 @@ export default function ReceiptClient({ id }: { id: string }) {
             Invoice ล่าสุด
             <p className="font-bold">{data.recentlyInvoice}</p>
           </div>
-          {!data.recentlyInvoice && (
+          {!data.invoice && (
             <button
               className=" rounded-md bg-blue-600 p-2 text-white hover:bg-blue-700 cursor-pointer"
               onClick={handlecreateInvocie}
