@@ -664,9 +664,15 @@ export default function DetailItem<T extends JobWithSteel>({
                       </label>
                       <button
                         type="button"
-                        onClick={() =>
-                          patchSteelItem(idx, { isServices: !item.isServices })
-                        }
+                        onClick={() => {
+                          const nextIsServices = !item.isServices;
+                          patchSteelItem(idx, {
+                            isServices: nextIsServices,
+                            isPerAmount: nextIsServices
+                              ? true
+                              : item.isPerAmount,
+                          });
+                        }}
                         disabled={isLine}
                         className={`flex h-10 items-center gap-2 rounded-lg border px-3 text-sm transition-all
                                                 ${
@@ -698,19 +704,10 @@ export default function DetailItem<T extends JobWithSteel>({
                       </label>
                       <button
                         type="button"
-                        onClick={
-                          () => {
-                            const nextIsService = !item.isServices;
-                            patchSteelItem(idx, {
-                              isServices: nextIsService,
-                              isPerAmount: nextIsService
-                                ? true
-                                : item.isPerAmount,
-                            });
-                          }
-                          // patchSteelItem(idx, {
-                          //   isPerAmount: !item.isPerAmount,
-                          // })
+                        onClick={() =>
+                          patchSteelItem(idx, {
+                            isPerAmount: !item.isPerAmount,
+                          })
                         }
                         disabled={isLine}
                         className={`flex h-10 items-center gap-2 rounded-lg border px-3 text-sm transition-all

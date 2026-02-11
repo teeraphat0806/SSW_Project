@@ -87,8 +87,8 @@ export type JobOrder = {
   poNumber: string | null;
   customerId: string;
   customerName: string;
-  customerEmail: string;
-  customerPhone: string;
+  customerEmail: string | null;
+  customerPhone: string | null;
   deliveryAddress: string;
   key: string[];
   supervisors: StaffMember[];
@@ -130,8 +130,8 @@ const tojobOrder = (api: ApiJobOrder): JobOrder => {
     // ✅ ใช้ ?? "" เพื่อแปลง null เป็น empty string
     customerId: api.customerId ?? "",
     customerName: api.customerName ?? "",
-    customerEmail: api.customerEmail ?? undefined,
-    customerPhone: api.customerPhone ?? undefined,
+    customerEmail: api.customerEmail ?? null,
+    customerPhone: api.customerPhone ?? null,
     deliveryAddress: api.deliveryAddress ?? "",
     key: api.key ?? [],
     supervisors: api.supervisors,
@@ -587,7 +587,6 @@ const JobOrderDetailPage = ({ id }: { id: string }) => {
                         ? jobOrder.deliveryDate.toLocaleDateString("th-TH")
                         : "-"
                     }
-
                     deliveryAddress={jobOrder?.deliveryAddress ?? "-"}
                     onUpdateStatus={handleStatusUpdate}
                     className=""
