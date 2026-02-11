@@ -211,7 +211,7 @@ export async function GET(
 
     const apiReceipt: ApiReceipt = {
       id: receipt.id,
-      poId: poId.id ?? null,
+      poId: poId?.id ?? null,
       subtotal: receipt.subtotal,
       grandTotal: receipt.grandTotal,
       deliveryDate: receipt.deliveryDate,
