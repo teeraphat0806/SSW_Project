@@ -30,12 +30,13 @@ type Inv71LikeInvoiceProps = {
   taxId: string;
 
   // ส่วนเอกสารขวาบน
-  invoiceNo: number; // 1003
+  invoice: number; // 1003
   date: string; // 14/08/68
   credit: string; // 30 วัน
   poNumber?: string; // เลขที่ใบ PO
   selesName: string; // J.Sirikran
-
+  recentlyInvoice?: number; 
+  dateCreateInvoice?: string;
   // รายการ
   items: InvoiceItem[];
 
@@ -54,7 +55,7 @@ export const InvoiceExcelSample: React.FC<Inv71LikeInvoiceProps> = ({
   tel,
   fax,
   taxId,
-  invoiceNo,
+  invoice,
   date,
   credit,
   poNumber,
@@ -65,6 +66,9 @@ export const InvoiceExcelSample: React.FC<Inv71LikeInvoiceProps> = ({
   vat,
   total,
   totalTextThai,
+  recentlyInvoice,
+  dateCreateInvoice,
+  
 }) => {
   const formatNumber = (n?: number | null) => {
     const x = typeof n === "number" ? n : Number(n);
@@ -130,7 +134,7 @@ export const InvoiceExcelSample: React.FC<Inv71LikeInvoiceProps> = ({
 
           <div className="min-w-[170px] text-sm space-y-3 mr-20 text-center">
             <div className="">
-              <span className="">HS{invoiceNo}</span>
+              <span className="">HS{invoice}</span>
             </div>
             <div className="">
               <span className="">{date} </span>
@@ -153,14 +157,15 @@ export const InvoiceExcelSample: React.FC<Inv71LikeInvoiceProps> = ({
         {/* หัวคอลัมน์แบบ Excel (ไม่มีกรอบ) */}
         <table className="w-full text-sm">
           {/* กำหนดความกว้างแต่ละคอลัมน์ให้ฟีลเหมือน Excel */}
+          {/* ลำดับ (35px), เกรดเหล็ก + หนา x กว้าง x ยาว (300px), JOB (100px), จำนวน (60px), น้ำหนัก (80px), ราคา (80px), จำนวนเงิน (100px) */}
           <colgroup>
-            <col className="w-[35px]" /> {/* ลำดับ (ไม่โชว์หัว) */}
-            <col className="w-[300px]" /> {/* เกรดเหล็ก + หนา x กว้าง x ยาว */}
-            <col className="w-[100px]" /> {/* JOB */}
-            <col className="w-[60px]" /> {/* จำนวน */}
-            <col className="w-[80px]" /> {/* น้ำหนัก */}
-            <col className="w-[80px]" /> {/* ราคา */}
-            <col className="w-[100px]" /> {/* จำนวนเงิน */}
+            <col className="w-[35px]" />
+            <col className="w-[300px]" />
+            <col className="w-[100px]" />
+            <col className="w-[60px]" />
+            <col className="w-[80px]" />
+            <col className="w-[80px]" />
+            <col className="w-[100px]" />
           </colgroup>
 
           {/* หัวคอลัมน์ มีเส้นใต้ ไม่มีกรอบรอบตาราง */}
@@ -220,14 +225,16 @@ export const InvoiceExcelSample: React.FC<Inv71LikeInvoiceProps> = ({
                 } else if (item.cuttingMethod === "RM") {
                   prefix += " R/M";
                 }
-
+                let dimensions = "";
                 // Add @ symbol if width is 0 or null (เพลา/line shape)
                 if (item.width === 0 || item.width === null) {
                   prefix += " Ø";
+                  dimensions = `${item.thickness} x ${item.length} ${item.unit || "mm."}`;
+                } else {
+                  dimensions = `${item.thickness} x ${item.width} x ${item.length} ${item.unit || "mm."}`;
                 }
 
                 // สร้างมิติ
-                const dimensions = `${item.thickness} x ${item.width} x ${item.length} ${item.unit || "mm."}`;
 
                 // ถ้า CNC เพิ่ม (แบบ) ท้าย
                 const suffix = item.cuttingMethod === "CNC" ? "(แบบ)" : "";

@@ -59,7 +59,7 @@ export default function ReceiptCutter({ id }: { id: string }) {
         <h1 className="text-lg font-semibold">ตัวอย่างใบตัด (Receipt)</h1>
         <button
           onClick={handlePrint}
-          className="rounded-lg border border-border px-4 py-2 text-sm font-medium hover:bg-accent"
+          className="rounded-lg border border-border px-4 py-2 text-sm font-medium hover:bg-accent cursor-pointer"
         >
           พิมพ์
         </button>

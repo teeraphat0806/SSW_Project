@@ -95,7 +95,7 @@ export default function ReceiptTemporary({
         <h1 className="text-lg font-semibold">ใบส่งสินค้าชั่วคราว</h1>
         <button
           onClick={handlePrint}
-          className="rounded-lg border border-black px-6 py-2 text-sm font-medium text-black hover:bg-gray-100 dark:border-zinc-300 dark:text-zinc-100 dark:hover:bg-zinc-800"
+          className="rounded-lg border border-black px-6 py-2 text-sm font-medium text-black hover:bg-gray-100 dark:border-zinc-300 dark:text-zinc-100 dark:hover:bg-zinc-800 cursor-pointer"
         >
           พิมพ์
         </button>

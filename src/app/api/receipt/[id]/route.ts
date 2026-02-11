@@ -87,6 +87,7 @@ function ThaiBaht(numberStr: string) {
 
 type ApiReceipt = {
   id: number;
+  poId: number | null;
   subtotal: number | null;
   grandTotal: number | null;
   invoice: number | null;
@@ -99,7 +100,7 @@ type ApiReceipt = {
   vat: number;
   vatRate: number | null;
   totalTextThai: string;
-  
+
   customer: {
     id: number;
     name: string;
@@ -139,6 +140,18 @@ export async function GET(
     return NextResponse.json({ error: "Invalid id" }, { status: 400 });
   }
 
+  let poId = null;
+  try {
+    poId = await prisma.orderPO.findUnique({
+      where: { billId: receiptId },
+      select: { id: true },
+    });
+  } catch (error) {
+    return NextResponse.json(
+      { error: "Internal server error" + error },
+      { status: 500 },
+    );
+  }
   try {
     const receipt = await prisma.bill.findUnique({
       where: { id: receiptId },
@@ -198,6 +211,7 @@ export async function GET(
 
     const apiReceipt: ApiReceipt = {
       id: receipt.id,
+      poId: poId.id ?? null,
       subtotal: receipt.subtotal,
       grandTotal: receipt.grandTotal,
       deliveryDate: receipt.deliveryDate,
