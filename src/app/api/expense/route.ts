@@ -139,7 +139,7 @@ export async function POST(request: Request) {
       description,
       expenseDate,
       categoryId,
-      receiptUrl,
+      receiptUrl: receiptUrl || "",
     };
     if (ExpenseSchema.safeParse(objectData).success === false) {
       return NextResponse.json(

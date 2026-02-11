@@ -109,6 +109,7 @@ const ExpenseCategoryModal = ({
         setNewCategory({ name: "", description: "" });
         await fetchCategoriesWithCount();
         refreshExpenses();
+        window.location.reload();
         if (onCategoryChange) onCategoryChange();
       } else {
         console.log("❌ Failed to add category:", responseData);
