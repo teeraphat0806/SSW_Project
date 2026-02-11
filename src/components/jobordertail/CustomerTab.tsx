@@ -9,9 +9,9 @@ import { Button } from "@/components/ui/button"; // ถ้ามี Shadcn Butto
 
 type CustomerTabProps = {
   customer: {
+    id: string;
     name: string;
     email: string;
-    code: string;
     phone: string;
     shippingAddress: string;
   };
@@ -60,7 +60,7 @@ export function CustomerTab({ customer }: CustomerTabProps) {
                 {customer.name}
               </h3>
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <span># {customer.code}</span>
+                <span># {customer.id}</span>
               </div>
               {/* <div className="mt-2 flex gap-2">
                  <span className="inline-flex items-center rounded-md bg-green-500 px-2 py-1 text-xs font-medium text-white ring-1 ring-inset ring-green-600/20 d">
