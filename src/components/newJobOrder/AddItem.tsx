@@ -335,6 +335,7 @@ export default function AddItem({
                               updateSteelItem(item.id, "shape", selected.shape);
                               if (selected.shape === "line") {
                                 updateSteelItem(item.id, "width", null);
+                                updateSteelItem(item.id, "isOD", false);
                               }
                             }
                           }}

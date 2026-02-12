@@ -105,6 +105,8 @@ model OrderPO {
   updatedAt   DateTime       @updatedAt
   bill        Bill?          @relation(fields: [billId], references: [id])
   Customer    Customer?      @relation(fields: [customerId], references: [id])
+  Invoice       Invoice?  @relation("OrderPO_Invoice")
+
   Product     Product[]
   staffLinks  OrderPOStaff[]
 
@@ -120,6 +122,10 @@ model Invoice{
   codetoinvoice     Int  @unique
   invoiceNo         Int  @default(autoincrement())
   createdAt         DateTime  @default(now())
+
+  OrderPO       OrderPO  @relation("OrderPO_Invoice", fields: [codetoinvoice], references: [codetoinvoice], onDelete: Cascade)
+  @@index([codetoinvoice])
+  @@index([invoiceNo])
 }
 
 model OrderPOStaff {

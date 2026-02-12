@@ -18,20 +18,14 @@ import {
   X,
 } from "lucide-react";
 import { date } from "zod";
-
-type JobStatus =
-  | "pending"
-  | "cutting"
-  | "weighing"
-  | "ready"
-  | "shipped"
-  | "completed"
-  | "canceled";
+import { status } from "@/types";
 
 interface Order {
   id: number;
   poNumber: string;
-  status: JobStatus;
+  codetoinvoice: string;
+  invoiceNo: string | null;
+  status: status;
   customerName: string | null;
   grandTotal: number;
   createdAt: string;
@@ -58,7 +52,7 @@ interface ApiResponse {
   pagination: Pagination;
 }
 
-const toThaiStatus = (s: JobStatus): string => {
+const toThaiStatus = (s: status): string => {
   switch (s) {
     case "pending":
       return "รอตัด";
@@ -89,7 +83,7 @@ export default function Dashboard() {
     notCompletedTotal: 0,
     ordersThisMonth: 0,
   });
-  const isJobStatus = (s: any): s is JobStatus =>
+  const isJobStatus = (s: any): s is status =>
     [
       "pending",
       "cutting",
@@ -119,8 +113,8 @@ export default function Dashboard() {
     try {
       const params = new URLSearchParams();
 
-      const q = debouncedSearchTerm.trim();
-      if (q) params.set("q", q);
+      const search = debouncedSearchTerm.trim();
+      if (search) params.set("search", search);
 
       if (statusFilter) params.set("status", statusFilter);
 
@@ -339,7 +333,7 @@ export default function Dashboard() {
               />
               <input
                 type="text"
-                placeholder="ชื่อลูกค้า, เลข PO... "
+                placeholder="ชื่อลูกค้า, เลข PO ,  รหัสออเดอร์"
                 className="w-full pl-10 pr-4 py-2.5 bg-zinc-50 dark:bg-zinc-950/50 border border-zinc-200 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
@@ -439,7 +433,7 @@ export default function Dashboard() {
             <thead>
               <tr className="bg-zinc-50/80 dark:bg-zinc-900/50 border-b border-zinc-200 dark:border-zinc-700">
                 <th className="py-4 px-6 text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
-                  เลขที่ใบสั่งซื้อ (PO Number)
+                  รหัสออเดอร์
                 </th>
                 <th className="py-4 px-6 text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
                   ลูกค้า
@@ -469,13 +463,21 @@ export default function Dashboard() {
                     <td className="py-4 px-6">
                       <div className="flex flex-col">
                         <span className="font-mono text-sm font-medium text-zinc-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-                          {order.poNumber
-                            ? order.poNumber
-                            : "ไม่มีเลขที่ใบสั่งซื้อ"}
+                          {String(order.codetoinvoice).padStart(6, "0")}
                         </span>
-                        <span className="text-xs text-zinc-400">
-                          ID: {order.id}
-                        </span>
+                        <div className="flex flex-col gap-0.5">
+                          {order.poNumber && (
+                            <span className="text-xs text-zinc-400">
+                              PO: {order.poNumber}
+                            </span>
+                          )}
+                          <span className="text-xs text-zinc-400">
+                            HS:{" "}
+                            {order.invoiceNo
+                              ? String(order.invoiceNo).padStart(7, "0")
+                              : "ยังไม่ได้ออกบิล"}
+                          </span>
+                        </div>
                       </div>
                     </td>
 

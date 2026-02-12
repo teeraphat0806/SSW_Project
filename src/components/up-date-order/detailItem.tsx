@@ -419,6 +419,7 @@ export default function DetailItem<T extends JobWithSteel>({
                                 ? null
                                 : (item.width ?? 1),
                             price: opt?.price ?? item.price,
+                            isOD: opt?.shape === "line" ? false : item.isOD, // ถ้าเปลี่ยนเป็นเส้น ให้ isOD เป็น false เสมอ
                           });
                         }}
                         options={steelOptions}
@@ -673,14 +674,13 @@ export default function DetailItem<T extends JobWithSteel>({
                               : item.isPerAmount,
                           });
                         }}
-                        disabled={isLine}
                         className={`flex h-10 items-center gap-2 rounded-lg border px-3 text-sm transition-all
                                                 ${
                                                   item.isServices === true
                                                     ? "border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
                                                     : "border-zinc-200 bg-white text-zinc-600 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800"
                                                 }
-                                                ${isLine ? "opacity-50 cursor-not-allowed" : ""}`}
+                                              `}
                       >
                         <div
                           className={`h-4 w-4 rounded border flex items-center justify-center
@@ -709,14 +709,13 @@ export default function DetailItem<T extends JobWithSteel>({
                             isPerAmount: !item.isPerAmount,
                           })
                         }
-                        disabled={isLine}
                         className={`flex h-10 items-center gap-2 rounded-lg border px-3 text-sm transition-all
                                                 ${
                                                   item.isPerAmount === true
                                                     ? "border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
                                                     : "border-zinc-200 bg-white text-zinc-600 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800"
                                                 }
-                                                ${isLine ? "opacity-50 cursor-not-allowed" : ""}`}
+                                               `}
                       >
                         <div
                           className={`h-4 w-4 rounded border flex items-center justify-center
