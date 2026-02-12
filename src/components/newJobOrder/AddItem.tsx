@@ -361,7 +361,8 @@ export default function AddItem({
                                 ไม่พบข้อมูล
                               </div>
                             ) : (
-                              steelTypes.map((type) => (
+                              <div className="max-h-48 overflow-y-auto">
+                                {steelTypes.map((type) => (
                                 <SelectItem
                                   key={type.id}
                                   value={String(type.id)}
@@ -382,7 +383,8 @@ export default function AddItem({
                                     </span>
                                   )} */}
                                 </SelectItem>
-                              ))
+                                ))}
+                              </div>
                             )}
                           </SelectContent>
                         </Select>

@@ -151,7 +151,7 @@ function SteelSearchSelect({
       >
         <Command>
           <CommandInput placeholder="พิมพ์ค้นหาเหล็ก..." />
-          <CommandList>
+          <CommandList className="max-h-48 overflow-y-auto">
             <CommandEmpty>ไม่พบเหล็กที่ค้นหา</CommandEmpty>
 
             <CommandGroup>

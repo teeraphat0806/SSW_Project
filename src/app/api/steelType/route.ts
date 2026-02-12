@@ -23,7 +23,7 @@ export async function GET(req: NextRequest) {
     const statusParam = (searchParams.get("status") ?? "").trim();
 
     // sorting
-    const sortParam = (searchParams.get("sort") ?? "createdAt").trim(); // createdAt | amount | codeSteel | price
+    const sortParam = (searchParams.get("sort") ?? "products").trim(); // createdAt | amount | codeSteel | price
     const orderParam = (searchParams.get("order") ?? "desc").trim(); // asc | desc
 
     const where: Prisma.SteelTypeWhereInput = {};
@@ -53,9 +53,12 @@ export async function GET(req: NextRequest) {
       "products",
     ] as const;
 
-    const sortField = allowedSort.includes(sortParam as (typeof allowedSort)[number])
+    //
+    const sortField = allowedSort.includes(
+      sortParam as (typeof allowedSort)[number],
+    )
       ? (sortParam as (typeof allowedSort)[number])
-      : "createdAt";
+      : "products";
     const order: Prisma.SortOrder = orderParam === "asc" ? "asc" : "desc";
     const orderBy: Prisma.SteelTypeOrderByWithRelationInput =
       sortField === "products"

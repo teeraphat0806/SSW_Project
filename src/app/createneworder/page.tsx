@@ -240,6 +240,8 @@ const NewJobOrder = () => {
         const param = new URLSearchParams();
         const q = searchCustomer.trim();
         if (q) param.set("search", q);
+        param.set("mode", "select"); // โหมดเลือกลูกค้า
+        param.set("pageSize", "50"); // ดึงข้อมูลเยอะขึ้นสำหรับการค้นหา
         const urlCustomer = `/api/customer?${param.toString()}`;
 
         const res = await fetch(urlCustomer, { cache: "no-store" });

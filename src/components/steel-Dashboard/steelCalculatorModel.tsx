@@ -1,11 +1,22 @@
 import React, { useMemo, useState, useRef, useEffect } from "react";
-import { X, Plus, Trash2, Search, ChevronDown, Calculator } from "lucide-react";
+import { createPortal } from "react-dom";
+import {
+  X,
+  Plus,
+  Trash2,
+  Search,
+  ChevronDown,
+  Calculator,
+  CheckIcon,
+} from "lucide-react";
+import { calculateWeightDetails } from "@/lib/calculateGrandTotal";
+import { ShapeSteel } from "@/types";
 
 // --- Types ---
 type SteelItemApi = {
   id: number;
   codeSteel: string;
-  shape: "line" | "square";
+  shape: ShapeSteel;
   amount: number;
   price: number;
   density: number;
@@ -19,6 +30,7 @@ type CalcRow = {
   thickness: number;
   width?: number;
   length: number;
+  isOD: boolean;
 };
 
 // --- Helpers ---
@@ -44,6 +56,12 @@ function SteelSearchSelect({
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState("");
   const containerRef = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const [menuPos, setMenuPos] = useState<{
+    top: number;
+    left: number;
+    width: number;
+  } | null>(null);
 
   const selectedSteel = steels.find((s) => s.id === value);
 
@@ -55,16 +73,40 @@ function SteelSearchSelect({
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
-      if (
-        containerRef.current &&
-        !containerRef.current.contains(e.target as Node)
-      ) {
-        setIsOpen(false);
-      }
+      const target = e.target as Node;
+      const clickedContainer = containerRef.current?.contains(target);
+      const clickedMenu = menuRef.current?.contains(target);
+
+      if (clickedContainer || clickedMenu) return;
+      setIsOpen(false);
     };
+
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const updatePosition = () => {
+      if (!containerRef.current) return;
+      const rect = containerRef.current.getBoundingClientRect();
+      setMenuPos({
+        top: rect.bottom + 4,
+        left: rect.left,
+        width: rect.width,
+      });
+    };
+
+    updatePosition();
+    window.addEventListener("resize", updatePosition);
+    window.addEventListener("scroll", updatePosition, true);
+
+    return () => {
+      window.removeEventListener("resize", updatePosition);
+      window.removeEventListener("scroll", updatePosition, true);
+    };
+  }, [isOpen]);
 
   return (
     <div className="relative w-full" ref={containerRef}>
@@ -87,52 +129,58 @@ function SteelSearchSelect({
         />
       </button>
 
-      {isOpen && (
-        <div className="absolute z-100 w-full mt-1 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-150">
-          <div className="p-2 border-b border-zinc-100 dark:border-zinc-800 flex items-center gap-2">
-            <Search className="w-4 h-4 text-zinc-400" />
-            <input
-              autoFocus
-              className="w-full bg-transparent outline-none text-sm p-1 text-zinc-900 dark:text-zinc-100"
-              placeholder="พิมพ์เพื่อค้นหา..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-          </div>
-          <div className="max-h-60 overflow-y-auto">
-            {filtered.length > 0 ? (
-              filtered.map((s) => (
-                <div
-                  key={s.id}
-                  className={`px-4 py-2 text-sm cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-900/20 flex flex-col ${
-                    value === s.id ? "bg-blue-50/50 dark:bg-blue-900/10" : ""
-                  }`}
-                  onClick={() => {
-                    onChange(s.id);
-                    setIsOpen(false);
-                    setSearch("");
-                  }}
-                >
-                  <span className="font-medium text-zinc-900 dark:text-zinc-100">
-                    {s.codeSteel} ({s.shape === "square" ? "แผ่น" : "เส้น"})
-                  </span>
-                  <span className="textxs text-zinc-500">
-                    Density: {s.density} | Price: {s.price}
-                  </span>
-                </div>
-              ))
-            ) : (
-              <div className="px-4 py-8 text-center text-zinc-400 text-sm">
-                ไม่พบข้อมูล
-              </div>
-            )}
-          </div>
-        </div>
-      )}
+      {isOpen &&
+        menuPos &&
+        createPortal(
+          <div
+            ref={menuRef}
+            style={{
+              top: menuPos.top,
+              left: menuPos.left,
+              width: menuPos.width,
+            }}
+            className="fixed z-[10000] bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-150"
+          >
+            <div className="p-2 border-b border-zinc-100 dark:border-zinc-800 flex items-center gap-2">
+              <Search className="w-4 h-4 text-zinc-400" />
+              <input
+                autoFocus
+                className="w-full bg-transparent outline-none text-sm p-1 text-zinc-900 dark:text-zinc-100"
+                placeholder="พิมพ์เพื่อค้นหา..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+            </div>
+            <div className="max-h-44 overflow-y-auto">
+              {filtered.length > 0 ? (
+                filtered.map((s) => (
+                  <div
+                    key={s.id}
+                    className={`px-4 py-2 text-sm cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-900/20 flex flex-col ${
+                      value === s.id ? "bg-blue-50/50 dark:bg-blue-900/10" : ""
+                    }`}
+                    onClick={() => {
+                      onChange(s.id);
+                      setIsOpen(false);
+                      setSearch("");
+                    }}
+                  >
+                    <span className="font-medium text-zinc-900 dark:text-zinc-100">
+                      {s.codeSteel} ({s.shape === "square" ? "แผ่น" : "เส้น"})
+                    </span>
+                    <span className="textxs text-zinc-500">ราคาต่อหน่วย: {s.price}</span>
+                  </div>
+                ))
+              ) : (
+                <div className="px-4 py-8 text-center text-zinc-400 text-sm">ไม่พบข้อมูล</div>
+              )}
+            </div>
+          </div>,
+          document.body,
+        )}
     </div>
   );
 }
-
 // --- Main Modal ---
 export function SteelCalculatorModal({
   open,
@@ -144,12 +192,19 @@ export function SteelCalculatorModal({
   steels: SteelItemApi[];
 }) {
   const [rows, setRows] = useState<CalcRow[]>([
-    { rowId: uid(), steelId: undefined, qty: 1, thickness: 0, length: 0 },
+    {
+      rowId: uid(),
+      steelId: undefined,
+      qty: 1,
+      thickness: 0,
+      length: 0,
+      isOD: false,
+    },
   ]);
 
   const getSteel = (id?: number) => steels.find((s) => s.id === id);
 
-  const Reset = () => {
+  const reset = () => {
     setRows([
       {
         rowId: uid(),
@@ -157,18 +212,30 @@ export function SteelCalculatorModal({
         qty: 1,
         thickness: 0,
         length: 0,
+        isOD: false,
       },
     ]);
   };
 
-  const calcWeight = (row: CalcRow) => {
+  const calcWeightPerPiece = (row: CalcRow) => {
     const steel = getSteel(row.steelId);
     if (!steel) return 0;
-    const { thickness: thickness, length: length } = row;
-    const density = steel.density;
-    return steel.shape === "square"
-      ? thickness * (row.width ?? 0) * length * density * 0.1
-      : thickness * length * length * density * 0.1;
+
+    return calculateWeightDetails({
+      shape: steel.shape,
+      amount: 1,
+      width: row.width ?? undefined,
+      length: row.length,
+      thickness: row.thickness,
+      density: steel.density,
+      price: steel.price,
+      weight: null,
+      total: null,
+      discount: null,
+      isOD: row.isOD,
+      isServices: false,
+      isPerAmount: false,
+    }).weight;
   };
 
   const totals = useMemo(() => {
@@ -176,16 +243,17 @@ export function SteelCalculatorModal({
       (acc, row) => {
         const steel = getSteel(row.steelId);
         const qty = Math.max(1, row.qty || 1);
-        const weight = calcWeight(row);
-        const price = steel ? weight * steel.price : 0;
+        const weightPerPiece = calcWeightPerPiece(row);
+        const pricePerPiece = steel ? weightPerPiece * steel.price : 0;
+
         return {
-          totalWeight: acc.totalWeight + weight * qty,
-          totalPrice: acc.totalPrice + price * qty,
+          totalWeight: acc.totalWeight + weightPerPiece * qty,
+          totalPrice: acc.totalPrice + pricePerPiece * qty,
         };
       },
       { totalWeight: 0, totalPrice: 0 },
     );
-  }, [rows]);
+  }, [rows, steels]);
 
   const updateRow = (rowId: string, patch: Partial<CalcRow>) => {
     setRows((prev) =>
@@ -202,8 +270,7 @@ export function SteelCalculatorModal({
         onClick={onClose}
       />
 
-      <div className="relative w-full max-w-6xl max-h-[90vh] mx-4 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-3xl shadow-2xl overflow-hidden flex flex-col">
-        {/* Header */}
+      <div className="relative w-full max-w-6xl max-h-[90vh] mx-4 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-3xl shadow-2xl overflow-x-hidden overflow-y-visible flex flex-col">
         <div className="px-6 py-4 border-b border-zinc-100 dark:border-zinc-800 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-blue-600 rounded-xl text-white">
@@ -226,7 +293,6 @@ export function SteelCalculatorModal({
           </button>
         </div>
 
-        {/* Info Bar */}
         <div className="px-6 py-4 bg-zinc-50/50 dark:bg-zinc-900/50 border-b border-zinc-100 dark:border-zinc-800 flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             <button
@@ -239,6 +305,7 @@ export function SteelCalculatorModal({
                     qty: 1,
                     thickness: 0,
                     length: 0,
+                    isOD: false,
                   },
                 ])
               }
@@ -247,7 +314,7 @@ export function SteelCalculatorModal({
               <Plus className="w-4 h-4" /> เพิ่มรายการเหล็ก
             </button>
             <button
-              onClick={Reset}
+              onClick={reset}
               className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-sm font-medium transition-all shadow-lg shadow-red-500/20 active:scale-95"
             >
               รีเซ็ตทั้งหมด
@@ -281,12 +348,11 @@ export function SteelCalculatorModal({
           </div>
         </div>
 
-        {/* Content */}
-        <div className="flex-1 overflow-auto p-6">
+        <div className="flex-1 overflow-x-auto overflow-y-visible p-6">
           <table className="w-full border-separate border-spacing-y-2">
             <thead>
               <tr className="text-left text-sm text-zinc-400 font-medium">
-                <th className="px-4 pb-2 w-[350px]">ชนิดเหล็ก</th>
+                <th className="px-4 pb-2 w-[300px]">ชนิดเหล็ก</th>
                 <th className="px-4 pb-2 text-center">จำนวน</th>
                 <th className="px-4 pb-2">ขนาด (หนา x กว้าง x ยาว)</th>
                 <th className="px-4 pb-2 text-right">น้ำหนัก/ชิ้น</th>
@@ -297,9 +363,10 @@ export function SteelCalculatorModal({
             <tbody>
               {rows.map((r) => {
                 const s = getSteel(r.steelId);
-                const w = calcWeight(r);
-                const p = s ? w * s.price : 0;
+                const weightPerPiece = calcWeightPerPiece(r);
+                const pricePerPiece = s ? weightPerPiece * s.price : 0;
                 const qty = Math.max(1, r.qty || 1);
+                const isSquare = s?.shape === "square";
 
                 return (
                   <tr key={r.rowId} className="group">
@@ -312,6 +379,7 @@ export function SteelCalculatorModal({
                           updateRow(r.rowId, {
                             steelId: id,
                             width: target?.shape === "square" ? 0 : undefined,
+                            isOD: target?.shape === "square",
                           });
                         }}
                       />
@@ -329,6 +397,32 @@ export function SteelCalculatorModal({
                     </td>
                     <td className="bg-zinc-50 dark:bg-zinc-900 px-4 py-3 border-y border-zinc-100 dark:border-zinc-800/50">
                       <div className="flex items-center gap-2">
+                        {isSquare && (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              updateRow(r.rowId, { isOD: !r.isOD })
+                            }
+                            className={`flex h-8 items-center gap-2 rounded-lg border px-2 text-xs transition-all ${
+                              r.isOD
+                                ? "border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
+                                : "border-zinc-200 bg-white text-zinc-600 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-400"
+                            }`}
+                          >
+                            <div
+                              className={`h-3.5 w-3.5 rounded border flex items-center justify-center ${
+                                r.isOD
+                                  ? "border-blue-500 bg-blue-500"
+                                  : "border-zinc-300 bg-white"
+                              }`}
+                            >
+                              {r.isOD && (
+                                <CheckIcon className="h-2.5 w-2.5 text-white" />
+                              )}
+                            </div>
+                            OD
+                          </button>
+                        )}
                         <input
                           type="number"
                           placeholder="หนา"
@@ -341,10 +435,10 @@ export function SteelCalculatorModal({
                           }
                         />
                         <span className="text-zinc-400 text-sm">×</span>
-                        {s?.shape === "square" ? (
+                        {isSquare ? (
                           <input
                             type="number"
-                            placeholder="กว้าง"
+                            placeholder={r.isOD ? "OD." : "กว้าง"}
                             className="w-20 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg px-2 py-1.5 text-sm outline-none"
                             value={r.width}
                             onChange={(e) =>
@@ -361,7 +455,7 @@ export function SteelCalculatorModal({
                         <span className="text-zinc-400 text-sm">×</span>
                         <input
                           type="number"
-                          placeholder="ยาว"
+                          placeholder={r.isOD ? "ID." : "ยาว"}
                           className="w-20 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg px-2 py-1.5 text-sm outline-none"
                           value={r.length}
                           onChange={(e) =>
@@ -373,12 +467,12 @@ export function SteelCalculatorModal({
                       </div>
                     </td>
                     <td className="bg-zinc-50 dark:bg-zinc-900 px-4 py-3 border-y border-zinc-100 dark:border-zinc-800/50 text-right font-mono text-zinc-600 dark:text-zinc-400">
-                      {w.toLocaleString(undefined, {
+                      {weightPerPiece.toLocaleString(undefined, {
                         minimumFractionDigits: 2,
                       })}
                     </td>
                     <td className="bg-zinc-50 dark:bg-zinc-900 px-4 py-3 border-y border-zinc-100 dark:border-zinc-800/50 text-right font-bold text-zinc-900 dark:text-zinc-100">
-                      {(p * qty).toLocaleString(undefined, {
+                      {(pricePerPiece * qty).toLocaleString(undefined, {
                         minimumFractionDigits: 2,
                       })}
                     </td>
@@ -406,7 +500,6 @@ export function SteelCalculatorModal({
           )}
         </div>
 
-        {/* Footer */}
         <div className="px-6 py-4 border-t border-zinc-100 dark:border-zinc-800 flex justify-end gap-3">
           <button
             onClick={onClose}
@@ -425,3 +518,5 @@ export function SteelCalculatorModal({
     </div>
   );
 }
+
+
