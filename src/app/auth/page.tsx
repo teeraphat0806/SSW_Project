@@ -105,7 +105,6 @@ export default function Auth() {
   const [taxId, setTaxId] = useState("");
   const [socialSecurity, setSocialSecurity] = useState("");
   const [startDate, setStartDate] = useState("");
-  const [salary, setSalary] = useState("");
 
   // Validation state
   const [showPasswordFeedback, setShowPasswordFeedback] = useState(false);
@@ -132,8 +131,6 @@ export default function Auth() {
     !socialSecurity ||
     (socialSecurity.length === 13 && /^\d+$/.test(socialSecurity));
   const startDateValid = !startDate || new Date(startDate) <= new Date();
-  const salaryValid =
-    !salary || (parseInt(salary) >= 0 && /^\d+$/.test(salary));
   const bankNameValid = bankName.trim().length > 0;
   const bankAccountValid =
     !bankAccount ||
@@ -152,7 +149,6 @@ export default function Auth() {
     taxIdValid &&
     socialSecurityValid &&
     startDateValid &&
-    salaryValid &&
     bankAccountValid;
 
   const passwordValidation = validatePassword(password);
@@ -211,7 +207,6 @@ export default function Auth() {
         taxid: taxId,
         startDate,
         social_security: socialSecurity,
-        currentSalary: salary ? parseInt(salary) : undefined,
       });
 
       if (error) {
@@ -237,7 +232,6 @@ export default function Auth() {
         setTaxId("");
         setSocialSecurity("");
         setStartDate("");
-        setSalary("");
         setTab("signin");
       }
     } catch (error) {
@@ -622,7 +616,7 @@ export default function Auth() {
                       ข้อมูลพนักงาน
                     </h3>
                     <div className="grid grid-cols-2 gap-3">
-                      <div className="space-y-2">
+                      <div className="col-span-2 space-y-2">
                         <Label htmlFor="start-date" className="text-slate-200">
                           วันที่เริ่มงาน <span className="text-red-400">*</span>
                         </Label>
@@ -642,36 +636,6 @@ export default function Auth() {
                           <p className="text-xs text-red-400 flex items-center gap-1">
                             <AlertCircle className="h-3 w-3" />
                             เลือกวันในอดีต หรือ วันนี้เท่านั้น
-                          </p>
-                        )}
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="salary" className="text-slate-200">
-                          เงินเดือน (บาท){" "}
-                          <span className="text-red-400">*</span>
-                        </Label>
-                        <Input
-                          id="salary"
-                          type="number"
-                          placeholder="เงินเดือน"
-                          value={salary}
-                          onChange={(e) => {
-                            const value = e.target.value;
-                            if (value === "" || /^\d+$/.test(value)) {
-                              setSalary(value);
-                            }
-                          }}
-                          min="0"
-                          className={`bg-slate-900/60 border-white/10 text-white placeholder:text-slate-500 ${
-                            salary && !salaryValid
-                              ? "border-red-500 border"
-                              : ""
-                          }`}
-                        />
-                        {salary && !salaryValid && (
-                          <p className="text-xs text-red-400 flex items-center gap-1">
-                            <AlertCircle className="h-3 w-3" />
-                            กรุณากรอกตัวเลขที่ไม่เป็นลบ
                           </p>
                         )}
                       </div>

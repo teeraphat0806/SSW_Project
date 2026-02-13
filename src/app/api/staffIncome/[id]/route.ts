@@ -6,7 +6,7 @@ import { requireAuth } from "@/lib/permissions";
 // GET /api/payroll/[id]
 export async function GET(
   req: NextRequest,
-  context: { params: Promise<{ id: string }> }
+  context: { params: Promise<{ id: string }> },
 ) {
   const { id } = await context.params;
   const authResult = await requireAuth([
@@ -27,7 +27,7 @@ export async function GET(
       include: {
         Staff: {
           select: {
-            position: true,
+            jobPosition: true,
             bankAccount: true,
             startDate: true,
             code: true,
@@ -44,7 +44,7 @@ export async function GET(
     console.log("error: ", error);
     return NextResponse.json(
       { error: "Failed to fetch payrolls" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -52,7 +52,7 @@ export async function GET(
 // PUT /api/payroll/[id]
 export async function PATCH(
   req: NextRequest,
-  context: { params: Promise<{ id: string }> }
+  context: { params: Promise<{ id: string }> },
 ) {
   const { id } = await context.params;
   const authResult = await requireAuth([
@@ -82,7 +82,7 @@ export async function PATCH(
   } catch (error) {
     return NextResponse.json(
       { error: "Failed to update staff income: " + error },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -90,7 +90,7 @@ export async function PATCH(
 // DELETE /api/payroll/[id]
 export async function DELETE(
   req: NextRequest,
-  context: { params: Promise<{ id: string }> }
+  context: { params: Promise<{ id: string }> },
 ) {
   const { id } = await context.params;
   const authResult = await requireAuth([
@@ -112,7 +112,7 @@ export async function DELETE(
   } catch (error) {
     return NextResponse.json(
       { error: "Failed to delete payroll: " + error },
-      { status: 500 }
+      { status: 500 },
     );
   }
   return NextResponse.json({ message: `Delete Complete` });

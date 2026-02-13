@@ -5,7 +5,7 @@ import { requireAuth } from "@/lib/permissions";
 // GET /api/payroll/[id]
 export async function GET(
   req: NextRequest,
-  context: { params: Promise<{ id: string }> }
+  context: { params: Promise<{ id: string }> },
 ) {
   const { id } = await context.params;
 
@@ -27,7 +27,7 @@ export async function GET(
       include: {
         Staff: {
           select: {
-            position: true,
+            jobPosition: true,
             bankAccount: true,
             startDate: true,
             code: true,
@@ -44,7 +44,7 @@ export async function GET(
     console.log("error: ", error);
     return NextResponse.json(
       { error: "Failed to fetch payrolls" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

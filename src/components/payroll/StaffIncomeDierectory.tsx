@@ -46,7 +46,6 @@ interface StaffIncomeData {
   date: string;
   staffName: string | null;
   Staff: {
-    position: string;
     bankAccount: string | null;
     startDate: string;
     code: string;
@@ -54,6 +53,11 @@ interface StaffIncomeData {
     currentSalary: number;
     user: {
       name: string;
+    } | null;
+    jobPosition?: {
+      id: number;
+      name: string;
+      baseSalary: number;
     } | null;
   } | null;
 }
@@ -74,17 +78,6 @@ interface PaginationInfo {
   limit: number;
   totalPages: number;
 }
-
-// Position mapping with Thai translations
-const POSITION_ROLES = {
-  superadmin: "ผู้จัดการระบบ",
-  supervisor: "หัวหน้างาน",
-  clerk: "เจ้าหน้าที่",
-  cutter: "ช่างตัด",
-  delivery: "ผู้จัดส่ง",
-} as const;
-
-type PositionRole = keyof typeof POSITION_ROLES;
 
 export function StaffIncomeDirectory() {
   const [staffIncomes, setStaffIncomes] = useState<StaffIncomeData[]>([]);
@@ -444,11 +437,11 @@ export function StaffIncomeDirectory() {
               <div>
                 <p className="text-sm text-muted-foreground">ตำแหน่ง</p>
                 <p className="font-semibold">
-                  {selectedIncome.Staff?.position
-                    ? POSITION_ROLES[
-                        selectedIncome.Staff.position as PositionRole
-                      ] || selectedIncome.Staff.position
-                    : "-"}
+                  {selectedIncome.Staff?.user && (
+                    <span className="text-sm text-zinc-600 dark:text-zinc-400">
+                      {selectedIncome.Staff?.jobPosition?.name || "-"}{" "}
+                    </span>
+                  )}
                 </p>
               </div>
               <div>

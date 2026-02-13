@@ -14,14 +14,13 @@ export async function POST(request: NextRequest) {
       startDate,
       code,
       social_security,
-      currentSalary,
     } = await request.json();
 
     // Validate required fields
     if (!email || !password || !name) {
       return Response.json(
         { error: "Email, password, and name are required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -70,8 +69,8 @@ export async function POST(request: NextRequest) {
           startDate: startDate ? new Date(startDate) : new Date(),
           code: code || `EMP_${user.id}`,
           social_security: social_security || `SS_${user.id}`,
-          currentSalary: currentSalary ? parseInt(currentSalary) : 0,
-          position: "clerk", // Default position
+          currentSalary: 1, // Default salary = 1 baht for all new signups
+          // positionId is optional, can be set later via staff management UI
         },
       });
 
@@ -94,7 +93,7 @@ export async function POST(request: NextRequest) {
       {
         error: `User could not be created because: ${errorMessage}`,
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

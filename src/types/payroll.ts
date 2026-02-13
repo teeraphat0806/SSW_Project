@@ -1,7 +1,6 @@
 export interface Employee {
   id: number;
   name: string;
-  position: string;
   code: string;
   startDate: string;
   bankAccount: string;
@@ -15,6 +14,12 @@ export interface Employee {
     name: string;
   };
   userId?: number;
+  positionId?: number | null;
+  jobPosition?: {
+    id: number;
+    name: string;
+    baseSalary: number;
+  } | null;
 }
 
 export interface SalaryAdjustment {

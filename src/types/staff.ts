@@ -1,15 +1,20 @@
-import {User} from "./user";
+import { User } from "./user";
 import { OrderPO } from "./orderPO";
-import {Bill} from "./bill";
-import {StaffIncome} from "./staffIncome";
-import {StaffSalary} from "./staffSalary";
-import {ExpenseCategory} from "./expenseCategory";
+import { Bill } from "./bill";
+import { StaffIncome } from "./staffIncome";
+import { StaffSalary } from "./staffSalary";
+import { ExpenseCategory } from "./expenseCategory";
 
 export interface Staff {
   id: number;
   userId?: number | null;
   user?: User | null;
-  position: string;
+  positionId?: number | null;
+  jobPosition?: {
+    id: number;
+    name: string;
+    baseSalary: number;
+  } | null;
   bankAccount: string;
   bankName: string;
   startDate: string;

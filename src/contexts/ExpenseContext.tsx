@@ -14,8 +14,11 @@ export type ExpenseCategory = {
   description: string;
   Staff?: {
     id: number;
-    position: string;
     code: string;
+    jobPosition?: {
+      id: number;
+      name: string;
+    } | null;
     user: {
       name: string | null;
       email: string;

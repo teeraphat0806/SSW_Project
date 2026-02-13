@@ -98,8 +98,13 @@ export const authOptions = {
             staff: {
               select: {
                 id: true,
-                position: true,
                 code: true,
+                jobPosition: {
+                  select: {
+                    id: true,
+                    name: true,
+                  },
+                },
               },
             },
           },
@@ -129,8 +134,13 @@ export const authOptions = {
               staff: {
                 select: {
                   id: true,
-                  position: true,
                   code: true,
+                  jobPosition: {
+                    select: {
+                      id: true,
+                      name: true,
+                    },
+                  },
                 },
               },
             },

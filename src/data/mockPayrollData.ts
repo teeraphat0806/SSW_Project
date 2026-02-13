@@ -5,7 +5,11 @@ export const mockEmployees: Employee[] = [
     id: 1,
     name: "สมชาย ใจดี",
     staffName: "สมชาย ใจดี", // ถ้าอยากให้ชื่อโชว์อีก field
-    position: "นักพัฒนาระบบ",
+    jobPosition: {
+      id: 1,
+      name: "นักพัฒนาระบบ",
+      baseSalary: 35000,
+    },
     code: "EMP001",
     startDate: "2023-01-15",
     bankAccount: "123-456-7890",
@@ -19,7 +23,11 @@ export const mockEmployees: Employee[] = [
     id: 2,
     name: "วิชัย ทดสอบ",
     staffName: "วิชัย ทดสอบ",
-    position: "พนักงานบัญชี",
+    jobPosition: {
+      id: 2,
+      name: "พนักงานบัญชี",
+      baseSalary: 30000,
+    },
     code: "EMP002",
     startDate: "2022-08-01",
     bankAccount: "987-654-3210",
@@ -32,7 +40,11 @@ export const mockEmployees: Employee[] = [
     id: 3,
     name: "ประยุทธ มานดี",
     staffName: "ประยุทธ มานดี",
-    position: "ผู้จัดการฝ่ายขาย",
+    jobPosition: {
+      id: 3,
+      name: "ผู้จัดการฝ่ายขาย",
+      baseSalary: 45000,
+    },
     code: "EMP003",
     startDate: "2021-03-01",
     bankAccount: "555-123-4567",

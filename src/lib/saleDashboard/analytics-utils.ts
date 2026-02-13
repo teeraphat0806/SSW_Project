@@ -98,11 +98,11 @@ export interface MonthlySalesData {
 
 export function getMonthlySalesByYear(
   year: number,
-  sources?: AnalyticsDataSources
+  sources?: AnalyticsDataSources,
 ): MonthlySalesData[] {
   const { bills } = useSources(sources);
   const billsByYear = bills.filter(
-    (bill) => getYear(new Date(bill.createdAt)) === year
+    (bill) => getYear(new Date(bill.createdAt)) === year,
   );
 
   const monthlyData: { [key: number]: MonthlySalesData } = {};
@@ -140,7 +140,7 @@ export interface CustomerSalesData {
 export function getCustomerSalesByYear(
   year: number,
   customerIds?: number[],
-  sources?: AnalyticsDataSources
+  sources?: AnalyticsDataSources,
 ): CustomerSalesData[] {
   const { bills, customers } = useSources(sources);
   const billsByYear = bills.filter((bill) => {
@@ -174,7 +174,7 @@ export function getCustomerSalesByYear(
   });
 
   return Object.values(customerData).sort(
-    (a, b) => b.totalSales - a.totalSales
+    (a, b) => b.totalSales - a.totalSales,
   );
 }
 
@@ -188,19 +188,19 @@ export interface YearlySalesData {
 
 export function getYearlySales(
   year: number,
-  sources?: AnalyticsDataSources
+  sources?: AnalyticsDataSources,
 ): YearlySalesData {
   const { bills, orders } = useSources(sources);
   const billsByYear = bills.filter(
-    (bill) => getYear(new Date(bill.createdAt)) === year
+    (bill) => getYear(new Date(bill.createdAt)) === year,
   );
   const ordersByYear = orders.filter(
-    (order) => getYear(new Date(order.createdAt)) === year
+    (order) => getYear(new Date(order.createdAt)) === year,
   );
 
   const totalSales = billsByYear.reduce(
     (sum, bill) => sum + (bill.grandTotal || 0),
-    0
+    0,
   );
   const totalVAT = billsByYear.reduce((sum, bill) => sum + (bill.vat || 0), 0);
   const totalOrders = ordersByYear.length;
@@ -223,11 +223,11 @@ export interface OrderStatusCount {
 
 export function getOrderStatusByYear(
   year: number,
-  sources?: AnalyticsDataSources
+  sources?: AnalyticsDataSources,
 ): OrderStatusCount[] {
   const { orders } = useSources(sources);
   const ordersByYear = orders.filter(
-    (order) => getYear(new Date(order.createdAt)) === year
+    (order) => getYear(new Date(order.createdAt)) === year,
   );
   const total = ordersByYear.length;
 
@@ -263,11 +263,11 @@ export interface OrderWithDetails extends OrderPO {
 
 export function getOrdersByYear(
   year: number,
-  sources?: AnalyticsDataSources
+  sources?: AnalyticsDataSources,
 ): OrderWithDetails[] {
   const { orders, customers, bills } = useSources(sources);
   const ordersByYear = orders.filter(
-    (order) => getYear(new Date(order.createdAt)) === year
+    (order) => getYear(new Date(order.createdAt)) === year,
   );
 
   return ordersByYear.map((order) => {
@@ -292,7 +292,7 @@ export interface DailyOrderCount {
 export function getDailyOrdersByMonth(
   year: number,
   month: number,
-  sources?: AnalyticsDataSources
+  sources?: AnalyticsDataSources,
 ): DailyOrderCount[] {
   const { orders } = useSources(sources);
   const ordersByMonth = orders.filter((order) => {
@@ -324,11 +324,11 @@ export interface MonthlyOrderCount {
 
 export function getMonthlyOrdersByYear(
   year: number,
-  sources?: AnalyticsDataSources
+  sources?: AnalyticsDataSources,
 ): MonthlyOrderCount[] {
   const { orders } = useSources(sources);
   const ordersByYear = orders.filter(
-    (order) => getYear(new Date(order.createdAt)) === year
+    (order) => getYear(new Date(order.createdAt)) === year,
   );
 
   const monthlyCounts: { [key: number]: number } = {};
@@ -361,43 +361,43 @@ export interface YearlyIncomeExpenseData {
 
 export function getIncomeExpenseByYear(
   year: number,
-  sources?: AnalyticsDataSources
+  sources?: AnalyticsDataSources,
 ): YearlyIncomeExpenseData {
   const { staffIncomes, expenses, staffSalaries } = useSources(sources);
 
   // Calculate total staff income
   const incomesByYear = staffIncomes.filter(
-    (income) => getYear(new Date(income.date)) === year
+    (income) => getYear(new Date(income.date)) === year,
   );
   const totalIncome = incomesByYear.reduce(
     (sum, income) => sum + income.amount,
-    0
+    0,
   );
 
   // Calculate total expenses
   const expensesByYear = expenses.filter(
-    (expense) => getYear(new Date(expense.expenseDate)) === year
+    (expense) => getYear(new Date(expense.expenseDate)) === year,
   );
   const totalExpense = expensesByYear.reduce(
     (sum, expense) => sum + expense.amount,
-    0
+    0,
   );
 
   // Calculate total salary (get latest salary for each staff in that year)
   const salariesByYear = staffSalaries.filter(
-    (salary) => getYear(new Date(salary.effectiveDate)) === year
+    (salary) => getYear(new Date(salary.effectiveDate)) === year,
   );
   // Sum all salaries * 12 months
   const uniqueStaffSalaries: { [key: number]: number } = {};
   salariesByYear.forEach((salary) => {
     uniqueStaffSalaries[salary.staffId] = Math.max(
       uniqueStaffSalaries[salary.staffId] || 0,
-      salary.amount
+      salary.amount,
     );
   });
   const totalSalary = Object.values(uniqueStaffSalaries).reduce(
     (sum, amount) => sum + amount * 12,
-    0
+    0,
   );
 
   const netIncome = totalIncome - totalExpense - totalSalary;
@@ -420,11 +420,11 @@ export interface ExpenseByCategoryData {
 
 export function getExpensesByCategoryAndYear(
   year: number,
-  sources?: AnalyticsDataSources
+  sources?: AnalyticsDataSources,
 ): ExpenseByCategoryData[] {
   const { expenses, expenseCategories } = useSources(sources);
   const expensesByYear = expenses.filter(
-    (expense) => getYear(new Date(expense.expenseDate)) === year
+    (expense) => getYear(new Date(expense.expenseDate)) === year,
   );
 
   const categoryData: { [key: number]: ExpenseByCategoryData } = {};
@@ -432,7 +432,7 @@ export function getExpensesByCategoryAndYear(
   expensesByYear.forEach((expense) => {
     if (!categoryData[expense.categoryId]) {
       const category = expenseCategories.find(
-        (c) => c.id === expense.categoryId
+        (c) => c.id === expense.categoryId,
       );
       categoryData[expense.categoryId] = {
         categoryId: expense.categoryId,
@@ -447,7 +447,7 @@ export function getExpensesByCategoryAndYear(
   });
 
   return Object.values(categoryData).sort(
-    (a, b) => b.totalAmount - a.totalAmount
+    (a, b) => b.totalAmount - a.totalAmount,
   );
 }
 
@@ -460,11 +460,11 @@ export interface IncomeByTypeData {
 
 export function getIncomesByTypeAndYear(
   year: number,
-  sources?: AnalyticsDataSources
+  sources?: AnalyticsDataSources,
 ): IncomeByTypeData[] {
   const { staffIncomes, typeStaffIncome } = useSources(sources);
   const incomesByYear = staffIncomes.filter(
-    (income) => getYear(new Date(income.date)) === year
+    (income) => getYear(new Date(income.date)) === year,
   );
 
   const typeData: { [key: number]: IncomeByTypeData } = {};
@@ -492,16 +492,16 @@ export function getIncomesByTypeAndYear(
 export function getRecentExpenses(
   year: number,
   limit = 10,
-  sources?: AnalyticsDataSources
+  sources?: AnalyticsDataSources,
 ): Expense[] {
   const { expenses } = useSources(sources);
   const expensesByYear = expenses.filter(
-    (expense) => getYear(new Date(expense.expenseDate)) === year
+    (expense) => getYear(new Date(expense.expenseDate)) === year,
   );
   return expensesByYear
     .sort(
       (a, b) =>
-        new Date(b.expenseDate).getTime() - new Date(a.expenseDate).getTime()
+        new Date(b.expenseDate).getTime() - new Date(a.expenseDate).getTime(),
     )
     .slice(0, limit);
 }
@@ -509,11 +509,11 @@ export function getRecentExpenses(
 export function getRecentIncomes(
   year: number,
   limit = 10,
-  sources?: AnalyticsDataSources
+  sources?: AnalyticsDataSources,
 ): StaffIncome[] {
   const { staffIncomes } = useSources(sources);
   const incomesByYear = staffIncomes.filter(
-    (income) => getYear(new Date(income.date)) === year
+    (income) => getYear(new Date(income.date)) === year,
   );
   return incomesByYear
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
@@ -529,11 +529,11 @@ export function getAvailableYears(sources?: AnalyticsDataSources): number[] {
   bills.forEach((bill) => years.add(getYear(new Date(bill.createdAt))));
   orders.forEach((order) => years.add(getYear(new Date(order.createdAt))));
   expenses.forEach((expense) =>
-    years.add(getYear(new Date(expense.expenseDate)))
+    years.add(getYear(new Date(expense.expenseDate))),
   );
   staffIncomes.forEach((income) => years.add(getYear(new Date(income.date))));
   staffSalaries.forEach((salary) =>
-    years.add(getYear(new Date(salary.effectiveDate)))
+    years.add(getYear(new Date(salary.effectiveDate))),
   );
 
   return Array.from(years).sort((a, b) => b - a);
@@ -552,22 +552,22 @@ export interface TopCustomerData {
 export function getTopCustomers(
   year: number,
   month?: number,
-  sources?: AnalyticsDataSources
+  sources?: AnalyticsDataSources,
 ): TopCustomerData[] {
   const { bills, customers } = useSources(sources);
   let billsByPeriod = bills.filter(
-    (bill) => getYear(new Date(bill.createdAt)) === year
+    (bill) => getYear(new Date(bill.createdAt)) === year,
   );
 
   if (month) {
     billsByPeriod = billsByPeriod.filter(
-      (bill) => getMonth(new Date(bill.createdAt)) === month
+      (bill) => getMonth(new Date(bill.createdAt)) === month,
     );
   }
 
   const totalSales = billsByPeriod.reduce(
     (sum, bill) => sum + (bill.grandTotal || 0),
-    0
+    0,
   );
   const customerData: { [key: number]: TopCustomerData } = {};
 
@@ -610,7 +610,7 @@ export interface ConcentrationMetrics {
 export function getCustomerConcentration(
   year: number,
   month?: number,
-  sources?: AnalyticsDataSources
+  sources?: AnalyticsDataSources,
 ): ConcentrationMetrics {
   const topCustomers = getTopCustomers(year, month, sources);
 
@@ -625,7 +625,7 @@ export function getCustomerConcentration(
   // Herfindahl Index (sum of squared market shares)
   const herfindahlIndex = topCustomers.reduce(
     (sum, c) => sum + Math.pow(c.shareOfTotal, 2),
-    0
+    0,
   );
 
   return {
@@ -648,7 +648,7 @@ export interface MonthlyCashflowData {
 
 export function getCashflowByMonth(
   year: number,
-  sources?: AnalyticsDataSources
+  sources?: AnalyticsDataSources,
 ): MonthlyCashflowData[] {
   const { staffIncomes, expenses, staffSalaries } = useSources(sources);
   const monthlyData: MonthlyCashflowData[] = [];
@@ -669,7 +669,7 @@ export function getCashflowByMonth(
     });
     const expenseTotal = expensesForMonth.reduce(
       (sum, expense) => sum + expense.amount,
-      0
+      0,
     );
 
     // Get salaries effective in that month (monthly salary amount)
@@ -689,7 +689,7 @@ export function getCashflowByMonth(
     });
     const salaryTotal = Object.values(staffSalaryMap).reduce(
       (sum, amount) => sum + amount,
-      0
+      0,
     );
 
     const outflow = expenseTotal + salaryTotal;
@@ -719,7 +719,7 @@ export interface CashflowSummary {
 
 export function getCashflowSummary(
   year: number,
-  sources?: AnalyticsDataSources
+  sources?: AnalyticsDataSources,
 ): CashflowSummary {
   const monthlyData = getCashflowByMonth(year, sources);
 
@@ -728,7 +728,7 @@ export function getCashflowSummary(
   const netCashflow = totalInflow - totalOutflow;
 
   const sortedByNet = [...monthlyData].sort(
-    (a, b) => b.netCashflow - a.netCashflow
+    (a, b) => b.netCashflow - a.netCashflow,
   );
   const bestMonth = sortedByNet[0] || {
     month: 0,
@@ -770,7 +770,7 @@ export interface MonthCashflowDetail {
 export function getMonthCashflowDetail(
   year: number,
   month: number,
-  sources?: AnalyticsDataSources
+  sources?: AnalyticsDataSources,
 ): MonthCashflowDetail {
   const { staffIncomes, expenses, staffSalaries, staff } = useSources(sources);
 
@@ -788,7 +788,7 @@ export function getMonthCashflowDetail(
   });
   const expenseTotal = expensesForMonth.reduce(
     (sum, expense) => sum + expense.amount,
-    0
+    0,
   );
 
   // Get salaries
@@ -808,7 +808,7 @@ export function getMonthCashflowDetail(
     const staffMember = staff.find((s) => s.id === Number.parseInt(staffId));
     return {
       staffId: Number.parseInt(staffId),
-      staffName: staffMember?.user?.name || staffMember?.position || "Unknown",
+      staffName: staffMember?.user?.name || "Unknown",
       amount,
     };
   });
@@ -840,7 +840,7 @@ export interface MonthlyNetProfitData {
 
 export function getNetProfitByMonth(
   year: number,
-  sources?: AnalyticsDataSources
+  sources?: AnalyticsDataSources,
 ): MonthlyNetProfitData[] {
   const { bills, expenses, staffSalaries } = useSources(sources);
   const monthlyData: MonthlyNetProfitData[] = [];
@@ -853,7 +853,7 @@ export function getNetProfitByMonth(
     });
     const sales = billsForMonth.reduce(
       (sum, bill) => sum + (bill.grandTotal || 0),
-      0
+      0,
     );
 
     // Expenses
@@ -863,7 +863,7 @@ export function getNetProfitByMonth(
     });
     const expenseTotal = expensesForMonth.reduce(
       (sum, expense) => sum + expense.amount,
-      0
+      0,
     );
 
     // Salaries (latest for each staff up to this month)
@@ -882,7 +882,7 @@ export function getNetProfitByMonth(
     });
     const salaryTotal = Object.values(staffSalaryMap).reduce(
       (sum, amount) => sum + amount,
-      0
+      0,
     );
 
     const netProfit = sales - expenseTotal - salaryTotal;
@@ -915,7 +915,7 @@ export interface NetProfitSummary {
 export function getNetProfitSummary(
   year: number,
   currentMonth?: number,
-  sources?: AnalyticsDataSources
+  sources?: AnalyticsDataSources,
 ): NetProfitSummary {
   const monthlyData = getNetProfitByMonth(year, sources);
 
@@ -963,29 +963,29 @@ export function getNetProfitSummary(
 export function generateProfitInsight(
   year: number,
   currentMonth?: number,
-  sources?: AnalyticsDataSources
+  sources?: AnalyticsDataSources,
 ): string {
   const summary = getNetProfitSummary(year, currentMonth, sources);
 
   if (summary.momChange !== undefined) {
     if (summary.momChange > 0) {
       return `กำไรสุทธิเพิ่มขึ้น +${summary.momChange.toFixed(
-        1
+        1,
       )}% เมื่อเทียบกับเดือนที่แล้ว`;
     }
     return `กำไรสุทธิลดลง ${summary.momChange.toFixed(
-      1
+      1,
     )}% เมื่อเทียบกับเดือนที่แล้ว`;
   }
 
   if (summary.yoyChange !== undefined) {
     if (summary.yoyChange > 0) {
       return `กำไรสุทธิเพิ่มขึ้น +${summary.yoyChange.toFixed(
-        1
+        1,
       )}% เมื่อเทียบกับปีที่แล้ว`;
     }
     return `กำไรสุทธิลดลง ${summary.yoyChange.toFixed(
-      1
+      1,
     )}% เมื่อเทียบกับปีที่แล้ว`;
   }
 
@@ -1024,7 +1024,7 @@ export function getOrdersForMonth(
   month: number,
   customerId?: number,
   sortType?: OrderSortType,
-  sources?: AnalyticsDataSources
+  sources?: AnalyticsDataSources,
 ): MonthDetailOrders {
   const { orders, customers, bills } = useSources(sources);
   let ordersForMonth = orders.filter((order) => {
@@ -1035,7 +1035,7 @@ export function getOrdersForMonth(
   // Filter by customer if provided
   if (customerId) {
     ordersForMonth = ordersForMonth.filter(
-      (order) => order.customerId === customerId
+      (order) => order.customerId === customerId,
     );
   }
 
@@ -1077,15 +1077,15 @@ export function getOrdersForMonth(
 
   const totalSales = enrichedOrders.reduce(
     (sum, order) => sum + order.total,
-    0
+    0,
   );
   const orderCount = enrichedOrders.length;
   const avgOrderValue = orderCount > 0 ? totalSales / orderCount : 0;
   const completedCount = enrichedOrders.filter(
-    (o) => o.status === "completed"
+    (o) => o.status === "completed",
   ).length;
   const pendingCount = enrichedOrders.filter(
-    (o) => o.status === "pending"
+    (o) => o.status === "pending",
   ).length;
 
   return {
@@ -1109,7 +1109,7 @@ export interface CustomerBreakdownForMonth {
 export function getCustomerBreakdownForMonth(
   year: number,
   month: number,
-  sources?: AnalyticsDataSources
+  sources?: AnalyticsDataSources,
 ): CustomerBreakdownForMonth[] {
   const { orders, customers } = useSources(sources);
   const ordersForMonth = orders.filter((order) => {
@@ -1160,7 +1160,7 @@ export interface MonthSalesData {
 export function getMonthSalesData(
   year: number,
   month: number,
-  sources?: AnalyticsDataSources
+  sources?: AnalyticsDataSources,
 ): MonthSalesData {
   const { bills, orders } = useSources(sources);
   const billsByMonth = bills.filter((bill) => {
@@ -1174,17 +1174,17 @@ export function getMonthSalesData(
 
   const totalSales = billsByMonth.reduce(
     (sum, bill) => sum + (bill.grandTotal || 0),
-    0
+    0,
   );
   const totalVAT = billsByMonth.reduce((sum, bill) => sum + (bill.vat || 0), 0);
   const totalOrders = ordersByMonth.length;
   const avgOrderValue = totalOrders > 0 ? totalSales / totalOrders : 0;
 
   const completedOrders = ordersByMonth.filter(
-    (o) => o.status === "completed"
+    (o) => o.status === "completed",
   ).length;
   const pendingOrders = ordersByMonth.filter(
-    (o) => o.status === "pending"
+    (o) => o.status === "pending",
   ).length;
 
   return {
@@ -1208,7 +1208,7 @@ export interface MonthCustomerData {
 export function getMonthCustomerBreakdown(
   year: number,
   month: number,
-  sources?: AnalyticsDataSources
+  sources?: AnalyticsDataSources,
 ): MonthCustomerData[] {
   const { bills, customers } = useSources(sources);
   const billsByMonth = bills.filter((bill) => {
@@ -1246,7 +1246,7 @@ export function getMonthCustomerBreakdown(
 export function getMonthOrders(
   year: number,
   month: number,
-  sources?: AnalyticsDataSources
+  sources?: AnalyticsDataSources,
 ): OrderWithDetails[] {
   const { orders, customers, bills } = useSources(sources);
   const ordersByMonth = orders.filter((order) => {

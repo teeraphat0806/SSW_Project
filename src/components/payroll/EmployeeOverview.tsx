@@ -2,17 +2,6 @@ import { Employee } from "../../types/payroll";
 import { FileText } from "lucide-react";
 import { useEffect } from "react";
 
-// Position mapping with Thai translations
-const POSITION_ROLES = {
-  superadmin: "ผู้จัดการระบบ",
-  supervisor: "หัวหน้างาน",
-  clerk: "เจ้าหน้าที่",
-  cutter: "ช่างตัด",
-  delivery: "ผู้จัดส่ง",
-} as const;
-
-type PositionRole = keyof typeof POSITION_ROLES;
-
 interface EmployeeOverviewProps {
   employees: Employee[];
   onGeneratePayslip: (employee: Employee) => void;
@@ -107,8 +96,7 @@ export const EmployeeOverview = ({
 
                       <td className="py-4 px-6">
                         <span className="text-sm font-medium text-zinc-700 dark:text-zinc-200">
-                          {POSITION_ROLES[employee.position as PositionRole] ||
-                            employee.position}
+                          {employee.jobPosition?.name || "-"}
                         </span>
                       </td>
 

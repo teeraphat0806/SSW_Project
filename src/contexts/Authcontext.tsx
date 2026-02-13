@@ -36,8 +36,7 @@ interface AuthContextType {
       startDate?: string;
       code?: string;
       social_security?: string;
-      currentSalary?: number;
-    }
+    },
   ) => Promise<{ error: AuthError }>;
   signOut: () => Promise<void>;
   hasRole: (role: UserRole) => boolean;
@@ -113,8 +112,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       startDate?: string;
       code?: string;
       social_security?: string;
-      currentSalary?: number;
-    }
+    },
   ) => {
     try {
       const res = await fetch("/api/auth/signup", {

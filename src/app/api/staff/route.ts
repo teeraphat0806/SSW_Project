@@ -19,17 +19,18 @@ export async function GET(req: NextRequest) {
   console.log(session);
   try {
     const result = await prisma.staff.findMany({
-      include: { user: { select: { name: true } } },
+      include: { user: { select: { name: true } }, jobPosition: true },
     });
     const payload = result.map((staff) => ({
       ...staff,
       staffName: staff.user?.name ?? null,
+      jobPositionName: staff.jobPosition?.name ?? null,
     }));
     return NextResponse.json(payload, { status: 200 });
   } catch (error) {
     return NextResponse.json(
       { error: "Failed to fetch payrolls" + error },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -53,20 +54,33 @@ export async function POST(req: NextRequest) {
   if (!parsed.success) {
     return NextResponse.json(
       { error: "Invalid data format", details: parsed.error.flatten() },
-      { status: 400 }
+      { status: 400 },
+    );
+  }
+  const jobPosition = await prisma.jobPosition.findUnique({
+    where: { id: parsed.data.positionId },
+  });
+
+  if (!jobPosition) {
+    return NextResponse.json(
+      { error: "ไม่พบตำแหน่งงานที่ระบุ" },
+      { status: 400 },
     );
   }
   const staffData = { ...parsed.data, startDate: new Date() }; //
   try {
     const result = await prisma.staff.create({
-      data: staffData, // ✅ ใช้ข้อมูลที่ผ่านการตรวจสอบแล้ว
+      data: staffData,
+      include: {
+        jobPosition: true,
+      },
     });
     return NextResponse.json(result, { status: 201 });
   } catch (error) {
     console.error("Database error:", error);
     return NextResponse.json(
       { error: "Failed to create staff" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

@@ -201,7 +201,7 @@ const ExpenseTable = () => {
                           {item.category?.Staff?.user?.name || "ไม่ระบุ"}
                         </span>
                         <span className="text-xs text-gray-500 dark:text-gray-400">
-                          {item.category?.Staff?.position || "-"}
+                          {item.category?.Staff?.jobPosition?.name || "-"}
                         </span>
                       </div>
                     </td>

@@ -8,6 +8,16 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -17,21 +27,30 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Eye, Edit } from "lucide-react";
-import { useState } from "react";
+import { Eye, Edit, Settings, Plus, Trash2 } from "lucide-react";
+import { useState, useEffect } from "react";
 import type { Employee } from "@/types/payroll";
+import { ToastContainer, toast } from "react-toastify";
 
-// Position mapping with Thai translations
-const POSITION_ROLES = {
-  superadmin: "ผู้จัดการระบบ",
-  supervisor: "หัวหน้างาน",
-  clerk: "เจ้าหน้าที่",
-  cutter: "ช่างตัด",
-  delivery: "ผู้จัดส่ง",
-} as const;
+// // Position mapping with Thai translations
+// const POSITION_ROLES = {
+//   superadmin: "ผู้จัดการระบบ",
+//   supervisor: "หัวหน้างาน",
+//   clerk: "เจ้าหน้าที่",
+//   cutter: "ช่างตัด",
+//   delivery: "ผู้จัดส่ง",
+// } as const;
 
-type PositionRole = keyof typeof POSITION_ROLES;
+// type PositionRole = keyof typeof POSITION_ROLES;
+interface JobPosition {
+  id: number;
+  name: string;
+  baseSalary: number;
+}
 
+type UpdatedEmployee = Employee & {
+  jobPosition?: JobPosition;
+};
 const THAI_BANKS = [
   { code: "BBL", name: "ธนาคารกรุงเทพ" },
   { code: "KBANK", name: "ธนาคารกสิกรไทย" },
@@ -82,6 +101,111 @@ export function EmployeeDirectory({ employees }: EmployeeDirectoryProps) {
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [editData, setEditData] = useState<Partial<Employee>>({});
+  const [jobPositions, setJobPositions] = useState<JobPosition[]>([]);
+  const [isPositionManagerOpen, setIsPositionManagerOpen] = useState(false);
+  const [isAddPositionOpen, setIsAddPositionOpen] = useState(false);
+  const [positionToDelete, setPositionToDelete] = useState<
+    (JobPosition & { _count?: { staff: number } }) | null
+  >(null);
+  const [newPositionData, setNewPositionData] = useState({
+    name: "",
+    baseSalary: 0,
+  });
+
+  // Fetch job positions
+  useEffect(() => {
+    const fetchJobPositions = async () => {
+      try {
+        const response = await fetch("/api/staff/position", {
+          credentials: "include",
+        });
+        if (response.ok) {
+          const data = await response.json();
+          setJobPositions(data);
+        }
+      } catch (error) {
+        console.error("Error fetching job positions:", error);
+      }
+    };
+    fetchJobPositions();
+  }, []);
+
+  const handleAddPosition = async () => {
+    if (!newPositionData.name.trim()) {
+      toast.error("กรุณาระบุชื่อตำแหน่ง");
+      return;
+    }
+    if (newPositionData.baseSalary <= 0) {
+      toast.error("กรุณาระบุเงินเดือนเริ่มต้นที่มากกว่า 0");
+      return;
+    }
+
+    try {
+      const response = await fetch("/api/staff/position", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(newPositionData),
+      });
+
+      if (response.ok) {
+        toast.success("เพิ่มตำแหน่งสำเร็จ");
+        setIsAddPositionOpen(false);
+        setNewPositionData({ name: "", baseSalary: 0 });
+        const data = await response.json();
+        setJobPositions([...jobPositions, data]);
+      } else {
+        const data = await response.json();
+        toast.error(data.error || "ไม่สามารถเพิ่มตำแหน่งได้");
+      }
+    } catch (error) {
+      console.error("Error adding position:", error);
+      toast.error("เกิดข้อผิดพลาด");
+    }
+  };
+
+  const handleDeletePosition = async (
+    position: JobPosition & { _count?: { staff: number } },
+  ) => {
+    if (position._count && position._count.staff > 0) {
+      toast.error(
+        `ไม่สามารถลบได้ เนื่องจากมีพนักงาน ${position._count.staff} คนใช้ตำแหน่งนี้อยู่`,
+      );
+      return;
+    }
+
+    // Open confirmation dialog
+    setPositionToDelete(position);
+  };
+
+  const confirmDeletePosition = async () => {
+    if (!positionToDelete) return;
+
+    try {
+      const response = await fetch(
+        `/api/staff/position/${positionToDelete.id}`,
+        {
+          method: "DELETE",
+          credentials: "include",
+        },
+      );
+
+      if (response.ok) {
+        toast.success("ลบตำแหน่งสำเร็จ");
+        setJobPositions(
+          jobPositions.filter((p) => p.id !== positionToDelete.id),
+        );
+      } else {
+        const data = await response.json();
+        toast.error(data.error || "ไม่สามารถลบตำแหน่งได้");
+      }
+    } catch (error) {
+      console.error("Error deleting position:", error);
+      toast.error("เกิดข้อผิดพลาด");
+    } finally {
+      setPositionToDelete(null);
+    }
+  };
 
   const handleViewDetails = (emp: Employee) => {
     setSelectedEmployee(emp);
@@ -92,7 +216,7 @@ export function EmployeeDirectory({ employees }: EmployeeDirectoryProps) {
     setSelectedEmployee(emp);
     setEditData({
       name: emp.name,
-      position: emp.position,
+      jobPosition: emp.jobPosition,
       bankName: emp.bankName,
       bankAccount: emp.bankAccount,
       taxid: emp.taxid,
@@ -106,19 +230,39 @@ export function EmployeeDirectory({ employees }: EmployeeDirectoryProps) {
     if (!selectedEmployee) return;
 
     try {
+      // Transform editData to match API schema (StaffSchema)
+      const updateData: any = {};
+
+      // Only include fields that exist in StaffSchema
+      if (editData.bankName) updateData.bankName = editData.bankName;
+      if (editData.bankAccount) updateData.bankAccount = editData.bankAccount;
+      if (editData.taxid) updateData.taxid = editData.taxid;
+      if (editData.social_security)
+        updateData.social_security = editData.social_security;
+
+      // Convert jobPosition object to positionId
+      if (editData.jobPosition?.id) {
+        updateData.positionId = editData.jobPosition.id;
+      }
+
       const response = await fetch(`/api/staff/${selectedEmployee.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify(editData),
+        body: JSON.stringify(updateData),
       });
 
       if (response.ok) {
+        toast.success("อัพเดทข้อมูลพนักงานสำเร็จ");
         setIsEditOpen(false);
         window.location.reload();
+      } else {
+        const data = await response.json();
+        toast.error(data.error || "ไม่สามารถอัพเดทข้อมูลได้");
       }
     } catch (error) {
       console.error("Error updating employee:", error);
+      toast.error("เกิดข้อผิดพลาดในการอัพเดทข้อมูล");
     }
   };
 
@@ -179,8 +323,7 @@ export function EmployeeDirectory({ employees }: EmployeeDirectoryProps) {
 
                 <td className="py-4 px-6">
                   <span className="text-sm font-medium text-zinc-700 dark:text-zinc-200">
-                    {POSITION_ROLES[emp.position as PositionRole] ||
-                      emp.position}
+                    {emp.jobPosition?.name || "-"}
                   </span>
                 </td>
 
@@ -245,8 +388,7 @@ export function EmployeeDirectory({ employees }: EmployeeDirectoryProps) {
               <div>
                 <p className="text-sm text-muted-foreground">ตำแหน่ง</p>
                 <p className="font-semibold">
-                  {POSITION_ROLES[selectedEmployee.position as PositionRole] ||
-                    selectedEmployee.position}
+                  {selectedEmployee.jobPosition?.name || "-"}
                 </p>
               </div>
               <div>
@@ -339,35 +481,55 @@ export function EmployeeDirectory({ employees }: EmployeeDirectoryProps) {
                 />
               </div>
               <div className="col-span-2">
-                <Label>ตำแหน่ง</Label>
+                <div className="flex items-center justify-between mb-1">
+                  <Label>ตำแหน่ง</Label>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setIsPositionManagerOpen(true)}
+                    className="h-8 px-2"
+                  >
+                    <Settings className="h-4 w-4 mr-1" />
+                    จัดการตำแหน่ง
+                  </Button>
+                </div>
                 <Select
-                  value={editData.position || ""}
+                  value={editData.jobPosition?.id?.toString()} // ✅ เปลี่ยนจาก position
                   onValueChange={(value) =>
-                    setEditData({ ...editData, position: value })
+                    setEditData({
+                      ...editData,
+                      jobPosition: jobPositions.find(
+                        (p) => p.id === Number(value),
+                      ),
+                    })
                   }
                 >
-                  <SelectTrigger className="mt-1">
-                    <SelectValue placeholder="เลือกตำแหน่ง">
-                      {editData.position
-                        ? POSITION_ROLES[editData.position as PositionRole] ||
-                          editData.position
+                  <SelectTrigger>
+                    <SelectValue>
+                      {editData.jobPosition?.id
+                        ? jobPositions.find(
+                            (p) => p.id === editData.jobPosition?.id,
+                          )?.name // ✅ เปลี่ยน
                         : "เลือกตำแหน่ง"}
                     </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
-                    {Object.entries(POSITION_ROLES).map(([key, value]) => (
-                      <SelectItem key={key} value={key}>
-                        {value}
-                      </SelectItem>
-                    ))}
+                    {jobPositions.map(
+                      (
+                        position, // ✅ เปลี่ยนจาก POSITION_ROLES
+                      ) => (
+                        <SelectItem
+                          key={position.id}
+                          value={position.id.toString()}
+                        >
+                          {position.name} (
+                          {position.baseSalary.toLocaleString()} บาท)
+                        </SelectItem>
+                      ),
+                    )}
                   </SelectContent>
                 </Select>
-                {editData.position &&
-                  !POSITION_ROLES[editData.position as PositionRole] && (
-                    <p className="text-xs text-amber-600 mt-1">
-                      ตำแหน่งปัจจุบัน: {editData.position} (ไม่อยู่ในรายการ)
-                    </p>
-                  )}
               </div>
               <div>
                 <Label>ธนาคาร</Label>
@@ -500,6 +662,173 @@ export function EmployeeDirectory({ employees }: EmployeeDirectoryProps) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Position Manager Dialog */}
+      <Dialog
+        open={isPositionManagerOpen}
+        onOpenChange={setIsPositionManagerOpen}
+      >
+        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center justify-between">
+              <span>จัดการตำแหน่งพนักงาน</span>
+              <Button
+                size="sm"
+                onClick={() => setIsAddPositionOpen(true)}
+                className="ml-auto"
+              >
+                <Plus className="h-4 w-4 mr-1" />
+                เพิ่มตำแหน่งใหม่
+              </Button>
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-2">
+            {jobPositions.length === 0 ? (
+              <p className="text-center text-muted-foreground py-8">
+                ไม่มีตำแหน่งในระบบ
+              </p>
+            ) : (
+              <div className="space-y-2">
+                {jobPositions.map((position) => (
+                  <div
+                    key={position.id}
+                    className="flex items-center justify-between p-4 border rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors"
+                  >
+                    <div className="flex-1">
+                      <p className="font-semibold text-lg">{position.name}</p>
+                      <p className="text-sm text-muted-foreground">
+                        เงินเดือนเริ่มต้น:{" "}
+                        {position.baseSalary.toLocaleString("th-TH", {
+                          style: "currency",
+                          currency: "THB",
+                        })}
+                      </p>
+                      {(position as any)._count && (
+                        <p className="text-xs text-muted-foreground mt-1">
+                          มีพนักงาน {(position as any)._count.staff} คน
+                        </p>
+                      )}
+                    </div>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => handleDeletePosition(position as any)}
+                      disabled={
+                        (position as any)._count &&
+                        (position as any)._count.staff > 0
+                      }
+                    >
+                      <Trash2 className="h-4 w-4 mr-1" />
+                      ลบ
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setIsPositionManagerOpen(false)}
+            >
+              ปิด
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Position Dialog */}
+      <Dialog open={isAddPositionOpen} onOpenChange={setIsAddPositionOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>เพิ่มตำแหน่งใหม่</DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div>
+              <Label>ชื่อตำแหน่ง</Label>
+              <Input
+                value={newPositionData.name}
+                onChange={(e) =>
+                  setNewPositionData({
+                    ...newPositionData,
+                    name: e.target.value,
+                  })
+                }
+                placeholder="เช่น ผู้จัดการ, พนักงานขาย"
+                className="mt-1"
+              />
+            </div>
+            <div>
+              <Label>เงินเดือนเริ่มต้น (บาท)</Label>
+              <Input
+                type="number"
+                value={newPositionData.baseSalary || ""}
+                onChange={(e) =>
+                  setNewPositionData({
+                    ...newPositionData,
+                    baseSalary: Number(e.target.value),
+                  })
+                }
+                placeholder="0"
+                className="mt-1"
+                min="0"
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setIsAddPositionOpen(false);
+                setNewPositionData({ name: "", baseSalary: 0 });
+              }}
+            >
+              ยกเลิก
+            </Button>
+            <Button variant="default" onClick={handleAddPosition}>
+              บันทึก
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog
+        open={!!positionToDelete}
+        onOpenChange={(open) => !open && setPositionToDelete(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>ยืนยันการลบตำแหน่ง</AlertDialogTitle>
+            <AlertDialogDescription>
+              คุณต้องการลบตำแหน่ง{" "}
+              <span className="font-semibold text-foreground">
+                "{positionToDelete?.name}"
+              </span>{" "}
+              ใช่หรือไม่?
+              <br />
+              <span className="text-destructive font-medium mt-2 block">
+                การดำเนินการนี้ไม่สามารถย้อนกลับได้
+              </span>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>ยกเลิก</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDeletePosition}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              ลบตำแหน่ง
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <ToastContainer />
     </div>
   );
 }

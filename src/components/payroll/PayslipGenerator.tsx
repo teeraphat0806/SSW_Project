@@ -8,17 +8,6 @@ import { Printer, Download, ArrowLeft, Loader2 } from "lucide-react";
 import Logo from "../../components/Logo";
 import { useState, useEffect } from "react";
 
-// Position mapping with Thai translations
-const POSITION_ROLES = {
-  superadmin: "ผู้จัดการระบบ",
-  supervisor: "หัวหน้างาน",
-  clerk: "เจ้าหน้าที่",
-  cutter: "ช่างตัด",
-  delivery: "ผู้จัดส่ง",
-} as const;
-
-type PositionRole = keyof typeof POSITION_ROLES;
-
 interface PayslipGeneratorProps {
   employee: Employee;
   onClose: () => void;
@@ -459,10 +448,11 @@ export const PayslipGenerator = ({
                 <p>
                   <span className="font-medium">ชื่อพนักงาน:</span> {name}
                 </p>
-                <p>
-                  <span className="font-medium">ตำแหน่ง:</span>{" "}
-                  {POSITION_ROLES[employee.position as PositionRole] ||
-                    employee.position}
+                <p className="text-sm text-gray-600">
+                  ตำแหน่ง:{" "}
+                  <span className="font-medium">
+                    {employee.jobPosition?.name || "-"}{" "}
+                  </span>
                 </p>
                 <p>
                   <span className="font-medium">เลขที่บัญชี:</span>{" "}

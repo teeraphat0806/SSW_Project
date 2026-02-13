@@ -12,18 +12,11 @@ import {
 import { Textarea } from "../../components/ui/textarea";
 import { Employee, SalaryAdjustment } from "../../types/payroll";
 import { ToastContainer, toast } from "react-toastify";
-
-// Position mapping with Thai translations
-const POSITION_ROLES = {
-  superadmin: "ผู้จัดการระบบ",
-  supervisor: "หัวหน้างาน",
-  clerk: "เจ้าหน้าที่",
-  cutter: "ช่างตัด",
-  delivery: "ผู้จัดส่ง",
-} as const;
-
-type PositionRole = keyof typeof POSITION_ROLES;
-
+interface JobPosition {
+  id: number;
+  name: string;
+  baseSalary: number;
+}
 interface SalaryAdjustmentFormProps {
   employees: Employee[];
   onAdjustmentSubmit: (
@@ -86,7 +79,31 @@ export const SalaryAdjustmentForm = ({
     (emp) => Number(emp.id) === Number(selectedstaffId),
   );
   // useEffect(()=>{console.log("selectEmployee: ",selectedEmployee)},[selectedEmployee])
+  const [jobPositions, setJobPositions] = useState<JobPosition[]>([]);
 
+  // ✅ Fetch positions
+  useEffect(() => {
+    const fetchPositions = async () => {
+      try {
+        const response = await fetch("/api/jobPosition", {
+          credentials: "include",
+        });
+        if (response.ok) {
+          const data = await response.json();
+          setJobPositions(data);
+        }
+      } catch (error) {
+        console.error("Error fetching positions:", error);
+      }
+    };
+    fetchPositions();
+  }, []);
+
+  // ✅ แสดงเงินเดือนปัจจุบันและเงินเดือนเริ่มต้นของตำแหน่ง
+  const selectedEmpData = employees.find(
+    (e) => e.id.toString() === selectedstaffId,
+  );
+  const baseSalary = selectedEmpData?.jobPosition?.baseSalary || 0;
   return (
     <div>
       <form onSubmit={handleSubmit} className="space-y-4">
@@ -124,6 +141,41 @@ export const SalaryAdjustmentForm = ({
             </SelectContent>
           </Select>
         </div>
+
+        {selectedEmpData && (
+          <div className="p-4 bg-zinc-50 dark:bg-zinc-800 rounded-lg space-y-2">
+            <p className="text-sm">
+              <span className="text-zinc-600 dark:text-zinc-400">
+                ตำแหน่ง:{" "}
+              </span>
+              <span className="font-semibold">
+                {selectedEmpData.jobPosition?.name || "-"}
+              </span>
+            </p>
+            <p className="text-sm">
+              <span className="text-zinc-600 dark:text-zinc-400">
+                เงินเดือนเริ่มต้น:{" "}
+              </span>
+              <span className="font-semibold">
+                {baseSalary.toLocaleString("th-TH", {
+                  style: "currency",
+                  currency: "THB",
+                })}
+              </span>
+            </p>
+            <p className="text-sm">
+              <span className="text-zinc-600 dark:text-zinc-400">
+                เงินเดือนปัจจุบัน:{" "}
+              </span>
+              <span className="font-semibold">
+                {selectedEmpData.currentSalary.toLocaleString("th-TH", {
+                  style: "currency",
+                  currency: "THB",
+                })}
+              </span>
+            </p>
+          </div>
+        )}
 
         <div className="space-y-2">
           <Label htmlFor="amount">ยอดเงินที่ต้องการปรับ (บวก/ลบ)</Label>

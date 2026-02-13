@@ -21,7 +21,7 @@ model User {
 model Staff {
   id                           Int               @id @default(autoincrement())
   userId                       Int?              @unique
-  position                     String            @default("พนักงานทั่วไป")
+  positionId                   Int?
   bankAccount                  String?           @unique
   bankName                     String?
   startDate                    DateTime
@@ -35,8 +35,20 @@ model Staff {
   ExpenseCategory              ExpenseCategory[]
   orderLinks                   OrderPOStaff[]
   user                         User?             @relation("UserStaff", fields: [userId], references: [id])
+  jobPosition                  JobPosition?      @relation(fields: [positionId], references: [id])
   StaffIncome                  StaffIncome[]
   StaffSalary                  StaffSalary[]
+
+  @@index([positionId])
+}
+
+model JobPosition {
+  id         Int      @id @default(autoincrement())
+  name       String   @unique
+  baseSalary Float
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  staff      Staff[]
 }
 
 model Customer {
@@ -86,23 +98,23 @@ model Bill {
 }
 
 model OrderPO {
-  id          Int            @id @default(autoincrement())
-  poNumber    String?
-  codetoinvoice   Int        @unique @default(autoincrement())
-  customerId  Int?
-  billId      Int?           @unique
-  status      JobStatus      @default(pending)
-  total       Float
-  completedAt DateTime?
-  urlPo       String[]
-  createdAt   DateTime       @default(now())
-  updatedAt   DateTime       @updatedAt
-  bill        Bill?          @relation(fields: [billId], references: [id])
-  Customer    Customer?      @relation(fields: [customerId], references: [id])
+  id            Int       @id @default(autoincrement())
+  poNumber      String?
+  codetoinvoice Int       @unique @default(autoincrement())
+  customerId    Int?
+  billId        Int?      @unique
+  status        JobStatus @default(pending)
+  total         Float
+  completedAt   DateTime?
+  urlPo         String[]
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  bill          Bill?     @relation(fields: [billId], references: [id])
+  Customer      Customer? @relation(fields: [customerId], references: [id])
   Invoice       Invoice?  @relation("OrderPO_Invoice")
 
-  Product     Product[]
-  staffLinks  OrderPOStaff[]
+  Product    Product[]
+  staffLinks OrderPOStaff[]
 
   @@index([status])
   @@index([createdAt])
@@ -111,13 +123,14 @@ model OrderPO {
   @@index([customerId])
 }
 
-model Invoice{
-  id                Int  @id @default(autoincrement())
-  codetoinvoice     Int  @unique
-  invoiceNo         Int  @default(autoincrement())
-  createdAt         DateTime  @default(now())
+model Invoice {
+  id            Int      @id @default(autoincrement())
+  codetoinvoice Int      @unique
+  invoiceNo     Int      @default(autoincrement())
+  createdAt     DateTime @default(now())
 
-  OrderPO       OrderPO  @relation("OrderPO_Invoice", fields: [codetoinvoice], references: [codetoinvoice], onDelete: Cascade)
+  OrderPO OrderPO @relation("OrderPO_Invoice", fields: [codetoinvoice], references: [codetoinvoice], onDelete: Cascade)
+
   @@index([codetoinvoice])
   @@index([invoiceNo])
 }

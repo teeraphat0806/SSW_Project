@@ -12,8 +12,11 @@ declare module "next-auth" {
       role?: string | null;
       staff?: {
         id: number;
-        position: string;
         code: string;
+        jobPosition?: {
+          id: number;
+          name: string;
+        } | null;
       } | null;
     };
   }

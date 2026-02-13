@@ -45,7 +45,7 @@ export async function GET(req: NextRequest) {
       include: {
         Staff: {
           select: {
-            position: true,
+            jobPosition: true,
             bankAccount: true,
             startDate: true,
             code: true,
