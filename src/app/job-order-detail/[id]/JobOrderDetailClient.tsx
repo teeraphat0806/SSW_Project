@@ -49,7 +49,6 @@ type ApiJobOrder = {
   customerEmail: string | null;
   customerPhone: string | null;
   deliveryAddress: string | null;
-  customercode: string | null;
   key: string[];
   supervisors: StaffMember[];
   technicians: StaffMember[];
@@ -88,10 +87,9 @@ export type JobOrder = {
   poNumber: string | null;
   customerId: string;
   customerName: string;
-  customerEmail: string;
-  customerPhone: string;
+  customerEmail: string | null;
+  customerPhone: string | null;
   deliveryAddress: string;
-  customercode: string;
   key: string[];
   supervisors: StaffMember[];
   technicians: StaffMember[];
@@ -132,10 +130,9 @@ const tojobOrder = (api: ApiJobOrder): JobOrder => {
     // ✅ ใช้ ?? "" เพื่อแปลง null เป็น empty string
     customerId: api.customerId ?? "",
     customerName: api.customerName ?? "",
-    customerEmail: api.customerEmail ?? "",
-    customerPhone: api.customerPhone ?? "",
+    customerEmail: api.customerEmail ?? null,
+    customerPhone: api.customerPhone ?? null,
     deliveryAddress: api.deliveryAddress ?? "",
-    customercode: api.customercode ?? "",
     key: api.key ?? [],
     supervisors: api.supervisors,
     technicians: api.technicians,
@@ -617,10 +614,10 @@ const JobOrderDetailPage = ({ id }: { id: string }) => {
                   <CustomerTab
                     customer={{
                       // ✅ ใช้ ?? "" เพื่อบอกว่า ถ้าเป็น undefined ให้ส่ง "" ไปแทน
+                      id: jobOrder?.customerId ?? "",
                       name: jobOrder?.customerName ?? "",
-                      email: jobOrder?.customerEmail ?? "",
-                      code: jobOrder?.customercode ?? "",
-                      phone: jobOrder?.customerPhone ?? "",
+                      email: jobOrder?.customerEmail ?? "-",
+                      phone: jobOrder?.customerPhone ?? "-",
                       shippingAddress: jobOrder?.deliveryAddress ?? "",
                     }}
                   />

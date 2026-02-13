@@ -144,6 +144,17 @@ export default function SteelTable({ steel = [], vatRate }: SteelTableProps) {
                           <span className="font-semibold text-zinc-800 dark:text-zinc-200 text-sm group-hover:text-black dark:group-hover:text-white transition-colors">
                             {item.steelType} {item.shape === "line" && "(เพลา)"}
                           </span>
+                          {item.isPerAmount === false && (
+                            <span
+                              className={`px-1.5 py-0.5 rounded border font-medium ${
+                                item.weight <= 0
+                                  ? "bg-orange-100 border-orange-200 text-orange-700 dark:bg-orange-900/30 dark:border-orange-800 dark:text-orange-400" // สีสำหรับ 'สูตร'
+                                  : "bg-green-100 border-green-200 text-green-700 dark:bg-green-900/30 dark:border-green-800 dark:text-green-400" // สีสำหรับ 'จริง'
+                              }`}
+                            >
+                              {item.weight <= 0 ? "สูตร" : "จริง"}
+                            </span>
+                          )}
 
                           {item.cuttingMethod !== "normal" && (
                             <span className="px-1.5 py-0.5 rounded border font-medium bg-zinc-100 border-zinc-200 text-zinc-500 dark:bg-zinc-900 dark:border-zinc-800 dark:text-zinc-500">

@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { requireAuth } from "@/lib/permissions";
 import { CuttingMethod, ShapeSteel, status } from "@/types";
+import { Session } from "inspector/promises";
 
 type ApiStaffMember = {
   id: number;
@@ -214,6 +215,7 @@ export async function PATCH(
     if ("response" in authResult) {
       return authResult.response;
     }
+    const { session } = authResult;
 
     if (body.status === "ready") {
       const po = await prisma.orderPO.findUnique({
@@ -232,7 +234,9 @@ export async function PATCH(
       }
 
       const hasMissingWeight = po.Product.some(
-        (p) => p.isPerAmount === false && (p.actualWeight === null || p.actualWeight <= 0),
+        (p) =>
+          p.isPerAmount === false &&
+          (p.actualWeight === null || p.actualWeight <= 0),
       );
 
       if (hasMissingWeight) {
@@ -283,6 +287,17 @@ export async function PATCH(
       where: { id: poId },
       data: { status: body.status },
     });
+
+    if (body.status === "shipped" && result.billId !== null) {
+      await prisma.bill.update({
+        where: { id: result.billId },
+        data: {
+          dateReceive: new Date(),
+          deliveredById: Number(session.user?.id),
+          deliveredBy: session.user?.name ?? "",
+        },
+      });
+    }
 
     return NextResponse.json(
       {

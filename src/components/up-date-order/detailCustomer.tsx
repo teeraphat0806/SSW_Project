@@ -126,8 +126,10 @@ export default function DetailCustomer<T extends JobCustomerFields>({
       setError(null);
       try {
         const param = new URLSearchParams();
-        const q = searchCustomer.trim();
-        if (q) param.set("search", q);
+        const keyword = q.trim();
+        if (keyword) param.set("search", keyword);
+        param.set("mode", "select"); // โหมดเลือกลูกค้า
+        param.set("pageSize", "50"); // ดึงข้อมูลเยอะขึ้นสำหรับการค้นหา
         const url = `/api/customer?${param.toString()}`;
         const res = await fetch(url, { cache: "no-store" });
         const data = await res.json();

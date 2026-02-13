@@ -50,9 +50,16 @@ export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
 
+    // mode=select → เอาไว้โชว์รายการให้เลือก (ไม่ต้อง paginate แบบตาราง)
+    const mode = (searchParams.get("mode") ?? "").trim(); // "select" | ""
+    const isSelectMode = mode === "select";
+
     // pagination
     const page = toInt(searchParams.get("page"), 1);
-    const pageSize = clamp(toInt(searchParams.get("pageSize"), 10), 1, 20);
+
+    const pageSize = isSelectMode
+      ? clamp(toInt(searchParams.get("pageSize"), 100), 1, 300)
+      : clamp(toInt(searchParams.get("pageSize"), 10), 1, 20);
 
     // search by name
     const search = (searchParams.get("search") ?? "").trim();
@@ -78,6 +85,28 @@ export async function GET(req: NextRequest) {
         ? ({ Bill: { _count: dir } } as const)
         : ({ [sortKey]: dir } as Record<string, "asc" | "desc">);
 
+    if (isSelectMode) {
+      const orderBySelect =
+        search.length > 0
+          ? ({ name: "asc" } as const)
+          : ({ Bill: { _count: dir } } as const);
+
+      const data = await prisma.customer.findMany({
+        where,
+        orderBy: orderBySelect,
+        skip: 0, //  dropdown ไม่ต้องแบ่งหน้า
+        take, //  โชว์เยอะๆไว้เลือกอะ
+        select: {
+          id: true,
+          name: true,
+          tel: true,
+          telSearch: true,
+          taxNumber: true,
+        },
+      });
+
+      return NextResponse.json({ data }, { status: 200 });
+    }
     const [total, data] = await prisma.$transaction([
       prisma.customer.count({ where }),
       prisma.customer.findMany({

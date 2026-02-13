@@ -19,3 +19,5 @@ export type userRole =
 export type CuttingMethod = "normal" | "FB" | "RM" | "CNC";
 
 export type ShapeSteel = "square" | "line";
+
+export type SteelStatus = "active" | "inactive"|"hold";

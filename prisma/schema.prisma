@@ -86,21 +86,23 @@ model Bill {
 }
 
 model OrderPO {
-  id            Int            @id @default(autoincrement())
-  poNumber      String?
-  customerId    Int?
-  billId        Int?           @unique
-  status        JobStatus      @default(pending)
-  total         Float
-  completedAt   DateTime?
-  urlPo         String[]
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-  codetoinvoice Int            @unique @default(autoincrement())
-  bill          Bill?          @relation(fields: [billId], references: [id])
-  Customer      Customer?      @relation(fields: [customerId], references: [id])
-  staffLinks    OrderPOStaff[]
-  Product       Product[]
+  id          Int            @id @default(autoincrement())
+  poNumber    String?
+  codetoinvoice   Int        @unique @default(autoincrement())
+  customerId  Int?
+  billId      Int?           @unique
+  status      JobStatus      @default(pending)
+  total       Float
+  completedAt DateTime?
+  urlPo       String[]
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  bill        Bill?          @relation(fields: [billId], references: [id])
+  Customer    Customer?      @relation(fields: [customerId], references: [id])
+  Invoice       Invoice?  @relation("OrderPO_Invoice")
+
+  Product     Product[]
+  staffLinks  OrderPOStaff[]
 
   @@index([status])
   @@index([createdAt])
@@ -109,11 +111,15 @@ model OrderPO {
   @@index([customerId])
 }
 
-model Invoice {
-  id            Int      @id @default(autoincrement())
-  codetoinvoice Int      @unique
-  invoiceNo     Int      @default(autoincrement())
-  createdAt     DateTime @default(now())
+model Invoice{
+  id                Int  @id @default(autoincrement())
+  codetoinvoice     Int  @unique
+  invoiceNo         Int  @default(autoincrement())
+  createdAt         DateTime  @default(now())
+
+  OrderPO       OrderPO  @relation("OrderPO_Invoice", fields: [codetoinvoice], references: [codetoinvoice], onDelete: Cascade)
+  @@index([codetoinvoice])
+  @@index([invoiceNo])
 }
 
 model OrderPOStaff {
