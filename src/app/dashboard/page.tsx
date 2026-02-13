@@ -16,6 +16,7 @@ import {
   Clock,
   Package,
   X,
+  Loader2,
 } from "lucide-react";
 import { date } from "zod";
 import { status } from "@/types";
@@ -97,7 +98,6 @@ export default function Dashboard() {
 
   // filters
   const [searchTerm, setSearchTerm] = useState("");
-  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
@@ -114,7 +114,7 @@ export default function Dashboard() {
     try {
       const params = new URLSearchParams();
 
-      const search = debouncedSearchTerm.trim();
+      const search = searchTerm.trim();
       if (search) params.set("search", search);
 
       if (statusFilter) params.set("status", statusFilter);
@@ -159,14 +159,6 @@ export default function Dashboard() {
 
   // เปลี่ยน filter → กลับไปหน้า 1 (แล้วค่อยให้ effect ของ page ยิง fetch)
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedSearchTerm(searchTerm);
-    }, 350);
-
-    return () => clearTimeout(timer);
-  }, [searchTerm]);
-
-  useEffect(() => {
     if (!didInitFilterEffect.current) {
       didInitFilterEffect.current = true;
       return;
@@ -181,7 +173,7 @@ export default function Dashboard() {
       fetchOrders(1);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [debouncedSearchTerm, statusFilter, dateFrom, dateTo]);
+  }, [searchTerm, statusFilter, dateFrom, dateTo]);
 
   // โหลดข้อมูลเมื่อ page เปลี่ยน (รวมถึงรอบแรก)
   useEffect(() => {
@@ -415,7 +407,6 @@ export default function Dashboard() {
             <button
               onClick={() => {
                 setSearchTerm("");
-                setDebouncedSearchTerm("");
                 setStatusFilter("");
                 setDateFrom("");
                 setDateTo("");
@@ -528,6 +519,15 @@ export default function Dashboard() {
                     </td>
                   </tr>
                 ))
+              ) : loading ? (
+                <tr>
+                  <td colSpan={6} className="p-12 text-center text-zinc-400">
+                    <div className="flex flex-col items-center gap-2">
+                      <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
+                      <span>กำลังโหลดข้อมูล...</span>
+                    </div>
+                  </td>
+                </tr>
               ) : (
                 <tr>
                   <td colSpan={6} className="py-12 text-center">

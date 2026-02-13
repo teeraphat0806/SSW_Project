@@ -11,6 +11,7 @@ import {
   FileText,
   ChevronLeft,
   ChevronRight,
+  Loader2,
 } from "lucide-react";
 import AddCustomerModal from "@/components/customer-Dashboard/AddCustomerModel";
 import { useConfirm } from "@/components/providers/confirm-dialog-provider";
@@ -256,7 +257,10 @@ export default function CustomerDashboard() {
         <div className="bg-white dark:bg-zinc-950/50 p-4 rounded-xl shadow-sm border border-zinc-100 dark:border-zinc-800 flex flex-col md:flex-row gap-4 justify-between items-center transition-colors">
           {/* Search */}
           <div className="relative w-full md:w-96">
-            <SearchDebounce  placeholder="ค้นหาชื่อ, เบอร์โทร..." onSearchChange={(value) => setSearch(value)} />
+            <SearchDebounce
+              placeholder="ค้นหาชื่อ, เบอร์โทร..."
+              onSearchChange={(value) => setSearch(value)}
+            />
           </div>
 
           {/* Sort */}
@@ -297,11 +301,11 @@ export default function CustomerDashboard() {
               <tbody className="divide-y divide-zinc-50 dark:divide-zinc-800">
                 {loading ? (
                   <tr>
-                    <td
-                      colSpan={7}
-                      className="p-8 text-center text-zinc-400 dark:text-zinc-500"
-                    >
-                      กำลังโหลดข้อมูล...
+                    <td colSpan={7} className="p-12 text-center text-zinc-400">
+                      <div className="flex flex-col items-center gap-2">
+                        <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
+                        <span>กำลังโหลดข้อมูล...</span>
+                      </div>
                     </td>
                   </tr>
                 ) : data.length === 0 ? (
