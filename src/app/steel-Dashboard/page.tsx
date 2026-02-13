@@ -18,8 +18,10 @@ import { z } from "zod";
 import CreateSteelTypeModal from "@/components/steel-Dashboard/CreateSteelTypeModal";
 import SteelTypeDetailModal from "@/components/steel-Dashboard/steelTypeDetailModal";
 import { SteelCalculatorModal } from "@/components/steel-Dashboard/steelCalculatorModel";
+import SearchDebounce from "@/components/SearchDebounce";
+import { ShapeSteel,SteelStatus } from "@/types"
 
-// ใช้ union แบบนี้แทนก็ได้ (ปลอดภัยสุดสำหรับ client)
+
 const ShapeSteelEnum = z.enum(["line", "square"]);
 
 const SteelTypeSchema = z.object({
@@ -35,11 +37,11 @@ const SteelTypeSchema = z.object({
 type SteelItemApi = {
   id: number;
   codeSteel: string;
-  shape: "line" | "square";
+  shape: ShapeSteel;
   amount: number;
   price: number;
   density: number;
-  status: "active" | "inactive" | string;
+  status: SteelStatus;
   _count?: { Product?: number };
 };
 
@@ -185,14 +187,18 @@ const SteelListPage = () => {
       {/* Filter Bar */}
       <div className="max-w-7xl mx-auto bg-white dark:bg-zinc-900/60 p-4 rounded-xl shadow-sm mb-6 flex flex-col sm:flex-row gap-4 justify-between items-center border border-gray-100 dark:border-zinc-800">
         <div className="relative w-full sm:w-96">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-zinc-500 w-5 h-5" />
+          <SearchDebounce
+            placeholder="ค้นหารหัสเหล็ก..."
+            onSearchChange={(value) => setSearch(value)}
+          />
+          {/* <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-zinc-500 w-5 h-5" />
           <input
             type="text"
             placeholder="ค้นหารหัสเหล็ก..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full pl-10 pr-4 py-2 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-zinc-950/60 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-colors text-md"
-          />
+          /> */}
         </div>
 
         <div className="text-md text-gray-500 dark:text-zinc-400 flex items-center gap-2">

@@ -532,6 +532,7 @@ const UpdateOrderPage = ({ id }: { id: string }) => {
   }
 
   const status: OrderStatus = toThaiStatus(job.status);
+  //weightEnabled คือสถานะที่เปิดให้กรอกน้ำหนักได้
   const weightEnabled =
     ORDER_STATUSES.indexOf(status) >= ORDER_STATUSES.indexOf("ชั่งน้ำหนัก");
 

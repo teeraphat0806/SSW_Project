@@ -21,7 +21,6 @@ model User {
 model Staff {
   id                           Int               @id @default(autoincrement())
   userId                       Int?              @unique
-  positionId                   Int?
   bankAccount                  String?           @unique
   bankName                     String?
   startDate                    DateTime
@@ -30,12 +29,13 @@ model Staff {
   currentSalary                Float
   updatedAt                    DateTime          @updatedAt
   taxid                        String?
+  positionId                   Int?
   Bill_Bill_deliveredByToStaff Bill[]            @relation("Bill_deliveredByToStaff")
   Bill_Bill_salesNameToStaff   Bill[]            @relation("Bill_salesNameToStaff")
   ExpenseCategory              ExpenseCategory[]
   orderLinks                   OrderPOStaff[]
-  user                         User?             @relation("UserStaff", fields: [userId], references: [id])
   jobPosition                  JobPosition?      @relation(fields: [positionId], references: [id])
+  user                         User?             @relation("UserStaff", fields: [userId], references: [id])
   StaffIncome                  StaffIncome[]
   StaffSalary                  StaffSalary[]
 
@@ -98,23 +98,22 @@ model Bill {
 }
 
 model OrderPO {
-  id            Int       @id @default(autoincrement())
+  id            Int            @id @default(autoincrement())
   poNumber      String?
-  codetoinvoice Int       @unique @default(autoincrement())
   customerId    Int?
-  billId        Int?      @unique
-  status        JobStatus @default(pending)
+  billId        Int?           @unique
+  status        JobStatus      @default(pending)
   total         Float
   completedAt   DateTime?
   urlPo         String[]
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  bill          Bill?     @relation(fields: [billId], references: [id])
-  Customer      Customer? @relation(fields: [customerId], references: [id])
-  Invoice       Invoice?  @relation("OrderPO_Invoice")
-
-  Product    Product[]
-  staffLinks OrderPOStaff[]
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  codetoinvoice Int            @unique @default(autoincrement())
+  Invoice       Invoice?       @relation("OrderPO_Invoice")
+  bill          Bill?          @relation(fields: [billId], references: [id])
+  Customer      Customer?      @relation(fields: [customerId], references: [id])
+  staffLinks    OrderPOStaff[]
+  Product       Product[]
 
   @@index([status])
   @@index([createdAt])
@@ -128,8 +127,7 @@ model Invoice {
   codetoinvoice Int      @unique
   invoiceNo     Int      @default(autoincrement())
   createdAt     DateTime @default(now())
-
-  OrderPO OrderPO @relation("OrderPO_Invoice", fields: [codetoinvoice], references: [codetoinvoice], onDelete: Cascade)
+  OrderPO       OrderPO  @relation("OrderPO_Invoice", fields: [codetoinvoice], references: [codetoinvoice], onDelete: Cascade)
 
   @@index([codetoinvoice])
   @@index([invoiceNo])

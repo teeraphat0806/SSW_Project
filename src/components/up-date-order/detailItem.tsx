@@ -380,7 +380,7 @@ export default function DetailItem<T extends JobWithSteel>({
 
       {/* Items */}
       <div className="space-y-3">
-        {(job.steel ?? []).map((item, idx) => {
+        {job.steel?.map((item, idx) => {
           const isLine = item.shape === "line";
           const isManualPrice = Boolean(item.manualPrice);
           const selectedSteelOption = steelOptions.find(
@@ -537,6 +537,7 @@ export default function DetailItem<T extends JobWithSteel>({
 
                     {/* 4) Weight */}
                     <div className="lg:col-span-2">
+                      {/* ประกาศฟังก์ชั่นเพื่อให้คำนวนได้ */}
                       {(() => {
                         const estKg = calculateWeightDetails({
                           shape: item.shape,
@@ -552,6 +553,7 @@ export default function DetailItem<T extends JobWithSteel>({
                           isPerAmount: item.isPerAmount,
                           weight: null,
                         }).weight;
+
                         return weightEnabled ? (
                           <div>
                             <label className="mb-1.5 block text-center text-sm font-medium text-zinc-500 dark:text-zinc-400">
