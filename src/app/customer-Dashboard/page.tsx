@@ -119,6 +119,7 @@ export default function CustomerDashboard() {
       );
     } catch (err: any) {
       // ถ้ายกเลิก request ไม่ต้องโชว์ error
+      //
       if (err?.name !== "AbortError") {
         console.error(err);
       }
