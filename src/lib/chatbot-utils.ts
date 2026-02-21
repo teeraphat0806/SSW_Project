@@ -80,11 +80,13 @@ const KNOWLEDGE_BASE: KnowledgeItem[] = [
     ],
   },
   {
-    pattern: /พนักงาน|สตาฟ|เงินเดือน|รายได้อื่น/i,
-    tables: ["Staff", "User", "StaffIncome", "StaffSalary"],
+    pattern: /พนักงาน|สตาฟ|เงินเดือน|รายได้อื่น|ตำแหน่ง/i,
+    tables: ["Staff", "User", "JobPosition", "StaffIncome", "StaffSalary"],
     examples: [
-      `SELECT u."name", s."position", s."currentSalary" FROM "Staff" s JOIN "User" u ON s."userId" = u."id"`,
+      `SELECT u."name", jp."name" as "position", s."currentSalary" FROM "Staff" s JOIN "User" u ON s."userId" = u."id" LEFT JOIN "JobPosition" jp ON s."positionId" = jp."id"`,
+      `SELECT u."name", jp."name" as "position", s."currentSalary", s."code" FROM "Staff" s JOIN "User" u ON s."userId" = u."id" LEFT JOIN "JobPosition" jp ON s."positionId" = jp."id" WHERE u."name" ILIKE '%ชื่อ%'`,
       `SELECT u."name", SUM(si."amount") as "total_income" FROM "Staff" s JOIN "User" u ON s."userId" = u."id" JOIN "StaffIncome" si ON s."id" = si."staffId" GROUP BY u."name"`,
+      `SELECT jp."name" as "position", COUNT(s."id") as "staff_count", AVG(s."currentSalary") as "avg_salary" FROM "Staff" s LEFT JOIN "JobPosition" jp ON s."positionId" = jp."id" GROUP BY jp."name"`,
     ],
   },
   {
@@ -195,7 +197,7 @@ const ALLOWED: Record<string, string[]> = {
   Staff: [
     "id",
     "userId",
-    "position",
+    "positionId",
     "bankAccount",
     "bankName",
     "startDate",
@@ -203,7 +205,9 @@ const ALLOWED: Record<string, string[]> = {
     "social_security",
     "currentSalary",
     "updatedAt",
+    "taxid",
   ],
+  JobPosition: ["id", "name", "baseSalary", "createdAt", "updatedAt"],
   StaffSalary: [
     "id",
     "staffId",
@@ -249,6 +253,7 @@ Key relationships:
 - "Bill"."customerId" -> "Customer"."id"
 - "OrderPO"."customerId" -> "Customer"."id"
 - "Staff"."userId" -> "User"."id"
+- "Staff"."positionId" -> "JobPosition"."id" (LEFT JOIN - nullable)
 - "Product"."orderPOId" -> "OrderPO"."id"
 
 Rules:

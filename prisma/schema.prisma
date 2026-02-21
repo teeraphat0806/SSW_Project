@@ -29,7 +29,8 @@ model Staff {
   currentSalary                Float
   updatedAt                    DateTime          @updatedAt
   taxid                        String?
-  positionId                   Int?
+  hireStatus                   Boolean           @default(true)
+  TerminationDate              DateTime?
   Bill_Bill_deliveredByToStaff Bill[]            @relation("Bill_deliveredByToStaff")
   Bill_Bill_salesNameToStaff   Bill[]            @relation("Bill_salesNameToStaff")
   ExpenseCategory              ExpenseCategory[]

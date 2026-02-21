@@ -8,4 +8,6 @@ export const StaffSchema = z.object({
   social_security: z.string(),
   currentSalary: z.number(),
   positionId: z.number().optional(),
+  hireStatus: z.boolean(),
+  TerminationDate: z.string().optional(),
 });
