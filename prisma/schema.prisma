@@ -31,6 +31,7 @@ model Staff {
   taxid                        String?
   hireStatus                   Boolean           @default(true)
   TerminationDate              DateTime?
+  positionId                   Int?
   Bill_Bill_deliveredByToStaff Bill[]            @relation("Bill_deliveredByToStaff")
   Bill_Bill_salesNameToStaff   Bill[]            @relation("Bill_salesNameToStaff")
   ExpenseCategory              ExpenseCategory[]
