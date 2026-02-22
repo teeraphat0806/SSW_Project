@@ -69,7 +69,7 @@ export default function PayrollPage() {
     adjustmentType,
     setAdjustmentType,
   } = usePayrollData();
-
+  const employeesHire = employees.filter((e) => e.hireStatus === true);
   const [selectedEmployeeForPayslip, setSelectedEmployeeForPayslip] =
     useState<Employee | null>(null);
   const [latestEmployeeOnly, setLatestEmployeeOnly] = useState<"none" | string>(
@@ -491,7 +491,7 @@ export default function PayrollPage() {
         {/* ========= DIRECTORY (Employees & Payslip) ========= */}
         <TabsContent value="directory" className="space-y-4 md:space-y-6">
           <EmployeeOverview
-            employees={employees}
+            employees={employeesHire}
             onGeneratePayslip={handleGeneratePayslip}
           />
         </TabsContent>

@@ -11,6 +11,7 @@ export const EmployeeOverview = ({
   employees,
   onGeneratePayslip,
 }: EmployeeOverviewProps) => {
+  
   const totalMonthlySalary = employees.reduce(
     (sum, emp) => sum + emp.currentSalary,
     0,
