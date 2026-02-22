@@ -7,7 +7,8 @@ export const StaffSchema = z.object({
   taxid: z.string(),
   social_security: z.string(),
   currentSalary: z.number(),
+  startDate: z.string().datetime().optional(),
   positionId: z.number().optional(),
   hireStatus: z.boolean(),
-  TerminationDate: z.string().optional(),
+  TerminationDate: z.string().datetime().nullable().optional(),
 });

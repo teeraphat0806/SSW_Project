@@ -40,8 +40,24 @@ model Staff {
   user                         User?             @relation("UserStaff", fields: [userId], references: [id])
   StaffIncome                  StaffIncome[]
   StaffSalary                  StaffSalary[]
+  employments                  StaffEmployment[]
 
   @@index([positionId])
+}
+
+model StaffEmployment {
+  id        Int       @id @default(autoincrement())
+  staffId   Int
+  startDate DateTime
+  endDate   DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  Staff Staff @relation(fields: [staffId], references: [id], onDelete: Cascade)
+
+  @@unique([staffId, endDate])
+  @@index([staffId, startDate(sort: Desc)])
+  @@index([staffId, endDate])
 }
 
 model JobPosition {
