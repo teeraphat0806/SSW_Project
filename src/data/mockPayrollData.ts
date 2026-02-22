@@ -17,6 +17,8 @@ export const mockEmployees: Employee[] = [
     taxid: "1234567890123",
     currentSalary: 37000,
     social_security: "1234567890123",
+    hireStatus: true,
+
     // user / userId ไม่ต้องใส่ก็ได้ เพราะเป็น optional
   },
   {
@@ -35,6 +37,7 @@ export const mockEmployees: Employee[] = [
     taxid: "2345678901234",
     currentSalary: 32000,
     social_security: "2345678901234",
+    hireStatus: true,
   },
   {
     id: 3,
@@ -52,6 +55,7 @@ export const mockEmployees: Employee[] = [
     taxid: "3456789012345",
     currentSalary: 48000,
     social_security: "3456789012345",
+    hireStatus: true,
   },
 ];
 

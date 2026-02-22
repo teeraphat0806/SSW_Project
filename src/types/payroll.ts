@@ -20,6 +20,8 @@ export interface Employee {
     name: string;
     baseSalary: number;
   } | null;
+  hireStatus: boolean;
+  TerminationDate?: string | null;
 }
 
 export interface SalaryAdjustment {

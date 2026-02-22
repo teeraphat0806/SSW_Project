@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -222,6 +222,8 @@ export function EmployeeDirectory({ employees }: EmployeeDirectoryProps) {
       taxid: emp.taxid,
       social_security: emp.social_security,
       startDate: emp.startDate,
+      hireStatus: emp.hireStatus,
+      TerminationDate: emp.TerminationDate,
     });
     setIsEditOpen(true);
   };
@@ -232,6 +234,8 @@ export function EmployeeDirectory({ employees }: EmployeeDirectoryProps) {
     try {
       // Transform editData to match API schema (StaffSchema)
       const updateData: any = {};
+      const isTerminating =
+        editData.hireStatus === false && selectedEmployee.hireStatus === true;
 
       // Only include fields that exist in StaffSchema
       if (editData.bankName) updateData.bankName = editData.bankName;
@@ -244,7 +248,38 @@ export function EmployeeDirectory({ employees }: EmployeeDirectoryProps) {
       if (editData.jobPosition?.id) {
         updateData.positionId = editData.jobPosition.id;
       }
+      if (
+        editData.hireStatus !== undefined &&
+        editData.hireStatus !== selectedEmployee.hireStatus
+      ) {
+        updateData.hireStatus = editData.hireStatus;
+        if (!editData.hireStatus) {
+          updateData.TerminationDate = new Date().toISOString();
+        } else if (!selectedEmployee.hireStatus && editData.hireStatus) {
+          // Rehire: reset start date to today and clear termination date
+          updateData.startDate = new Date().toISOString();
+          updateData.TerminationDate = null;
+        }
+      }
+      if (isTerminating) {
+        const employmentResponse = await fetch("/api/staffEmployment", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({
+            staffId: selectedEmployee.id,
+            endDate: updateData.TerminationDate || new Date().toISOString(),
+          }),
+        });
 
+        if (!employmentResponse.ok) {
+          const data = await employmentResponse
+            .json()
+            .catch(() => ({ error: "Failed to create employment history" }));
+          toast.error(data.error || "ไม่สามารถบันทึกประวัติการเลิกจ้างได้");
+          return;
+        }
+      }
       const response = await fetch(`/api/staff/${selectedEmployee.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -620,7 +655,7 @@ export function EmployeeDirectory({ employees }: EmployeeDirectoryProps) {
                     : "ต้องเป็น 13 หลัก"}
                 </p>
               </div>
-              <div className="col-span-2">
+              <div className="">
                 <Label>วันที่เข้าทำงาน</Label>
                 <Input
                   type="date"
@@ -648,6 +683,49 @@ export function EmployeeDirectory({ employees }: EmployeeDirectoryProps) {
                 <p className="text-xs text-muted-foreground mt-1">
                   เลือกได้เฉพาะวันในอดีต หรือ วันนี้เท่านั้น
                 </p>
+              </div>
+              <div>
+                <Label>สถานะการจ้างงาน</Label>
+                <Select
+                  value={editData.hireStatus === true ? "active" : "inactive"}
+                  onValueChange={(value) => {
+                    const isActive = value === "active";
+                    setEditData({
+                      ...editData,
+                      hireStatus: isActive,
+                      TerminationDate: isActive
+                        ? undefined
+                        : editData.TerminationDate,
+                    });
+                  }}
+                >
+                  <SelectTrigger className="mt-1">
+                    <SelectValue placeholder="เลือกสถานะ" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="active">กำลังจ้างงาน</SelectItem>
+                    <SelectItem value="inactive">เลิกจ้างงาน</SelectItem>
+                  </SelectContent>
+                </Select>
+                {(editData.TerminationDate ||
+                  selectedEmployee?.TerminationDate) &&
+                  !editData.hireStatus && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      วันที่เลิกจ้างงาน:{" "}
+                      {new Date(
+                        editData.TerminationDate ||
+                          selectedEmployee?.TerminationDate!,
+                      ).toLocaleDateString("th-TH")}
+                    </p>
+                  )}
+                {editData.hireStatus === true && editData.TerminationDate && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    วันที่เคยเลิกจ้างงาน:{" "}
+                    {new Date(editData.TerminationDate).toLocaleDateString(
+                      "th-TH",
+                    )}
+                  </p>
+                )}
               </div>
             </div>
           )}
