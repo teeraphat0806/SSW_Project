@@ -286,7 +286,7 @@ export default function ReceiptReportPage() {
             >
               <div className="page-content">
                 {/* Header - แสดงในทุกหน้า */}
-                <div className="mb-6">
+                <div className="mb-6 mt-20">
                   <div className="flex justify-between items-start mb-2">
                     <div className="text-left"></div>
                     <div className="text-right text-base text-black dark:text-white print:text-black">
@@ -331,7 +331,7 @@ export default function ReceiptReportPage() {
                     {pageData.map((bill, index) => (
                       <tr key={bill.id}>
                         <td
-                          className="px-2 py-1 text-xl text-left text-black dark:text-white print:text-black"
+                          className="px-0 py-1 text-xl text-left text-black dark:text-white print:text-black"
                           style={{ width: "5%" }}
                         >
                           {startIndex + index + 1}
@@ -368,7 +368,7 @@ export default function ReceiptReportPage() {
 
                 {/* Footer - Fixed position ที่ด้านล่าง - แสดงเฉพาะหน้าสุดท้าย */}
                 {isLastPage && (
-                  <div className="fixed-footer">
+                  <div className="fixed-footer mb-[200px]">
                     <div className="flex justify-between items-center">
                       <div className="text-xl font-bold text-black dark:text-white print:text-black">
                         {numberToThaiText(meta?.totalAmount || 0)}
@@ -444,6 +444,12 @@ export default function ReceiptReportPage() {
 
           .bill-table tbody {
             display: table-row-group;
+          }
+
+          .bill-table td:first-child {
+            position: relative;
+            left: -18mm;
+            padding-left: 2mm !important;
           }
         }
 
