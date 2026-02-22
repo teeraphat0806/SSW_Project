@@ -368,7 +368,7 @@ export default function ReceiptReportPage() {
 
                 {/* Footer - Fixed position ที่ด้านล่าง - แสดงเฉพาะหน้าสุดท้าย */}
                 {isLastPage && (
-                  <div className="fixed-footer mb-[250px]">
+                  <div className="fixed-footer mb-[260px]">
                     <div className="flex justify-between items-center">
                       <div className="text-xl font-bold text-black dark:text-white print:text-black">
                         {numberToThaiText(meta?.totalAmount || 0)}
@@ -449,7 +449,7 @@ export default function ReceiptReportPage() {
           .bill-table td:first-child {
             position: relative;
             left: -18mm;
-            padding-left: 10mm !important;
+            padding-left: 5mm !important;
           }
         }
 
