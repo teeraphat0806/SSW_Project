@@ -11,6 +11,12 @@ type ApiStaffMember = {
   role: "supervisor" | "cutter";
 };
 
+type ApiDeliveryMember = {
+  id: number | null;
+  name: string;
+  role: "delivery";
+};
+
 type ApiJobOrder = {
   id: number;
   billid: number;
@@ -23,6 +29,7 @@ type ApiJobOrder = {
   key: string[];
   supervisors: ApiStaffMember[];
   technicians: ApiStaffMember[];
+  deliveryStaff: ApiDeliveryMember | null;
   vatRate: number;
   steel: {
     steelType: string;
@@ -66,7 +73,22 @@ export async function GET(
     const jobOrder = await prisma.orderPO.findUnique({
       where: { id: poId },
       include: {
-        bill: { select: { id: true, deliveryDate: true, vatRate: true } },
+        bill: {
+          select: {
+            id: true,
+            deliveryDate: true,
+            vatRate: true,
+            deliveredBy: true,
+            deliveredById: true,
+            Staff_Bill_deliveredByToStaff: {
+              select: {
+                id: true,
+                user: { select: { name: true } },
+                code: true,
+              },
+            },
+          },
+        },
         Product: {
           include: {
             SteelType: true,
@@ -113,6 +135,18 @@ export async function GET(
     const technicians = allStaff.filter((s) => s.role === "cutter");
     const customer = jobOrder.Customer;
     const bill = jobOrder.bill;
+    const deliveryStaff: ApiDeliveryMember | null =
+      bill.deliveredById != null || bill.deliveredBy
+        ? {
+            id: bill.deliveredById ?? null,
+            name:
+              bill.Staff_Bill_deliveredByToStaff?.user?.name ??
+              bill.Staff_Bill_deliveredByToStaff?.code ??
+              bill.deliveredBy ??
+              "Unknown",
+            role: "delivery",
+          }
+        : null;
 
     const apiJobOrder: ApiJobOrder = {
       id: jobOrder.id,
@@ -126,6 +160,7 @@ export async function GET(
       key: jobOrder.urlPo.length ? jobOrder.urlPo : [],
       supervisors: supervisors ?? [],
       technicians: technicians ?? [],
+      deliveryStaff,
       vatRate: bill.vatRate,
       steel: jobOrder.Product.map((p) => ({
         steelType: p.SteelType.codeSteel, // SteelType เป็น non-null ตาม schema
@@ -283,18 +318,30 @@ export async function PATCH(
     }
 
     // 4. Update Database
+
     const result = await prisma.orderPO.update({
       where: { id: poId },
       data: { status: body.status },
     });
 
     if (body.status === "shipped" && result.billId !== null) {
+      const havedeliveredBy = await prisma.bill.findUnique({
+        where: { id: result.billId },
+        select: { deliveredById: true, deliveredBy: true },
+      });
+
+      //ดูว่าในseession มี user จริงมั้ย
+      const actorStaff = await prisma.staff.findFirst({
+        where: { userId: Number(session.user?.id) },
+        select: { id: true, user: { select: { name: true } } },
+      });
+
       await prisma.bill.update({
         where: { id: result.billId },
         data: {
           dateReceive: new Date(),
-          deliveredById: Number(session.user?.id),
-          deliveredBy: session.user?.name ?? "",
+          deliveredById: havedeliveredBy?.deliveredById ?? actorStaff?.id,
+          deliveredBy: havedeliveredBy?.deliveredBy ?? actorStaff?.user?.name,
         },
       });
     }
