@@ -286,7 +286,7 @@ export default function ReceiptReportPage() {
             >
               <div className="page-content">
                 {/* Header - แสดงในทุกหน้า */}
-                <div className="mb-6 mt-23">
+                <div className="mb-6 mt-21">
                   <div className="flex justify-between items-start mb-2">
                     <div className="text-left"></div>
                     <div className="text-right text-base text-black dark:text-white print:text-black">
@@ -449,7 +449,7 @@ export default function ReceiptReportPage() {
           .bill-table td:first-child {
             position: relative;
             left: -18mm;
-            padding-left: 5mm !important;
+            padding-left: 8mm !important;
           }
         }
 
