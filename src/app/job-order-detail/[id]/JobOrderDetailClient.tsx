@@ -391,7 +391,7 @@ const JobOrderDetailPage = ({ id }: { id: string }) => {
       case "shipped":
         return "กำลังส่ง";
       case "completed":
-        return "ส่งสำเร็จ";
+        return "เสร็จสิ้น";
       case "canceled":
         return "ยกเลิก";
       default:

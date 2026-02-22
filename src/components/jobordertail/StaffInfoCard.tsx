@@ -127,7 +127,7 @@ export function StaffInfoCard({
 
     try {
       const res = await fetch(`/api/job-order-detail/${jobOrderId}/staff`, {
-        method: "PATCH",
+        method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
