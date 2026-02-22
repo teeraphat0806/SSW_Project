@@ -40,6 +40,12 @@ type StaffMember = {
   role: "supervisor" | "cutter";
 };
 
+type DeliveryStaffMember = {
+  id: number;
+  name: string;
+  role: "delivery";
+};
+
 type ApiJobOrder = {
   id: number;
   billid: number;
@@ -52,6 +58,7 @@ type ApiJobOrder = {
   key: string[];
   supervisors: StaffMember[];
   technicians: StaffMember[];
+  deliveryStaff?: DeliveryStaffMember | null;
   vatRate: number | null;
 
   steel: {
@@ -93,6 +100,7 @@ export type JobOrder = {
   key: string[];
   supervisors: StaffMember[];
   technicians: StaffMember[];
+  deliveryStaff?: DeliveryStaffMember;
   vatRate: number;
   steel: Array<{
     steelType: string;
@@ -136,6 +144,7 @@ const tojobOrder = (api: ApiJobOrder): JobOrder => {
     key: api.key ?? [],
     supervisors: api.supervisors,
     technicians: api.technicians,
+    deliveryStaff: api.deliveryStaff ?? undefined,
     vatRate: api.vatRate ?? 7,
     steel: (api.steel || []).map((s) => ({
       steelType: s.steelType,
@@ -195,30 +204,29 @@ const JobOrderDetailPage = ({ id }: { id: string }) => {
   const [isUpdating, setIsUpdating] = useState(false);
 
   const router = useRouter();
+  const fetchJobOrder = async () => {
+    try {
+      setLoading(true);
+
+      const response = await fetch(`/api/job-order-detail/${id}`, {
+        cache: "no-store",
+      });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+      const apiData: ApiJobOrder = await response.json();
+      const mapped = tojobOrder(apiData);
+
+      setJobOrder(mapped);
+      console.log("mapped jobOrder:", mapped);
+    } catch (error) {
+      console.error("Failed to fetch job order:", error);
+      setJobOrder(null);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchJobOrder = async () => {
-      try {
-        setLoading(true);
-
-        const response = await fetch(`/api/job-order-detail/${id}`, {
-          cache: "no-store",
-        });
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-
-        const apiData: ApiJobOrder = await response.json();
-        const mapped = tojobOrder(apiData);
-
-        setJobOrder(mapped);
-        console.log("mapped jobOrder:", mapped); // ✅ log ตัวที่แปลงแล้ว
-      } catch (error) {
-        console.error("Failed to fetch job order:", error);
-        setJobOrder(null);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchJobOrder();
   }, [id]);
 
@@ -576,6 +584,7 @@ const JobOrderDetailPage = ({ id }: { id: string }) => {
                 {/* Delivery */}
                 <TabsContent value="Delivery" className="mt-0">
                   <DeliveryTab
+                    jobOrderId={id}
                     status={
                       (jobOrder?.status || "pending") as Exclude<
                         JobOrder["status"],
@@ -589,6 +598,8 @@ const JobOrderDetailPage = ({ id }: { id: string }) => {
                     }
                     deliveryAddress={jobOrder?.deliveryAddress ?? "-"}
                     onUpdateStatus={handleStatusUpdate}
+                    assignedDelivery={jobOrder?.deliveryStaff}
+                    onDataChange={fetchJobOrder}
                     className=""
                     items={jobOrder?.steel || []}
                   />
@@ -648,3 +659,4 @@ const JobOrderDetailPage = ({ id }: { id: string }) => {
 };
 
 export default JobOrderDetailPage;
+

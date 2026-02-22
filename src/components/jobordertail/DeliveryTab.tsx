@@ -2,6 +2,7 @@
 "use client";
 import { useState } from "react";
 import * as React from "react";
+import * as Dialog from "@radix-ui/react-dialog";
 import {
   Truck,
   Calendar,
@@ -14,10 +15,19 @@ import {
   ExternalLink,
   RotateCcw,
   Play,
+  Users,
+  Plus,
+  Trash2,
+  Search,
+  Loader2,
+  User,
+  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { toast } from "react-toastify";
+import { useConfirm } from "../providers/confirm-dialog-provider";
 
 // Types (คงเดิม)
 export type JobStatus =
@@ -41,27 +51,55 @@ export type SteelItem = {
   shape: string;
 };
 
+export type DeliveryStaff = {
+  id: number;
+  name: string;
+  role: "delivery";
+};
+
 export type DeliveryTabProps = {
+  jobOrderId: string | number;
   status: JobStatus;
   deliveryDate?: string | null;
   deliveryAddress?: string | null;
+  assignedDelivery?: DeliveryStaff;
   items?: SteelItem[];
-  onUpdateStatus: (newStatus: JobStatus) => void;
+  onUpdateStatus: (newStatus: JobStatus) => void | Promise<void>;
+  onDataChange?: () => void;
   className?: string;
 };
 
 export function DeliveryTab({
+  jobOrderId,
   status,
   deliveryDate,
   deliveryAddress,
+  assignedDelivery,
   items = [],
   onUpdateStatus,
+  onDataChange,
   className,
 }: DeliveryTabProps) {
   const [checkedState, setCheckedState] = React.useState<
     Record<number, boolean>
   >({});
   const [isAddressCopied, setIsAddressCopied] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [availableDelivery, setAvailableDelivery] = useState<DeliveryStaff[]>(
+    [],
+  );
+  const [localDelivery, setLocalDelivery] = useState<DeliveryStaff | undefined>(
+    assignedDelivery,
+  );
+  const [searchTerm, setSearchTerm] = useState("");
+  const [isLoadingStaff, setIsLoadingStaff] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const confirm = useConfirm();
+
+  React.useEffect(() => {
+    setLocalDelivery(assignedDelivery);
+  }, [assignedDelivery]);
 
   // Logic Checklist
   const handleCheck = (index: number) => {
@@ -98,14 +136,123 @@ export function DeliveryTab({
     );
   };
 
+  const fetchCurrentDelivery = async () => {
+    try {
+      const res = await fetch(`/api/job-order-detail/${jobOrderId}`, {
+        cache: "no-store",
+      });
+      if (!res.ok) return;
+      const data = await res.json();
+      setLocalDelivery(data?.deliveryStaff ?? undefined);
+    } catch (error) {
+      console.error("Failed to refresh delivery assignment:", error);
+    }
+  };
+
+  const fetchAvailableDelivery = async () => {
+    setIsLoadingStaff(true);
+    setSearchTerm("");
+    setAvailableDelivery([]);
+    try {
+      const res = await fetch(
+        `/api/job-order-detail/${jobOrderId}/staff?role=delivery`,
+      );
+      if (!res.ok) throw new Error(`Failed to fetch staff: ${res.statusText}`);
+      const rawData = await res.json();
+      const mapped: DeliveryStaff[] = Array.isArray(rawData)
+        ? rawData.map((item: any) => ({
+            id: item.id,
+            name: item.name || item.user?.name || "Unknown",
+            role: "delivery" as const,
+          }))
+        : [];
+      setAvailableDelivery(mapped);
+    } catch (error) {
+      console.error("Failed to fetch delivery staff:", error);
+      toast.error("ไม่สามารถโหลดรายชื่อพนักงานขนส่งได้", {
+        position: "bottom-right",
+      });
+    } finally {
+      setIsLoadingStaff(false);
+    }
+  };
+
+  const openDeliveryModal = () => {
+    setIsModalOpen(true);
+    fetchAvailableDelivery();
+  };
+
+  const handleAssignDelivery = async (staffId: number) => {
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+    try {
+      const res = await fetch(`/api/job-order-detail/${jobOrderId}/staff`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ staffId, role: "delivery" }),
+      });
+      if (!res.ok) throw new Error("Failed to assign delivery");
+      const selected = availableDelivery.find((s) => s.id === staffId);
+      if (selected) setLocalDelivery(selected);
+      setIsModalOpen(false);
+      await fetchCurrentDelivery();
+      toast.success("เพิ่มคนขนส่งเรียบร้อยแล้ว", { position: "bottom-right" });
+    } catch (error) {
+      console.error("Assign delivery failed:", error);
+      toast.error("ไม่สามารถเพิ่มคนขนส่งได้", { position: "bottom-right" });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleRemoveDelivery = async () => {
+    if (isSubmitting) return;
+    // const confirmed = window.confirm("ต้องการลบคนขนส่งออกจากงานนี้ใช่หรือไม่?");
+    const isconfirmed = await confirm({
+      title: "ยืนยันการลบ",
+      description: "ต้องการลบคนขนส่งออกจากงานนี้ใช่หรือไม่?",
+      variant: "destructive",
+      confirmText: "ลบคนขนส่ง",
+      cancelText: "ยกเลิก",
+    })
+    if (!isconfirmed) return;
+
+    setIsSubmitting(true);
+    try {
+      const res = await fetch(`/api/job-order-detail/${jobOrderId}/staff`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ role: "delivery" }),
+      });
+      if (!res.ok) throw new Error("Failed to clear delivery assignment");
+      setLocalDelivery(undefined);
+      await fetchCurrentDelivery();
+      toast.success("ลบคนขนส่งเรียบร้อยแล้ว", { position: "bottom-right" });
+    } catch (error) {
+      console.error("Remove delivery failed:", error);
+      toast.error("ไม่สามารถลบคนขนส่งได้", { position: "bottom-right" });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const allChecked =
     items.length > 0 && items.every((_, idx) => checkedState[idx]);
   const checkedCount = Object.keys(checkedState).length;
+  const filteredDelivery = availableDelivery
+    .filter((s) => s.id !== localDelivery?.id)
+    .filter((s) =>
+      (s.name ?? "").toLowerCase().includes((searchTerm ?? "").toLowerCase()),
+    );
 
   // Status Checks
   const isReadyStep = status === "ready";
   const isShippedStep = status === "shipped"; // สถานะปัจจุบันคือส่งของแล้ว
   const isPostReady = isShippedStep; // ใช้สำหรับล็อกสถานะเช็คของ
+  const handleShipStatus = async () => {
+    await onUpdateStatus("shipped");
+    await fetchCurrentDelivery();
+  };
 
   // const progressPercent =
   //   items.length > 0 ? (checkedCount / items.length) * 100 : 0;
@@ -331,7 +478,7 @@ export function DeliveryTab({
                 {/* Primary action */}
                 <Button
                   className="w-full h-11 rounded-xl bg-blue-600 hover:bg-blue-700 text-white gap-2 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                  onClick={() => onUpdateStatus("shipped")}
+                  onClick={handleShipStatus}
                   disabled={!allChecked}
                 >
                   <Play className="h-3 w-3 fill-current" />
@@ -390,6 +537,136 @@ export function DeliveryTab({
           </div>
         </div>
       </div>
+
+      <div className="rounded-xl border bg-card shadow-sm overflow-hidden dark:border-zinc-800 dark:bg-zinc-900/50">
+        <div className="border-b bg-muted/40 px-4 py-3">
+          <div className="flex items-center justify-between gap-3">
+            <h5 className="font-semibold flex items-center gap-2 text-sm text-foreground">
+              <Users className="h-4 w-4" />
+              คนขนส่ง
+            </h5>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={openDeliveryModal}
+              className="h-8 border-dashed border-muted-foreground/30"
+            >
+              {localDelivery ? "เปลี่ยนคนส่ง" : "+"}
+            </Button>
+          </div>
+        </div>
+
+        <div className="p-4">
+          {!localDelivery ? (
+            <p className="text-sm text-muted-foreground">ยังไม่ได้ระบุคนขนส่ง</p>
+          ) : (
+            <div className="group flex items-center justify-between rounded-lg border bg-muted/30 px-3 py-2">
+              <div className="flex items-center gap-3">
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-100 text-blue-700 text-xs font-bold">
+                  {localDelivery.name.slice(0, 2).toUpperCase()}
+                </div>
+                <div>
+                  <p className="text-sm font-medium">{localDelivery.name}</p>
+                  <p className="text-xs text-muted-foreground">Delivery</p>
+                </div>
+              </div>
+              <button
+                onClick={handleRemoveDelivery}
+                className="rounded-md p-1.5 text-muted-foreground hover:bg-red-50 hover:text-red-600"
+                title="Remove"
+              >
+                <Trash2 className="h-4 w-4" />
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+
+      <Dialog.Root open={isModalOpen} onOpenChange={setIsModalOpen}>
+        <Dialog.Portal>
+          <Dialog.Overlay className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm" />
+          <Dialog.Content className="fixed left-[50%] top-[50%] z-50 w-full max-w-lg translate-x-[-50%] translate-y-[-50%] border bg-background p-0 shadow-2xl sm:rounded-xl dark:border-zinc-800 dark:bg-zinc-900">
+            <div className="flex flex-col space-y-1.5 border-b px-6 py-4 dark:border-zinc-800">
+              <Dialog.Title className="text-lg font-semibold text-foreground">
+                เพิ่มคนขนส่ง
+              </Dialog.Title>
+              <Dialog.Description className="text-sm text-muted-foreground">
+                เลือกรายชื่อพนักงานขนส่งเพื่อมอบหมายงาน
+              </Dialog.Description>
+            </div>
+
+            <div className="px-4 py-4">
+              <div className="relative">
+                <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                <input
+                  type="text"
+                  placeholder="พิมพ์ชื่อเพื่อค้นหา..."
+                  className="flex h-10 w-full rounded-lg border border-input bg-muted/50 px-3 py-2 pl-9 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  autoFocus
+                />
+              </div>
+            </div>
+
+            <div className="max-h-[300px] min-h-[150px] overflow-y-auto px-2 pb-4">
+              {isLoadingStaff ? (
+                <div className="flex h-[150px] flex-col items-center justify-center text-muted-foreground gap-2">
+                  <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                  <span className="text-sm">กำลังโหลดข้อมูล...</span>
+                </div>
+              ) : filteredDelivery.length === 0 ? (
+                <div className="flex h-[150px] flex-col items-center justify-center text-sm text-muted-foreground gap-2">
+                  <div className="p-3 rounded-full bg-muted/50">
+                    <User className="h-6 w-6 opacity-50" />
+                  </div>
+                  <span>
+                    {searchTerm
+                      ? "ไม่พบรายชื่อที่ค้นหา"
+                      : "ไม่มีพนักงานขนส่งเพิ่มเติมให้เลือก"}
+                  </span>
+                </div>
+              ) : (
+                <div className="space-y-1 p-2">
+                  {filteredDelivery.map((staff) => (
+                    <button
+                      key={staff.id}
+                      disabled={isSubmitting}
+                      onClick={() => handleAssignDelivery(staff.id)}
+                      className="group flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-left text-sm transition-all hover:bg-accent disabled:opacity-50"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">
+                          {staff.name.slice(0, 2).toUpperCase()}
+                        </div>
+                        <div className="flex flex-col items-start gap-0.5">
+                          <span className="text-sm font-medium text-foreground leading-none">
+                            {staff.name}
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                            Delivery
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex h-6 w-6 items-center justify-center rounded-md border border-muted-foreground/20 opacity-0 transition-opacity group-hover:opacity-100">
+                        <Plus className="h-3.5 w-3.5 text-foreground" />
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <Dialog.Close className="absolute right-4 top-4 rounded-sm opacity-70 transition-opacity hover:opacity-100">
+              <X className="h-4 w-4" />
+              <span className="sr-only">Close</span>
+            </Dialog.Close>
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog.Root>
     </div>
   );
 }
+
+
+

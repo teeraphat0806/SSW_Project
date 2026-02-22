@@ -141,24 +141,16 @@ export function StaffInfoCard({
         throw new Error(`Failed to add staff: ${res.statusText}`);
       }
 
-      // Success: อัปเดต Local State ทันทีเพื่อให้เห็นผลเลย
+      await fetchCurrentStaff();
       toast.success("เพิ่มพนักงานเรียบร้อยแล้ว", {
         position: "bottom-right",
       });
-      const addedStaff = availableStaff.find((s) => s.id === staffId);
-      if (addedStaff) {
-        if (modalType === "supervisor") {
-          setLocalSupervisors((prev) => [...prev, addedStaff]);
-        } else {
-          setLocalTechs((prev) => [...prev, addedStaff]);
-        }
-      }
-
       setIsModalOpen(false);
-      onDataChange?.(); // แจ้ง Parent ให้โหลดข้อมูลใหม่ (Backup)
     } catch (error) {
       console.error("Error adding staff:", error);
-      alert("เกิดข้อผิดพลาดในการเพิ่มพนักงาน");
+      toast.error("ไม่สามารถเพิ่มพนักงานได้ กรุณาลองใหม่อีกครั้ง", {
+        position: "bottom-right",
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -167,15 +159,17 @@ export function StaffInfoCard({
   // 3. DELETE: ลบพนักงาน
   const handleRemoveStaff = async (staffId: number, type: ModalType) => {
     const isConfirmed = await confirm({
-      title: "ต้องการลบรายชื่อนี้ออกจากงานใช่หรือไม่?", // หัวข้อ
-      description: "หากลบแล้วข้อมูลพนักงานจะถูกลบออกจากงานนี้ทันที", // คำอธิบาย
-      variant: "destructive", // ใส่เพื่อให้ปุ่มเป็นสีแดง (optional)
-      confirmText: "ลบข้อมูล", // ข้อความปุ่มยืนยัน
-      cancelText: "ไม่ลบ", // ข้อความปุ่มยกเลิก
+      title: "ยืนยันการลบ",
+      description: "การดำเนินการนี้จะลบพนักงานออกจากงานนี้ทันที",
+      variant: "destructive",
+      confirmText: "ลบพนักงาน",
+      cancelText: "ยกเลิก",
     });
     if (!isConfirmed) return;
 
     const role = apiRoleFromModal(type);
+    if (isSubmitting) return;
+    setIsSubmitting(true);
 
     try {
       const res = await fetch(`/api/job-order-detail/${jobOrderId}/staff`, {
@@ -190,22 +184,29 @@ export function StaffInfoCard({
         });
         throw new Error("Failed to remove staff");
       }
+
+      await fetchCurrentStaff();
       toast.success("ลบพนักงานเรียบร้อยแล้ว", {
         position: "bottom-right",
       });
-
-      // Success: ลบออกจาก Local State ทันที
-      if (type === "supervisor") {
-        setLocalSupervisors((prev) => prev.filter((s) => s.id !== staffId));
-      } else {
-        setLocalTechs((prev) => prev.filter((s) => s.id !== staffId));
-      }
-
-      onDataChange?.();
     } catch (error) {
       console.error("Error removing staff:", error);
-      alert("เกิดข้อผิดพลาดในการลบพนักงาน");
+      toast.error("ไม่สามารถลบพนักงานได้ กรุณาลองใหม่อีกครั้ง", {
+        position: "bottom-right",
+      });
+    } finally {
+      setIsSubmitting(false);
     }
+  };
+
+  const fetchCurrentStaff = async () => {
+    const res = await fetch(`/api/job-order-detail/${jobOrderId}`, {
+      cache: "no-store",
+    });
+    if (!res.ok) return;
+    const data = await res.json();
+    setLocalSupervisors(uniqueStaffById(data.supervisors));
+    setLocalTechs(uniqueStaffById(data.technicians));
   };
 
   // --- Handlers ---
