@@ -130,7 +130,7 @@ const toJoborder = (api: ApiJobOrder): Joborder => ({
     isOD: s.isOD ?? false,
     isServices: s.isServices ?? false,
     isPerAmount: s.isPerAmount ?? false,
-    discount: s.discount ?? null  ,
+    discount: s.discount ?? null,
     price: s.price ?? 1,
     density: s.density ?? 0.0000079,
   })),
@@ -143,7 +143,7 @@ const ORDER_STATUSES = [
   "ชั่งน้ำหนัก",
   "ตัดเสร็จสิ้น",
   "กำลังส่ง",
-  "ส่งสำเร็จ",
+  "เสร็จสิ้น",
 ] as const;
 
 type OrderStatus = (typeof ORDER_STATUSES)[number];
@@ -154,7 +154,7 @@ const STATUS_ICONS: Record<OrderStatus, React.ReactNode> = {
   ชั่งน้ำหนัก: <Scale className="h-5 w-5" />,
   ตัดเสร็จสิ้น: <CheckCircle2 className="h-5 w-5" />,
   กำลังส่ง: <Truck className="h-5 w-5" />,
-  ส่งสำเร็จ: <PackageCheck className="h-5 w-5" />,
+  เสร็จสิ้น: <PackageCheck className="h-5 w-5" />,
 };
 
 type SteelOption = {
@@ -221,7 +221,7 @@ const toThaiStatus = (s: Joborder["status"]): OrderStatus => {
     case "shipped":
       return "กำลังส่ง";
     case "completed":
-      return "ส่งสำเร็จ";
+      return "เสร็จสิ้น";
     default:
       return "รอตัด";
   }
@@ -532,6 +532,7 @@ const UpdateOrderPage = ({ id }: { id: string }) => {
   }
 
   const status: OrderStatus = toThaiStatus(job.status);
+  //weightEnabled คือสถานะที่เปิดให้กรอกน้ำหนักได้
   const weightEnabled =
     ORDER_STATUSES.indexOf(status) >= ORDER_STATUSES.indexOf("ชั่งน้ำหนัก");
 

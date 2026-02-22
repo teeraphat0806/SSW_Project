@@ -11,11 +11,13 @@ import {
   FileText,
   ChevronLeft,
   ChevronRight,
+  Loader2,
 } from "lucide-react";
 import AddCustomerModal from "@/components/customer-Dashboard/AddCustomerModel";
 import { useConfirm } from "@/components/providers/confirm-dialog-provider";
 import { toast } from "react-toastify";
 import CustomerViewEditModal from "@/components/customer-Dashboard/CustomerViewEditModal";
+import SearchDebounce from "@/components/SearchDebounce";
 
 type Customer = {
   id: number;
@@ -117,6 +119,7 @@ export default function CustomerDashboard() {
       );
     } catch (err: any) {
       // ถ้ายกเลิก request ไม่ต้องโชว์ error
+      //
       if (err?.name !== "AbortError") {
         console.error(err);
       }
@@ -247,8 +250,6 @@ export default function CustomerDashboard() {
           open={openAdd}
           onClose={() => setOpenAdd(false)}
           onCreated={() => {
-            // หลังสร้างสำเร็จ ให้รีเฟรชตาราง
-            // วิธีง่ายสุด: เรียก fetchCustomers() ของคุณ
             fetchCustomers();
           }}
         />
@@ -257,16 +258,9 @@ export default function CustomerDashboard() {
         <div className="bg-white dark:bg-zinc-950/50 p-4 rounded-xl shadow-sm border border-zinc-100 dark:border-zinc-800 flex flex-col md:flex-row gap-4 justify-between items-center transition-colors">
           {/* Search */}
           <div className="relative w-full md:w-96">
-            <Search
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400"
-              size={18}
-            />
-            <input
-              type="text"
+            <SearchDebounce
               placeholder="ค้นหาชื่อ, เบอร์โทร..."
-              className="w-full pl-10 pr-4 py-2 border border-zinc-200 dark:border-zinc-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 dark:placeholder-zinc-500 transition-all"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onSearchChange={(value) => setSearch(value)}
             />
           </div>
 
@@ -308,11 +302,11 @@ export default function CustomerDashboard() {
               <tbody className="divide-y divide-zinc-50 dark:divide-zinc-800">
                 {loading ? (
                   <tr>
-                    <td
-                      colSpan={7}
-                      className="p-8 text-center text-zinc-400 dark:text-zinc-500"
-                    >
-                      กำลังโหลดข้อมูล...
+                    <td colSpan={7} className="p-12 text-center text-zinc-400">
+                      <div className="flex flex-col items-center gap-2">
+                        <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
+                        <span>กำลังโหลดข้อมูล...</span>
+                      </div>
                     </td>
                   </tr>
                 ) : data.length === 0 ? (

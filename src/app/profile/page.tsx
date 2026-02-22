@@ -147,7 +147,7 @@ export default function Profile() {
               </div>
             </section>
 
-            {/* Security */}
+            {/* Security all */}
             <section className="mb-8">
               <h2 className="text-2xl font-semibold mb-4">ความปลอดภัย</h2>
               <div className="flex flex-wrap gap-3">

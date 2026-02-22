@@ -28,7 +28,7 @@ export type OrderStatus =
   | "ชั่งน้ำหนัก"
   | "ตัดเสร็จสิ้น"
   | "กำลังส่ง"
-  | "ส่งสำเร็จ";
+  | "เสร็จสิ้น";
 
 /* =========================
    Status Mapping
@@ -47,7 +47,7 @@ export const toThaiStatus = (s: ApiStatus): OrderStatus => {
     case "shipped":
       return "กำลังส่ง";
     case "completed":
-      return "ส่งสำเร็จ";
+      return "เสร็จสิ้น";
     default:
       return "รอตัด";
   }
@@ -65,7 +65,7 @@ export const toApiStatus = (s: OrderStatus): ApiStatus => {
       return "ready";
     case "กำลังส่ง":
       return "shipped";
-    case "ส่งสำเร็จ":
+    case "เสร็จสิ้น":
       return "completed";
     default:
       return "pending";
@@ -98,7 +98,7 @@ export default function Stepper({
 
   const currentStep = useMemo(
     () => ORDER_STATUSES.indexOf(thaiStatus),
-    [thaiStatus, ORDER_STATUSES]
+    [thaiStatus, ORDER_STATUSES],
   );
 
   const progressPct = useMemo(() => {
@@ -141,7 +141,7 @@ export default function Stepper({
                     {React.isValidElement(STATUS_ICONS[s]) &&
                       React.cloneElement(
                         STATUS_ICONS[s] as React.ReactElement,
-                        { className: "h-5 w-5" } as any
+                        { className: "h-5 w-5" } as any,
                       )}
                     <span>{s}</span>
                   </div>
@@ -187,7 +187,7 @@ export default function Stepper({
                       {React.isValidElement(STATUS_ICONS[s]) &&
                         React.cloneElement(
                           STATUS_ICONS[s] as React.ReactElement,
-                          { className: "h-5 w-5" } as any
+                          { className: "h-5 w-5" } as any,
                         )}
                     </div>
 
@@ -196,8 +196,8 @@ export default function Stepper({
                         isActive
                           ? "font-bold text-blue-600 dark:text-blue-400"
                           : isCompleted
-                          ? "text-zinc-700 dark:text-zinc-300"
-                          : "text-zinc-400 dark:text-zinc-600"
+                            ? "text-zinc-700 dark:text-zinc-300"
+                            : "text-zinc-400 dark:text-zinc-600"
                       }`}
                     >
                       {s}

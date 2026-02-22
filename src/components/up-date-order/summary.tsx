@@ -1,9 +1,10 @@
 import React, { useMemo } from "react";
 import { Boxes, Calculator, ListChecks } from "lucide-react";
+import { ShapeSteel } from "@/types";
 
 type SteelItem = {
   steelType: string;
-  shape: "square" | "line";
+  shape: ShapeSteel;
   amount: number;
   weight?: number | null;
 };

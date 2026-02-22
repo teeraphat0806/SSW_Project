@@ -122,12 +122,6 @@ export default function Sidebar() {
                 : ""
             }
           >
-            {expanded && (
-              <h3 className="mb-2 px-2 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-                {group.category}
-              </h3>
-            )}
-
             <div className="space-y-1">
               {group.items.map((item) => {
                 const isActive = pathname === item.href;
