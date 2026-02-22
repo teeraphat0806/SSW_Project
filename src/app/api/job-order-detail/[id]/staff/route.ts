@@ -40,7 +40,7 @@ export async function GET(req: NextRequest) {
   if (!parsedQ.success) {
     return NextResponse.json(
       { error: parsedQ.error.flatten() },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
@@ -57,7 +57,7 @@ export async function GET(req: NextRequest) {
     if (!staff) {
       return NextResponse.json(
         { error: `Not found ${userRole}` },
-        { status: 404 }
+        { status: 404 },
       );
     }
     const formattedStaff: staffApi[] = staff.map((s) => ({
@@ -70,18 +70,15 @@ export async function GET(req: NextRequest) {
     console.error("Error fetching staff:", error);
     return NextResponse.json(
       { error: "Internal Server Error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
 
-export async function PATCH(
+export async function POST(
   req: NextRequest,
-  context: { params: Promise<{ id: string }> }
+  context: { params: Promise<{ id: string }> },
 ) {
-  // const authResult = await requireAuth(["superadmin", "clerk", "supervisor"]);
-  // if ("response" in authResult) return authResult.response;
-
   const { id } = await context.params;
   const poId = Number(id);
   if (Number.isNaN(poId)) {
@@ -92,7 +89,7 @@ export async function PATCH(
   if (!parsed.success) {
     return NextResponse.json(
       { error: parsed.error.flatten() },
-      { status: 400 }
+      { status: 400 },
     );
   }
   const { staffId, role } = parsed.data;
@@ -120,20 +117,20 @@ export async function PATCH(
     });
     return NextResponse.json(
       { message: "Assigned successfully" },
-      { status: 200 }
+      { status: 200 },
     );
   } catch (error) {
     console.error("Error assigning staff:", error);
     return NextResponse.json(
       { error: "Internal Server Error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
 
 export async function DELETE(
   req: NextRequest,
-  context: { params: Promise<{ id: string }> }
+  context: { params: Promise<{ id: string }> },
 ) {
   const { id } = await context.params;
   const poId = Number(id);
@@ -146,7 +143,7 @@ export async function DELETE(
   if (!parsed.success) {
     return NextResponse.json(
       { error: parsed.error.flatten() },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
@@ -162,13 +159,13 @@ export async function DELETE(
 
     return NextResponse.json(
       { message: "Removed successfully" },
-      { status: 200 }
+      { status: 200 },
     );
   } catch (error) {
     console.error("Error removing staff assignment:", error);
     return NextResponse.json(
       { error: "Internal Server Error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
