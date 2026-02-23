@@ -69,8 +69,8 @@ export function calculateWeightDetails(steel: SteelItem): WeightDetails {
 
   if (weight > 0) {
     return {
-      weight: round2(weight * amount),
-      total: round2(weight * amount * price),
+      weight: round2(weight),
+      total: round2(weight * price),
       discount,
       isManual: true,
     };

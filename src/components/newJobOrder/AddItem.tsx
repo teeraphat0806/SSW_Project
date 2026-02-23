@@ -145,37 +145,36 @@ export default function AddItem({
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {/* 1. PO Number */}
 
-            {pofilelength > 0 && (
-              <div className="space-y-2 group">
-                <Label
-                  htmlFor="poNumber"
-                  className="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 group-focus-within:text-blue-600 dark:group-focus-within:text-blue-400 transition-colors"
-                >
-                  เลขที่ใบ PO <span className="text-red-500">*</span>
-                </Label>
-                <div className="relative transition-all duration-200 ease-in-out transform group-focus-within:-translate-y-0.5">
-                  <Hash className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400 group-focus-within:text-blue-500 transition-colors" />
-                  <Input
-                    id="poNumber"
-                    placeholder="ระบุเลข PO (เช่น PO-2025001)"
-                    value={headOrder.poNumber ?? ""}
-                    onChange={(e) => {
-                      const targetValue = e.target.value;
+            {/* {pofilelength > 0 && ( */}
+            <div className="space-y-2 group">
+              <Label
+                htmlFor="poNumber"
+                className="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 group-focus-within:text-blue-600 dark:group-focus-within:text-blue-400 transition-colors"
+              >
+                เลขที่ใบ PO <span className="text-red-500">*</span>
+              </Label>
+              <div className="relative transition-all duration-200 ease-in-out transform group-focus-within:-translate-y-0.5">
+                <Hash className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400 group-focus-within:text-blue-500 transition-colors" />
+                <Input
+                  id="poNumber"
+                  placeholder="ระบุเลข PO (เช่น PO-2025001)"
+                  value={headOrder.poNumber ?? ""}
+                  onChange={(e) => {
+                    const targetValue = e.target.value;
 
-                      if (pofilelength > 0) {
-                        setheadOrder({ ...headOrder, poNumber: targetValue });
-                      }
-                      setheadOrder({
-                        ...headOrder,
-                        poNumber:
-                          targetValue.trim() === "" ? null : targetValue,
-                      });
-                    }}
-                    className="pl-10 h-11 bg-zinc-50/50 dark:bg-zinc-950/50 border-zinc-200 dark:border-zinc-800 focus:bg-white dark:focus:bg-zinc-950 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
-                  />
-                </div>
+                    if (pofilelength > 0) {
+                      setheadOrder({ ...headOrder, poNumber: targetValue });
+                    }
+                    setheadOrder({
+                      ...headOrder,
+                      poNumber: targetValue.trim() === "" ? null : targetValue,
+                    });
+                  }}
+                  className="pl-10 h-11 bg-zinc-50/50 dark:bg-zinc-950/50 border-zinc-200 dark:border-zinc-800 focus:bg-white dark:focus:bg-zinc-950 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                />
               </div>
-            )}
+            </div>
+            {/* )} */}
 
             {/* 2. Your Ref */}
             <div className="space-y-2 group">
@@ -363,26 +362,26 @@ export default function AddItem({
                             ) : (
                               <div className="max-h-48 overflow-y-auto">
                                 {steelTypes.map((type) => (
-                                <SelectItem
-                                  key={type.id}
-                                  value={String(type.id)}
-                                >
-                                  <span className="font-medium">
-                                    {type.name}
-                                  </span>
-                                  <span className="ml-2 text-xs text-muted-foreground">
-                                    {type.shape === "square"
-                                      ? "(แผ่น)"
-                                      : type.shape === "line"
-                                        ? "(เพลา)"
-                                        : ""}
-                                  </span>
-                                  {/* {type.shape === "line" && (
+                                  <SelectItem
+                                    key={type.id}
+                                    value={String(type.id)}
+                                  >
+                                    <span className="font-medium">
+                                      {type.name}
+                                    </span>
+                                    <span className="ml-2 text-xs text-muted-foreground">
+                                      {type.shape === "square"
+                                        ? "(แผ่น)"
+                                        : type.shape === "line"
+                                          ? "(เพลา)"
+                                          : ""}
+                                    </span>
+                                    {/* {type.shape === "line" && (
                                     <span className="ml-2 text-xs text-muted-foreground">
                                       Ø
                                     </span>
                                   )} */}
-                                </SelectItem>
+                                  </SelectItem>
                                 ))}
                               </div>
                             )}
