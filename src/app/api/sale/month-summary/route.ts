@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "../../../../lib/prisma";
 import { requireAuth } from "@/lib/permissions";
+import { getSalaryForPeriod } from "@/lib/salary-expense-utils";
 
 export async function GET(req: NextRequest) {
   const authResult = await requireAuth([
@@ -18,12 +19,10 @@ export async function GET(req: NextRequest) {
   console.log(session);
 
   try {
-    // Get query parameters
     const searchParams = req.nextUrl.searchParams;
     const year = searchParams.get("year");
     const month = searchParams.get("month");
 
-    // Validate parameters
     if (!year || !month) {
       return NextResponse.json(
         {
@@ -31,9 +30,7 @@ export async function GET(req: NextRequest) {
           error: {
             code: "MISSING_PARAMETERS",
             message: "กรุณาระบุปีและเดือน",
-            details: {
-              required: ["year", "month"],
-            },
+            details: { required: ["year", "month"] },
           },
         },
         { status: 400 },
@@ -43,7 +40,6 @@ export async function GET(req: NextRequest) {
     const yearNumber = Number(year);
     const monthNumber = Number(month);
 
-    // Validate year
     if (isNaN(yearNumber) || yearNumber < 2000 || yearNumber > 2100) {
       return NextResponse.json(
         {
@@ -62,14 +58,13 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    // Validate month
     if (isNaN(monthNumber) || monthNumber < 1 || monthNumber > 12) {
       return NextResponse.json(
         {
           success: false,
           error: {
             code: "INVALID_MONTH",
-            message: "เดือนไม่ถูกต้อง กรุณาระบุเดือนระหว่าง 1-12",
+            message: "เดือนไม่ถูกต้อง กรุณาระบุเดือนระหว่าง  1-12",
             details: {
               field: "month",
               provided: monthNumber,
@@ -97,77 +92,101 @@ export async function GET(req: NextRequest) {
     ];
 
     const startOfMonth = new Date(yearNumber, monthNumber - 1, 1);
-    const endOfMonth = new Date(yearNumber, monthNumber, 1);
+    const endOfMonthExclusive = new Date(yearNumber, monthNumber, 1);
+    const endOfMonth = new Date(endOfMonthExclusive.getTime() - 1);
     const daysInMonth = new Date(yearNumber, monthNumber, 0).getDate();
 
-    // Get income data (from Bill)
-    const incomeStats = await prisma.bill.aggregate({
-      where: {
-        createdAt: {
-          gte: startOfMonth,
-          lt: endOfMonth,
+    const [
+      incomeStats,
+      expenseStats,
+      allStaff,
+      employmentsFromDB,
+      salariesFromDB,
+    ] = await Promise.all([
+      prisma.bill.aggregate({
+        where: {
+          createdAt: { gte: startOfMonth, lt: endOfMonthExclusive },
+          OrderPO: { is: { status: "completed" } },
         },
-        OrderPO: {
-          is: {
-            status: "completed",
-          },
+        _sum: {
+          grandTotal: true,
+          subtotal: true,
+          vat: true,
         },
-      },
-      _sum: {
-        grandTotal: true,
-        subtotal: true,
-        vat: true,
-      },
-      _count: {
-        id: true,
-      },
-    });
-
-    // Get expense data
-    const expenseStats = await prisma.expense.aggregate({
-      where: {
-        expenseDate: {
-          gte: startOfMonth,
-          lt: endOfMonth,
+        _count: { id: true },
+      }),
+      prisma.expense.aggregate({
+        where: {
+          expenseDate: { gte: startOfMonth, lt: endOfMonthExclusive },
         },
-      },
-      _sum: {
-        amount: true,
-      },
-      _count: {
-        id: true,
-      },
-    });
+        _sum: { amount: true },
+        _count: { id: true },
+      }),
+      prisma.staff.findMany({
+        select: {
+          id: true,
+          currentSalary: true,
+          startDate: true,
+          hireStatus: true,
+          TerminationDate: true,
+        },
+      }),
+      prisma.staffEmployment.findMany({
+        where: {
+          startDate: { lte: endOfMonth },
+          OR: [{ endDate: null }, { endDate: { gte: startOfMonth } }],
+        },
+        select: {
+          staffId: true,
+          startDate: true,
+          endDate: true,
+        },
+        orderBy: [{ staffId: "asc" }, { startDate: "desc" }],
+      }),
+      prisma.staffSalary.findMany({
+        where: {
+          effectiveDate: { lte: endOfMonth },
+        },
+        select: {
+          staffId: true,
+          amount: true,
+          effectiveDate: true,
+        },
+        orderBy: [{ staffId: "asc" }, { effectiveDate: "desc" }],
+      }),
+    ]);
 
-    // Get all staff to calculate salaries for the month
-    const allStaff = await prisma.staff.findMany({
-      select: {
-        id: true,
-        currentSalary: true,
-      },
-    });
+    const employmentMap = new Map<
+      number,
+      (typeof employmentsFromDB)[number][]
+    >();
+    for (const employment of employmentsFromDB) {
+      const current = employmentMap.get(employment.staffId) ?? [];
+      current.push(employment);
+      employmentMap.set(employment.staffId, current);
+    }
 
-    // Calculate total salaries for the month
+    const staffSalaryMap = new Map<number, (typeof salariesFromDB)[number][]>();
+    for (const salary of salariesFromDB) {
+      const current = staffSalaryMap.get(salary.staffId) ?? [];
+      current.push(salary);
+      staffSalaryMap.set(salary.staffId, current);
+    }
+
     let totalSalary = 0;
     let salaryItemCount = 0;
-
     for (const staff of allStaff) {
-      // Find the latest salary that's effective for this month
-      const salary = await prisma.staffSalary.findFirst({
-        where: {
-          staffId: staff.id,
-          effectiveDate: {
-            lte: endOfMonth,
-          },
+      const amount = getSalaryForPeriod(
+        {
+          staff,
+          employments: employmentMap.get(staff.id) ?? [],
+          salaries: staffSalaryMap.get(staff.id) ?? [],
         },
-        orderBy: {
-          effectiveDate: "desc",
-        },
-      });
-
-      // Use the salary from StaffSalary if found, otherwise use currentSalary
-      const salaryAmount = salary ? salary.amount : staff.currentSalary;
-      totalSalary += salaryAmount;
+        startOfMonth,
+        endOfMonth,
+      );
+      if (amount == null) continue;
+      totalSalary += amount;
       salaryItemCount++;
     }
 
@@ -194,26 +213,14 @@ export async function GET(req: NextRequest) {
         : 0;
     const profitMargin = netPercentage;
 
-    // หาลูกค้าที่มียอดซื้อมากที่สุดในเดือนนี้
     const customerPurchases = await prisma.bill.groupBy({
       by: ["customerId"],
       where: {
-        createdAt: {
-          gte: startOfMonth,
-          lt: endOfMonth,
-        },
-        OrderPO: {
-          is: {
-            status: "completed",
-          },
-        },
+        createdAt: { gte: startOfMonth, lt: endOfMonthExclusive },
+        OrderPO: { is: { status: "completed" } },
       },
-      _count: {
-        id: true,
-      },
-      _sum: {
-        grandTotal: true,
-      },
+      _count: { id: true },
+      _sum: { grandTotal: true },
       orderBy: {
         _sum: {
           grandTotal: "desc",
@@ -222,7 +229,6 @@ export async function GET(req: NextRequest) {
       take: 1,
     });
 
-    // ดึงข้อมูลลูกค้าที่มียอดซื้อมากที่สุด
     let topCustomer = null;
     if (customerPurchases.length > 0) {
       const topCustomerData = customerPurchases[0];
@@ -234,7 +240,6 @@ export async function GET(req: NextRequest) {
           taxNumber: true,
         },
       });
-
       if (customer) {
         topCustomer = {
           id: customer.id,
@@ -250,66 +255,65 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    // Calculate working days (excluding weekends)
     let workingDays = 0;
     for (let day = 1; day <= daysInMonth; day++) {
       const date = new Date(yearNumber, monthNumber - 1, day);
       const dayOfWeek = date.getDay();
-      // 0 = Sunday, 6 = Saturday
       if (dayOfWeek !== 0 && dayOfWeek !== 6) {
         workingDays++;
       }
     }
 
-    const result = {
-      success: true,
-      data: {
-        month: monthNumber,
-        monthName: monthNames[monthNumber - 1],
-        year: yearNumber,
-        income: {
-          total: totalIncome,
-          formatted: `฿${totalIncome.toLocaleString("en-US")}`,
-          subtotal: totalSubtotal,
-          subtotalFormatted: `฿${totalSubtotal.toLocaleString("en-US")}`,
-          totalTax: totalTax,
-          totalTaxFormatted: `฿${totalTax.toLocaleString("en-US")}`,
-          billCount,
-          avgPerBill,
+    return NextResponse.json(
+      {
+        success: true,
+        data: {
+          month: monthNumber,
+          monthName: monthNames[monthNumber - 1],
+          year: yearNumber,
+          income: {
+            total: totalIncome,
+            formatted: `฿${totalIncome.toLocaleString("en-US")}`,
+            subtotal: totalSubtotal,
+            subtotalFormatted: `฿${totalSubtotal.toLocaleString("en-US")}`,
+            totalTax: totalTax,
+            totalTaxFormatted: `฿${totalTax.toLocaleString("en-US")}`,
+            billCount,
+            avgPerBill,
+          },
+          expense: {
+            total: totalExpense,
+            formatted: `฿${totalExpense.toLocaleString("en-US")}`,
+            itemCount: totalExpenseItemCount,
+            avgPerItem,
+            salaryAmount: totalSalary,
+            expenseAmount: totalExpenseFromExpense,
+            salaryCount: salaryItemCount,
+            expenseCount: expenseItemCount,
+          },
+          net: {
+            total: netTotal,
+            formatted: `฿${netTotal.toLocaleString("en-US")}`,
+            percentage: netPercentage,
+            profitMargin,
+          },
+          topCustomer,
         },
-        expense: {
-          total: totalExpense,
-          formatted: `฿${totalExpense.toLocaleString("en-US")}`,
-          itemCount: totalExpenseItemCount,
-          avgPerItem,
-          salaryAmount: totalSalary,
-          expenseAmount: totalExpenseFromExpense,
-          salaryCount: salaryItemCount,
-          expenseCount: expenseItemCount,
+        meta: {
+          totalDays: daysInMonth,
+          workingDays,
+          lastUpdated: new Date().toISOString(),
         },
-        net: {
-          total: netTotal,
-          formatted: `฿${netTotal.toLocaleString("en-US")}`,
-          percentage: netPercentage,
-          profitMargin,
-        },
-        topCustomer: topCustomer,
       },
-      meta: {
-        totalDays: daysInMonth,
-        workingDays,
-        lastUpdated: new Date().toISOString(),
-      },
-    };
-
-    return NextResponse.json(result, { status: 200 });
+      { status: 200 },
+    );
   } catch (error) {
     return NextResponse.json(
       {
         success: false,
         error: {
           code: "INTERNAL_ERROR",
-          message: "เกิดข้อผิดพลาดในการดึงข้อมูล",
+          message: "เกิดข้อผิดพลาดภายในระบบ กรุณาลองใหม่อีกครั้ง",
           details: {
             message: String(error),
           },

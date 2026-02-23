@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "../../../../../lib/prisma";
 import { requireAuth } from "@/lib/permissions";
+import { getSalaryForPeriod } from "@/lib/salary-expense-utils";
+
 export async function GET(
   req: NextRequest,
   context: { params: Promise<{ year: string }> },
@@ -16,135 +18,165 @@ export async function GET(
   if ("response" in authResult) {
     return authResult.response;
   }
+
   if (!year || isNaN(Number(year))) {
     return NextResponse.json(
       { error: "Invalid year parameter" },
       { status: 400 },
     );
   }
+
   const { session } = authResult;
   console.log(session);
+
   try {
     const yearNumber = Number(year);
-    const startOfYear = new Date(yearNumber, 0, 1); // January 1st
-    const endOfYear = new Date(yearNumber + 1, 0, 1); // January 1st of next year
+    const startOfYear = new Date(yearNumber, 0, 1);
+    const endOfYearExclusive = new Date(yearNumber + 1, 0, 1);
+    const endOfYear = new Date(endOfYearExclusive.getTime() - 1);
 
-    // คำนวณยอดขายและจำนวนบิลที่มี OrderPO สำเร็จ
-    const billStats = await prisma.bill.aggregate({
-      where: {
-        createdAt: {
-          gte: startOfYear,
-          lt: endOfYear,
-        },
-        OrderPO: {
-          is: {
-            status: "completed",
+    const [
+      billStats,
+      revenueStats,
+      expenseStats,
+      allStaff,
+      employmentsFromDB,
+      salariesFromDB,
+    ] = await Promise.all([
+      prisma.bill.aggregate({
+        where: {
+          createdAt: {
+            gte: startOfYear,
+            lt: endOfYearExclusive,
+          },
+          OrderPO: {
+            is: {
+              status: "completed",
+            },
           },
         },
-      },
-      _sum: {
-        grandTotal: true,
-      },
-      _count: {
-        id: true,
-      },
-    });
-
-    // คำนวณรายรับจาก Bill ที่มี OrderPO completed
-    const revenueStats = await prisma.bill.aggregate({
-      where: {
-        createdAt: {
-          gte: startOfYear,
-          lt: endOfYear,
+        _sum: {
+          grandTotal: true,
         },
-        OrderPO: {
-          is: {
-            status: "completed",
+        _count: {
+          id: true,
+        },
+      }),
+      prisma.bill.aggregate({
+        where: {
+          createdAt: {
+            gte: startOfYear,
+            lt: endOfYearExclusive,
+          },
+          OrderPO: {
+            is: {
+              status: "completed",
+            },
           },
         },
-      },
-      _sum: {
-        grandTotal: true,
-      },
-    });
-
-    // คำนวณรายจ่ายจาก Expense
-    const expenseStats = await prisma.expense.aggregate({
-      where: {
-        expenseDate: {
-          gte: startOfYear,
-          lt: endOfYear,
+        _sum: {
+          grandTotal: true,
         },
-      },
-      _sum: {
-        amount: true,
-      },
-    });
-
-    // หาเดือนที่มี Bill (มีรายได้หรือยอดขาย)
-    const billsWithMonths = await prisma.bill.findMany({
-      where: {
-        createdAt: {
-          gte: startOfYear,
-          lt: endOfYear,
-        },
-        OrderPO: {
-          is: {
-            status: "completed",
+      }),
+      prisma.expense.aggregate({
+        where: {
+          expenseDate: {
+            gte: startOfYear,
+            lt: endOfYearExclusive,
           },
         },
-      },
-      select: {
-        createdAt: true,
-      },
-    });
+        _sum: {
+          amount: true,
+        },
+      }),
+      prisma.staff.findMany({
+        select: {
+          id: true,
+          currentSalary: true,
+          startDate: true,
+          hireStatus: true,
+          TerminationDate: true,
+        },
+      }),
+      prisma.staffEmployment.findMany({
+        where: {
+          startDate: { lte: endOfYear },
+          OR: [{ endDate: null }, { endDate: { gte: startOfYear } }],
+        },
+        select: {
+          staffId: true,
+          startDate: true,
+          endDate: true,
+        },
+        orderBy: [{ staffId: "asc" }, { startDate: "desc" }],
+      }),
+      prisma.staffSalary.findMany({
+        where: {
+          effectiveDate: { lte: endOfYear },
+        },
+        select: {
+          staffId: true,
+          amount: true,
+          effectiveDate: true,
+        },
+        orderBy: [{ staffId: "asc" }, { effectiveDate: "desc" }],
+      }),
+    ]);
 
-    // สร้าง Set ของเดือนที่มีข้อมูล (0-11)
-    const monthsWithData = new Set<number>();
-    billsWithMonths.forEach((bill) => {
-      const month = bill.createdAt.getMonth();
-      monthsWithData.add(month);
-    });
+    const currentDate = new Date();
+    const isCurrentYear = yearNumber === currentDate.getFullYear();
+    const lastMonthIndex = isCurrentYear ? currentDate.getMonth() : 11;
+    const monthsInYear = Array.from(
+      { length: lastMonthIndex + 1 },
+      (_, month) => month,
+    );
 
-    // คำนวณค่าเงินเดือนพนักงานเฉพาะเดือนที่มีข้อมูล
-    // ดึงพนักงานทั้งหมดที่มีอยู่
-    const allStaff = await prisma.staff.findMany({
-      select: { id: true },
-    });
+    const employmentMap = new Map<
+      number,
+      (typeof employmentsFromDB)[number][]
+    >();
+    for (const employment of employmentsFromDB) {
+      const current = employmentMap.get(employment.staffId) ?? [];
+      current.push(employment);
+      employmentMap.set(employment.staffId, current);
+    }
+
+    const staffSalaryMap = new Map<number, (typeof salariesFromDB)[number][]>();
+    for (const salary of salariesFromDB) {
+      const current = staffSalaryMap.get(salary.staffId) ?? [];
+      current.push(salary);
+      staffSalaryMap.set(salary.staffId, current);
+    }
 
     let totalSalaryAmount = 0;
 
-    // วนลูปคำนวณเงินเดือนเฉพาะเดือนที่มีข้อมูล
-    for (const staff of allStaff) {
-      for (const month of monthsWithData) {
-        const monthDate = new Date(yearNumber, month, 1);
+    for (const month of monthsInYear) {
+      const periodStart = new Date(yearNumber, month, 1);
+      const periodEndExclusive = new Date(yearNumber, month + 1, 1);
+      const periodEnd = new Date(periodEndExclusive.getTime() - 1);
 
-        // หาเงินเดือนที่มีผลในเดือนนั้น (effectiveDate ล่าสุดที่ <= วันแรกของเดือน)
-        const salary = await prisma.staffSalary.findFirst({
-          where: {
-            staffId: staff.id,
-            effectiveDate: {
-              lte: monthDate,
-            },
+      for (const staff of allStaff) {
+        const amount = getSalaryForPeriod(
+          {
+            staff,
+            employments: employmentMap.get(staff.id) ?? [],
+            salaries: staffSalaryMap.get(staff.id) ?? [],
           },
-          orderBy: {
-            effectiveDate: "desc",
-          },
-        });
-
-        if (salary) {
-          totalSalaryAmount += salary.amount;
+          periodStart,
+          periodEnd,
+        );
+        if (amount != null) {
+          totalSalaryAmount += amount;
         }
       }
     }
 
-    // หาลูกค้าที่มียอดซื้อมากที่สุด
     const customerPurchases = await prisma.bill.groupBy({
       by: ["customerId"],
       where: {
         createdAt: {
           gte: startOfYear,
-          lt: endOfYear,
+          lt: endOfYearExclusive,
         },
         OrderPO: {
           is: {
@@ -166,7 +198,6 @@ export async function GET(
       take: 1,
     });
 
-    // ดึงข้อมูลลูกค้าที่มียอดซื้อมากที่สุด
     let topCustomer = null;
     if (customerPurchases.length > 0) {
       const topCustomerData = customerPurchases[0];
@@ -205,43 +236,44 @@ export async function GET(
         ? parseFloat(((profit / totalRevenue) * 100).toFixed(1))
         : 0;
 
-    const result = {
-      success: true,
-      data: {
-        salesAmount: {
-          total: totalSales,
-          formatted: `฿${totalSales.toLocaleString("en-US")}`,
+    return NextResponse.json(
+      {
+        success: true,
+        data: {
+          salesAmount: {
+            total: totalSales,
+            formatted: `฿${totalSales.toLocaleString("en-US")}`,
+          },
+          salesQuantity: {
+            total: orderCount,
+            formatted: orderCount.toLocaleString("en-US"),
+          },
+          income: {
+            total: totalRevenue,
+            formatted: `฿${totalRevenue.toLocaleString("en-US")}`,
+          },
+          expense: {
+            total: totalExpense,
+            formatted: `฿${totalExpense.toLocaleString("en-US")}`,
+          },
+          netProfit: {
+            total: profit,
+            formatted: `฿${profit.toLocaleString("en-US")}`,
+            percentage: profitPercentage,
+          },
+          salary: {
+            total: totalSalaryAmount,
+            formatted: `฿${totalSalaryAmount.toLocaleString("en-US")}`,
+          },
+          topCustomer,
         },
-        salesQuantity: {
-          total: orderCount,
-          formatted: orderCount.toLocaleString("en-US"),
+        meta: {
+          year: yearNumber,
+          lastUpdated: new Date().toISOString(),
         },
-        income: {
-          total: totalRevenue,
-          formatted: `฿${totalRevenue.toLocaleString("en-US")}`,
-        },
-        expense: {
-          total: totalExpense,
-          formatted: `฿${totalExpense.toLocaleString("en-US")}`,
-        },
-        netProfit: {
-          total: profit,
-          formatted: `฿${profit.toLocaleString("en-US")}`,
-          percentage: profitPercentage,
-        },
-        salary: {
-          total: totalSalaryAmount,
-          formatted: `฿${totalSalaryAmount.toLocaleString("en-US")}`,
-        },
-        topCustomer: topCustomer,
       },
-      meta: {
-        year: yearNumber,
-        lastUpdated: new Date().toISOString(),
-      },
-    };
-
-    return NextResponse.json(result, { status: 200 });
+      { status: 200 },
+    );
   } catch (error) {
     return NextResponse.json(
       { error: "Failed to fetch KPI summary: " + error },

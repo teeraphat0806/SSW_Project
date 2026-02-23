@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "../../../../../lib/prisma";
 import { requireAuth } from "@/lib/permissions";
+import { getSalaryForPeriod } from "@/lib/salary-expense-utils";
+
 export async function GET(
   req: NextRequest,
   context: { params: Promise<{ year: string }> },
@@ -16,12 +18,12 @@ export async function GET(
   if ("response" in authResult) {
     return authResult.response;
   }
+
   const { session } = authResult;
   console.log(session);
+
   try {
     const yearNumber = Number(year);
-
-    // Validate year
     if (isNaN(yearNumber) || yearNumber < 2000 || yearNumber > 2100) {
       return NextResponse.json(
         {
@@ -29,11 +31,7 @@ export async function GET(
           error: {
             code: "INVALID_YEAR",
             message: "ปีไม่ถูกต้อง กรุณาระบุปีระหว่าง 2000-2100",
-            details: {
-              field: "year",
-              provided: year,
-              expected: "2000-2100",
-            },
+            details: { field: "year", provided: year, expected: "2000-2100" },
           },
         },
         { status: 400 },
@@ -55,99 +53,127 @@ export async function GET(
       "ธันวาคม",
     ];
 
-    const monthlyData = [];
+    const startOfYear = new Date(yearNumber, 0, 1);
+    const endOfYearExclusive = new Date(yearNumber + 1, 0, 1);
+    const endOfYear = new Date(endOfYearExclusive.getTime() - 1);
 
-    // Loop through each month
-    for (let month = 1; month <= 12; month++) {
-      const startOfMonth = new Date(yearNumber, month - 1, 1);
-      const endOfMonth = new Date(yearNumber, month, 1);
-
-      console.log(
-        `Querying month ${month}: ${startOfMonth.toISOString()} to ${endOfMonth.toISOString()}`,
-      );
-
-      // Get sales data (from Bill)
-      const salesStats = await prisma.bill.aggregate({
-        where: {
-          createdAt: {
-            gte: startOfMonth,
-            lt: endOfMonth,
-          },
-          OrderPO: {
-            is: {
-              status: "completed",
-            },
-          },
-        },
-        _sum: {
-          grandTotal: true,
-          subtotal: true,
-          vat: true,
-        },
-        _count: {
-          id: true,
-        },
-      });
-
-      console.log(`Sales stats for month ${month}:`, salesStats);
-
-      // Get all staff
-      const allStaff = await prisma.staff.findMany({
+    const [allStaff, employmentsFromDB, salariesFromDB] = await Promise.all([
+      prisma.staff.findMany({
         select: {
           id: true,
           currentSalary: true,
+          startDate: true,
+          hireStatus: true,
+          TerminationDate: true,
         },
-      });
-
-      // Get staff salaries for the month
-      const staffSalaries = await prisma.staffSalary.findMany({
+      }),
+      prisma.staffEmployment.findMany({
         where: {
-          effectiveDate: {
-            gte: startOfMonth,
-            lt: endOfMonth,
-          },
+          startDate: { lte: endOfYear },
+          OR: [{ endDate: null }, { endDate: { gte: startOfYear } }],
         },
-        orderBy: {
-          effectiveDate: "desc", // Get latest first
+        select: {
+          staffId: true,
+          startDate: true,
+          endDate: true,
         },
-      });
-
-      // Group by staffId and take only the latest one per staff
-      const staffSalaryMap = new Map<number, number>();
-      staffSalaries.forEach((salary) => {
-        if (!staffSalaryMap.has(salary.staffId)) {
-          staffSalaryMap.set(salary.staffId, salary.amount);
-        }
-      });
-
-      // Calculate total salaries - one per staff
-      const totalSalaries = allStaff.reduce((sum, staff) => {
-        const salaryAmount = staffSalaryMap.has(staff.id)
-          ? staffSalaryMap.get(staff.id)!
-          : staff.currentSalary;
-        return sum + salaryAmount;
-      }, 0);
-
-      // Get expense data
-      const expenseStats = await prisma.expense.aggregate({
+        orderBy: [{ staffId: "asc" }, { startDate: "desc" }],
+      }),
+      prisma.staffSalary.findMany({
         where: {
-          expenseDate: {
-            gte: startOfMonth,
-            lt: endOfMonth,
-          },
+          effectiveDate: { lte: endOfYear },
         },
-        _sum: {
+        select: {
+          staffId: true,
           amount: true,
+          effectiveDate: true,
         },
-      });
+        orderBy: [{ staffId: "asc" }, { effectiveDate: "desc" }],
+      }),
+    ]);
+
+    const employmentMap = new Map<
+      number,
+      (typeof employmentsFromDB)[number][]
+    >();
+    for (const employment of employmentsFromDB) {
+      const current = employmentMap.get(employment.staffId) ?? [];
+      current.push(employment);
+      employmentMap.set(employment.staffId, current);
+    }
+
+    const staffSalaryMap = new Map<number, (typeof salariesFromDB)[number][]>();
+    for (const salary of salariesFromDB) {
+      const current = staffSalaryMap.get(salary.staffId) ?? [];
+      current.push(salary);
+      staffSalaryMap.set(salary.staffId, current);
+    }
+
+    const monthlyData = [];
+
+    for (let month = 1; month <= 12; month++) {
+      const startOfMonth = new Date(yearNumber, month - 1, 1);
+      const endOfMonthExclusive = new Date(yearNumber, month, 1);
+      const endOfMonth = new Date(endOfMonthExclusive.getTime() - 1);
+
+      const [salesStats, expenseStats] = await Promise.all([
+        prisma.bill.aggregate({
+          where: {
+            createdAt: {
+              gte: startOfMonth,
+              lt: endOfMonthExclusive,
+            },
+            OrderPO: {
+              is: {
+                status: "completed",
+              },
+            },
+          },
+          _sum: {
+            grandTotal: true,
+            subtotal: true,
+            vat: true,
+          },
+          _count: {
+            id: true,
+          },
+        }),
+        prisma.expense.aggregate({
+          where: {
+            expenseDate: {
+              gte: startOfMonth,
+              lt: endOfMonthExclusive,
+            },
+          },
+          _sum: {
+            amount: true,
+          },
+        }),
+      ]);
+
+      let totalSalaries = 0;
+      for (const staff of allStaff) {
+        const amount = getSalaryForPeriod(
+          {
+            staff,
+            employments: employmentMap.get(staff.id) ?? [],
+            salaries: staffSalaryMap.get(staff.id) ?? [],
+          },
+          startOfMonth,
+          endOfMonth,
+        );
+        if (amount != null) {
+          totalSalaries += amount;
+        }
+      }
 
       const salesAmt = salesStats._sum.grandTotal || 0;
       const subtotal = salesStats._sum.subtotal || 0;
       const vat = salesStats._sum.vat || 0;
       const salesQty = salesStats._count.id || 0;
-      const income = salesStats._sum.grandTotal || 0; // Income = Sales from Bill
+      const income = salesAmt;
       const expenseAmount = expenseStats._sum.amount || 0;
-      const expense = expenseAmount + totalSalaries; // Include salaries in expense
+      const expense = expenseAmount + totalSalaries;
       const net = income - expense;
 
       monthlyData.push({
@@ -172,24 +198,25 @@ export async function GET(
       });
     }
 
-    const result = {
-      success: true,
-      data: monthlyData,
-      meta: {
-        year: yearNumber,
-        totalMonths: 12,
-        lastUpdated: new Date().toISOString(),
+    return NextResponse.json(
+      {
+        success: true,
+        data: monthlyData,
+        meta: {
+          year: yearNumber,
+          totalMonths: 12,
+          lastUpdated: new Date().toISOString(),
+        },
       },
-    };
-
-    return NextResponse.json(result, { status: 200 });
+      { status: 200 },
+    );
   } catch (error) {
     return NextResponse.json(
       {
         success: false,
         error: {
           code: "INTERNAL_ERROR",
-          message: "เกิดข้อผิดพลาดในการดึงข้อมูล",
+          message: "เกิดข้อผิดพลาดภายในระบบ กรุณาลองใหม่อีกครั้ง",
           details: {
             message: String(error),
           },

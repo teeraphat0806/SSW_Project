@@ -19,10 +19,36 @@ export const PayslipGenerator = ({
 }: PayslipGeneratorProps) => {
   const currentDate = new Date();
   const currentMonth = format(currentDate, "MMMM");
-  const currentYear = format(currentDate, "yyyy");
-  const dueDate = format(
+  const toBuddhistYear = (year: number) => year + 543;
+  const formatDateToBE = (date: Date) => {
+    const day = String(date.getDate()).padStart(2, "0");
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const yearBE = toBuddhistYear(date.getFullYear());
+    return `${day}/${month}/${yearBE}`;
+  };
+  const normalizeToGregorianDate = (value: string) => {
+    const isoDatePrefix = value.match(/^(\d{4})-(\d{2})-(\d{2})(?:[T\s].*)?$/);
+    if (isoDatePrefix) {
+      const [, yearStr, monthStr, dayStr] = isoDatePrefix;
+      const year = Number(yearStr);
+      const month = Number(monthStr);
+      const day = Number(dayStr);
+      const normalizedYear = year > 2400 ? year - 543 : year;
+      const parsedDate = new Date(normalizedYear, month - 1, day);
+      if (Number.isNaN(parsedDate.getTime())) return null;
+      return parsedDate;
+    }
+
+    const parsedDate = new Date(value);
+    if (Number.isNaN(parsedDate.getTime())) return null;
+    if (parsedDate.getFullYear() > 2400) {
+      parsedDate.setFullYear(parsedDate.getFullYear() - 543);
+    }
+    return parsedDate;
+  };
+  const currentYear = String(toBuddhistYear(currentDate.getFullYear()));
+  const dueDate = formatDateToBE(
     new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0),
-    "dd/MM/yyyy",
   );
   const slipRef = useRef<HTMLDivElement>(null);
   const [income, setIncome] = useState<PayslipItem[]>([]);
@@ -34,6 +60,7 @@ export const PayslipGenerator = ({
     const data = await res.json();
     setName(data.name);
   };
+  const normalizedStartDate = normalizeToGregorianDate(employee.startDate);
   const fetchIncome = async () => {
     const res = await fetch(`/api/staffIncome/${employee.id}/staffId`);
     const data: { nameIncome?: string; amount?: number }[] = await res.json();
@@ -211,6 +238,16 @@ export const PayslipGenerator = ({
 
     const socialSecurity = Math.min(grossIncome * 0.05, 750); // 5% capped at 750
     const tax = grossIncome * 0.05; // Simplified tax calculation
+    const hasValidStartDate = Boolean(normalizedStartDate);
+    const monthsWorked = hasValidStartDate
+      ? Math.max(
+          0,
+          (currentDate.getFullYear() - normalizedStartDate!.getFullYear()) *
+            12 +
+            (currentDate.getMonth() - normalizedStartDate!.getMonth()) +
+            1,
+        )
+      : 0;
 
     const totalDeductions = deductions.reduce(
       (sum, item) => sum + item.amount,
@@ -226,10 +263,10 @@ export const PayslipGenerator = ({
       income,
       deductions,
       netIncome,
-      accumulatedSalary: netIncome * 12, // Mock accumulated data
-      accumulatedTax: tax * 12,
-      accumulatedSocialSecurity: socialSecurity * 12,
-      accumulatedProvidentFund: grossIncome * 0.03 * 12,
+      accumulatedSalary: grossIncome * monthsWorked,
+      accumulatedTax: tax * monthsWorked,
+      accumulatedSocialSecurity: socialSecurity * monthsWorked,
+      accumulatedProvidentFund: grossIncome * 0.03 * monthsWorked,
     };
   };
 
@@ -437,7 +474,9 @@ export const PayslipGenerator = ({
               <div className="space-y-1">
                 <p>
                   <span className="font-medium">วันที่เริ่มงาน:</span>{" "}
-                  {format(new Date(employee.startDate), "dd/MM/yy")}
+                  {normalizedStartDate
+                    ? formatDateToBE(normalizedStartDate)
+                    : "-"}
                 </p>
                 <p>
                   <span className="font-medium">รหัสพนักงาน:</span>{" "}
