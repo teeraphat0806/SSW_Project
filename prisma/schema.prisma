@@ -167,7 +167,7 @@ model OrderPOStaff {
 model Product {
   id            Int           @id @default(autoincrement())
   orderPOId     Int
-  sequence      Int?
+  sequence      Int
   steelId       Int
   wide          Float?
   length        Float
