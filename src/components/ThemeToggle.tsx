@@ -1,11 +1,14 @@
 "use client";
 import { useEffect, useState } from "react";
 import { Switch } from "radix-ui";
-
 import { Sun, Moon } from "lucide-react";
+import { useTheme } from "next-themes";
+
 export default function ThemeToggle() {
-  const [theme, setTheme] = useState<"light" | "dark">("light");
+  const { resolvedTheme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 768);
     checkMobile();
@@ -14,32 +17,25 @@ export default function ThemeToggle() {
   }, []);
 
   useEffect(() => {
-    const saved = localStorage.getItem("theme");
-    if (saved === "dark") {
-      document.documentElement.classList.add("dark");
-      setTheme("dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-      setTheme("light");
-    }
+    setMounted(true);
   }, []);
 
   const toggleTheme = () => {
-    const newTheme = theme === "light" ? "dark" : "light";
-    localStorage.setItem("theme", newTheme);
-    document.documentElement.classList.toggle("dark");
-    setTheme(newTheme);
+    const currentTheme = resolvedTheme === "dark" ? "dark" : "light";
+    setTheme(currentTheme === "light" ? "dark" : "light");
   };
+
+  const isDark = mounted && resolvedTheme === "dark";
 
   return (
     <div className="flex px-3 py-2 items-center space-x-3">
       <label className="text-sm" htmlFor="theme-switch">
-        {theme === "light" ? <Moon /> : <Sun />}
+        {isDark ? <Sun /> : <Moon />}
       </label>
 
       <Switch.Root
         id="theme-switch"
-        checked={theme === "dark"}
+        checked={isDark}
         onCheckedChange={toggleTheme}
         className="cursor-pointer w-12 h-6 bg-gray-300 rounded-full relative data-[state=checked]:bg-[hsl(var(--primary))] transition-colors hidden group-hover:inline"
       >

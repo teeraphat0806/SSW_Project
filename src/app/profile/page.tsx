@@ -19,8 +19,6 @@ export default function Profile() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [toast, setToast] = useState<ToastState>({ show: false, message: "" });
-  const [theme, setTheme] = useState<"light" | "dark">("light");
-  const [loading, setLoading] = useState(true);
 
   // Redirect safely (no router.push during render)
   useEffect(() => {
@@ -36,36 +34,6 @@ export default function Profile() {
     );
     return () => clearTimeout(timer);
   }, [toast.show]);
-
-  // Theme init + sync to <html class="dark">
-  useEffect(() => {
-    const saved =
-      (typeof window !== "undefined" &&
-        (localStorage.getItem("theme") as "light" | "dark" | null)) ||
-      null;
-
-    const prefersDark =
-      typeof window !== "undefined" &&
-      window.matchMedia &&
-      window.matchMedia("(prefers-color-scheme: dark)").matches;
-
-    const initial: "light" | "dark" = saved ?? (prefersDark ? "dark" : "light");
-    setTheme(initial);
-
-    document.documentElement.classList.toggle("dark", initial === "dark");
-    setLoading(false);
-  }, []);
-
-  const toggleTheme = () => {
-    const next = theme === "dark" ? "light" : "dark";
-    setTheme(next);
-    document.documentElement.classList.toggle("dark", next === "dark");
-    localStorage.setItem("theme", next);
-    setToast({
-      show: true,
-      message: next === "dark" ? "Dark mode enabled" : "Light mode enabled",
-    });
-  };
 
   const user = session?.user as Session["user"];
 
@@ -89,7 +57,7 @@ export default function Profile() {
   const handleBackToHome = () => router.push("/dashboard");
 
   // Loading skeleton (token-based colors)
-  if (status === "loading" || loading) {
+  if (status === "loading") {
     return (
       <div className="min-h-screen flex items-center justify-center p-4 bg-[hsl(var(--background))] text-[hsl(var(--foreground))]">
         <div className="text-center">

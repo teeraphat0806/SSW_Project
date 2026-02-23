@@ -1,7 +1,5 @@
 // src/app/layout.tsx
 import Layout from "../../components/Layout";
-
-import { ThemeProvider } from "next-themes";
 export const metadata = {
   title: "My App",
   description: "My App Description",

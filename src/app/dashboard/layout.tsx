@@ -1,7 +1,6 @@
 // src/app/layout.tsx
 import "../globals.css";
 import Layout from "../../components/Layout";
-import { ThemeProvider } from "@/components/saleDashboard/theme-provider";
 export const metadata = {
   title: "My App",
   description: "My App Description",

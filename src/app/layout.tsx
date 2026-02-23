@@ -4,6 +4,7 @@ import "./globals.css";
 import { Theme } from "@radix-ui/themes";
 import { getServerSession } from "next-auth/next";
 import SessionProvider from "../components/SessionProvider";
+import { ThemeProvider } from "@/components/saleDashboard/theme-provider";
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -33,9 +34,17 @@ export default async function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <Theme>
-          <SessionProvider session={session}>{children}</SessionProvider>
-        </Theme>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          storageKey="theme"
+          disableTransitionOnChange
+        >
+          <Theme>
+            <SessionProvider session={session}>{children}</SessionProvider>
+          </Theme>
+        </ThemeProvider>
       </body>
     </html>
   );
