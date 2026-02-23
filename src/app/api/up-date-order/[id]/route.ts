@@ -108,6 +108,7 @@ export async function GET(
       where: { id: poId },
       include: {
         Product: {
+          orderBy: [{ sequence: "asc" }],
           include: {
             SteelType: true,
           },
@@ -340,7 +341,7 @@ export async function PATCH(
         // สร้างใหม่รายการเหล็กทั้งหมด
         await tx.product.createMany({
           // l คือ line item ที่ส่งมาใน patch
-          data: patch.steel.map((l) => {
+          data: patch.steel.map((l, index) => {
             //st คือ steelType จาก database
             const code = l.codeSteel.trim();
             const shape = (l.shape ?? "square") as ShapeSteel;
@@ -365,6 +366,7 @@ export async function PATCH(
 
             return {
               orderPOId: poId,
+              sequence: index + 1,
               steelId: st.id,
               wide: l.width ?? null,
               length: l.length ?? null,
@@ -445,7 +447,10 @@ export async function PATCH(
       const order = await tx.orderPO.findUnique({
         where: { id: poId },
         include: {
-          Product: { include: { SteelType: true } },
+          Product: {
+            orderBy: [{ sequence: "asc" }, { id: "asc" }],
+            include: { SteelType: true },
+          },
           Customer: true,
           bill: { select: { credit: true } },
         },

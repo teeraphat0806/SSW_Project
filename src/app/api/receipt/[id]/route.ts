@@ -160,6 +160,7 @@ export async function GET(
         OrderPO: {
           include: {
             Product: {
+              orderBy: [{ sequence: "asc" }],
               include: {
                 SteelType: true,
               },

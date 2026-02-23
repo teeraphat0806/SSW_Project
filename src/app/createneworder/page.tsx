@@ -385,7 +385,8 @@ const NewJobOrder = () => {
           credit: headOrder.credit,
           urlPo: poKeys,
 
-          products: steelItems.map((item) => ({
+          products: steelItems.map((item, index) => ({
+            sequence: index + 1,
             steelType: item.steelType,
             shape: item.shape,
             wide: item.width ?? null,
