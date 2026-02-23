@@ -2,6 +2,7 @@ import { z } from "zod";
 
 export const ProductSchema = z.object({
   id: z.number().optional(),
+  sequence: z.number().int().positive().optional(),
   steelid: z.number(),
   wide: z.number(),
   length: z.number(),

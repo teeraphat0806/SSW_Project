@@ -185,8 +185,9 @@ export async function POST(req: NextRequest) {
               total: poTotal,
 
               Product: {
-                create: computed.map(({ steel, product, steelline }) => ({
+                create: computed.map(({ steel, product, steelline }, index) => ({
                   SteelType: { connect: { id: steel.id } },
+                  sequence: product.sequence ?? index + 1,
 
                   wide: product.wide ?? null,
                   length: product.length,
