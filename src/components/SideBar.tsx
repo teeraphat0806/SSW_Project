@@ -19,6 +19,7 @@ import { usePathname } from "next/navigation";
 import Logo from "../components/Logo";
 import type { Session } from "next-auth";
 import { useEffect, useState } from "react";
+import { useTheme } from "next-themes";
 
 const MENU_ITEMS = [
   {
@@ -68,7 +69,8 @@ export default function Sidebar() {
   const { data: session, status } = useSession();
   const user = session?.user as Session["user"];
   const [expanded, setExpanded] = useState(false);
-  const [theme, setTheme] = useState<"light" | "dark">("light");
+  const { resolvedTheme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
   const pathname = usePathname();
 
   if (status !== "authenticated" || !session?.user) return null;
@@ -76,16 +78,13 @@ export default function Sidebar() {
   const toggleSidebar = () => setExpanded((prev) => !prev);
 
   useEffect(() => {
-    const isDark = document.documentElement.classList.contains("dark");
-    setTheme(isDark ? "dark" : "light");
+    setMounted(true);
   }, []);
 
   const toggleTheme = (e: React.MouseEvent) => {
     e.stopPropagation();
-    const nextTheme = theme === "light" ? "dark" : "light";
-    localStorage.setItem("theme", nextTheme);
-    document.documentElement.classList.toggle("dark", nextTheme === "dark");
-    setTheme(nextTheme);
+    const currentTheme = resolvedTheme === "dark" ? "dark" : "light";
+    setTheme(currentTheme === "light" ? "dark" : "light");
   };
 
   return (
@@ -144,10 +143,14 @@ export default function Sidebar() {
                   className={`group relative w-full rounded-lg py-2.5 px-3 flex items-center transition-all duration-200 text-foreground hover:bg-accent hover:text-accent-foreground ${
                     expanded ? "justify-start" : "justify-center"
                   }`}
-                  title={`Theme: ${theme === "dark" ? "Dark" : "Light"}`}
+                  title={`Theme: ${resolvedTheme === "dark" ? "Dark" : "Light"}`}
                 >
                   <div className="text-muted-foreground group-hover:text-accent-foreground">
-                    {theme === "dark" ? <Sun size={20} /> : <Moon size={20} />}
+                    {mounted && resolvedTheme === "dark" ? (
+                      <Sun size={20} />
+                    ) : (
+                      <Moon size={20} />
+                    )}
                   </div>
                   <span
                     className={`ml-3 overflow-hidden whitespace-nowrap text-sm font-medium transition-all duration-300 ${
@@ -158,7 +161,7 @@ export default function Sidebar() {
                   </span>
                   {expanded && (
                     <span className="ml-auto rounded-md border px-2 py-0.5 text-xs text-muted-foreground">
-                      {theme === "dark" ? "Dark" : "Light"}
+                      {resolvedTheme === "dark" ? "Dark" : "Light"}
                     </span>
                   )}
                 </button>

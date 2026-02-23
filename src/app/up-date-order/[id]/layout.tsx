@@ -1,8 +1,6 @@
 //src/app/up-date-order/[id]/layout.tsx
 import "../../globals.css";
 import Layout from "@/components/Layout";
-import { Theme } from "@radix-ui/themes";
-import { ThemeProvider } from "next-themes";
 import { ToastContainer } from "react-toastify";
 
 export const metadata = {
@@ -18,10 +16,8 @@ export default function UpdateOrderLayout({
   return (
     <Layout>
       <div className="bg-muted min-h-screen md:pl-20 ">
-        <ThemeProvider attribute="class">
-          {children}
-          <ToastContainer />
-        </ThemeProvider>
+        {children}
+        <ToastContainer />
       </div>
     </Layout>
   );
