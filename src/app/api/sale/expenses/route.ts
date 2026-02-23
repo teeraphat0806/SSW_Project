@@ -1,6 +1,27 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "../../../../lib/prisma";
 import { requireAuth } from "@/lib/permissions";
+import {
+  getLatestSalaryAtOrBefore,
+  getSalaryForPeriod,
+} from "@/lib/salary-expense-utils";
+
+function getMonthNames() {
+  return [
+    "มกราคม",
+    "กุมภาพันธ์",
+    "มีนาคม",
+    "เมษายน",
+    "พฤษภาคม",
+    "มิถุนายน",
+    "กรกฎาคม",
+    "สิงหาคม",
+    "กันยายน",
+    "ตุลาคม",
+    "พฤศจิกายน",
+    "ธันวาคม",
+  ];
+}
 
 export async function GET(req: NextRequest) {
   const authResult = await requireAuth([
@@ -18,12 +39,11 @@ export async function GET(req: NextRequest) {
   console.log(session);
 
   try {
-    // Get query parameters
     const searchParams = req.nextUrl.searchParams;
     const year = searchParams.get("year");
     const month = searchParams.get("month");
-    const page = parseInt(searchParams.get("page") || "1");
-    const limit = parseInt(searchParams.get("limit") || "10");
+    const page = parseInt(searchParams.get("page") || "1", 10);
+    const limit = parseInt(searchParams.get("limit") || "10", 10);
     const categoryId = searchParams.get("categoryId");
     const category = searchParams.get("category");
     const sortBy = searchParams.get("sortBy") || "date";
@@ -31,7 +51,6 @@ export async function GET(req: NextRequest) {
     const startDate = searchParams.get("startDate");
     const endDate = searchParams.get("endDate");
 
-    // Validate required parameters
     if (!year || !month) {
       return NextResponse.json(
         {
@@ -39,9 +58,7 @@ export async function GET(req: NextRequest) {
           error: {
             code: "MISSING_PARAMETERS",
             message: "กรุณาระบุปีและเดือน",
-            details: {
-              required: ["year", "month"],
-            },
+            details: { required: ["year", "month"] },
           },
         },
         { status: 400 },
@@ -50,8 +67,6 @@ export async function GET(req: NextRequest) {
 
     const yearNumber = Number(year);
     const monthNumber = Number(month);
-
-    // Validate year
     if (isNaN(yearNumber) || yearNumber < 2000 || yearNumber > 2100) {
       return NextResponse.json(
         {
@@ -69,8 +84,6 @@ export async function GET(req: NextRequest) {
         { status: 400 },
       );
     }
-
-    // Validate month
     if (isNaN(monthNumber) || monthNumber < 1 || monthNumber > 12) {
       return NextResponse.json(
         {
@@ -89,7 +102,6 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    // Validate sortBy
     const validSortBy = ["date", "amount", "category"];
     if (!validSortBy.includes(sortBy)) {
       return NextResponse.json(
@@ -97,7 +109,7 @@ export async function GET(req: NextRequest) {
           success: false,
           error: {
             code: "INVALID_SORT_BY",
-            message: "sortBy ไม่ถูกต้อง",
+            message: "sortBy ไม่ถูกต้อง กรุณาระบุค่าที่ถูกต้อง",
             details: {
               field: "sortBy",
               provided: sortBy,
@@ -108,15 +120,13 @@ export async function GET(req: NextRequest) {
         { status: 400 },
       );
     }
-
-    // Validate sortOrder
     if (sortOrder !== "asc" && sortOrder !== "desc") {
       return NextResponse.json(
         {
           success: false,
           error: {
             code: "INVALID_SORT_ORDER",
-            message: "sortOrder ไม่ถูกต้อง",
+            message: "sortOrder ไม่ถูกต้อง กรุณาระบุค่า asc หรือ desc",
             details: {
               field: "sortOrder",
               provided: sortOrder,
@@ -128,42 +138,23 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const monthNames = [
-      "มกราคม",
-      "กุมภาพันธ์",
-      "มีนาคม",
-      "เมษายน",
-      "พฤษภาคม",
-      "มิถุนายน",
-      "กรกฎาคม",
-      "สิงหาคม",
-      "กันยายน",
-      "ตุลาคม",
-      "พฤศจิกายน",
-      "ธันวาคม",
-    ];
-
-    // Determine date range
     let startOfPeriod: Date;
     let endOfPeriod: Date;
-
-    // Get today for validation
     const today = new Date();
-    today.setHours(23, 59, 59, 999); // End of today
+    today.setHours(23, 59, 59, 999);
 
     if (startDate && endDate) {
-      // Custom date range mode
       const parsedStartDate = new Date(startDate);
       const parsedEndDate = new Date(endDate);
 
-      // Validate dates
       if (isNaN(parsedStartDate.getTime()) || isNaN(parsedEndDate.getTime())) {
         return NextResponse.json(
           {
             success: false,
             error: {
               code: "INVALID_DATE_FORMAT",
-              message: "รูปแบบวันที่ไม่ถูกต้อง",
+              message:
+                "รูปแบบวันที่ไม่ถูกต้อง กรุณาระบุวันที่ในรูปแบบ YYYY-MM-DD",
               details: {
                 provided: { startDate, endDate },
                 expected: "YYYY-MM-DD",
@@ -174,14 +165,13 @@ export async function GET(req: NextRequest) {
         );
       }
 
-      // Check if dates are not in the future
       if (parsedStartDate > today || parsedEndDate > today) {
         return NextResponse.json(
           {
             success: false,
             error: {
               code: "FUTURE_DATE_NOT_ALLOWED",
-              message: "วันที่ต้องไม่เกินวันนี้",
+              message: "วันที่ไม่ถูกต้อง กรุณาระบุวันที่ในอดีต",
               details: {
                 today: today.toISOString().split("T")[0],
                 provided: { startDate, endDate },
@@ -192,18 +182,15 @@ export async function GET(req: NextRequest) {
         );
       }
 
-      // Check if start date is before or equal to end date
       if (parsedStartDate > parsedEndDate) {
         return NextResponse.json(
           {
             success: false,
             error: {
               code: "INVALID_DATE_RANGE",
-              message: "วันที่เริ่มต้นต้องไม่เกินวันที่สิ้นสุด",
-              details: {
-                startDate,
-                endDate,
-              },
+              message:
+                "ช่วงวันที่ไม่ถูกต้อง กรุณาระบุวันที่เริ่มต้นก่อนวันที่สิ้นสุด",
+              details: { startDate, endDate },
             },
           },
           { status: 400 },
@@ -212,164 +199,163 @@ export async function GET(req: NextRequest) {
 
       startOfPeriod = parsedStartDate;
       startOfPeriod.setHours(0, 0, 0, 0);
-
       endOfPeriod = parsedEndDate;
       endOfPeriod.setHours(23, 59, 59, 999);
     } else {
-      // Default to month range
       startOfPeriod = new Date(yearNumber, monthNumber - 1, 1);
       endOfPeriod = new Date(yearNumber, monthNumber, 0, 23, 59, 59, 999);
     }
 
-    // Build where clause
     const whereClause: any = {
       expenseDate: {
         gte: startOfPeriod,
         lte: endOfPeriod,
       },
     };
-
-    // Add category filters
     if (categoryId) {
-      whereClause.categoryId = parseInt(categoryId);
+      whereClause.categoryId = parseInt(categoryId, 10);
     }
-
     if (category) {
       whereClause.category = {
-        name: {
-          contains: category,
-          mode: "insensitive",
-        },
+        name: { contains: category, mode: "insensitive" },
       };
     }
 
-    // Build orderBy clause
-    let orderByClause: any = {};
-    if (sortBy === "date") {
-      orderByClause = { expenseDate: sortOrder };
-    } else if (sortBy === "amount") {
-      orderByClause = { amount: sortOrder };
-    } else if (sortBy === "category") {
-      orderByClause = { category: { name: sortOrder } };
+    const [allStaff, employmentsFromDB, salariesFromDB] = await Promise.all([
+      prisma.staff.findMany({
+        select: {
+          id: true,
+          currentSalary: true,
+          startDate: true,
+          hireStatus: true,
+          TerminationDate: true,
+          user: { select: { name: true } },
+        },
+      }),
+      prisma.staffEmployment.findMany({
+        where: {
+          startDate: { lte: endOfPeriod },
+          OR: [{ endDate: null }, { endDate: { gte: startOfPeriod } }],
+        },
+        select: {
+          staffId: true,
+          startDate: true,
+          endDate: true,
+        },
+        orderBy: [{ staffId: "asc" }, { startDate: "desc" }],
+      }),
+      prisma.staffSalary.findMany({
+        where: { effectiveDate: { lte: endOfPeriod } },
+        select: {
+          staffId: true,
+          amount: true,
+          effectiveDate: true,
+        },
+        orderBy: [{ staffId: "asc" }, { effectiveDate: "desc" }],
+      }),
+    ]);
+
+    const employmentMap = new Map<
+      number,
+      (typeof employmentsFromDB)[number][]
+    >();
+    for (const employment of employmentsFromDB) {
+      const current = employmentMap.get(employment.staffId) ?? [];
+      current.push(employment);
+      employmentMap.set(employment.staffId, current);
     }
 
-    // Get staff salaries for the month
-    // First, get all staff
-    const allStaff = await prisma.staff.findMany({
-      include: {
-        user: true,
-      },
+    const staffSalaryMap = new Map<number, (typeof salariesFromDB)[number][]>();
+    for (const salary of salariesFromDB) {
+      const current = staffSalaryMap.get(salary.staffId) ?? [];
+      current.push(salary);
+      staffSalaryMap.set(salary.staffId, current);
+    }
+
+    const salaryExpenses = allStaff.flatMap((staff, index) => {
+      const employments = employmentMap.get(staff.id) ?? [];
+      const salaries = staffSalaryMap.get(staff.id) ?? [];
+      const amount = getSalaryForPeriod(
+        { staff, employments, salaries },
+        startOfPeriod,
+        endOfPeriod,
+      );
+      if (amount == null) return [];
+
+      const latestSalary = getLatestSalaryAtOrBefore(salaries, endOfPeriod);
+      const effectiveDate = latestSalary
+        ? latestSalary.effectiveDate
+        : startOfPeriod;
+
+      return [
+        {
+          id: -1000000 - index,
+          expenseDate: effectiveDate,
+          categoryId: null,
+          category: null,
+          description: `ค่าเงินเดือนพนักงาน - ${staff.user?.name || "ไม่ระบุชื่อพนักงาน"}${latestSalary ? "" : " (ไม่มีข้อมูลเงินเดือนในช่วงเวลาที่เลือก)"}`,
+          amount,
+          receiptUrl: null,
+          staffName: staff.user?.name || "Unknown",
+        },
+      ];
     });
 
-    // Get staff salaries for the month
-    const salariesFromDB = await prisma.staffSalary.findMany({
-      where: {
-        effectiveDate: {
-          gte: startOfPeriod,
-          lte: endOfPeriod,
-        },
-      },
-      include: {
-        Staff: {
-          include: {
-            user: true,
+    const [expenseCount, expensesData, allExpensesGrouped] = await Promise.all([
+      prisma.expense.count({ where: whereClause }),
+      prisma.expense.findMany({
+        where: whereClause,
+        include: {
+          category: {
+            include: {
+              Staff: {
+                include: {
+                  user: { select: { name: true } },
+                },
+              },
+            },
           },
         },
-      },
-      orderBy: {
-        effectiveDate: "desc", // Get latest first
-      },
-    });
+      }),
+      prisma.expense.groupBy({
+        by: ["categoryId"],
+        where: whereClause,
+        _sum: { amount: true },
+        _count: { id: true },
+      }),
+    ]);
 
-    // Group by staffId and take only the latest one per staff
-    const staffSalaryMap = new Map<number, (typeof salariesFromDB)[0]>();
-    salariesFromDB.forEach((salary) => {
-      if (!staffSalaryMap.has(salary.staffId)) {
-        staffSalaryMap.set(salary.staffId, salary);
-      }
-    });
+    const total = expenseCount + salaryExpenses.length;
 
-    // Build salary expenses - one per staff
-    const salaryExpenses = allStaff.map((staff, index) => {
-      const salaryRecord = staffSalaryMap.get(staff.id);
-      const amount = salaryRecord ? salaryRecord.amount : staff.currentSalary;
-      const effectiveDate = salaryRecord
-        ? salaryRecord.effectiveDate
-        : startOfPeriod; // Use start of period instead of first day of month
-
-      return {
-        id: -1000000 - index, // Negative ID to distinguish from real expenses
-        expenseDate: effectiveDate,
-        categoryId: null,
-        category: null,
-        description: `เงินเดือนพนักงาน - ${staff.user?.name || "Unknown"}${salaryRecord ? "" : " (ใช้เงินเดือนปัจจุบัน)"}`,
-        amount: amount,
-        receiptUrl: null,
-        staffName: staff.user?.name || "Unknown",
-      };
-    });
-
-    // Get total count (expenses + salaries)
-    const expenseCount = await prisma.expense.count({
-      where: whereClause,
-    });
-    const total = expenseCount + allStaff.length; // Use allStaff.length instead of salaries.length
-
-    // Combine expenses and salaries, then sort
-    let allExpenses: any[] = [];
-
-    // Get all expenses without pagination first
-    const expensesData = await prisma.expense.findMany({
-      where: whereClause,
-      include: {
-        category: {
-          include: {
-            Staff: true,
-          },
-        },
-      },
-    });
-
-    // Combine with salary expenses
-    allExpenses = [
-      ...expensesData.map((e) => ({
-        ...e,
-        staffName: undefined, // Expenses don't have direct staff relation
-      })),
+    const allCombinedExpenses = [
+      ...expensesData.map((e) => ({ ...e, staffName: undefined })),
       ...salaryExpenses,
-    ];
+    ] as any[];
 
-    // Sort combined data
     if (sortBy === "date") {
-      allExpenses.sort((a, b) => {
+      allCombinedExpenses.sort((a, b) => {
         const dateA = a.expenseDate.getTime();
         const dateB = b.expenseDate.getTime();
         return sortOrder === "asc" ? dateA - dateB : dateB - dateA;
       });
     } else if (sortBy === "amount") {
-      allExpenses.sort((a, b) => {
-        return sortOrder === "asc" ? a.amount - b.amount : b.amount - a.amount;
-      });
-    } else if (sortBy === "category") {
-      allExpenses.sort((a, b) => {
-        const catA = a.category?.name || "เงินเดือน";
-        const catB = b.category?.name || "เงินเดือน";
+      allCombinedExpenses.sort((a, b) =>
+        sortOrder === "asc" ? a.amount - b.amount : b.amount - a.amount,
+      );
+    } else {
+      allCombinedExpenses.sort((a, b) => {
+        const catA = a.category?.name || "เน€เธเธดเธเน€เธ”เธทเธญเธ";
+        const catB = b.category?.name || "เน€เธเธดเธเน€เธ”เธทเธญเธ";
         return sortOrder === "asc"
           ? catA.localeCompare(catB)
           : catB.localeCompare(catA);
       });
     }
 
-    // Apply pagination after sorting
     const skip = (page - 1) * limit;
-    const expenses = allExpenses.slice(skip, skip + limit);
+    const expenses = allCombinedExpenses.slice(skip, skip + limit);
 
-    // Calculate totals including salaries
-    const allExpensesForTotal = await prisma.expense.findMany({
-      where: whereClause,
-    });
-
-    const expensesTotal = allExpensesForTotal.reduce(
+    const expensesTotal = expensesData.reduce(
       (sum, exp) => sum + exp.amount,
       0,
     );
@@ -378,18 +364,6 @@ export async function GET(req: NextRequest) {
       0,
     );
     const totalAmount = expensesTotal + salariesTotal;
-
-    // Build category breakdown (including salary as a category)
-    const allExpensesGrouped = await prisma.expense.groupBy({
-      by: ["categoryId"],
-      where: whereClause,
-      _sum: {
-        amount: true,
-      },
-      _count: {
-        id: true,
-      },
-    });
 
     const categoryBreakdown = await Promise.all(
       allExpensesGrouped.map(async (expense) => {
@@ -401,7 +375,6 @@ export async function GET(req: NextRequest) {
           totalAmount > 0
             ? parseFloat(((amount / totalAmount) * 100).toFixed(1))
             : 0;
-
         return {
           category: cat?.name || "Unknown",
           amount,
@@ -410,7 +383,6 @@ export async function GET(req: NextRequest) {
       }),
     );
 
-    // Add salary as a category
     if (salariesTotal > 0) {
       categoryBreakdown.push({
         category: "เงินเดือนพนักงาน",
@@ -422,11 +394,8 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    // Format data
     const formattedData = expenses.map((expense) => {
-      // Check if this is a salary expense (negative ID)
       const isSalary = expense.id < 0;
-
       return {
         id: expense.id,
         date: expense.expenseDate.toLocaleDateString("th-TH", {
@@ -439,7 +408,7 @@ export async function GET(req: NextRequest) {
           ? {
               id: -1,
               name: "เงินเดือนพนักงาน",
-              description: "เงินเดือนประจำเดือน",
+              description: "ค่าเงินเดือนของพนักงานที่ทำงานในบริษัท",
             }
           : expense.category
             ? {
@@ -452,10 +421,7 @@ export async function GET(req: NextRequest) {
         amount: expense.amount,
         receiptUrl: expense.receiptUrl,
         staff: isSalary
-          ? {
-              id: 0,
-              name: expense.staffName || "พนักงาน",
-            }
+          ? { id: 0, name: expense.staffName || "ไม่ระบุชื่อพนักงาน" }
           : expense.category?.Staff
             ? {
                 id: expense.category.Staff.id,
@@ -474,56 +440,58 @@ export async function GET(req: NextRequest) {
     });
 
     const totalPages = Math.ceil(total / limit);
+    const monthNames = getMonthNames();
 
-    const result = {
-      success: true,
-      data: formattedData,
-      pagination: {
-        page,
-        limit,
-        total,
-        totalPages,
-        hasNextPage: page < totalPages,
-        hasPrevPage: page > 1,
+    return NextResponse.json(
+      {
+        success: true,
+        data: formattedData,
+        pagination: {
+          page,
+          limit,
+          total,
+          totalPages,
+          hasNextPage: page < totalPages,
+          hasPrevPage: page > 1,
+        },
+        meta: {
+          year: yearNumber,
+          month: monthNumber,
+          monthName: monthNames[monthNumber - 1],
+          dateRange:
+            startDate && endDate
+              ? {
+                  startDate,
+                  endDate,
+                  formatted: {
+                    startDate: new Date(startDate).toLocaleDateString("th-TH", {
+                      year: "numeric",
+                      month: "long",
+                      day: "numeric",
+                    }),
+                    endDate: new Date(endDate).toLocaleDateString("th-TH", {
+                      year: "numeric",
+                      month: "long",
+                      day: "numeric",
+                    }),
+                  },
+                }
+              : null,
+          totalAmount,
+          categoryBreakdown: categoryBreakdown.sort(
+            (a, b) => b.amount - a.amount,
+          ),
+        },
       },
-      meta: {
-        year: yearNumber,
-        month: monthNumber,
-        monthName: monthNames[monthNumber - 1],
-        dateRange:
-          startDate && endDate
-            ? {
-                startDate,
-                endDate,
-                formatted: {
-                  startDate: new Date(startDate).toLocaleDateString("th-TH", {
-                    year: "numeric",
-                    month: "long",
-                    day: "numeric",
-                  }),
-                  endDate: new Date(endDate).toLocaleDateString("th-TH", {
-                    year: "numeric",
-                    month: "long",
-                    day: "numeric",
-                  }),
-                },
-              }
-            : null,
-        totalAmount,
-        categoryBreakdown: categoryBreakdown.sort(
-          (a, b) => b.amount - a.amount,
-        ),
-      },
-    };
-
-    return NextResponse.json(result, { status: 200 });
+      { status: 200 },
+    );
   } catch (error) {
     return NextResponse.json(
       {
         success: false,
         error: {
           code: "INTERNAL_ERROR",
-          message: "เกิดข้อผิดพลาดในการดึงข้อมูล",
+          message: "เกิดข้อผิดพลาดภายในระบบ",
           details: {
             message: String(error),
           },
