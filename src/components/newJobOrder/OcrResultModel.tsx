@@ -50,14 +50,12 @@ export function OcrResultModal({
 }: OcrResultModalProps) {
   if (!open) return null;
 
-  const isDone = stage === "done";
-
   return (
     <div className="fixed inset-0 z-[999] flex items-center justify-center sm:p-4">
       {/* Backdrop with Blur */}
       <div
         className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity animate-in fade-in duration-300"
-        onClick={isDone ? onClose : undefined}
+        onClick={onClose}
       />
 
       {/* Modal Content */}
@@ -85,7 +83,7 @@ export function OcrResultModal({
               <h3 className="font-semibold text-foreground text-base">
                 {stage === "loading" ? titleLoading : titleDone}
               </h3>
-              {isDone && (
+              {stage === "done" && (
                 <p className="text-xs text-muted-foreground">
                   ตรวจสอบความถูกต้องก่อนดำเนินการต่อ
                 </p>
@@ -98,7 +96,6 @@ export function OcrResultModal({
             size="icon"
             className="h-8 w-8 rounded-full"
             onClick={onClose}
-            disabled={!isDone}
           >
             <X className="h-4 w-4" />
           </Button>
@@ -245,7 +242,6 @@ export function OcrResultModal({
             className="w-full sm:w-auto sm:ml-auto sm:flex"
             size="lg"
             onClick={onClose}
-            disabled={!isDone}
           >
             <X className="mr-2 h-4 w-4" />
             ปิด

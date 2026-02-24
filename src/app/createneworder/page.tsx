@@ -1,5 +1,5 @@
 "use client";
-import { use, useEffect, useState } from "react";
+import { use, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -156,6 +156,7 @@ const NewJobOrder = () => {
       description: string | null;
     }>;
   } | null>(null);
+  const ocrAbortRef = useRef<AbortController | null>(null);
 
   const [selectedCustomerId, setSelectedCustomerId] = useState<
     string | number | null
@@ -557,22 +558,29 @@ const NewJobOrder = () => {
   const handleRunOcr = async () => {
     const firstFile = UploadFile[0];
     if (!firstFile) {
-      toast.error("กรุณาแนบไฟล์ก่อนกด OCR", { position: "bottom-right" });
+      toast.error("Please attach a file before running OCR", {
+        position: "bottom-right",
+      });
       return;
     }
 
+    let controller: AbortController | null = null;
     try {
       setOcrLoading(true);
       setOcrModalOpen(true);
       setOcrStage("loading");
       setOcrSummary(null);
 
+      controller = new AbortController();
+      ocrAbortRef.current = controller;
+
       const file = new FormData();
-      file.append("files", firstFile); // ส่งแค่ไฟล์แรก
+      file.append("files", firstFile);
 
       const res = await fetch("/api/ocr/parse-po", {
         method: "POST",
         body: file,
+        signal: controller.signal,
       });
 
       const data: OcrParseResponse = await res.json().catch(() => ({}) as any);
@@ -581,18 +589,34 @@ const NewJobOrder = () => {
       setOcrData(data);
       applyOcrToForm(data);
 
-      toast.success("เติมข้อมูลจาก OCR แล้ว กรุณาตรวจสอบก่อนบันทึก", {
+      toast.success("อ่านข้อมูลจากเอกสารแล้ว กรุณาตรวจสอบข้อมูลทีก่อนบันทึก", {
         position: "bottom-right",
       });
     } catch (err) {
+      if (err instanceof DOMException && err.name === "AbortError") {
+        return;
+      }
+
       console.error(err);
-      toast.error(
-        `OCR ไม่สำเร็จ: ${err instanceof Error ? err.message : String(err)}`,
-        { position: "bottom-right" },
-      );
+      setOcrModalOpen(false);
+      toast.error(`${err instanceof Error ? err.message : String(err)}`, {
+        position: "bottom-right",
+      });
     } finally {
+      if (controller && ocrAbortRef.current === controller) {
+        ocrAbortRef.current = null;
+      }
       setOcrLoading(false);
     }
+  };
+
+  const handleCloseOcrModal = () => {
+    if (ocrLoading && ocrStage === "loading") {
+      ocrAbortRef.current?.abort();
+      toast.info("ยกเลิกการ OCR แล้ว", { position: "bottom-right" });
+    }
+
+    setOcrModalOpen(false);
   };
 
   const resetOcr = () => {
@@ -931,55 +955,12 @@ const NewJobOrder = () => {
           </div>
         </form>
       </div>
-      {ocrModalOpen && (
-        <div className="fixed inset-0 z-50">
-          {/* overlay กันคลิก */}
-          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
-
-          {/* modal */}
-          <div className="absolute inset-0 flex items-center justify-center p-4">
-            <div className="w-full max-w-lg rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-xl overflow-hidden">
-              <div className="p-4 border-b border-zinc-100 dark:border-zinc-800 flex items-center justify-between">
-                <div className="text-sm font-semibold">
-                  {ocrStage === "loading"
-                    ? "กำลังอ่านเอกสาร (OCR)..."
-                    : "สรุปผล OCR"}
-                </div>
-
-                {/* ปิดได้เฉพาะตอน done */}
-                <Button
-                  type="button"
-                  variant="ghost"
-                  disabled={ocrStage !== "done"}
-                  onClick={() => setOcrModalOpen(false)}
-                >
-                  ปิด
-                </Button>
-              </div>
-
-              <div className="p-4 space-y-4">
-                <OcrResultModal
-                  open={ocrModalOpen}
-                  stage={ocrStage}
-                  summary={ocrSummary}
-                  onClose={() => setOcrModalOpen(false)}
-                />
-              </div>
-
-              {/* footer */}
-              <div className="p-4 border-t border-zinc-100 dark:border-zinc-800 flex justify-end gap-2">
-                <Button
-                  type="button"
-                  disabled={ocrStage !== "done"}
-                  onClick={() => setOcrModalOpen(false)}
-                >
-                  เข้าใจแล้ว
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      <OcrResultModal
+        open={ocrModalOpen}
+        stage={ocrStage}
+        summary={ocrSummary}
+        onClose={handleCloseOcrModal}
+      />
 
       <ToastContainer />
     </div>

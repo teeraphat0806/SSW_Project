@@ -216,7 +216,7 @@ export default function AddItem({
                 <Input
                   id="deliveryDate"
                   type="date"
-                  min={today}
+                  // min={today}
                   value={headOrder.deliveryDate}
                   onChange={handleDateChange}
                   className="pl-10 h-11 
