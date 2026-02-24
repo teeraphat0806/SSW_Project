@@ -467,7 +467,7 @@ export default function Dashboard() {
                               PO: {order.poNumber}
                             </span>
                           )}
-                          <span className="text-xs text-zinc-400">
+                          <span className="text-xs text-red-500">
                             HS:{" "}
                             {order.invoiceNo
                               ? String(order.invoiceNo).padStart(8, "0")
