@@ -35,7 +35,7 @@ type Inv71LikeInvoiceProps = {
   credit: string; // 30 วัน
   poNumber?: string; // เลขที่ใบ PO
   selesName: string; // J.Sirikran
-  recentlyInvoice?: number; 
+  recentlyInvoice?: number;
   dateCreateInvoice?: string;
   // รายการ
   items: InvoiceItem[];
@@ -68,7 +68,6 @@ export const InvoiceExcelSample: React.FC<Inv71LikeInvoiceProps> = ({
   totalTextThai,
   recentlyInvoice,
   dateCreateInvoice,
-  
 }) => {
   const formatNumber = (n?: number | null) => {
     const x = typeof n === "number" ? n : Number(n);
@@ -134,7 +133,9 @@ export const InvoiceExcelSample: React.FC<Inv71LikeInvoiceProps> = ({
 
           <div className="min-w-[170px] text-sm space-y-3 mr-20 text-center">
             <div className="">
-              <span className="">HS{invoice}</span>
+              <span className="">
+                HS{invoice ? invoice.toString().padStart(8, "0") : ""}
+              </span>
             </div>
             <div className="">
               <span className="">{date} </span>

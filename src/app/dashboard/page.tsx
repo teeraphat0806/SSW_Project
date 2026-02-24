@@ -470,7 +470,7 @@ export default function Dashboard() {
                           <span className="text-xs text-zinc-400">
                             HS:{" "}
                             {order.invoiceNo
-                              ? String(order.invoiceNo).padStart(7, "0")
+                              ? String(order.invoiceNo).padStart(8, "0")
                               : "ยังไม่ได้ออกบิล"}
                           </span>
                         </div>

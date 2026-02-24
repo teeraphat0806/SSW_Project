@@ -68,7 +68,9 @@ export const InvoiceExcelCutter: React.FC<Inv71LikeInvoiceProps> = ({
         >
           <div className="mb-8 flex items-start justify-between">
             <div className="text-4xl font-bold">{companyName}</div>
-            <div className="text-right text-4xl font-semibold">HS{invoice}</div>
+            <div className="text-right text-4xl font-semibold">
+              HS{invoice ? invoice.toString().padStart(8, "0") : ""}
+            </div>
           </div>
 
           <table className="w-full table-fixed text-[24px] leading-9">
