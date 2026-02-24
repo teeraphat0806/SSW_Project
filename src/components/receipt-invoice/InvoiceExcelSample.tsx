@@ -126,7 +126,8 @@ export const InvoiceExcelSample: React.FC<Inv71LikeInvoiceProps> = ({
             <div className="mt-1">{addressLine1}</div>
             <div>{addressLine2}</div>
             <div className="mt-1">
-              โทร.{tel} &nbsp;&nbsp;&nbsp; แฟกซ์.{fax}
+              {tel ? `โทร.${tel}` : ""} &nbsp;&nbsp;&nbsp;{" "}
+              {fax ? `แฟกซ์ ${fax}` : ""}
             </div>
             <div className="mt-1">เลขประจำตัวผู้เสียภาษี {taxId}</div>
           </div>
