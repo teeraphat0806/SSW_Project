@@ -38,6 +38,7 @@ const isAtLeast = (s: status, atLeast: status) =>
 type ApiJobOrder = {
   id: number;
   poNumber: string | null;
+  deliveryDate: string | Date | null;
   customerId: string;
   customerName: string;
   customerEmail: string | null;
@@ -72,6 +73,7 @@ type ApiJobOrder = {
 type Joborder = {
   id: string;
   poNumber: string;
+  deliveryDate: string;
   customerId: string;
   customerName: string;
   customerEmail: string | null;
@@ -103,9 +105,24 @@ type Joborder = {
   status: status;
 };
 
+const toInputDate = (value: string | Date | null | undefined): string => {
+  if (!value) return "";
+  if (typeof value === "string") {
+    const m = value.match(/^(\d{4}-\d{2}-\d{2})/);
+    if (m?.[1]) return m[1];
+  }
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return "";
+  const y = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${y}-${mm}-${dd}`;
+};
+
 const toJoborder = (api: ApiJobOrder): Joborder => ({
   id: api.id.toString(),
   poNumber: api.poNumber ?? "",
+  deliveryDate: toInputDate(api.deliveryDate),
   credit: api.credit ?? 30,
   customerId: api.customerId ?? "",
   customerName: api.customerName ?? "",
@@ -176,6 +193,10 @@ type SteelStockApiItem = {
 
 const steelKey = (codeSteel: string, shape: ShapeSteel) =>
   `${codeSteel}::${shape}`;
+const normalizeSteelCode = (value?: string | null) =>
+  String(value ?? "")
+    .trim()
+    .replace(/::(square|line)$/i, "");
 
 function mergeOrderSteelIntoOptions(
   options: SteelOption[],
@@ -231,6 +252,8 @@ type PatchPayload = {
   status?: status;
   customerId?: string;
   credit: number;
+  poNumber?: string;
+  deliveryDate?: string;
   steel?: {
     codeSteel: string;
     shape: ShapeSteel;
@@ -257,8 +280,10 @@ function buildPatchPayload(job: Joborder): PatchPayload {
     status: job.status,
     customerId: String(job.customerId),
     credit: job.credit,
+    poNumber: job.poNumber ?? "",
+    deliveryDate: job.deliveryDate || undefined,
     steel: job.steel.map((l) => ({
-      codeSteel: l.steelType?.trim(),
+      codeSteel: normalizeSteelCode(l.steelType),
       shape: l.shape,
       amount: Number(l.amount),
       width: l.width ?? null,
@@ -413,7 +438,7 @@ const UpdateOrderPage = ({ id }: { id: string }) => {
     if (
       job.steel.some(
         (s) =>
-          s.length <= 0 ||
+          (s.isOD == false && !s.length) || // s.length <= 0 ||
           s.thickness <= 0 ||
           (s.shape == "square" && (s.width == null || s.width <= 0)),
       )
