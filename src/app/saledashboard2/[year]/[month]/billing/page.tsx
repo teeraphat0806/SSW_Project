@@ -402,20 +402,43 @@ export default function BillingReportPage() {
                   {/* Signatures */}
                   <div className="mt-8 grid grid-cols-2 gap-10 text-[14px]">
                     <div className="signature">
+                      <div className="label">ผู้รับวางบิล</div>
+                      <div className="dots">
+                        ...............................................................................
+                      </div>
+                    </div>
+                    <div className="signature">
                       <div className="label">ผู้วางบิล</div>
-                      <div className="line" />
+                      <div className="dots">
+                        ...............................................................................
+                      </div>
                     </div>
                   </div>
 
                   <div className="mt-4 grid grid-cols-2 gap-10 text-[14px]">
                     <div className="signature">
-                      <div className="label">วันที่นัดชำระเงิน</div>
-                      <div className="line" />
+                      <div className="label">วันที่รับวางบิล</div>
+                      <div className="dots">
+                        ...............................................................................
+                      </div>
                     </div>
                     <div className="signature">
-                      <div className="label">ผู้วางบิล</div>
-                      <div className="line" />
+                      <div className="label">วันที่วางบิล</div>
+                      <div className="dots">
+                        ...............................................................................
+                      </div>
                     </div>
+                  </div>
+
+                  {/* วันนัดชำระเงิน */}
+                  <div className="mt-4 grid grid-cols-2 gap-10 text-[14px]">
+                    <div className="signature">
+                      <div className="label">วันที่นัดชำระเงิน</div>
+                      <div className="dots">
+                        ...............................................................................
+                      </div>
+                    </div>
+
                     <div />
                   </div>
                 </footer>
@@ -478,6 +501,10 @@ export default function BillingReportPage() {
         .signature .line {
           border-bottom: 1.5px solid currentColor;
           height: 16px;
+        }
+        .signature .dots {
+          height: 16px;
+          letter-spacing: 1px;
         }
 
         @media print {
