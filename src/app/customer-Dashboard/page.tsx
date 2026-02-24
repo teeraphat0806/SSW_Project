@@ -375,7 +375,7 @@ export default function CustomerDashboard() {
                                 setOpenCustomerModal(true);
                               }}
                             >
-                              <Eye size={18} /> แสดง
+                              <Eye size={18} />
                             </button>
                             {canDelete ? (
                               <button

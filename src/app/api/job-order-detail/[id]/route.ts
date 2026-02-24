@@ -90,6 +90,7 @@ export async function GET(
           },
         },
         Product: {
+          orderBy: [{ sequence: "asc" }],
           include: {
             SteelType: true,
           },

@@ -1,7 +1,6 @@
 // src/app/่job-order-detail/[id]/layout.tsx
 import "../../globals.css";
 import Layout from "../../../components/Layout";
-import { ThemeProvider } from "next-themes";
 
 import { ToastContainer } from "react-toastify";
 import { ConfirmDialogProvider } from "@/components/providers/confirm-dialog-provider";
@@ -18,12 +17,10 @@ export default function JobOrderDetailLayout({
   return (
     <Layout>
       <div className="bg-muted min-h-screen md:pl-20 ">
-        <ThemeProvider attribute="class">
-          <ConfirmDialogProvider>
+        <ConfirmDialogProvider>
           {children}
           <ToastContainer />
-          </ConfirmDialogProvider>
-        </ThemeProvider>
+        </ConfirmDialogProvider>
       </div>
     </Layout>
   );

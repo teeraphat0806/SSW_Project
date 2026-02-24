@@ -54,8 +54,17 @@ export async function POST(req: NextRequest) {
     );
   }
   try {
+    const latestProduct = await prisma.product.findFirst({
+      where: { orderPOId: parsed.data.orderPOId },
+      orderBy: { sequence: "desc" },
+      select: { sequence: true },
+    });
+
+    const sequence = parsed.data.sequence ?? (latestProduct?.sequence ?? 0) + 1;
+
     const result = await prisma.product.create({
       data: {
+        sequence,
         wide: parsed.data.wide,
         length: parsed.data.length,
         thickness: parsed.data.thickness,

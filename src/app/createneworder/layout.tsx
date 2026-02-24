@@ -1,7 +1,6 @@
 // src/app/layout.tsx
 import "../globals.css";
 import Layout from "../../components/Layout";
-import { ThemeProvider } from "next-themes";
 export const metadata = {
   title: "My App",
   description: "My App Description",
@@ -14,7 +13,7 @@ export default function CreateneworderLayout({
 }) {
   return (
     <Layout>
-          <ThemeProvider attribute="class">{children}</ThemeProvider>;
+      {children}
     </Layout>
   );
 }
