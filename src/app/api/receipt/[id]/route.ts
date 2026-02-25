@@ -100,7 +100,7 @@ type ApiReceipt = {
   vat: number;
   vatRate: number | null;
   totalTextThai: string;
-
+  poNumber?: string | null;
   customer: {
     id: number;
     name: string;
@@ -141,10 +141,15 @@ export async function GET(
   }
 
   let poId = null;
+  let poNumber = null;
   try {
     poId = await prisma.orderPO.findUnique({
       where: { billId: receiptId },
       select: { id: true },
+    });
+    poNumber = await prisma.orderPO.findUnique({
+      where: { billId: receiptId },
+      select: { poNumber: true },
     });
   } catch (error) {
     return NextResponse.json(
@@ -225,6 +230,7 @@ export async function GET(
       totalTextThai: ThaiBaht(grandTotal.toString()),
       recentlyInvoice: latestInvoice?.invoiceNo ?? 0,
       selesName: receipt.salesName,
+      poNumber: poNumber?.poNumber ?? null,
       customer: {
         id: customer.id,
         name: customer.name,
