@@ -429,7 +429,8 @@ export default function DetailItem<T extends JobWithSteel>({
           const isLine = item.shape === "line";
           const isManualPrice = Boolean(item.manualPrice);
           const selectedSteelOption = steelOptions.find(
-            (o) => o.codeSteel === normalizedSteelType && o.shape === item.shape,
+            (o) =>
+              o.codeSteel === normalizedSteelType && o.shape === item.shape,
           );
 
           return (
@@ -489,6 +490,7 @@ export default function DetailItem<T extends JobWithSteel>({
                             <Input
                               type="number"
                               min="0"
+                              step="0.01"
                               className="h-10 border-zinc-200 bg-white pr-7 text-center hover:border-blue-400 focus-visible:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
                               value={item.thickness ?? 0}
                               onChange={(e) =>
@@ -516,6 +518,7 @@ export default function DetailItem<T extends JobWithSteel>({
                               <Input
                                 type="number"
                                 min="0"
+                                step="0.01"
                                 className="h-10 border-zinc-200 bg-white pr-7 text-center hover:border-blue-400 focus-visible:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
                                 value={item.width ?? 0}
                                 onChange={(e) =>
@@ -543,6 +546,7 @@ export default function DetailItem<T extends JobWithSteel>({
                             <Input
                               type="number"
                               min="0"
+                              step="0.01"
                               className="h-10 border-zinc-200 bg-white pr-7 text-center hover:border-blue-400 focus-visible:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
                               value={item.length ?? 0}
                               onChange={(e) =>
