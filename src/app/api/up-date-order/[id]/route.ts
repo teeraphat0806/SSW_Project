@@ -264,17 +264,17 @@ export async function PATCH(
             data: { poNumber: null },
           });
         } else {
-          const poNumberExists = await tx.orderPO.findFirst({
-            where: {
-              id: { not: poId },
-              poNumber: nextPoNumber,
-            },
-            select: { id: true },
-          });
+          // const poNumberExists = await tx.orderPO.findFirst({
+          //   where: {
+          //     id: { not: poId },
+          //     poNumber: nextPoNumber,
+          //   },
+          //   select: { id: true },
+          // });
 
-          if (poNumberExists) {
-            throw new Error("PO Number already exists");
-          }
+          // if (poNumberExists) {
+          //   throw new Error("PO Number already exists");
+          // }
           await tx.orderPO.update({
             where: { id: poId },
             data: { poNumber: nextPoNumber },
