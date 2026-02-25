@@ -70,19 +70,21 @@ model JobPosition {
 }
 
 model Customer {
-  id              Int       @id @default(autoincrement())
+  id              Int           @id @default(autoincrement())
   name            String
   address         String
-  tel             String?   @unique
-  taxNumber       String    @unique
-  faxNumber       String?   @unique
-  email           String?   @unique
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-  faxNumberSearch String?   @unique
-  telSearch       String?   @unique
+  tel             String?       @unique
+  taxNumber       String        @unique
+  faxNumber       String?       @unique
+  email           String?       @unique
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  faxNumberSearch String?       @unique
+  telSearch       String?       @unique
   Bill            Bill[]
   OrderPO         OrderPO[]
+  Statements      Statement[]
+  Acquittances    Acquittance[]
 }
 
 model Bill {
@@ -141,11 +143,13 @@ model OrderPO {
 }
 
 model Invoice {
-  id            Int      @id @default(autoincrement())
-  codetoinvoice Int      @unique
-  invoiceNo     Int      @default(autoincrement())
-  createdAt     DateTime @default(now())
-  OrderPO       OrderPO  @relation("OrderPO_Invoice", fields: [codetoinvoice], references: [codetoinvoice], onDelete: Cascade)
+  id              Int                 @id @default(autoincrement())
+  codetoinvoice   Int                 @unique
+  invoiceNo       Int                 @default(autoincrement())
+  createdAt       DateTime            @default(now())
+  OrderPO         OrderPO             @relation("OrderPO_Invoice", fields: [codetoinvoice], references: [codetoinvoice], onDelete: Cascade)
+  statementItem   StatementInvoice?
+  acquittanceItem AcquittanceInvoice?
 
   @@index([codetoinvoice])
   @@index([invoiceNo])
@@ -162,6 +166,61 @@ model OrderPOStaff {
   @@id([orderPOId, staffId, role])
   @@index([staffId])
   @@index([orderPOId, role])
+}
+
+model Statement {
+  id          Int @id @default(autoincrement())
+  statementNo Int @default(autoincrement()) // เลขใบวางบิล (โชว์บนเอกสาร)
+  customerId  Int
+
+  Customer Customer           @relation(fields: [customerId], references: [id])
+  items    StatementInvoice[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([statementNo])
+  @@index([customerId, createdAt])
+}
+
+model StatementInvoice {
+  statementId Int
+  invoiceId   Int
+
+  statement Statement @relation(fields: [statementId], references: [id], onDelete: Cascade)
+  invoice   Invoice   @relation(fields: [invoiceId], references: [id], onDelete: Restrict)
+
+  @@id([statementId, invoiceId])
+  @@unique([invoiceId])
+  @@index([statementId])
+  @@index([invoiceId])
+}
+
+model Acquittance {
+  id            Int      @id @default(autoincrement())
+  acquittanceNo Int      @default(autoincrement()) // เลขใบเสร็จรับเงิน (โชว์บนเอกสาร)
+  customerId    Int
+  createdAt     DateTime @default(now())
+
+  Customer Customer             @relation(fields: [customerId], references: [id])
+  items    AcquittanceInvoice[]
+
+  updatedAt DateTime @updatedAt
+
+  @@index([acquittanceNo])
+  @@index([customerId, createdAt])
+}
+
+model AcquittanceInvoice {
+  acquittanceId Int
+  invoiceId     Int
+  acquittance   Acquittance @relation(fields: [acquittanceId], references: [id], onDelete: Cascade)
+  invoice       Invoice     @relation(fields: [invoiceId], references: [id], onDelete: Restrict)
+
+  @@id([acquittanceId, invoiceId])
+  @@unique([invoiceId]) // invoice 1 ใบอยู่ได้แค่ 1 acquittance
+  @@index([acquittanceId])
+  @@index([invoiceId])
 }
 
 model Product {
