@@ -46,7 +46,7 @@ export default function CreateSteelTypeModal({
       detail: "",
       shape: "square",
       price: 0,
-      density: 0.000079,
+      density: 0.0000079,
       ...defaultValues,
     }),
     [defaultValues],

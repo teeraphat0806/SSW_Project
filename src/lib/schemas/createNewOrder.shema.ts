@@ -27,6 +27,9 @@ export const CreateNewOrderSchema = z.object({
           detail: z.string().optional(),
           cuttingMethod: z.enum(["normal", "FB", "RM", "CNC"]).optional(),
           job: z.number().int().nullable().optional(),
+          weight: z.number().nonnegative().nullable().optional(),
+          discount: z.number().nonnegative().nullable().optional(),
+          price: z.number().nonnegative().optional(),
 
           isOD: z.boolean().optional(),
           isServices: z.boolean().optional(),
