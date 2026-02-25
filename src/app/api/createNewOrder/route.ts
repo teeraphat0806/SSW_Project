@@ -136,6 +136,9 @@ export async function POST(req: NextRequest) {
         const code = String(product.steelType).trim();
         const shape = product.shape as unknown as ShapeSteel;
         const steel = mapSteel.get(steelKey(code, shape))!;
+        const linePrice = Number(product.price ?? steel.price);
+        const lineWeight = product.weight ?? null;
+        const lineDiscount = product.discount ?? null;
 
         const steelline = calculateWeightDetails({
           shape,
@@ -145,22 +148,28 @@ export async function POST(req: NextRequest) {
           thickness: product.thickness,
           density: steel.density,
 
-          price: steel.price,
-          weight: null,
+          price: linePrice,
+          weight: lineWeight,
           total: null,
-          discount: null,
+          discount: lineDiscount,
 
           isOD: product.isOD ?? false,
           isServices: product.isServices ?? false,
           isPerAmount: product.isPerAmount ?? false,
         });
 
-        return { steel, product, steelline };
+        return { steel, product, steelline, linePrice, lineWeight, lineDiscount };
       });
 
-      const poTotal = round2(
+      const subtotal = round2(
         computed.reduce((sum: number, x) => sum + x.steelline.total, 0),
       );
+      const discount = round2(
+        computed.reduce((sum: number, x) => sum + Number(x.lineDiscount ?? 0), 0),
+      );
+      const subtotalAfterDiscount = round2(subtotal - discount);
+      const vat = round2((subtotalAfterDiscount * 7) / 100);
+      const grandTotal = round2(subtotalAfterDiscount + vat);
 
       const bill = await tx.bill.create({
         data: {
@@ -173,19 +182,24 @@ export async function POST(req: NextRequest) {
             connect: { id: Number(session.user?.id) },
           },
 
-          subtotal: poTotal,
-          vat: round2((poTotal * 7) / 100),
-          grandTotal: round2(poTotal + (poTotal * 7) / 100),
+          subtotal,
+          discount,
+          vat,
+          grandTotal,
 
           OrderPO: {
             create: {
               poNumber: po.poNumber ?? null,
               Customer: { connect: { id: data.customerId } },
               urlPo: po.urlPo ?? [],
-              total: poTotal,
+              total: subtotal,
 
               Product: {
-                create: computed.map(({ steel, product, steelline }, index) => ({
+                create: computed.map(
+                  (
+                    { steel, product, steelline, linePrice, lineWeight, lineDiscount },
+                    index,
+                  ) => ({
                   SteelType: { connect: { id: steel.id } },
                   sequence: product.sequence ?? index + 1,
 
@@ -194,7 +208,9 @@ export async function POST(req: NextRequest) {
                   thickness: product.thickness,
                   amount: product.amount,
 
-                  unitPrice: steel.price, //  snapshot ราคา ณ ตอนนั้น
+                  unitPrice: linePrice,
+                  actualWeight: lineWeight,
+                  discount: lineDiscount,
                   detail: product.detail ?? null,
                   job: product.job ?? null,
                   cuttingMethod: product.cuttingMethod ?? "normal",

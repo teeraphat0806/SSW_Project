@@ -52,9 +52,14 @@ type SteelItem = {
   length: number;
   thickness: number;
   notes: string;
+  weight?: number | null;
+  price: number;
+  discount: number | null;
+  density: number;
   cuttingMethod?: CuttingMethod;
   isOD: boolean;
   isServices: boolean;
+  isPerAmount: boolean;
   job?: number | null;
 };
 
@@ -62,6 +67,8 @@ type SteelType = {
   id: string;
   name: string; // ใช้แสดงใน Select
   shape: ShapeSteel;
+  price: number;
+  density: number;
 };
 
 type OcrParseResponse = {
@@ -184,6 +191,11 @@ const NewJobOrder = () => {
       thickness: 1,
       isOD: false,
       isServices: false,
+      isPerAmount: false,
+      weight: null,
+      discount: null,
+      density: 0.0000079,
+      price: 0,
       cuttingMethod: "normal",
       notes: "",
     },
@@ -220,11 +232,21 @@ const NewJobOrder = () => {
 
         if (!ignore) {
           setSteelTypes(
-            data.map((t: { id: number; codeSteel: string; shape: string }) => ({
-              id: t.id.toString(),
-              name: t.codeSteel, // ใช้เป็น value/label ใน Select
-              shape: t.shape,
-            })),
+            data.map(
+              (t: {
+                id: number;
+                codeSteel: string;
+                shape: string;
+                price: number;
+                density: number;
+              }) => ({
+                id: t.id.toString(),
+                name: t.codeSteel, // ใช้เป็น value/label ใน Select
+                shape: t.shape,
+                price: Number(t.price ?? 0),
+                density: Number(t.density ?? 0.0000079),
+              }),
+            ),
           );
         }
       } catch (e) {
@@ -401,7 +423,10 @@ const NewJobOrder = () => {
 
             isOD: item.isOD || false,
             isServices: item.isServices || false,
-            isPerAmount: item.isServices || false,
+            isPerAmount: item.isPerAmount || false,
+            weight: item.weight ?? null,
+            discount: item.discount ?? null,
+            price: item.price,
           })),
         },
       };
@@ -469,19 +494,26 @@ const NewJobOrder = () => {
 
   // Add steel items
   const addSteelItem = () => {
+    const firstSteelType = steelTypes[0];
+    const firstShape: ShapeSteel = firstSteelType?.shape ?? "square";
     const newItem: SteelItem = {
       id: uuidv4(),
-      steelType: "",
+      steelType: firstSteelType?.name ?? "",
       quantity: 1,
-      width: null,
-      shape: "square",
-      length: 0,
-      thickness: 0,
+      width: firstShape === "line" ? null : 1,
+      shape: firstShape,
+      length: 1,
+      thickness: 1,
       notes: "",
+      weight: null,
+      price: Number(firstSteelType?.price ?? 0),
+      discount: null,
+      density: Number(firstSteelType?.density ?? 0.0000079),
       cuttingMethod: "normal",
       job: null,
       isOD: false,
       isServices: false,
+      isPerAmount: false,
     };
     setSteelItems((prev) => [...prev, newItem]);
   };
@@ -521,20 +553,32 @@ const NewJobOrder = () => {
     }
 
     // 3) steelItems จาก steelTypeId ที่ match มาแล้ว
-    const mapped: SteelItem[] = (data.items ?? []).map((x) => ({
+    const mapped: SteelItem[] = (data.items ?? []).map((x) => {
+      const shape = x.raw?.shape ?? "square";
+      const steelTypeName = x.match?.steelTypeId ? String(x.raw.codeSteel) : "";
+      const matchedType = steelTypes.find(
+        (s) => s.name === steelTypeName && s.shape === shape,
+      );
+      return {
       id: uuidv4(),
-      steelType: x.match?.steelTypeId ? String(x.raw.codeSteel) : "",
-      shape: x.raw?.shape ?? "square",
+      steelType: steelTypeName,
+      shape,
       quantity: x.raw?.quantity ?? 1,
       width: x.raw?.width ?? null,
       length: x.raw?.length ?? 0,
       thickness: x.raw?.thickness ?? 0,
       notes: x.raw?.notes ?? "",
+      weight: null,
+      price: Number(matchedType?.price ?? 0),
+      discount: null,
+      density: Number(matchedType?.density ?? 0.0000079),
       cuttingMethod: x.raw?.cuttingMethod ?? "normal",
       job: x.raw?.job ?? null,
       isOD: x.raw?.isOD ?? false,
       isServices: x.raw?.isServices ?? false,
-    }));
+      isPerAmount: x.raw?.isServices ?? false,
+    };
+    });
     if (mapped.length) setSteelItems(mapped);
     const customerLine = data.customerMatch?.matched
       ? `${data.customerDraft?.name}: #${data.customerMatch.customerId}`

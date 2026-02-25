@@ -513,7 +513,7 @@ export default function Dashboard() {
                     <td className="py-4 px-6 text-center">
                       <Link href={`/job-order-detail/${order.id}`}>
                         <button className="p-2 rounded-lg flex flex-row items-center gap-2 text-blue-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 dark:hover:text-blue-400 transition-all">
-                          <Edit size={18} />
+                          <Edit size={18} /> แสดง
                         </button>
                       </Link>
                     </td>
