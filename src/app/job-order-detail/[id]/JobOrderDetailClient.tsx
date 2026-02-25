@@ -50,6 +50,7 @@ type ApiJobOrder = {
   id: number;
   billid: number;
   poNumber: string | null;
+  codetoinvoice: number;
   customerId: string | null;
   customerName: string | null;
   customerEmail: string | null;
@@ -92,6 +93,7 @@ export type JobOrder = {
   id: string;
   billid: number;
   poNumber: string | null;
+  codetoinvoice: number;
   customerId: string;
   customerName: string;
   customerEmail: string | null;
@@ -136,6 +138,7 @@ const tojobOrder = (api: ApiJobOrder): JobOrder => {
     poNumber: api.poNumber ?? null,
     billid: api.billid,
     // ✅ ใช้ ?? "" เพื่อแปลง null เป็น empty string
+    codetoinvoice: api.codetoinvoice,
     customerId: api.customerId ?? "",
     customerName: api.customerName ?? "",
     customerEmail: api.customerEmail ?? null,
@@ -445,7 +448,7 @@ const JobOrderDetailPage = ({ id }: { id: string }) => {
             <div>
               <div className="flex items-center gap-3">
                 <h1 className="text-2xl font-bold tracking-tight text-foreground">
-                  รายละเอียดออเดอร์ #{jobOrder?.id || "N/A"}
+                  รายละเอียดออเดอร์ #{jobOrder?.codetoinvoice || "N/A"}
                 </h1>
                 <Badge
                   variant="outline"
@@ -494,7 +497,7 @@ const JobOrderDetailPage = ({ id }: { id: string }) => {
                 <div className="grid grid-cols-2 gap-4 sm:grid-cols-2 lg:grid-cols-4">
                   <InfoStat
                     label="Order ID"
-                    value={`#${jobOrder?.id || ""}`}
+                    value={`#${jobOrder?.codetoinvoice || "N/A"}`}
                     icon={Hash}
                   />
                   <InfoStat
@@ -659,4 +662,3 @@ const JobOrderDetailPage = ({ id }: { id: string }) => {
 };
 
 export default JobOrderDetailPage;
-
