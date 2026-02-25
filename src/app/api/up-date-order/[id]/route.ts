@@ -16,6 +16,7 @@ type ApiJobOrder = {
   customerAddress: string;
   customerTaxId: string;
   customerFax: string | null;
+  deliveryDate: Date;
   credit: number;
   steel: {
     id: number;
@@ -43,7 +44,7 @@ type OrderWithRelations = Prisma.OrderPOGetPayload<{
   include: {
     Product: { include: { SteelType: true } };
     Customer: true;
-    bill: { select: { credit: true } };
+    bill: { select: { credit: true; deliveryDate: true } };
   };
 }>;
 
@@ -51,7 +52,11 @@ function toApiJobOrder(order: OrderWithRelations): ApiJobOrder {
   if (!order.Customer) {
     throw new Error("Order is missing Customer relation");
   }
+  if (!order.bill) {
+    throw new Error("Order is missing bill relation");
+  }
   const customer = order.Customer;
+  const bill = order.bill;
 
   return {
     id: order.id,
@@ -63,7 +68,8 @@ function toApiJobOrder(order: OrderWithRelations): ApiJobOrder {
     customerAddress: customer.address,
     customerTaxId: customer.taxNumber,
     customerFax: customer.faxNumber,
-    credit: order.bill?.credit ?? 30,
+    deliveryDate: bill.deliveryDate,
+    credit: bill.credit ?? 30,
     steel: order.Product.map((p) => ({
       id: p.id,
       steelType: p.SteelType.codeSteel,
@@ -114,7 +120,7 @@ export async function GET(
           },
         },
         Customer: true,
-        bill: { select: { credit: true } },
+        bill: { select: { credit: true, deliveryDate: true } },
       },
     });
 
@@ -171,6 +177,8 @@ const PatchSchema = z.object({
   // credit (days) must be a positive integer; allow coercion from string inputs.
   credit: z.coerce.number().int().positive().optional(),
   customerId: z.string().trim().optional(),
+  poNumber: z.string().trim().optional(),
+  deliveryDate: z.coerce.date().optional(),
   steel: z.array(SteelLineSchema).optional(),
 });
 
@@ -213,7 +221,6 @@ export async function PATCH(
     }
 
     const body = await req.json().catch(() => null);
-    console.log("PATCH body:", body);
     const parsed = PatchSchema.safeParse(body);
     if (!parsed.success) {
       console.error("Validation errors:", parsed.error.issues);
@@ -235,6 +242,44 @@ export async function PATCH(
       const credit = patch.credit;
       if (credit !== undefined && existing.billId == null) {
         throw new Error("No bill associated with this order");
+      }
+
+      // deliveryDate (ถ้ามีส่งมา)
+      if (patch.deliveryDate) {
+        if (existing.billId == null) {
+          throw new Error("No bill associated with this order");
+        }
+        await tx.bill.update({
+          where: { id: existing.billId },
+          data: { deliveryDate: patch.deliveryDate },
+        });
+      }
+
+      //ถ้ามี poNumber ส่งมา ให้ตรวจสอบความซ้ำซ้อนก่อน update
+      if (patch.poNumber !== undefined) {
+        const nextPoNumber = patch.poNumber.trim();
+        if (nextPoNumber === "") {
+          await tx.orderPO.update({
+            where: { id: poId },
+            data: { poNumber: null },
+          });
+        } else {
+          // const poNumberExists = await tx.orderPO.findFirst({
+          //   where: {
+          //     id: { not: poId },
+          //     poNumber: nextPoNumber,
+          //   },
+          //   select: { id: true },
+          // });
+
+          // if (poNumberExists) {
+          //   throw new Error("PO Number already exists");
+          // }
+          await tx.orderPO.update({
+            where: { id: poId },
+            data: { poNumber: nextPoNumber },
+          });
+        }
       }
 
       // customerId (ถ้ามีส่งมา)
@@ -452,7 +497,7 @@ export async function PATCH(
             include: { SteelType: true },
           },
           Customer: true,
-          bill: { select: { credit: true } },
+          bill: { select: { credit: true, deliveryDate: true } },
         },
       });
 

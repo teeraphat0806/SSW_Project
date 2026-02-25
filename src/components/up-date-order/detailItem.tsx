@@ -75,9 +75,17 @@ type SteelOption = {
   shape: ShapeSteel;
 };
 
+const DEFAULT_DENSITY = 0.0000079;
+const normalizeSteelCode = (value?: string | null) =>
+  String(value ?? "")
+    .trim()
+    .replace(/::(square|line)$/i, "");
+
 //  job ต้องมีอย่างน้อย id + steel
 type JobWithSteel = {
   id: string | number;
+  poNumber: string;
+  deliveryDate: string;
   credit: number;
   steel: SteelItem[];
 };
@@ -241,7 +249,7 @@ export default function DetailItem<T extends JobWithSteel>({
       if (!prev) return prev;
 
       const firstOpt = steelOptions?.[0];
-      const firstType = firstOpt?.value ?? "";
+      const firstType = firstOpt?.codeSteel ?? "";
       const firstprice = firstOpt?.price ?? 0;
       const firstShape: ShapeSteel = firstOpt?.shape ?? "square";
 
@@ -251,7 +259,7 @@ export default function DetailItem<T extends JobWithSteel>({
           ...(prev.steel ?? []),
           {
             steelType: firstType,
-            quantity: 1,
+            amount: 1,
             width: firstShape === "line" ? null : 1,
             length: 1,
             thickness: 1,
@@ -263,6 +271,7 @@ export default function DetailItem<T extends JobWithSteel>({
             price: firstprice,
             discount: null,
             manualPrice: false,
+            density: DEFAULT_DENSITY,
             isOD: false,
             isServices: false,
             isPerAmount: false,
@@ -355,6 +364,41 @@ export default function DetailItem<T extends JobWithSteel>({
             />
           </div>
 
+          {/* PO Number */}
+          <div className="w-[180px] shrink-0">
+            <label className="mb-1.5 block text-sm font-medium text-zinc-500 dark:text-zinc-400">
+              PO Number
+            </label>
+            <Input
+              type="text"
+              value={job.poNumber ?? ""}
+              onChange={(e) =>
+                setJob((prev) =>
+                  prev ? { ...prev, poNumber: e.target.value } : prev,
+                )
+              }
+              placeholder="เช่น PO-2026-001"
+              className="h-10 w-full border-zinc-200 bg-white text-sm dark:border-zinc-700 dark:bg-zinc-900"
+            />
+          </div>
+
+          {/* Delivery Date */}
+          <div className="w-[170px] shrink-0">
+            <label className="mb-1.5 block text-sm font-medium text-zinc-500 dark:text-zinc-400">
+              วันที่ส่ง
+            </label>
+            <Input
+              type="date"
+              value={job.deliveryDate ?? ""}
+              onChange={(e) =>
+                setJob((prev) =>
+                  prev ? { ...prev, deliveryDate: e.target.value } : prev,
+                )
+              }
+              className="h-10 w-full border-zinc-200 bg-white text-sm dark:border-zinc-700 dark:bg-zinc-900"
+            />
+          </div>
+
           {/* Add */}
           <Button
             type="button"
@@ -381,10 +425,12 @@ export default function DetailItem<T extends JobWithSteel>({
       {/* Items */}
       <div className="space-y-3">
         {job.steel?.map((item, idx) => {
+          const normalizedSteelType = normalizeSteelCode(item.steelType);
           const isLine = item.shape === "line";
           const isManualPrice = Boolean(item.manualPrice);
           const selectedSteelOption = steelOptions.find(
-            (o) => o.codeSteel === item.steelType && o.shape === item.shape,
+            (o) =>
+              o.codeSteel === normalizedSteelType && o.shape === item.shape,
           );
 
           return (
@@ -407,12 +453,12 @@ export default function DetailItem<T extends JobWithSteel>({
 
                       <SteelSearchSelect
                         value={selectedSteelOption?.value ?? ""}
-                        fallbackLabel={item.steelType}
+                        fallbackLabel={normalizedSteelType}
                         onChange={(v) => {
                           const opt = steelOptions.find((o) => o.value === v);
 
                           patchSteelItem(idx, {
-                            steelType: opt?.codeSteel ?? item.steelType,
+                            steelType: opt?.codeSteel ?? normalizedSteelType,
                             shape: opt?.shape ?? item.shape ?? "square",
                             width:
                               (opt?.shape ?? item.shape) === "line"
@@ -444,6 +490,7 @@ export default function DetailItem<T extends JobWithSteel>({
                             <Input
                               type="number"
                               min="0"
+                              step="0.01"
                               className="h-10 border-zinc-200 bg-white pr-7 text-center hover:border-blue-400 focus-visible:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
                               value={item.thickness ?? 0}
                               onChange={(e) =>
@@ -471,6 +518,7 @@ export default function DetailItem<T extends JobWithSteel>({
                               <Input
                                 type="number"
                                 min="0"
+                                step="0.01"
                                 className="h-10 border-zinc-200 bg-white pr-7 text-center hover:border-blue-400 focus-visible:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
                                 value={item.width ?? 0}
                                 onChange={(e) =>
@@ -498,6 +546,7 @@ export default function DetailItem<T extends JobWithSteel>({
                             <Input
                               type="number"
                               min="0"
+                              step="0.01"
                               className="h-10 border-zinc-200 bg-white pr-7 text-center hover:border-blue-400 focus-visible:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
                               value={item.length ?? 0}
                               onChange={(e) =>
@@ -554,7 +603,7 @@ export default function DetailItem<T extends JobWithSteel>({
                           weight: null,
                         }).weight;
 
-                        return weightEnabled ? (
+                        return (
                           <div>
                             <label className="mb-1.5 block text-center text-sm font-medium text-zinc-500 dark:text-zinc-400">
                               น้ำหนักประมาณ {fmtKg(estKg)} Kg.
@@ -578,16 +627,6 @@ export default function DetailItem<T extends JobWithSteel>({
                                 Kg.
                               </span>
                             </div>
-                          </div>
-                        ) : (
-                          <div className="flex h-full flex-col justify-end pb-2 lg:items-center">
-                            <div className="mb-1 h-4 w-full" />
-                            <span className="text-sm text-zinc-500 dark:text-zinc-400">
-                              น้ำหนักประมาณ {fmtKg(estKg)} Kg.
-                            </span>
-                            <span className="text-sm italic text-zinc-300 dark:text-zinc-600">
-                              รอชั่ง
-                            </span>
                           </div>
                         );
                       })()}
