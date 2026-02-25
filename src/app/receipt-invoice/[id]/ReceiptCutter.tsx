@@ -13,6 +13,7 @@ type ApiReceipt = {
   totalTextThai: string;
   selesName: string;
   credit: string;
+  poId: number;
   customer: {
     name: string;
     address: string;
@@ -71,7 +72,7 @@ export default function ReceiptCutter({ id }: { id: string }) {
         tel={data.customer.tel}
         fax={data.customer.faxNumber}
         taxId={data.customer.taxNumber}
-        invoice={data.invoice}
+        invoice={data.poId}
         date={new Date().toLocaleDateString("th-TH")}
         credit={data.credit}
         selesName={data.selesName}

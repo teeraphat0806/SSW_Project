@@ -15,6 +15,7 @@ type ApiReceipt = {
   totalTextThai: string;
   selesName: string;
   credit: string;
+  poNumber?: string | null;
   customer: {
     name: string;
     address: string;
@@ -104,6 +105,7 @@ export default function ReceiptClient({ id }: { id: string }) {
         date={new Date().toLocaleDateString("th-TH")}
         credit={data.credit}
         selesName={data.selesName}
+        poNumber={data.poNumber ?? undefined}
         items={data.steel.map((s) => ({
           steelType: s.steelType,
           thickness: s.thickness,
