@@ -1,11 +1,12 @@
-"use client";
+﻿"use client";
 
 import * as React from "react";
+import { CuttingMethod } from "@/types";
 
 type InvoiceItem = {
   steelType: string; // SS400
   thickness: number; // 25
-  width: number; // 430
+  width?: number | null; // 430
   length: number; // 2745
   unit?: string; // mm.
   job: string; // 1
@@ -13,10 +14,13 @@ type InvoiceItem = {
   weight: number; // 233.00
   price: number; // 34.00
   total: number; // 7922.00
+  cuttingMethod?: CuttingMethod;
+  isOD?: boolean;
+  isServices?: boolean;
 };
 
 type Inv71LikeInvoiceProps = {
-  // ส่วนหัวบริษัท
+  // เธชเนเธงเธเธซเธฑเธงเธเธฃเธดเธฉเธฑเธ—
   companyName: string;
   addressLine1: string;
   addressLine2: string;
@@ -24,20 +28,20 @@ type Inv71LikeInvoiceProps = {
   fax: string;
   taxId: string;
 
-  // ส่วนเอกสารขวาบน
+  // เธชเนเธงเธเน€เธญเธเธชเธฒเธฃเธเธงเธฒเธเธ
   invoice: number; // 1003
   date: string; // 14/08/68
-  credit: string; // 30 วัน
+  credit: string; // 30 เธงเธฑเธ
   selesName: string; // J.Sirikran
 
-  // รายการ
+  // เธฃเธฒเธขเธเธฒเธฃ
   items: InvoiceItem[];
 
-  // ยอดรวม
+  // เธขเธญเธ”เธฃเธงเธก
   subtotal: number; // 7,922.00
   vat: number; // 554.54
   total: number; // 8,476.54
-  totalTextThai: string; // แปดพันสี่ร้อยเจ็ดสิบหกบาทห้าสิบสี่สตางค์
+  totalTextThai: string; // เนเธเธ”เธเธฑเธเธชเธตเนเธฃเนเธญเธขเน€เธเนเธ”เธชเธดเธเธซเธเธเธฒเธ—เธซเนเธฒเธชเธดเธเธชเธตเนเธชเธ•เธฒเธเธเน
 };
 
 export const InvoiceExcelCutter: React.FC<Inv71LikeInvoiceProps> = ({
@@ -69,7 +73,7 @@ export const InvoiceExcelCutter: React.FC<Inv71LikeInvoiceProps> = ({
           <div className="mb-8 flex items-start justify-between">
             <div className="text-4xl font-bold">{companyName}</div>
             <div className="text-right text-4xl font-semibold">
-              HS{invoice ? invoice.toString().padStart(8, "0") : ""}
+              {invoice ? invoice.toString() : ""}
             </div>
           </div>
 
@@ -96,25 +100,77 @@ export const InvoiceExcelCutter: React.FC<Inv71LikeInvoiceProps> = ({
                   </td>
                 </tr>
               ) : (
-                pageItems.map((item, idx) => (
-                  <tr
-                    key={`${pageIdx}-${idx}`}
-                    className="border-b border-dotted border-gray-300 align-top"
-                  >
-                    <td className="py-4 pr-5 text-left text-[24px] font-semibold">
-                      {pageIdx * rowsPerPage + idx + 1}
-                    </td>
-                    <td className="py-4 pr-5 text-[24px] font-semibold">{`เหล็ก ${item.steelType}`}</td>
-                    <td className="py-4 pr-5 text-[24px]">
-                      {`${item.thickness} x ${item.width} x ${item.length} ${
-                        item.unit || "mm."
-                      }`}
-                    </td>
-                    <td className="py-4 text-[24px] font-semibold">
-                      {item.amount ?? ""}
-                    </td>
-                  </tr>
-                ))
+                pageItems.map((item, idx) => {
+                  let steelDisplay =
+                    item.isServices === true
+                      ? item.steelType
+                      : `เหล็ก ${item.steelType}`;
+                  let dimensions = "";
+
+                  if (item.isOD) {
+                    const odDimensions = [
+                      item.thickness !== 0 ? `${item.thickness} t` : null,
+                      item.width != null && item.width !== 0
+                        ? `OD ${item.width}`
+                        : null,
+                      item.length !== 0 ? `ID ${item.length}` : null,
+                    ]
+                      .filter(Boolean)
+                      .join(" ");
+                    dimensions = `${odDimensions}${odDimensions ? " " : ""}${
+                      item.unit || "mm."
+                    }`;
+                  } else {
+                    if (item.cuttingMethod === "FB") {
+                      steelDisplay += " F/P";
+                    } else if (item.cuttingMethod === "RM") {
+                      steelDisplay += " R/M";
+                    }
+
+                    if (item.width === 0 || item.width == null) {
+                      steelDisplay += " \u00D8";
+                      const lineDimensions = [item.thickness, item.length]
+                        .filter((value) => value !== 0)
+                        .join(" x ");
+                      dimensions = `${lineDimensions}${
+                        lineDimensions ? " " : ""
+                      }${item.unit || "mm."}`;
+                    } else {
+                      const boxDimensions = [
+                        item.thickness,
+                        item.width,
+                        item.length,
+                      ]
+                        .filter((value) => value !== 0)
+                        .join(" x ");
+                      dimensions = `${boxDimensions}${
+                        boxDimensions ? " " : ""
+                      }${item.unit || "mm."}`;
+                    }
+                  }
+
+                  if (item.isServices === true) {
+                    steelDisplay = `machine services ${steelDisplay}`;
+                  }
+
+                  return (
+                    <tr
+                      key={`${pageIdx}-${idx}`}
+                      className="border-b border-dotted border-gray-300 align-top"
+                    >
+                      <td className="py-4 pr-5 text-left text-[24px] font-semibold">
+                        {pageIdx * rowsPerPage + idx + 1}
+                      </td>
+                      <td className="py-4 pr-5 text-[24px] font-semibold">
+                        {steelDisplay}
+                      </td>
+                      <td className="py-4 pr-5 text-[24px]">{dimensions}</td>
+                      <td className="py-4 text-[24px] font-semibold">
+                        {item.amount ?? ""}
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>
@@ -129,3 +185,4 @@ export const InvoiceExcelCutter: React.FC<Inv71LikeInvoiceProps> = ({
     </div>
   );
 };
+
