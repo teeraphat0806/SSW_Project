@@ -560,24 +560,24 @@ const NewJobOrder = () => {
         (s) => s.name === steelTypeName && s.shape === shape,
       );
       return {
-      id: uuidv4(),
-      steelType: steelTypeName,
-      shape,
-      quantity: x.raw?.quantity ?? 1,
-      width: x.raw?.width ?? null,
-      length: x.raw?.length ?? 0,
-      thickness: x.raw?.thickness ?? 0,
-      notes: x.raw?.notes ?? "",
-      weight: null,
-      price: Number(matchedType?.price ?? 0),
-      discount: null,
-      density: Number(matchedType?.density ?? 0.0000079),
-      cuttingMethod: x.raw?.cuttingMethod ?? "normal",
-      job: x.raw?.job ?? null,
-      isOD: x.raw?.isOD ?? false,
-      isServices: x.raw?.isServices ?? false,
-      isPerAmount: x.raw?.isServices ?? false,
-    };
+        id: uuidv4(),
+        steelType: steelTypeName,
+        shape,
+        quantity: x.raw?.quantity ?? 1,
+        width: x.raw?.width ?? null,
+        length: x.raw?.length ?? 0,
+        thickness: x.raw?.thickness ?? 0,
+        notes: x.raw?.notes ?? "",
+        weight: null,
+        price: Number(matchedType?.price ?? 0),
+        discount: null,
+        density: Number(matchedType?.density ?? 0.0000079),
+        cuttingMethod: x.raw?.cuttingMethod ?? "normal",
+        job: x.raw?.job ?? null,
+        isOD: x.raw?.isOD ?? false,
+        isServices: x.raw?.isServices ?? false,
+        isPerAmount: x.raw?.isServices ?? false,
+      };
     });
     if (mapped.length) setSteelItems(mapped);
     const customerLine = data.customerMatch?.matched
@@ -693,7 +693,7 @@ const NewJobOrder = () => {
     if (
       steelItems.some(
         (item) =>
-          item.length <= 0 ||
+          (item.isOD === false && (!item.length || item.length <= 0)) ||
           item.thickness <= 0 ||
           (item.shape === "square" && (item.width === null || item.width <= 0)),
       )
