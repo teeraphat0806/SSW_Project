@@ -3,7 +3,7 @@ import { z } from "zod";
 
 export const CreateNewOrderSchema = z.object({
   customerId: z.number().int().positive(),
-  credit: z.coerce.date().optional(),
+  credit: z.coerce.number().int().nonnegative().optional(),
   deliveryDate: z.coerce.date(),
   deliveryOrderNo: z.string().optional(),
   salesName: z.string().optional(),

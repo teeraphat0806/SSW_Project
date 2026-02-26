@@ -158,14 +158,24 @@ export async function POST(req: NextRequest) {
           isPerAmount: product.isPerAmount ?? false,
         });
 
-        return { steel, product, steelline, linePrice, lineWeight, lineDiscount };
+        return {
+          steel,
+          product,
+          steelline,
+          linePrice,
+          lineWeight,
+          lineDiscount,
+        };
       });
 
       const subtotal = round2(
         computed.reduce((sum: number, x) => sum + x.steelline.total, 0),
       );
       const discount = round2(
-        computed.reduce((sum: number, x) => sum + Number(x.lineDiscount ?? 0), 0),
+        computed.reduce(
+          (sum: number, x) => sum + Number(x.lineDiscount ?? 0),
+          0,
+        ),
       );
       const subtotalAfterDiscount = round2(subtotal - discount);
       const vat = round2((subtotalAfterDiscount * 7) / 100);
@@ -197,29 +207,37 @@ export async function POST(req: NextRequest) {
               Product: {
                 create: computed.map(
                   (
-                    { steel, product, steelline, linePrice, lineWeight, lineDiscount },
+                    {
+                      steel,
+                      product,
+                      steelline,
+                      linePrice,
+                      lineWeight,
+                      lineDiscount,
+                    },
                     index,
                   ) => ({
-                  SteelType: { connect: { id: steel.id } },
-                  sequence: product.sequence ?? index + 1,
+                    SteelType: { connect: { id: steel.id } },
+                    sequence: product.sequence ?? index + 1,
 
-                  wide: product.wide ?? null,
-                  length: product.length,
-                  thickness: product.thickness,
-                  amount: product.amount,
+                    wide: product.wide ?? null,
+                    length: product.length,
+                    thickness: product.thickness,
+                    amount: product.amount,
 
-                  unitPrice: linePrice,
-                  actualWeight: lineWeight,
-                  discount: lineDiscount,
-                  detail: product.detail ?? null,
-                  job: product.job ?? null,
-                  cuttingMethod: product.cuttingMethod ?? "normal",
+                    unitPrice: linePrice,
+                    actualWeight: lineWeight,
+                    discount: lineDiscount,
+                    detail: product.detail ?? null,
+                    job: product.job ?? null,
+                    cuttingMethod: product.cuttingMethod ?? "normal",
 
-                  isOD: product.isOD ?? false,
-                  isServices: product.isServices ?? false,
-                  isPerAmount: product.isPerAmount ?? false,
-                  total: steelline.total, //  เป็น number แน่นอน
-                })),
+                    isOD: product.isOD ?? false,
+                    isServices: product.isServices ?? false,
+                    isPerAmount: product.isPerAmount ?? false,
+                    total: steelline.total, //  เป็น number แน่นอน
+                  }),
+                ),
               },
             },
           },
