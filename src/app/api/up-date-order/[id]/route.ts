@@ -177,7 +177,7 @@ const steelKey = (codeSteel: string, shape: ShapeSteel) =>
 const PatchSchema = z.object({
   status: StatusSchema.optional(),
   // credit (days) must be a positive integer; allow coercion from string inputs.
-  credit: z.coerce.number().int().positive().optional(),
+  credit: z.coerce.number().int().nonnegative().optional(),
   customerId: z.string().trim().optional(),
   poNumber: z.string().trim().optional(),
   deliveryDate: z.coerce.date().optional(),
@@ -507,7 +507,9 @@ export async function PATCH(
             include: { SteelType: true },
           },
           Customer: true,
-          bill: { select: { credit: true, deliveryDate: true, createdAt: true } },
+          bill: {
+            select: { credit: true, deliveryDate: true, createdAt: true },
+          },
         },
       });
 

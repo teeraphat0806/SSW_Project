@@ -246,6 +246,18 @@ export default function DetailItem<T extends JobWithSteel>({
   const MAX_ITEMS = 15;
   const noNumberSpinnerClass =
     "[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none";
+  const preventWheelChangeOnNumberInput = (
+    e: React.WheelEvent<HTMLElement>,
+  ) => {
+    const target = e.target;
+    if (
+      target instanceof HTMLInputElement &&
+      target.type === "number" &&
+      document.activeElement === target
+    ) {
+      target.blur();
+    }
+  };
   // ✅ เพิ่มเหล็ก
   const addSteelItem = () => {
     setJob((prev) => {
@@ -263,9 +275,9 @@ export default function DetailItem<T extends JobWithSteel>({
           {
             steelType: firstType,
             amount: 1,
-            width: firstShape === "line" ? null : 1,
-            length: 1,
-            thickness: 1,
+            width: firstShape === "line" ? null : 0,
+            length: 0,
+            thickness: 0,
             detail: "",
             weight: null,
             job: null,
@@ -319,7 +331,10 @@ export default function DetailItem<T extends JobWithSteel>({
   };
 
   return (
-    <section className="space-y-3">
+    <section
+      className="space-y-3"
+      onWheelCapture={preventWheelChangeOnNumberInput}
+    >
       {/* Header */}
       <div className="flex items-center justify-between">
         <h2 className="flex items-center gap-2 text-lg font-semibold text-zinc-900 dark:text-zinc-50">
@@ -350,17 +365,17 @@ export default function DetailItem<T extends JobWithSteel>({
           </Button>
 
           {/* credit */}
-          <div className="w-[120px] shrink-0">
+          <div className="w-[80px] shrink-0">
             <label className="mb-1.5 block text-sm font-medium text-zinc-500 dark:text-zinc-400">
               Credit (วัน)
             </label>
             <Input
               type="number"
-              min={1}
+              min={0}
               inputMode="numeric"
               value={job.credit ?? 30}
               onChange={(e) => {
-                const next = Math.max(1, Number(e.target.value || 1));
+                const next = Math.max(0, Number(e.target.value || 0));
                 setJob((prev) => (prev ? { ...prev, credit: next } : prev));
               }}
               className={`h-10 w-full border-zinc-200 bg-white text-center font-semibold tabular-nums focus-visible:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-900 ${noNumberSpinnerClass}`}
@@ -368,7 +383,7 @@ export default function DetailItem<T extends JobWithSteel>({
           </div>
 
           {/* PO Number */}
-          <div className="w-[180px] shrink-0">
+          <div className="w-[150px] shrink-0">
             <label className="mb-1.5 block text-sm font-medium text-zinc-500 dark:text-zinc-400">
               PO Number
             </label>
@@ -386,7 +401,7 @@ export default function DetailItem<T extends JobWithSteel>({
           </div>
 
           {/* Bill Created Date */}
-          <div className="w-[170px] shrink-0">
+          <div className="w-[130px] shrink-0">
             <label className="mb-1.5 block text-sm font-medium text-zinc-500 dark:text-zinc-400">
               วันที่สร้างบิล
             </label>
@@ -403,7 +418,7 @@ export default function DetailItem<T extends JobWithSteel>({
           </div>
 
           {/* Delivery Date */}
-          <div className="w-[170px] shrink-0">
+          <div className="w-[130px] shrink-0">
             <label className="mb-1.5 block text-sm font-medium text-zinc-500 dark:text-zinc-400">
               กำหนดส่งสินค้า
             </label>

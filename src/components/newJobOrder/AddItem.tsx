@@ -131,8 +131,24 @@ export default function AddItem({
     setheadOrder({ ...headOrder, deliveryDate: selectedDate });
   };
 
+  const preventWheelChangeOnNumberInput = (
+    e: React.WheelEvent<HTMLDivElement>,
+  ) => {
+    const target = e.target;
+    if (
+      target instanceof HTMLInputElement &&
+      target.type === "number" &&
+      document.activeElement === target
+    ) {
+      target.blur();
+    }
+  };
+
   return (
-    <div className="space-y-6 max-w-7xl mx-auto pb-10">
+    <div
+      className="space-y-6 max-w-7xl mx-auto pb-10"
+      onWheelCapture={preventWheelChangeOnNumberInput}
+    >
       {/* ------------------------------------------------------- */}
       {/* ส่วนหัว: ข้อมูล PO และวันที่ (Header Section)           */}
       {/* ------------------------------------------------------- */}
@@ -205,7 +221,7 @@ export default function AddItem({
                   id="credit"
                   placeholder="ระบุเครดิต ( 30 )"
                   type="number"
-                  min="1"
+                  min="0"
                   value={headOrder.credit}
                   onChange={(e) =>
                     setheadOrder({
@@ -295,7 +311,9 @@ export default function AddItem({
             <Button
               type="button"
               onClick={addSteelItemLimited}
-              disabled={steelTypes.length === 0 || steelItems.length >= MAX_ITEMS}
+              disabled={
+                steelTypes.length === 0 || steelItems.length >= MAX_ITEMS
+              }
               className="bg-zinc-900 text-white shadow-sm hover:bg-zinc-800 dark:bg-blue-600 dark:hover:bg-blue-500 dark:shadow-none"
               title={"เพิ่มรายการใหม่ (สูงสุด " + MAX_ITEMS + " รายการ)"}
             >
@@ -527,7 +545,7 @@ export default function AddItem({
                         </label>
                         <Input
                           type="number"
-                          min={1}
+                          min={0}
                           className={`h-10 w-full border-blue-200 bg-blue-50 text-center font-bold text-blue-700 shadow-sm focus-visible:ring-blue-500 dark:border-blue-900 dark:bg-blue-900/20 dark:text-blue-400 ${noNumberSpinnerClass}`}
                           value={item.quantity ?? 1}
                           onChange={(e) =>
@@ -647,7 +665,11 @@ export default function AddItem({
                           type="button"
                           onClick={() => {
                             const nextIsServices = !item.isServices;
-                            updateSteelItem(item.id, "isServices", nextIsServices);
+                            updateSteelItem(
+                              item.id,
+                              "isServices",
+                              nextIsServices,
+                            );
                             updateSteelItem(
                               item.id,
                               "isPerAmount",
