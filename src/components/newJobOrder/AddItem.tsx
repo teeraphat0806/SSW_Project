@@ -119,17 +119,17 @@ export default function AddItem({
     addSteelItem();
   };
 
-  const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedDate = e.target.value;
-    const currentDate = new Date();
-    const selectedDateTime = new Date(selectedDate);
+  // const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  //   const selectedDate = e.target.value;
+  //   const currentDate = new Date();
+  //   const selectedDateTime = new Date(selectedDate);
 
-    if (selectedDateTime < currentDate && selectedDate !== "") {
-      alert("ไม่สามารถเลือกวันที่ผ่านมาแล้วได้ กรุณาเลือกวันที่ในอนาคต");
-      return;
-    }
-    setheadOrder({ ...headOrder, deliveryDate: selectedDate });
-  };
+  //   if (selectedDateTime < currentDate && selectedDate !== "") {
+  //     alert("ไม่สามารถเลือกวันที่ผ่านมาแล้วได้ กรุณาเลือกวันที่ในอนาคต");
+  //     return;
+  //   }
+  //   setheadOrder({ ...headOrder, deliveryDate: selectedDate });
+  // };
 
   const preventWheelChangeOnNumberInput = (
     e: React.WheelEvent<HTMLDivElement>,
@@ -249,7 +249,12 @@ export default function AddItem({
                   type="date"
                   // min={today}
                   value={headOrder.deliveryDate}
-                  onChange={handleDateChange}
+                  onChange={(e) => {
+                    setheadOrder({
+                      ...headOrder,
+                      deliveryDate: e.target.value,
+                    });
+                  }}
                   className="pl-10 h-11 
                 bg-zinc-50/50 dark:bg-zinc-950/50 
                 border-zinc-200 dark:border-zinc-800 
