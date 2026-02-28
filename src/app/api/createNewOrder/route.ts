@@ -2,194 +2,238 @@ import { randomBytes } from "crypto";
 import { z } from "zod";
 import { NextRequest, NextResponse } from "next/server";
 
-import { calculateWeightDetails } from "@/lib/calculateGrandTotal";
-import { requireAuth } from "@/lib/permissions";
 import prisma from "@/lib/prisma";
+import { requireAuth } from "@/lib/permissions";
+import { calculateWeightDetails } from "@/lib/calculateGrandTotal";
 import { CreateNewOrderSchema } from "@/lib/schemas/createNewOrder.shema";
 import { ShapeSteel } from "@/types";
 
-// ✅ สร้าง type จาก Zod เพื่อกัน implicit any ทั้งไฟล์
-type CreateNewOrderInput = z.infer<typeof CreateNewOrderSchema>;
-type OrderPOInput = CreateNewOrderInput["orderPO"];
-type ProductInput = OrderPOInput["products"][number];
+/* =========================================================
+   TYPE DEFINITIONS
+========================================================= */
 
-function generateCode(
-  length = 20,
-  charset = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-_",
-) {
-  if (length <= 0) return "";
-  const n = charset.length;
-  if (n < 2) throw new Error("charset ต้องมีอักขระอย่างน้อย 2 ตัว");
+type CreateOrderInput = z.infer<typeof CreateNewOrderSchema>;
+type OrderPO = CreateOrderInput["orderPO"];
+type Product = OrderPO["products"][number];
 
-  const bytes: Uint8Array = randomBytes(length * 2);
-  const result: string[] = [];
-  const max = 256 - (256 % n);
+/* =========================================================
+   HELPER FUNCTIONS
+========================================================= */
 
-  let i = 0;
-  while (result.length < length) {
-    if (i >= bytes.length) {
-      const more = randomBytes(length);
-      const tmp = new Uint8Array(more);
-      for (let j = 0; j < tmp.length; j++) bytes[i + j] = tmp[j];
-    }
-    const rnd = bytes[i++]!;
-    if (rnd < max) result.push(charset[rnd % n]!);
-  }
-  return result.join("");
+// ปัดเลขให้เหลือ 2 ตำแหน่ง
+function round2(num: number) {
+  return Math.round(num * 100) / 100;
 }
 
-type SteelFromDB = {
-  id: number;
-  codeSteel: string;
-  price: number;
-  density: number;
-  shape: ShapeSteel;
-};
+// สร้าง key สำหรับ map เหล็ก
+function createSteelKey(codeSteel: string, shape: ShapeSteel) {
+  return `${codeSteel}::${shape}`;
+}
 
-const round2 = (n: number) => Math.round(n * 100) / 100;
-const steelKey = (codeSteel: string, shape: ShapeSteel) =>
-  `${codeSteel}::${shape}`;
+// แปลงรายการเหล็กที่หาไม่เจอให้อ่านง่ายในข้อความ error
+function formatMissingSteelMessage(
+  missingSteels: Array<{ codeSteel: string; shape: ShapeSteel }>,
+) {
+  const text = missingSteels
+    .map((item) => `${item.codeSteel} (${item.shape})`)
+    .join(", ");
+
+  return `SteelType not found: ${text}`;
+}
+
+// สร้างรหัสสุ่มสำหรับ bill
+function generateCode(length = 20) {
+  const charset =
+    "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-_";
+
+  const bytes = randomBytes(length);
+  let result = "";
+
+  for (let i = 0; i < length; i++) {
+    const index = bytes[i]! % charset.length;
+    result += charset[index];
+  }
+
+  return result;
+}
+
+/* =========================================================
+   MAIN ROUTE
+========================================================= */
+
 export async function POST(req: NextRequest) {
-  const authResult = await requireAuth([
+  // 1️⃣ ตรวจสอบสิทธิ์ผู้ใช้
+  const auth = await requireAuth([
     "superadmin",
     "supervisor",
     "clerk",
     "delivery",
   ]);
-  if ("response" in authResult) return authResult.response;
 
-  const { session } = authResult;
+  if ("response" in auth) return auth.response;
 
   try {
+    // 2️⃣ รับข้อมูลจาก request
     const body = await req.json();
 
+    // 3️⃣ ตรวจสอบข้อมูลด้วย Zod
     const parsed = CreateNewOrderSchema.safeParse(body);
+
     if (!parsed.success) {
-      const formattedErrors = parsed.error.issues.map((err) => ({
-        path: err.path.join("."),
-        message: err.message,
+      const errors = parsed.error.issues.map((e) => ({
+        path: e.path.join("."),
+        message: e.message,
       }));
-      console.log("Validation errors:", formattedErrors);
+
       return NextResponse.json(
-        { error: "Invalid input", details: formattedErrors },
+        { error: "Invalid input", details: errors },
         { status: 400 },
       );
     }
 
-    const data: CreateNewOrderInput = parsed.data;
-    const po: OrderPOInput = data.orderPO;
+    const data: CreateOrderInput = parsed.data;
+    const orderPO: OrderPO = data.orderPO;
 
-    //  ดึงคู่ codeSteel + shape ทั้งหมดที่เกี่ยวข้อง
-    const requestedSteels = Array.from(
+    // 4️⃣ เตรียมรายการเหล็กที่ต้องใช้
+    const steelPairs = Array.from(
       new Set(
-        po.products.map((product: ProductInput) =>
-          steelKey(
-            String(product.steelType).trim(),
-            product.shape as unknown as ShapeSteel,
+        orderPO.products.map((p) =>
+          createSteelKey(
+            String(p.steelType).trim(),
+            p.shape as ShapeSteel,
           ),
         ),
       ),
-    ).map((k) => {
-      const [codeSteel, shape] = k.split("::");
+    ).map((key) => {
+      const [codeSteel, shape] = key.split("::");
       return {
-        codeSteel: codeSteel ?? "",
-        shape: (shape ?? "square") as ShapeSteel,
+        codeSteel: codeSteel!,
+        shape: shape as ShapeSteel,
       };
     });
 
+    // 5️⃣ เริ่ม transaction
     const newBill = await prisma.$transaction(async (tx) => {
-      const steelTypes = await tx.steelType.findMany({
-        where: {
-          OR: requestedSteels.map(({ codeSteel, shape }) => ({
-            codeSteel,
-            shape,
-          })),
-        },
-        select: {
-          id: true,
-          codeSteel: true,
-          price: true,
-          density: true,
-          shape: true,
-        },
+      // ดึงเหล็กจาก database
+      const steelList = await tx.steelType.findMany({
+        where: { OR: steelPairs },
       });
 
-      const mapSteel = new Map<string, SteelFromDB>(
-        steelTypes.map((s) => [
-          steelKey(s.codeSteel, s.shape as unknown as ShapeSteel),
-          s,
-        ]),
-      );
+      // สร้าง map ไว้ค้นหาเหล็กเร็ว ๆ
+      const steelMap = new Map<
+        string,
+        typeof steelList[number]
+      >();
 
-      const missing = requestedSteels.filter(
-        ({ codeSteel, shape }) => !mapSteel.has(steelKey(codeSteel, shape)),
-      );
-      if (missing.length)
-        throw new Error(
-          `SteelType not found: ${missing
-            .map(({ codeSteel, shape }) => `${codeSteel} (${shape})`)
-            .join(", ")}`,
+      steelList.forEach((steel) => {
+        const key = createSteelKey(
+          steel.codeSteel,
+          steel.shape as ShapeSteel,
         );
-
-      // เตรียมข้อมูล
-      const computed = po.products.map((product: ProductInput) => {
-        const code = String(product.steelType).trim();
-        const shape = product.shape as unknown as ShapeSteel;
-        const steel = mapSteel.get(steelKey(code, shape))!;
-        const linePrice = Number(product.price ?? steel.price);
-        const lineWeight = product.weight ?? null;
-        const lineDiscount = product.discount ?? null;
-
-        const steelline = calculateWeightDetails({
-          shape,
-          amount: product.amount,
-          width: product.wide ?? undefined,
-          length: product.length,
-          thickness: product.thickness,
-          density: steel.density,
-
-          price: linePrice,
-          weight: lineWeight,
-          total: null,
-          discount: lineDiscount,
-
-          isOD: product.isOD ?? false,
-          isServices: product.isServices ?? false,
-          isPerAmount: product.isPerAmount ?? false,
-        });
-
-        return {
-          steel,
-          product,
-          steelline,
-          linePrice,
-          lineWeight,
-          lineDiscount,
-        };
+        steelMap.set(key, steel);
       });
 
-      const subtotal = round2(
-        computed.reduce((sum: number, x) => sum + x.steelline.total, 0),
+      // 6️⃣ ตรวจว่ามีเหล็กรายการไหนที่หาไม่เจอบ้าง (รวมทุกตัว)
+      const missingSteels = steelPairs.filter(
+        (pair) =>
+          !steelMap.has(createSteelKey(pair.codeSteel, pair.shape)),
       );
-      const discount = round2(
-        computed.reduce(
-          (sum: number, x) => sum + Number(x.lineDiscount ?? 0),
+
+      if (missingSteels.length > 0) {
+        throw new Error(
+          formatMissingSteelMessage(missingSteels),
+        );
+      }
+
+      // 7️⃣ คำนวณข้อมูลสินค้าแต่ละรายการ
+      const calculatedProducts = orderPO.products.map(
+        (product, index) => {
+          const code = String(product.steelType).trim();
+          const shape = product.shape as ShapeSteel;
+
+          const steel = steelMap.get(
+            createSteelKey(code, shape),
+          );
+
+          // ปกติจะไม่เข้าเงื่อนไขนี้ เพราะเช็ก missing ไปก่อนหน้าแล้ว
+          if (!steel) {
+            throw new Error(
+              `SteelType not found: ${code} (${shape})`,
+            );
+          }
+
+          const unitPrice =
+            product.price ?? steel.price;
+
+          const result = calculateWeightDetails({
+            shape,
+            amount: product.amount,
+            width: product.wide ?? undefined,
+            length: product.length,
+            thickness: product.thickness,
+            density: steel.density,
+            price: unitPrice,
+            weight: product.weight ?? null,
+            total: null,
+            discount: product.discount ?? null,
+            isOD: product.isOD ?? false,
+            isServices:
+              product.isServices ?? false,
+            isPerAmount:
+              product.isPerAmount ?? false,
+          });
+
+          return {
+            product,
+            steel,
+            unitPrice,
+            total: result.total,
+            index,
+          };
+        },
+      );
+
+      // 8️⃣ คำนวณยอดรวมทั้งหมด
+      const subtotal = round2(
+        calculatedProducts.reduce(
+          (sum, item) => sum + item.total,
           0,
         ),
       );
-      const subtotalAfterDiscount = round2(subtotal - discount);
-      const vat = round2((subtotalAfterDiscount * 7) / 100);
-      const grandTotal = round2(subtotalAfterDiscount + vat);
 
-      const bill = await tx.bill.create({
+      const discount = round2(
+        calculatedProducts.reduce(
+          (sum, item) =>
+            sum + Number(item.product.discount ?? 0),
+          0,
+        ),
+      );
+
+      const subtotalAfterDiscount =
+        subtotal - discount;
+
+      const vat = round2(
+        (subtotalAfterDiscount * 7) / 100,
+      );
+
+      const grandTotal = round2(
+        subtotalAfterDiscount + vat,
+      );
+
+      // 9️⃣ สร้าง Bill และ OrderPO พร้อม Product
+      return tx.bill.create({
         data: {
-          Customer: { connect: { id: data.customerId } },
+          Customer: {
+            connect: { id: data.customerId },
+          },
           codeCustomer: generateCode(),
           deliveryDate: new Date(data.deliveryDate),
 
-          salesName: session.user?.name ?? "",
+          salesName: auth.session.user?.name ?? "",
           Staff_Bill_salesNameToStaff: {
-            connect: { id: Number(session.user?.id) },
+            connect: {
+              id: Number(auth.session.user?.id),
+            },
           },
 
           subtotal,
@@ -199,43 +243,67 @@ export async function POST(req: NextRequest) {
 
           OrderPO: {
             create: {
-              poNumber: po.poNumber ?? null,
-              Customer: { connect: { id: data.customerId } },
-              urlPo: po.urlPo ?? [],
+              poNumber:
+                orderPO.poNumber ?? null,
+              Customer: {
+                connect: {
+                  id: data.customerId,
+                },
+              },
+              urlPo: orderPO.urlPo ?? [],
               total: subtotal,
 
               Product: {
-                create: computed.map(
-                  (
-                    {
-                      steel,
-                      product,
-                      steelline,
-                      linePrice,
-                      lineWeight,
-                      lineDiscount,
+                create: calculatedProducts.map(
+                  (item) => ({
+                    SteelType: {
+                      connect: {
+                        id: item.steel.id,
+                      },
                     },
-                    index,
-                  ) => ({
-                    SteelType: { connect: { id: steel.id } },
-                    sequence: product.sequence ?? index + 1,
+                    sequence:
+                      item.product.sequence ??
+                      item.index + 1,
 
-                    wide: product.wide ?? null,
-                    length: product.length,
-                    thickness: product.thickness,
-                    amount: product.amount,
+                    wide:
+                      item.product.wide ?? null,
+                    length: item.product.length,
+                    thickness:
+                      item.product.thickness,
+                    amount:
+                      item.product.amount,
 
-                    unitPrice: linePrice,
-                    actualWeight: lineWeight,
-                    discount: lineDiscount,
-                    detail: product.detail ?? null,
-                    job: product.job ?? null,
-                    cuttingMethod: product.cuttingMethod ?? "normal",
+                    unitPrice:
+                      item.unitPrice,
+                    actualWeight:
+                      item.product.weight ??
+                      null,
+                    discount:
+                      item.product.discount ??
+                      null,
+                    detail:
+                      item.product.detail ??
+                      null,
+                    job:
+                      item.product.job ?? null,
+                    cuttingMethod:
+                      item.product
+                        .cuttingMethod ??
+                      "normal",
 
-                    isOD: product.isOD ?? false,
-                    isServices: product.isServices ?? false,
-                    isPerAmount: product.isPerAmount ?? false,
-                    total: steelline.total, //  เป็น number แน่นอน
+                    isOD:
+                      item.product.isOD ??
+                      false,
+                    isServices:
+                      item.product
+                        .isServices ??
+                      false,
+                    isPerAmount:
+                      item.product
+                        .isPerAmount ??
+                      false,
+
+                    total: item.total,
                   }),
                 ),
               },
@@ -244,16 +312,25 @@ export async function POST(req: NextRequest) {
         },
         include: {
           Customer: true,
-          OrderPO: { include: { Product: true } },
+          OrderPO: {
+            include: { Product: true },
+          },
         },
       });
-
-      return bill;
     });
 
-    return NextResponse.json(newBill, { status: 201 });
+    return NextResponse.json(newBill, {
+      status: 201,
+    });
   } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    return NextResponse.json({ error: message }, { status: 500 });
+    const message =
+      error instanceof Error
+        ? error.message
+        : String(error);
+
+    return NextResponse.json(
+      { error: message },
+      { status: 500 },
+    );
   }
 }
