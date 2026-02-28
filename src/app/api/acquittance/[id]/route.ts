@@ -5,7 +5,7 @@ import { calcAcquittanceTotals } from "@/lib/billingCalc";
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } },
+  context: { params: Promise<{ id: string }> },
 ) {
   const authResult = await requireAuth([
     "superadmin",
@@ -15,11 +15,13 @@ export async function GET(
   ]);
   if ("response" in authResult) return authResult.response;
 
-  const id = Number(params.id);
-  if (!id) return NextResponse.json({ error: "Invalid id" }, { status: 400 });
+  const { id } = await context.params;
+  const numId = Number(id);
+  if (!numId)
+    return NextResponse.json({ error: "Invalid id" }, { status: 400 });
 
   const acquittance = await prisma.acquittance.findUnique({
-    where: { id },
+    where: { id: numId },
     include: {
       Customer: true,
       items: {
@@ -36,6 +38,6 @@ export async function GET(
       { status: 404 },
     );
 
-  const totals = await calcAcquittanceTotals(id);
+  const totals = await calcAcquittanceTotals(numId);
   return NextResponse.json({ acquittance, totals });
 }

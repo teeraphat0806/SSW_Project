@@ -51,16 +51,16 @@ export async function calcStatementTotals(
     const po = inv.OrderPO;
     const bill = po.bill;
     mustHaveBill(bill, po.id, inv.id);
-
+    const safeBill = bill as NonNullable<typeof bill>;
     return {
       invoiceId: inv.id,
       invoiceNo: inv.invoiceNo,
       orderPOId: po.id,
-      billId: bill.id,
-      billSubtotal: n(bill.subtotal),
-      billVat: n(bill.vat),
-      billDiscount: n(bill.discount),
-      billGrandTotal: n(bill.grandTotal),
+      billId: safeBill.id,
+      billSubtotal: n(safeBill.subtotal),
+      billVat: n(safeBill.vat),
+      billDiscount: n(safeBill.discount),
+      billGrandTotal: n(safeBill.grandTotal),
     };
   });
 
@@ -96,16 +96,16 @@ export async function calcAcquittanceTotals(
     const po = inv.OrderPO;
     const bill = po.bill;
     mustHaveBill(bill, po.id, inv.id);
-
+    const safeBill = bill as NonNullable<typeof bill>;
     return {
       invoiceId: inv.id,
       invoiceNo: inv.invoiceNo,
       orderPOId: po.id,
-      billId: bill.id,
-      billSubtotal: n(bill.subtotal),
-      billVat: n(bill.vat),
-      billDiscount: n(bill.discount),
-      billGrandTotal: n(bill.grandTotal),
+      billId: safeBill.id,
+      billSubtotal: n(safeBill.subtotal),
+      billVat: n(safeBill.vat),
+      billDiscount: n(safeBill.discount),
+      billGrandTotal: n(safeBill.grandTotal),
     };
   });
 

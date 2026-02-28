@@ -5,7 +5,7 @@ import { calcStatementTotals } from "@/lib/billingCalc";
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } },
+  context: { params: Promise<{ id: string }> },
 ) {
   const authResult = await requireAuth([
     "superadmin",
@@ -15,11 +15,13 @@ export async function GET(
   ]);
   if ("response" in authResult) return authResult.response;
 
-  const id = Number(params.id);
-  if (!id) return NextResponse.json({ error: "Invalid id" }, { status: 400 });
+  const { id } = await context.params;
+  const numId = Number(id);
+  if (!numId)
+    return NextResponse.json({ error: "Invalid id" }, { status: 400 });
 
   const statement = await prisma.statement.findUnique({
-    where: { id },
+    where: { id: numId },
     include: {
       Customer: true,
       items: {
@@ -33,6 +35,6 @@ export async function GET(
   if (!statement)
     return NextResponse.json({ error: "Statement not found" }, { status: 404 });
 
-  const totals = await calcStatementTotals(id);
+  const totals = await calcStatementTotals(numId);
   return NextResponse.json({ statement, totals });
 }

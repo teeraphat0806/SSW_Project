@@ -14,7 +14,7 @@ type TotalsRow = {
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } },
+  context: { params: Promise<{ id: string }> },
 ) {
   const authResult = await requireAuth([
     "superadmin",
@@ -24,7 +24,8 @@ export async function GET(
   ]);
   if ("response" in authResult) return authResult.response;
 
-  const customerId = Number(params.id);
+  const { id } = await context.params;
+  const customerId = Number(id);
   if (!customerId)
     return NextResponse.json({ error: "Invalid customer id" }, { status: 400 });
 
@@ -36,7 +37,7 @@ export async function GET(
   );
   const skip = (page - 1) * pageSize;
 
-  const q = (searchParams.get("q") ?? "").trim(); // acquittanceNo ตรงตัว
+  const q = (searchParams.get("q") ?? "").trim();
   const from = searchParams.get("from");
   const to = searchParams.get("to");
 

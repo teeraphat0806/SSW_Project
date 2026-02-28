@@ -14,7 +14,7 @@ type TotalsRow = {
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } },
+  context: { params: Promise<{ id: string }> },
 ) {
   const authResult = await requireAuth([
     "superadmin",
@@ -24,7 +24,8 @@ export async function GET(
   ]);
   if ("response" in authResult) return authResult.response;
 
-  const customerId = Number(params.id);
+  const { id } = await context.params;
+  const customerId = Number(id);
   if (!customerId)
     return NextResponse.json({ error: "Invalid customer id" }, { status: 400 });
 
@@ -36,9 +37,9 @@ export async function GET(
   );
   const skip = (page - 1) * pageSize;
 
-  const q = (searchParams.get("q") ?? "").trim(); // statementNo ตรงตัว
-  const from = searchParams.get("from"); // ISO date
-  const to = searchParams.get("to"); // ISO date
+  const q = (searchParams.get("q") ?? "").trim();
+  const from = searchParams.get("from");
+  const to = searchParams.get("to");
 
   const where: any = { customerId };
 
@@ -70,7 +71,6 @@ export async function GET(
     }),
   ]);
 
-  // ถ้าไม่มีข้อมูล ก็คืนเร็ว ๆ
   if (statements.length === 0) {
     return NextResponse.json({
       customerId,
@@ -84,8 +84,6 @@ export async function GET(
 
   const ids = statements.map((s) => s.id);
 
-  // ✅ Aggregate ยอดจาก Bill ตาม schema ล่าสุด:
-  // StatementInvoice -> Invoice -> OrderPO (via codetoinvoice) -> Bill (via billId)
   const totalsRows = await prisma.$queryRaw<TotalsRow[]>(Prisma.sql`
     SELECT
       si."statementId"::int AS "statementId",
