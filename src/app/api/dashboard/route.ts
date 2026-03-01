@@ -68,11 +68,13 @@ function toTokens(q: string) {
 
 function buildWhere({
   status,
+  invoice,
   from,
   to,
   search,
 }: {
   status: string;
+  invoice: string;
   from: string;
   to: string;
   search: string;
@@ -81,6 +83,14 @@ function buildWhere({
 
   // 1) status
   if (status) where.status = status as any;
+
+  // 1.1) invoice status
+  if (invoice === "invoiced") {
+    where.Invoice = { isNot: null };
+  } else if (invoice === "pending") {
+    where.Invoice = { is: null };
+  }
+
 
   // 2) date range (createdAt)
   if (from || to) {
@@ -102,7 +112,7 @@ function buildWhere({
       const numToken = Number(token);
       if (!Number.isNaN(numToken)) {
         orConditions.push({ codetoinvoice: numToken }); // หรือ { codetoinvoice: { equals: numToken } }
-        orConditions.push({ Invoice: { invoiceNo: numToken } });
+        orConditions.push({ Invoice: { is: { invoiceNo: numToken } } });
       }
 
       return { OR: orConditions };
@@ -117,6 +127,11 @@ export async function GET(req: Request) {
 
   // --- Read params ---
   const search = (searchParams.get("search") ?? "").trim();
+
+  const rawInvoice = (searchParams.get("invoice") ?? "").trim();
+  const Invoice = ["pending", "invoiced"].includes(rawInvoice)
+    ? rawInvoice
+    : "";
 
   const rawStatus = (searchParams.get("status") ?? "").trim();
   const status = ALLOWED_STATUS.has(rawStatus) ? rawStatus : "";
@@ -133,7 +148,7 @@ export async function GET(req: Request) {
   const skip = (page - 1) * pageSize;
 
   // --- Build filters ---
-  const where = buildWhere({ status, from, to, search: search });
+  const where = buildWhere({ search, status, invoice: Invoice, from, to });
 
   // --- Summary date ranges (Bangkok) ---
   const {
