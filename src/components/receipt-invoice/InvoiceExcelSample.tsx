@@ -109,8 +109,8 @@ export const InvoiceExcelSample: React.FC<Inv71LikeInvoiceProps> = ({
     h-[29.7cm] print:h-[29.7cm]
     bg-white
     px-4
-    pt-[1cm]      /* เว้นบน 4 ซม. */
-    pb-[10cm]      /* เว้นล่าง 5 ซม. */
+    pt-[0cm]      /* เว้นบน 4 ซม. */
+    pb-[8cm]      /* เว้นล่าง 5 ซม. */
     text-sm text-black font-light
     flex flex-col
   "
@@ -154,7 +154,7 @@ export const InvoiceExcelSample: React.FC<Inv71LikeInvoiceProps> = ({
         </div>
 
         {/* ระยะห่างก่อนหัวคอลัมน์ (ลดลงจาก mt-19) */}
-        <div className="h-[8mm]" />
+        <div className="h-[15mm]" />
 
         {/* หัวคอลัมน์แบบ Excel (ไม่มีกรอบ) */}
         <table className="w-full text-sm">
