@@ -78,10 +78,11 @@ export const InvoiceExcelSample: React.FC<Inv71LikeInvoiceProps> = ({
     });
   };
 
-  // แนะนำ: ใช้ตัวแปรเดียวกันแทนการเช็ค items[0] ซ้ำๆ
-  const shouldShowTotals = !(
-    items?.[0]?.weight == null || items?.[0]?.weight === 0
-  );
+  // machine service แสดงยอดได้แม้ weight เป็น 0/null
+  // กรณีอื่นคงพฤติกรรมเดิม
+  const shouldShowTotals =
+    (items?.some((item) => item.isServices === true) ?? false) ||
+    !(items?.[0]?.weight == null || items?.[0]?.weight === 0);
 
   return (
     <>
@@ -254,10 +255,7 @@ export const InvoiceExcelSample: React.FC<Inv71LikeInvoiceProps> = ({
                 weightDisplay = formatNumber(item.weight);
               }
 
-              const showPriceAndTotal =
-                item.isServices === true
-                  ? item.weight != null && item.weight > 0
-                  : true;
+              const showPriceAndTotal = item.isServices === true ? true : true;
 
               return (
                 <tr key={idx} className="align-top">
