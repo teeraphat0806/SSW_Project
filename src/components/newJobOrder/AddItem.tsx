@@ -146,7 +146,7 @@ export default function AddItem({
 
   return (
     <div
-      className="space-y-6 max-w-7xl mx-auto pb-10"
+      className="w-full space-y-6 pb-10"
       onWheelCapture={preventWheelChangeOnNumberInput}
     >
       {/* ------------------------------------------------------- */}
