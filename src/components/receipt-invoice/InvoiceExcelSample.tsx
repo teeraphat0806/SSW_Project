@@ -100,22 +100,14 @@ export const InvoiceExcelSample: React.FC<Inv71LikeInvoiceProps> = ({
       <div
         id="inv71-print-area"
         className="
-        mx-auto 
-        w-full 
-        max-w-[21cm]
-        min-h-[29.7cm]
-        bg-white
-        px-4 
-        py-3 
-        pb-8
-        text-sm
-        text-black
-        font-light
-        print:w-[21cm]
-        print:min-h-[29.7cm]
-        flex
-        flex-col
-      "
+    mx-auto w-full max-w-[21cm]
+    h-[29.7cm]
+    bg-white
+    px-4 py-3 pb-8
+    text-sm text-black font-light
+    print:w-[21cm] print:h-[29.7cm]
+    flex flex-col
+  "
       >
         {/* แถวแรก: ซ้ายบริษัท, ขวาเลขที่/วันที่/เครดิต/ผู้จัดทำ */}
         <div className="mt-19" />
@@ -310,63 +302,68 @@ export const InvoiceExcelSample: React.FC<Inv71LikeInvoiceProps> = ({
           </tbody>
         </table>
 
-        {/* เว้นบรรทัดก่อนโซนรวมยอด */}
-        <div className="h-[54mm] shrink-0 " />
-
         {/* รวมเงิน, ส่วนลด, ภาษี, VAT, รวมทั้งสิ้น (จัดขวาเหมือนในใบ) */}
-        <div className="space-y-[2px] mr-5">
-          <div className="flex justify-between">
-            <span className="flex-1" />
-            <span className="w-[160px] text-right">
-              {items[0].weight == null || items[0].weight === 0
-                ? ""
-                : formatNumber(subtotal)}
-            </span>
-          </div>
-          <div className="flex justify-between">
-            <span className="flex-1" />
-            <span className="w-[160px] text-right">&nbsp; </span>
-          </div>
-          <div className="flex justify-between">
-            <span className="flex-1" />
-            <span className="w-[160px] text-right">
-              {items[0].weight == null || items[0].weight === 0
-                ? ""
-                : formatNumber(subtotal)}
-            </span>
-          </div>
-
-          {/* ส่วนลด */}
-          {discount != null && discount > 0 && (
+        {/* ===== โซนรวมยอด (ติดล่างเสมอ) ===== */}
+        <div className="mt-auto">
+          {/* รวมเงิน, ส่วนลด, VAT */}
+          <div className="space-y-[2px] mr-5">
             <div className="flex justify-between">
               <span className="flex-1" />
               <span className="w-[160px] text-right">
-                {formatNumber(discount)}
+                {items[0]?.weight == null || items[0]?.weight === 0
+                  ? ""
+                  : formatNumber(subtotal)}
               </span>
             </div>
-          )}
 
-          <div className="flex justify-between">
-            <span className="flex-1" />
-            <span className="w-[150px] text-right">
-              {items[0].weight == null || items[0].weight === 0
+            <div className="flex justify-between">
+              <span className="flex-1" />
+              <span className="w-[160px] text-right">&nbsp;</span>
+            </div>
+
+            <div className="flex justify-between">
+              <span className="flex-1" />
+              <span className="w-[160px] text-right">
+                {items[0]?.weight == null || items[0]?.weight === 0
+                  ? ""
+                  : formatNumber(subtotal)}
+              </span>
+            </div>
+
+            {/* ส่วนลด */}
+            {discount != null && discount > 0 && (
+              <div className="flex justify-between">
+                <span className="flex-1" />
+                <span className="w-[160px] text-right">
+                  {formatNumber(discount)}
+                </span>
+              </div>
+            )}
+
+            {/* VAT */}
+            <div className="flex justify-between">
+              <span className="flex-1" />
+              <span className="w-[150px] text-right">
+                {items[0]?.weight == null || items[0]?.weight === 0
+                  ? ""
+                  : formatNumber(vat)}
+              </span>
+            </div>
+          </div>
+
+          {/* แถวข้อความจำนวนเงินตัวหนังสือ + รวมทั้งสิ้น */}
+          <div className="mt-6 flex mr-5">
+            <div className="flex-1 ml-10">
+              {items[0]?.weight == null || items[0]?.weight === 0
                 ? ""
-                : formatNumber(vat)}
-            </span>
-          </div>
-        </div>
+                : totalTextThai}
+            </div>
 
-        {/* แถว: ข้อความตัวหนังสือ & รวมทั้งสิ้น */}
-        <div className="mt-6 flex mr-5">
-          <div className="flex-1 ml-10">
-            {items[0].weight == null || items[0].weight === 0
-              ? ""
-              : totalTextThai}
-          </div>
-          <div className="w-[160px] text-right font-semibold">
-            {items[0].weight == null || items[0].weight === 0
-              ? ""
-              : formatNumber(total)}
+            <div className="w-[160px] text-right font-semibold">
+              {items[0]?.weight == null || items[0]?.weight === 0
+                ? ""
+                : formatNumber(total)}
+            </div>
           </div>
         </div>
       </div>
