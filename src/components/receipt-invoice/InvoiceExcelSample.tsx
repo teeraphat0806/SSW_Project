@@ -109,8 +109,8 @@ export const InvoiceExcelSample: React.FC<Inv71LikeInvoiceProps> = ({
     h-[29.7cm] print:h-[29.7cm]
     bg-white
     px-4
-    pt-[4cm]      /* เว้นบน 4 ซม. */
-    pb-[5cm]      /* เว้นล่าง 5 ซม. */
+    pt-[1cm]      /* เว้นบน 4 ซม. */
+    pb-[10cm]      /* เว้นล่าง 5 ซม. */
     text-sm text-black font-light
     flex flex-col
   "
