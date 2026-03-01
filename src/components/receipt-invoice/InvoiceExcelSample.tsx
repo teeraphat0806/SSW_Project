@@ -110,13 +110,13 @@ export const InvoiceExcelSample: React.FC<Inv71LikeInvoiceProps> = ({
     bg-white
     px-4
     pt-[0.2cm]      /* เว้นบน 4 ซม. */
-    pb-[7cm]      /* เว้นล่าง 5 ซม. */
+    pb-[7.02cm]      /* เว้นล่าง 5 ซม. */
     text-sm text-black font-light
     flex flex-col
   "
       >
         {/* ระยะห่างด้านบน (ปรับให้แคบลงกว่าของเดิม) */}
-        <div className="h-[20mm]" />
+        <div className="h-[22mm]" />
 
         {/* แถวแรก: ซ้ายบริษัท, ขวาเลขที่/วันที่/เครดิต/ผู้จัดทำ */}
         <div className="flex justify-between gap-4">
