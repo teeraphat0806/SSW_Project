@@ -39,6 +39,7 @@ type ApiJobOrder = {
   id: number;
   poNumber: string | null;
   deliveryDate: string | Date | null;
+  createdAt: string | Date | null;
   customerId: string;
   customerName: string;
   customerEmail: string | null;
@@ -58,7 +59,7 @@ type ApiJobOrder = {
     weight?: number | null;
     unitPrice: number;
     shape: ShapeSteel;
-    job?: number | null;
+    job?: string | null;
     cuttingMethod: CuttingMethod;
     density: number;
     isOD: boolean;
@@ -74,6 +75,7 @@ type Joborder = {
   id: string;
   poNumber: string;
   deliveryDate: string;
+  createdAt: string;
   customerId: string;
   customerName: string;
   customerEmail: string | null;
@@ -94,7 +96,7 @@ type Joborder = {
     unitPrice: number;
     shape: ShapeSteel;
     density: number;
-    job?: number | null;
+    job?: string | null;
     cuttingMethod: CuttingMethod;
     isOD: boolean;
     isServices: boolean;
@@ -123,6 +125,7 @@ const toJoborder = (api: ApiJobOrder): Joborder => ({
   id: api.id.toString(),
   poNumber: api.poNumber ?? "",
   deliveryDate: toInputDate(api.deliveryDate),
+  createdAt: toInputDate(api.createdAt),
   credit: api.credit ?? 30,
   customerId: api.customerId ?? "",
   customerName: api.customerName ?? "",
@@ -254,6 +257,7 @@ type PatchPayload = {
   credit: number;
   poNumber?: string;
   deliveryDate?: string;
+  createdAt?: string;
   steel?: {
     codeSteel: string;
     shape: ShapeSteel;
@@ -268,7 +272,7 @@ type PatchPayload = {
     isServices: boolean;
     isPerAmount: boolean;
 
-    job?: number | null;
+    job?: string | null;
     cuttingMethod?: CuttingMethod;
     discount?: number | null;
     price?: number;
@@ -282,6 +286,7 @@ function buildPatchPayload(job: Joborder): PatchPayload {
     credit: job.credit,
     poNumber: job.poNumber ?? "",
     deliveryDate: job.deliveryDate || undefined,
+    createdAt: job.createdAt || undefined,
     steel: job.steel.map((l) => ({
       codeSteel: normalizeSteelCode(l.steelType),
       shape: l.shape,
@@ -331,7 +336,8 @@ const UpdateOrderPage = ({ id }: { id: string }) => {
     if (hasAnyJob) setUseJob(true);
   }, [hasAnyJob]);
 
-  const hasMissingJob = useJob && (job?.steel ?? []).some((s) => s.job == null);
+  const hasMissingJob =
+    useJob && (job?.steel ?? []).some((s) => !s.job?.trim());
 
   const fetchSteel = async (name: string, cancelledRef?: () => boolean) => {
     setLoadingSteel(true);

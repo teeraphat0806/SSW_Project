@@ -37,6 +37,7 @@ type Inv71LikeInvoiceProps = {
   selesName: string; // J.Sirikran
   recentlyInvoice?: number;
   dateCreateInvoice?: string;
+
   // รายการ
   items: InvoiceItem[];
 
@@ -71,13 +72,17 @@ export const InvoiceExcelSample: React.FC<Inv71LikeInvoiceProps> = ({
 }) => {
   const formatNumber = (n?: number | null) => {
     const x = typeof n === "number" ? n : Number(n);
-    // if (!Number.isFinite(x)) return "0.00";
     return x.toLocaleString("en-US", {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     });
   };
-  console.log("items in InvoiceExcelSample:", items);
+
+  // machine service แสดงยอดได้แม้ weight เป็น 0/null
+  // กรณีอื่นคงพฤติกรรมเดิม
+  const shouldShowTotals =
+    (items?.some((item) => item.isServices === true) ?? false) ||
+    !(items?.[0]?.weight == null || items?.[0]?.weight === 0);
 
   return (
     <>
@@ -97,28 +102,24 @@ export const InvoiceExcelSample: React.FC<Inv71LikeInvoiceProps> = ({
         `,
         }}
       />
+
       <div
         id="inv71-print-area"
         className="
-        mx-auto 
-        w-full 
-        max-w-[21cm]
-        min-h-[29.7cm]
-        bg-white
-        px-4 
-        py-3 
-        pb-8
-        text-sm
-        text-black
-        font-light
-        print:w-[21cm]
-        print:min-h-[29.7cm]
-        flex
-        flex-col
-      "
+    mx-auto w-full max-w-[21cm]
+    h-[29.7cm] print:h-[29.7cm]
+    bg-white
+    px-4
+    pt-[0.2cm]      /* เว้นบน 4 ซม. */
+    pb-[7.02cm]      /* เว้นล่าง 5 ซม. */
+    text-sm text-black font-light
+    flex flex-col
+  "
       >
+        {/* ระยะห่างด้านบน (ปรับให้แคบลงกว่าของเดิม) */}
+        <div className="h-[22mm]" />
+
         {/* แถวแรก: ซ้ายบริษัท, ขวาเลขที่/วันที่/เครดิต/ผู้จัดทำ */}
-        <div className="mt-19" />
         <div className="flex justify-between gap-4">
           {/* ซ้าย: ข้อมูลบริษัท */}
           <div className="space-y-2 max-w-[8cm] ml-13">
@@ -133,33 +134,31 @@ export const InvoiceExcelSample: React.FC<Inv71LikeInvoiceProps> = ({
           </div>
 
           <div className="min-w-[170px] text-sm space-y-3 mr-20 text-center">
-            <div className="">
-              <span className="">
+            <div>
+              <span>
                 HS{invoice ? invoice.toString().padStart(8, "0") : ""}
               </span>
             </div>
-            <div className="">
-              <span className="">{date} </span>
+            <div>
+              <span>{date} </span>
             </div>
             <div className="ml-20">
-              <span className="">{credit}&nbsp;วัน</span>
+              <span>{credit}&nbsp;วัน</span>
             </div>
-            <div className="">
-              <span className="">{poNumber || ""}</span>
+            <div>
+              <span>{poNumber || ""}</span>
             </div>
-            <div className="">
-              <span className="">J.Sirikran</span>
+            <div>
+              <span>{"J.Sirikran"}</span>
             </div>
           </div>
         </div>
 
-        {/* ระยะห่างเล็กน้อยก่อนหัวคอลัมน์ */}
-        <div className="mt-19" />
+        {/* ระยะห่างก่อนหัวคอลัมน์ (ลดลงจาก mt-19) */}
+        <div className="h-[20mm]" />
 
         {/* หัวคอลัมน์แบบ Excel (ไม่มีกรอบ) */}
         <table className="w-full text-sm">
-          {/* กำหนดความกว้างแต่ละคอลัมน์ให้ฟีลเหมือน Excel */}
-          {/* ลำดับ (35px), เกรดเหล็ก + หนา x กว้าง x ยาว (300px), JOB (100px), จำนวน (60px), น้ำหนัก (80px), ราคา (80px), จำนวนเงิน (100px) */}
           <colgroup>
             <col className="w-[35px]" />
             <col className="w-[300px]" />
@@ -170,10 +169,8 @@ export const InvoiceExcelSample: React.FC<Inv71LikeInvoiceProps> = ({
             <col className="w-[100px]" />
           </colgroup>
 
-          {/* หัวคอลัมน์ มีเส้นใต้ ไม่มีกรอบรอบตาราง */}
           <thead>
             <tr className="text-center">
-              {/* ลำดับ: มีคอลัมน์แต่ไม่โชว์ข้อความ */}
               <th className="pb-1 font-normal text-left ">
                 <span className="underline opacity-0">ลำดับ</span>
               </th>
@@ -204,31 +201,25 @@ export const InvoiceExcelSample: React.FC<Inv71LikeInvoiceProps> = ({
             </tr>
           </thead>
 
-          {/* เนื้อหารายการ ต่อจากหัวคอลัมน์ลงมาเลย */}
           <tbody>
             {items.map((item, idx) => {
-              // สร้างแสดงรายการตาม cuttingMethod, isOD, isServices
               let steelDisplay = "";
 
               if (item.isOD) {
-                // กรณี isOD = true: เหล็ก SS400 28 t OD 154 ID 121 mm. หรือ machine services SS400 28 t OD 154 ID 121 mm.
                 const steelPrefix = item.isServices === true ? "" : "เหล็ก ";
-                steelDisplay = `${steelPrefix}${item.steelType} ${item.thickness} t OD ${item.width} ID ${item.length} ${item.unit || "mm."}`;
+                steelDisplay = `${steelPrefix}${item.steelType} ${item.thickness} t OD ${item.width} ID ${item.length} ${
+                  item.unit || "mm."
+                }`;
               } else {
-                // กรณีปกติ - ถ้า isServices = true ไม่ใส่คำว่า "เหล็ก"
                 let prefix =
                   item.isServices === true
                     ? item.steelType
                     : `เหล็ก ${item.steelType}`;
 
-                // ตรวจสอบ cuttingMethod
-                if (item.cuttingMethod === "FB") {
-                  prefix += " F/P";
-                } else if (item.cuttingMethod === "RM") {
-                  prefix += " R/M";
-                }
+                if (item.cuttingMethod === "FB") prefix += " F/P";
+                else if (item.cuttingMethod === "RM") prefix += " R/M";
+
                 let dimensions = "";
-                // Add @ symbol if width is 0 or null (เพลา/line shape)
                 if (item.width === 0 || item.width === null) {
                   prefix += " Ø";
                   dimensions = `${item.thickness} x ${item.length} ${item.unit || "mm."}`;
@@ -236,71 +227,47 @@ export const InvoiceExcelSample: React.FC<Inv71LikeInvoiceProps> = ({
                   dimensions = `${item.thickness} x ${item.width} x ${item.length} ${item.unit || "mm."}`;
                 }
 
-                // สร้างมิติ
-
-                // ถ้า CNC เพิ่ม (แบบ) ท้าย
                 const suffix = item.cuttingMethod === "CNC" ? "(แบบ)" : "";
-
                 steelDisplay = `${prefix} ${dimensions}${suffix}`;
               }
 
-              // ถ้า isServices = true เพิ่ม "machine services" หน้าข้อความ
               if (item.isServices === true) {
-                steelDisplay = `machine services ${steelDisplay}`;
+                steelDisplay = `services ${steelDisplay}`;
               }
 
-              // กำหนด Job field
               let jobDisplay = "";
               if (
                 item.isServices === true &&
                 item.weight != null &&
                 item.weight > 0
               ) {
-                // ถ้า isServices = true ย้ายน้ำหนักมาแสดงที่ Job
                 jobDisplay = `[${formatNumber(item.weight)} kg]`;
               } else if (item.job) {
-                // แสดง job ปกติ
                 jobDisplay = item.job;
               }
 
-              // กำหนด Weight field
               let weightDisplay = "";
               if (
                 item.isServices !== true &&
                 item.weight != null &&
                 item.weight > 0
               ) {
-                // ถ้า isServices ไม่ใช่ true (false หรือ undefined) แสดงน้ำหนักปกติ
                 weightDisplay = formatNumber(item.weight);
               }
-              // ถ้า isServices = true น้ำหนักจะว่างเปล่า
 
-              // กำหนด Price และ Total field - แสดงเสมอยกเว้นเป็นบริการที่ไม่มีน้ำหนัก
-              const showPriceAndTotal =
-                item.isServices === true
-                  ? item.weight != null && item.weight > 0
-                  : true;
+              const showPriceAndTotal = item.isServices === true ? true : true;
 
               return (
                 <tr key={idx} className="align-top">
-                  {/* ลำดับ (โชว์เฉพาะเลข ไม่ต้องมีหัวข้อ) */}
                   <td className="pt-0.5 pr-1 pl-0">{idx + 1}</td>
-
                   <td className="pt-0.5 pr-1">{steelDisplay}</td>
-
                   <td className="pt-0.5 pr-1 text-left pl-1">{jobDisplay}</td>
-
                   <td className="pt-0.5 pr-1 text-left pl-5">{item.amount}</td>
-
                   <td className="pt-0.5 pr-1 text-left">{weightDisplay}</td>
-
                   <td className="pt-0.5 pr-1 text-left pl-5">
                     {showPriceAndTotal ? formatNumber(item.price) : ""}
                   </td>
-                  <td className="pt-0.5 pr-0 text-left">
-                    {/* ส่วนลด คอลัมน์นี้เว้นว่าง */}
-                  </td>
-
+                  <td className="pt-0.5 pr-0 text-left"></td>
                   <td className="pt-0.5 pr-8 pl-4 text-left">
                     {showPriceAndTotal ? formatNumber(item.total) : ""}
                   </td>
@@ -310,63 +277,53 @@ export const InvoiceExcelSample: React.FC<Inv71LikeInvoiceProps> = ({
           </tbody>
         </table>
 
-        {/* เว้นบรรทัดก่อนโซนรวมยอด */}
-        <div className="h-[54mm] shrink-0 " />
-
-        {/* รวมเงิน, ส่วนลด, ภาษี, VAT, รวมทั้งสิ้น (จัดขวาเหมือนในใบ) */}
-        <div className="space-y-[2px] mr-5">
-          <div className="flex justify-between">
-            <span className="flex-1" />
-            <span className="w-[160px] text-right">
-              {items[0].weight == null || items[0].weight === 0
-                ? ""
-                : formatNumber(subtotal)}
-            </span>
-          </div>
-          <div className="flex justify-between">
-            <span className="flex-1" />
-            <span className="w-[160px] text-right">&nbsp; </span>
-          </div>
-          <div className="flex justify-between">
-            <span className="flex-1" />
-            <span className="w-[160px] text-right">
-              {items[0].weight == null || items[0].weight === 0
-                ? ""
-                : formatNumber(subtotal)}
-            </span>
-          </div>
-
-          {/* ส่วนลด */}
-          {discount != null && discount > 0 && (
+        {/* ===== โซนรวมยอด (ติดล่างเสมอ) ===== */}
+        {/* เอา mb-45 ออก แล้วคุมระยะจากขอบล่างด้วย pb-[8mm] ที่ container แทน */}
+        <div className="mt-auto">
+          <div className="space-y-[2px] mr-5">
             <div className="flex justify-between">
               <span className="flex-1" />
               <span className="w-[160px] text-right">
-                {formatNumber(discount)}
+                {!shouldShowTotals ? "" : formatNumber(subtotal)}
               </span>
             </div>
-          )}
 
-          <div className="flex justify-between">
-            <span className="flex-1" />
-            <span className="w-[150px] text-right">
-              {items[0].weight == null || items[0].weight === 0
-                ? ""
-                : formatNumber(vat)}
-            </span>
-          </div>
-        </div>
+            <div className="flex justify-between">
+              <span className="flex-1" />
+              <span className="w-[160px] text-right">&nbsp;</span>
+            </div>
 
-        {/* แถว: ข้อความตัวหนังสือ & รวมทั้งสิ้น */}
-        <div className="mt-6 flex mr-5">
-          <div className="flex-1 ml-10">
-            {items[0].weight == null || items[0].weight === 0
-              ? ""
-              : totalTextThai}
+            <div className="flex justify-between">
+              <span className="flex-1" />
+              <span className="w-[160px] text-right">
+                {!shouldShowTotals ? "" : formatNumber(subtotal)}
+              </span>
+            </div>
+
+            {discount != null && discount > 0 && (
+              <div className="flex justify-between">
+                <span className="flex-1" />
+                <span className="w-[160px] text-right">
+                  {formatNumber(discount)}
+                </span>
+              </div>
+            )}
+
+            <div className="flex justify-between">
+              <span className="flex-1" />
+              <span className="w-[150px] text-right">
+                {!shouldShowTotals ? "" : formatNumber(vat)}
+              </span>
+            </div>
           </div>
-          <div className="w-[160px] text-right font-semibold">
-            {items[0].weight == null || items[0].weight === 0
-              ? ""
-              : formatNumber(total)}
+
+          <div className="mt-6 flex mr-5">
+            <div className="flex-1 ml-10">
+              {!shouldShowTotals ? "" : totalTextThai}
+            </div>
+            <div className="w-[160px] text-right font-semibold">
+              {!shouldShowTotals ? "" : formatNumber(total)}
+            </div>
           </div>
         </div>
       </div>

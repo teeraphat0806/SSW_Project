@@ -17,6 +17,7 @@ type ApiJobOrder = {
   customerTaxId: string;
   customerFax: string | null;
   deliveryDate: Date;
+  createdAt: Date;
   credit: number;
   steel: {
     id: number;
@@ -28,7 +29,7 @@ type ApiJobOrder = {
     detail?: string | null;
     weight?: number | null;
     shape: ShapeSteel;
-    job: number | null;
+    job: string | null;
     cuttingMethod: CuttingMethod;
     discount?: number | null;
     price: number;
@@ -44,7 +45,7 @@ type OrderWithRelations = Prisma.OrderPOGetPayload<{
   include: {
     Product: { include: { SteelType: true } };
     Customer: true;
-    bill: { select: { credit: true; deliveryDate: true } };
+    bill: { select: { credit: true; deliveryDate: true; createdAt: true } };
   };
 }>;
 
@@ -69,6 +70,7 @@ function toApiJobOrder(order: OrderWithRelations): ApiJobOrder {
     customerTaxId: customer.taxNumber,
     customerFax: customer.faxNumber,
     deliveryDate: bill.deliveryDate,
+    createdAt: bill.createdAt,
     credit: bill.credit ?? 30,
     steel: order.Product.map((p) => ({
       id: p.id,
@@ -120,7 +122,7 @@ export async function GET(
           },
         },
         Customer: true,
-        bill: { select: { credit: true, deliveryDate: true } },
+        bill: { select: { credit: true, deliveryDate: true, createdAt: true } },
       },
     });
 
@@ -161,7 +163,7 @@ const SteelLineSchema = z.object({
   weight: z.number().nonnegative().nullable().optional(),
   detail: z.string().nullable().optional(),
   cuttingMethod: z.enum(["normal", "FB", "RM", "CNC"]).optional(),
-  job: z.number().int().nullable().optional(),
+  job: z.string().trim().nullable().optional(),
   discount: z.number().nonnegative().nullable().optional(),
   price: z.number().nonnegative(),
   isOD: z.boolean().optional(),
@@ -175,10 +177,11 @@ const steelKey = (codeSteel: string, shape: ShapeSteel) =>
 const PatchSchema = z.object({
   status: StatusSchema.optional(),
   // credit (days) must be a positive integer; allow coercion from string inputs.
-  credit: z.coerce.number().int().positive().optional(),
+  credit: z.coerce.number().int().nonnegative().optional(),
   customerId: z.string().trim().optional(),
   poNumber: z.string().trim().optional(),
   deliveryDate: z.coerce.date().optional(),
+  createdAt: z.coerce.date().optional(),
   steel: z.array(SteelLineSchema).optional(),
 });
 
@@ -240,18 +243,25 @@ export async function PATCH(
       if (!existing) throw new Error("Order not found");
 
       const credit = patch.credit;
+      const createdAt = patch.createdAt;
       if (credit !== undefined && existing.billId == null) {
+        throw new Error("No bill associated with this order");
+      }
+      if (createdAt !== undefined && existing.billId == null) {
         throw new Error("No bill associated with this order");
       }
 
       // deliveryDate (ถ้ามีส่งมา)
-      if (patch.deliveryDate) {
+      if (patch.deliveryDate || patch.createdAt) {
         if (existing.billId == null) {
           throw new Error("No bill associated with this order");
         }
         await tx.bill.update({
           where: { id: existing.billId },
-          data: { deliveryDate: patch.deliveryDate },
+          data: {
+            ...(patch.deliveryDate ? { deliveryDate: patch.deliveryDate } : {}),
+            ...(patch.createdAt ? { createdAt: patch.createdAt } : {}),
+          },
         });
       }
 
@@ -497,7 +507,9 @@ export async function PATCH(
             include: { SteelType: true },
           },
           Customer: true,
-          bill: { select: { credit: true, deliveryDate: true } },
+          bill: {
+            select: { credit: true, deliveryDate: true, createdAt: true },
+          },
         },
       });
 

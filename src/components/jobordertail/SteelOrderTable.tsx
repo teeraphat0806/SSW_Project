@@ -20,7 +20,7 @@ export type SteelItem = {
   weight: number; // ถ้าส่งมาเป็น 0 ระบบจะคำนวณให้, ถ้ามีค่า > 0 จะใช้ค่านั้นเลย
   detail?: string;
   density: number;
-  job?: number;
+  job?: string;
   discount?: number | null;
   cuttingMethod: CuttingMethod;
   shape: ShapeSteel;
@@ -187,27 +187,31 @@ export default function SteelTable({ steel = [], vatRate }: SteelTableProps) {
                         <span className="font-bold text-zinc-700 dark:text-zinc-300">
                           {item.thickness}
                         </span>
-                        <span className="text-zinc-500 dark:text-zinc-500 mx-1.5">
-                          ×
-                        </span>
 
                         {safeNum(item.width) > 0 && (
                           <>
-                            <span className="font-bold text-zinc-700 dark:text-zinc-300">
-                              {item.width}
-                            </span>
                             <span className="text-zinc-500 dark:text-zinc-500 mx-1.5">
                               ×
                             </span>
+                            <span className="font-bold text-zinc-700 dark:text-zinc-300">
+                              {item.width}
+                            </span>
                           </>
                         )}
-
-                        <span className="font-bold text-zinc-700 dark:text-zinc-300">
-                          {item.length}
-                        </span>
+                        {safeNum(item.length) > 0 && (
+                          <>
+                            <span className="text-zinc-500 dark:text-zinc-500 mx-1.5">
+                              ×
+                            </span>
+                            <span className="font-bold text-zinc-700 dark:text-zinc-300">
+                              {item.length}
+                            </span>
+                          </>
+                        )}
                       </div>
 
                       {/* Col 3 */}
+
                       <div className="col-span-1 text-center font-bold text-zinc-700 dark:text-zinc-300">
                         x{safeNum(item.amount)}
                       </div>

@@ -60,7 +60,10 @@ export default function SelectCustomer({
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-[200px] p-0">
-        <Command className="bg-background text-foreground hover:bg-accent hover:text-accent-foreground max-h-[200px]">
+        <Command
+          shouldFilter={false}
+          className="bg-background text-foreground hover:bg-accent hover:text-accent-foreground max-h-[200px]"
+        >
           <CommandInput
             placeholder="ค้นหาบริษัท..."
             value={search}
@@ -79,9 +82,11 @@ export default function SelectCustomer({
                 .map((customer) => (
                   <CommandItem
                     key={customer.id}
+                    value={customer.name}
                     className="bg-background text-foreground hover:bg-accent hover:text-accent-foreground"
                     onSelect={() => {
                       setSelectedCustomer(customer.id);
+                      setSearch("");
                       setOpen(false);
                     }}
                   >
@@ -89,7 +94,7 @@ export default function SelectCustomer({
                     <Check
                       className={cn(
                         "ml-auto h-4 w-4",
-                        selectedCustomer === customer
+                        selectedCustomerId === customer.id
                           ? "opacity-100"
                           : "opacity-0"
                       )}

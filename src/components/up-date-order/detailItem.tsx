@@ -55,7 +55,7 @@ type SteelItem = {
   detail?: string | null;
   weight?: number | null;
   shape: ShapeSteel;
-  job?: number | null;
+  job?: string | null;
   cuttingMethod: CuttingMethod;
   price: number;
   discount: number | null;
@@ -86,6 +86,7 @@ type JobWithSteel = {
   id: string | number;
   poNumber: string;
   deliveryDate: string;
+  createdAt: string;
   credit: number;
   steel: SteelItem[];
 };
@@ -243,6 +244,20 @@ export default function DetailItem<T extends JobWithSteel>({
   //   });
   // };
   const MAX_ITEMS = 15;
+  const noNumberSpinnerClass =
+    "[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none";
+  const preventWheelChangeOnNumberInput = (
+    e: React.WheelEvent<HTMLElement>,
+  ) => {
+    const target = e.target;
+    if (
+      target instanceof HTMLInputElement &&
+      target.type === "number" &&
+      document.activeElement === target
+    ) {
+      target.blur();
+    }
+  };
   // ✅ เพิ่มเหล็ก
   const addSteelItem = () => {
     setJob((prev) => {
@@ -260,9 +275,9 @@ export default function DetailItem<T extends JobWithSteel>({
           {
             steelType: firstType,
             amount: 1,
-            width: firstShape === "line" ? null : 1,
-            length: 1,
-            thickness: 1,
+            width: firstShape === "line" ? null : 0,
+            length: 0,
+            thickness: 0,
             detail: "",
             weight: null,
             job: null,
@@ -316,7 +331,10 @@ export default function DetailItem<T extends JobWithSteel>({
   };
 
   return (
-    <section className="space-y-3">
+    <section
+      className="space-y-3"
+      onWheelCapture={preventWheelChangeOnNumberInput}
+    >
       {/* Header */}
       <div className="flex items-center justify-between">
         <h2 className="flex items-center gap-2 text-lg font-semibold text-zinc-900 dark:text-zinc-50">
@@ -347,25 +365,25 @@ export default function DetailItem<T extends JobWithSteel>({
           </Button>
 
           {/* credit */}
-          <div className="w-[120px] shrink-0">
+          <div className="w-[80px] shrink-0">
             <label className="mb-1.5 block text-sm font-medium text-zinc-500 dark:text-zinc-400">
               Credit (วัน)
             </label>
             <Input
               type="number"
-              min={1}
+              min={0}
               inputMode="numeric"
               value={job.credit ?? 30}
               onChange={(e) => {
-                const next = Math.max(1, Number(e.target.value || 1));
+                const next = Math.max(0, Number(e.target.value || 0));
                 setJob((prev) => (prev ? { ...prev, credit: next } : prev));
               }}
-              className="h-10 w-full border-zinc-200 bg-white text-center font-semibold tabular-nums focus-visible:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-900"
+              className={`h-10 w-full border-zinc-200 bg-white text-center font-semibold tabular-nums focus-visible:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-900 ${noNumberSpinnerClass}`}
             />
           </div>
 
           {/* PO Number */}
-          <div className="w-[180px] shrink-0">
+          <div className="w-[150px] shrink-0">
             <label className="mb-1.5 block text-sm font-medium text-zinc-500 dark:text-zinc-400">
               PO Number
             </label>
@@ -382,10 +400,27 @@ export default function DetailItem<T extends JobWithSteel>({
             />
           </div>
 
-          {/* Delivery Date */}
-          <div className="w-[170px] shrink-0">
+          {/* Bill Created Date */}
+          <div className="w-[130px] shrink-0">
             <label className="mb-1.5 block text-sm font-medium text-zinc-500 dark:text-zinc-400">
-              วันที่ส่ง
+              วันที่สร้างบิล
+            </label>
+            <Input
+              type="date"
+              value={job.createdAt ?? ""}
+              onChange={(e) =>
+                setJob((prev) =>
+                  prev ? { ...prev, createdAt: e.target.value } : prev,
+                )
+              }
+              className="h-10 w-full border-zinc-200 bg-white text-sm dark:border-zinc-700 dark:bg-zinc-900"
+            />
+          </div>
+
+          {/* Delivery Date */}
+          <div className="w-[130px] shrink-0">
+            <label className="mb-1.5 block text-sm font-medium text-zinc-500 dark:text-zinc-400">
+              กำหนดส่งสินค้า
             </label>
             <Input
               type="date"
@@ -491,7 +526,7 @@ export default function DetailItem<T extends JobWithSteel>({
                               type="number"
                               min="0"
                               step="0.01"
-                              className="h-10 border-zinc-200 bg-white pr-7 text-center hover:border-blue-400 focus-visible:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
+                              className={`h-10 border-zinc-200 bg-white pr-7 text-center hover:border-blue-400 focus-visible:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 ${noNumberSpinnerClass}`}
                               value={item.thickness ?? 0}
                               onChange={(e) =>
                                 patchSteelItem(idx, {
@@ -519,7 +554,7 @@ export default function DetailItem<T extends JobWithSteel>({
                                 type="number"
                                 min="0"
                                 step="0.01"
-                                className="h-10 border-zinc-200 bg-white pr-7 text-center hover:border-blue-400 focus-visible:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
+                                className={`h-10 border-zinc-200 bg-white pr-7 text-center hover:border-blue-400 focus-visible:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 ${noNumberSpinnerClass}`}
                                 value={item.width ?? 0}
                                 onChange={(e) =>
                                   patchSteelItem(idx, {
@@ -547,7 +582,7 @@ export default function DetailItem<T extends JobWithSteel>({
                               type="number"
                               min="0"
                               step="0.01"
-                              className="h-10 border-zinc-200 bg-white pr-7 text-center hover:border-blue-400 focus-visible:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
+                              className={`h-10 border-zinc-200 bg-white pr-7 text-center hover:border-blue-400 focus-visible:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 ${noNumberSpinnerClass}`}
                               value={item.length ?? 0}
                               onChange={(e) =>
                                 patchSteelItem(idx, {
@@ -574,7 +609,7 @@ export default function DetailItem<T extends JobWithSteel>({
                       <Input
                         type="number"
                         min={1}
-                        className="h-10 w-full border-blue-200 bg-blue-50 text-center font-bold text-blue-700 shadow-sm focus-visible:ring-blue-500 dark:border-blue-900 dark:bg-blue-900/20 dark:text-blue-400"
+                        className={`h-10 w-full border-blue-200 bg-blue-50 text-center font-bold text-blue-700 shadow-sm focus-visible:ring-blue-500 dark:border-blue-900 dark:bg-blue-900/20 dark:text-blue-400 ${noNumberSpinnerClass}`}
                         value={item.amount ?? 1}
                         onChange={(e) =>
                           patchSteelItem(idx, {
@@ -612,7 +647,7 @@ export default function DetailItem<T extends JobWithSteel>({
                               <Input
                                 type="number"
                                 min="0"
-                                className="h-10 border-zinc-200 bg-white pr-8 text-right font-mono text-sm hover:border-blue-400 focus-visible:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
+                                className={`h-10 border-zinc-200 bg-white pr-8 text-right font-mono text-sm hover:border-blue-400 focus-visible:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 ${noNumberSpinnerClass}`}
                                 value={item.weight ?? 0}
                                 onChange={(e) =>
                                   patchSteelItem(idx, {
@@ -792,7 +827,7 @@ export default function DetailItem<T extends JobWithSteel>({
                             });
                           }}
                           placeholder="0"
-                          className="h-10 border-zinc-200 bg-white text-right pr-8 dark:border-zinc-700 dark:bg-zinc-900"
+                          className={`h-10 border-zinc-200 bg-white text-right pr-8 dark:border-zinc-700 dark:bg-zinc-900 ${noNumberSpinnerClass}`}
                         />
                         <span className="absolute right-2 top-1/2 -translate-y-1/2 text-sm text-zinc-400">
                           ฿
@@ -819,7 +854,7 @@ export default function DetailItem<T extends JobWithSteel>({
                             })
                           }
                           placeholder="0"
-                          className="h-10 border-zinc-200 bg-white text-right pr-8 dark:border-zinc-700 dark:bg-zinc-900"
+                          className={`h-10 border-zinc-200 bg-white text-right pr-8 dark:border-zinc-700 dark:bg-zinc-900 ${noNumberSpinnerClass}`}
                         />
                         <span className="absolute right-2 top-1/2 -translate-y-1/2 text-sm text-zinc-400">
                           ฿
@@ -834,14 +869,14 @@ export default function DetailItem<T extends JobWithSteel>({
                           Job No.
                         </label>
                         <Input
-                          type="number"
+                          type="text"
                           value={item.job ?? ""}
                           onChange={(e) =>
                             patchSteelItem(idx, {
                               job:
-                                e.target.value === ""
+                                e.target.value.trim() === ""
                                   ? null
-                                  : Number(e.target.value),
+                                  : e.target.value,
                             } as any)
                           }
                           placeholder="No."

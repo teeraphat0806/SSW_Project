@@ -98,7 +98,9 @@ export default function Dashboard() {
 
   // filters
   const [searchTerm, setSearchTerm] = useState("");
+  const [searchResetKey, setSearchResetKey] = useState(0);
   const [statusFilter, setStatusFilter] = useState("");
+  const [invoiceFilter, setInvoiceFilter] = useState("");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
 
@@ -118,6 +120,7 @@ export default function Dashboard() {
       if (search) params.set("search", search);
 
       if (statusFilter) params.set("status", statusFilter);
+      if (invoiceFilter) params.set("invoice", invoiceFilter);
 
       if (dateFrom) params.set("from", dateFrom);
       if (dateTo) params.set("to", dateTo);
@@ -173,7 +176,7 @@ export default function Dashboard() {
       fetchOrders(1);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchTerm, statusFilter, dateFrom, dateTo]);
+  }, [searchTerm, statusFilter, invoiceFilter, dateFrom, dateTo]);
 
   // โหลดข้อมูลเมื่อ page เปลี่ยน (รวมถึงรอบแรก)
   useEffect(() => {
@@ -315,7 +318,7 @@ export default function Dashboard() {
         {/* เปลี่ยน items-end เป็น items-center หรือ items-end ตามความเหมาะสม แต่ Grid จัดการเรื่องความสูงไว้แล้ว */}
         <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
           {/* Search: หน้าจอ iPad (md) ให้กินพื้นที่ครึ่งจอ (6/12), จอใหญ่ (lg) ให้กิน 5/12 */}
-          <div className="md:col-span-6 lg:col-span-5">
+          <div className="md:col-span-6 lg:col-span-4">
             <label className="block text-xs font-semibold text-zinc-500 dark:text-zinc-400 mb-1.5 uppercase tracking-wider">
               ค้นหา
             </label>
@@ -323,6 +326,7 @@ export default function Dashboard() {
               <SearchDebounce
                 placeholder="ชื่อลูกค้า, เลข PO ,  รหัสออเดอร์"
                 onSearchChange={(value) => setSearchTerm(value)}
+                resetKey={searchResetKey}
               />
               {/* <Search
                 className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 group-focus-within:text-blue-500 transition-colors"
@@ -339,7 +343,7 @@ export default function Dashboard() {
           </div>
 
           {/* Status: หน้าจอ iPad (md) ให้กินพื้นที่ครึ่งจอที่เหลือ (6/12), จอใหญ่ (lg) ให้กิน 2/12 */}
-          <div className="md:col-span-6 lg:col-span-2">
+          <div className="md:col-span-3 lg:col-span-2">
             <label className="block text-xs font-semibold text-zinc-500 dark:text-zinc-400 mb-1.5 uppercase tracking-wider">
               สถานะ
             </label>
@@ -366,7 +370,28 @@ export default function Dashboard() {
           </div>
 
           {/* Date Range + Refresh: หน้าจอ iPad (md) ให้ขึ้นบรรทัดใหม่เต็มจอ (12/12), จอใหญ่ (lg) กลับไปอยู่ท้ายแถว (5/12) */}
-          <div className="md:col-span-12 lg:col-span-5 flex gap-2">
+          <div className="md:col-span-3 lg:col-span-2">
+            <label className="block text-xs font-semibold text-zinc-500 dark:text-zinc-400 mb-1.5 uppercase tracking-wider">
+              ใบแจ้งหนี้
+            </label>
+            <div className="relative">
+              <Filter
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none"
+                size={16}
+              />
+              <select
+                className="w-full pl-9 pr-8 py-2.5 bg-zinc-50 dark:bg-zinc-950/50 border border-zinc-200 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-white appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500/50 cursor-pointer transition-all"
+                value={invoiceFilter}
+                onChange={(e) => setInvoiceFilter(e.target.value)}
+              >
+                <option value="">ทั้งหมด</option>
+                <option value="pending">ยังไม่ออกใบแจ้งหนี้</option>
+                <option value="invoiced">ออกใบแจ้งหนี้แล้ว</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="md:col-span-12 lg:col-span-4 flex gap-2">
             <div className="flex-1">
               <label className="block text-xs font-semibold text-zinc-500 dark:text-zinc-400 mb-1.5 uppercase tracking-wider">
                 เริ่มต้น
@@ -407,7 +432,9 @@ export default function Dashboard() {
             <button
               onClick={() => {
                 setSearchTerm("");
+                setSearchResetKey((k) => k + 1);
                 setStatusFilter("");
+                setInvoiceFilter("");
                 setDateFrom("");
                 setDateTo("");
                 setPagination((p) => ({ ...p, page: 1 }));
@@ -513,7 +540,7 @@ export default function Dashboard() {
                     <td className="py-4 px-6 text-center">
                       <Link href={`/job-order-detail/${order.id}`}>
                         <button className="p-2 rounded-lg flex flex-row items-center gap-2 text-blue-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 dark:hover:text-blue-400 transition-all">
-                          <Edit size={18} />
+                          <Edit size={18} /> แสดง
                         </button>
                       </Link>
                     </td>

@@ -73,7 +73,7 @@ type ApiJobOrder = {
     density: number | null;
     detail?: string | null;
     shape: ShapeSteel;
-    job?: number | null;
+    job?: string | null;
     discount?: number | null;
     cuttingMethod: CuttingMethod;
     isOD?: boolean | null;
@@ -114,7 +114,7 @@ export type JobOrder = {
     weight: number;
     detail?: string;
     density: number;
-    job?: number;
+    job?: string;
     discount?: number | null;
     cuttingMethod: CuttingMethod;
     shape: ShapeSteel;

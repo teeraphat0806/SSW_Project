@@ -10,11 +10,8 @@ import {
   User,
   MapPin,
   Mail,
-  Hash,
 } from "lucide-react";
-import { z } from "zod";
 import { toast } from "react-toastify";
-import { digitsOnly } from "@/lib/calculateGrandTotal";
 import { CustomerSchema } from "@/lib/schemas/customer.schema";
 
 // --- Types & Schema (คงเดิม) ---
@@ -43,6 +40,14 @@ const initialForm: CustomerPayload = {
 };
 
 type FieldErrors = Partial<Record<keyof CustomerPayload, string>>;
+type CustomerApiError = {
+  error?: string;
+  message?: string;
+  field?: string;
+  details?: {
+    fieldErrors?: Partial<Record<keyof CustomerPayload, string[]>>;
+  };
+};
 
 // --- Component ---
 export default function AddCustomerModal({ open, onClose, onCreated }: Props) {
@@ -121,15 +126,60 @@ export default function AddCustomerModal({ open, onClose, onCreated }: Props) {
         body: JSON.stringify(v.value),
       });
 
-      const json = await res.json().catch(() => ({}));
+      const json: CustomerApiError = await res.json().catch(() => ({}));
 
       if (!res.ok) {
-        toast.error("สร้างลูกค้าไม่สำเร็จ", { position: "bottom-right" });
-        const msg =
-          json?.error ||
-          json?.message ||
-          `สร้างลูกค้าไม่สำเร็จ (HTTP ${res.status})`;
-        throw new Error(msg);
+        const nextErrors: FieldErrors = {};
+        const fieldMap: Record<string, keyof CustomerPayload> = {
+          taxNumber: "taxNumber",
+          tel: "tel",
+          telSearch: "tel",
+          faxNumber: "faxNumber",
+          faxNumberSearch: "faxNumber",
+          email: "email",
+          name: "name",
+          address: "address",
+        };
+        const fieldLabelMap: Record<keyof CustomerPayload, string> = {
+          name: "ชื่อลูกค้า",
+          address: "ที่อยู่",
+          tel: "เบอร์โทร",
+          email: "อีเมล",
+          taxNumber: "เลขผู้เสียภาษี",
+          faxNumber: "แฟกซ์",
+        };
+
+        if (res.status === 400 && json.details?.fieldErrors) {
+          for (const [key, values] of Object.entries(json.details.fieldErrors)) {
+            if (!values?.length) continue;
+            const mappedKey = fieldMap[key];
+            if (!mappedKey || nextErrors[mappedKey]) continue;
+            nextErrors[mappedKey] = values[0];
+          }
+        }
+
+        if (res.status === 409 && json.field) {
+          const mappedKey = fieldMap[json.field];
+          if (mappedKey && !nextErrors[mappedKey]) {
+            nextErrors[mappedKey] = `${fieldLabelMap[mappedKey]}ซ้ำในระบบ`;
+          }
+        }
+
+        if (Object.keys(nextErrors).length > 0) {
+          setFieldErrors(nextErrors);
+        }
+
+        let msg =
+          json.message || json.error || `สร้างลูกค้าไม่สำเร็จ (HTTP ${res.status})`;
+        if (res.status === 409 && json.field) {
+          const mappedKey = fieldMap[json.field];
+          if (mappedKey) {
+            msg = `ข้อมูลซ้ำ: ${fieldLabelMap[mappedKey]}`;
+          }
+        }
+        setErrorTop(msg);
+        toast.error(msg, { position: "bottom-right" });
+        return;
       }
 
       toast.success("เพิ่มลูกค้าสำเร็จ", { position: "bottom-right" });
@@ -138,8 +188,10 @@ export default function AddCustomerModal({ open, onClose, onCreated }: Props) {
       setFieldErrors({});
       onClose();
       onCreated?.();
-    } catch (e: any) {
-      setErrorTop(e?.message ?? "เกิดข้อผิดพลาด");
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "เกิดข้อผิดพลาด";
+      setErrorTop(msg);
+      toast.error(msg, { position: "bottom-right" });
     } finally {
       setSubmitting(false);
     }

@@ -43,7 +43,7 @@ type ApiJobOrder = {
     density: number;
     detail?: string;
     shape: ShapeSteel;
-    job?: number;
+    job?: string;
     cuttingMethod: CuttingMethod;
     isOD: boolean;
     isServices: boolean;
