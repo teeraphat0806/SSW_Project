@@ -182,7 +182,6 @@ const SteelListPage = () => {
       {/* Filter Bar */}
       <div className="max-w-7xl mx-auto bg-white dark:bg-zinc-900/60 p-4 rounded-xl shadow-sm mb-6 flex flex-col sm:flex-row gap-4 justify-between items-center border border-gray-100 dark:border-zinc-800">
         <div className="relative w-full sm:w-96">
-          
           <SearchDebounce
             placeholder="ค้นหารหัสเหล็ก..."
             onSearchChange={(value) => setSearch(value)}
@@ -256,7 +255,7 @@ const SteelListPage = () => {
                   onClick={() => handleSort("amount")}
                 >
                   <div className="flex items-center justify-center gap-1">
-                    ปริมาณ (Stock)
+                    คงเหลือ (Stock)
                     <ArrowUpDown
                       className={`w-3 h-3 ${
                         sortConfig.key === "amount"
