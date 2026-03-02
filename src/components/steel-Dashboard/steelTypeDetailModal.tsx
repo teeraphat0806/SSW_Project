@@ -166,10 +166,17 @@ export default function SteelTypeDetailModal({
 
   useEffect(() => {
     if (open && steelTypeId) {
+      setDisplayUnit("mm");
       fetchData();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, steelTypeId]);
+
+  useEffect(() => {
+    if (showInModal) {
+      setInForm((prev) => ({ ...prev, unit: "mm" }));
+    }
+  }, [showInModal]);
 
   const handleStockIn = async () => {
     if (!steelTypeId || !data) return;
@@ -213,7 +220,7 @@ export default function SteelTypeDetailModal({
         width: "",
         length: "",
         quantity: 1,
-        unit: "m",
+        unit: "mm",
       });
       setShowInModal(false);
 
@@ -612,7 +619,7 @@ export default function SteelTypeDetailModal({
                         ชิ้น{" "}
                         {data.shape === "square"
                           ? "หนา × กว้าง × ยาว"
-                          : "หนา × ยาว"}
+                          : "กลม × ยาว"}
                       </div>
                     </div>
 
@@ -813,8 +820,8 @@ export default function SteelTypeDetailModal({
                 {/* Thickness */}
                 <div className="space-y-1.5">
                   <label className="text-[13px] font-semibold text-gray-600 dark:text-zinc-400 ml-1">
-                    ความหนา ({inForm.unit}){" "}
-                    <span className="text-red-500">*</span>
+                    {data.shape === "square" ? "ความหนา" : "กลม"} ({inForm.unit}
+                    ) <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="number"
