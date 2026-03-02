@@ -232,7 +232,7 @@ export const InvoiceExcelSample: React.FC<Inv71LikeInvoiceProps> = ({
               }
 
               if (item.isServices === true) {
-                steelDisplay = `machine ${steelDisplay}`;
+                steelDisplay = `services ${steelDisplay}`;
               }
 
               let jobDisplay = "";
