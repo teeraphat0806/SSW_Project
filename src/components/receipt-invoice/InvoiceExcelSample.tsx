@@ -149,7 +149,7 @@ export const InvoiceExcelSample: React.FC<Inv71LikeInvoiceProps> = ({
               <span>{poNumber || ""}</span>
             </div>
             <div>
-              <span>{selesName || "J.Sirikran"}</span>
+              <span>{"J.Sirikran"}</span>
             </div>
           </div>
         </div>
