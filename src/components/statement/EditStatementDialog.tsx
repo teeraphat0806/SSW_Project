@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Trash2,
   Check,
@@ -33,21 +33,30 @@ interface InvoiceItem {
   invoiceNo: number;
   total: number;
   createdAt: string;
+  billId?: number | null;
+}
+
+interface CustomerInvoiceApiItem {
+  id: number;
+  invoiceNo: number;
+  createdAt: string;
+  grandTotal: number;
+  billId?: number | null;
 }
 
 interface EditStatementDialogProps {
   statementId: number;
+  customerId: number;
   selectedInvoices: InvoiceItem[];
   onUpdate: (invoiceIds: number[]) => void;
-  allInvoices: InvoiceItem[]; // all available invoices for add
   loading: boolean;
 }
 
 export default function EditStatementDialog({
   statementId,
+  customerId,
   selectedInvoices,
   onUpdate,
-  allInvoices,
   loading,
 }: EditStatementDialogProps) {
   const [open, setOpen] = useState(false);
@@ -55,18 +64,114 @@ export default function EditStatementDialog({
   const [invoiceSearch2, setInvoiceSearch2] = useState("");
   const [currentInvoices, setCurrentInvoices] =
     useState<InvoiceItem[]>(selectedInvoices);
+  const [availableInvoices, setAvailableInvoices] = useState<InvoiceItem[]>([]);
+  const [availableLoading, setAvailableLoading] = useState(false);
   const [page, setPage] = useState(1);
   const [pageSize] = useState(5);
   const [showSelectedTable, setShowSelectedTable] = useState(true);
   const [showAvailableTable, setShowAvailableTable] = useState(true);
   const [selectedPage, setSelectedPage] = useState(1);
 
-  // Filter allInvoices: remove those already selected
-  const filteredInvoiceList = allInvoices.filter(
+  const fetchAvailableInvoices = async () => {
+    setAvailableLoading(true);
+    try {
+      const res = await fetch(`/api/invoice/customer/${customerId}`, {
+        cache: "no-store",
+      });
+
+      if (!res.ok) throw new Error("Failed to fetch customer invoices");
+
+      const data = await res.json();
+      const apiItems: CustomerInvoiceApiItem[] = Array.isArray(data)
+        ? data
+        : Array.isArray(data?.items)
+          ? data.items
+          : [];
+
+      setAvailableInvoices(
+        apiItems.map((inv) => ({
+          id: inv.id,
+          invoiceNo: inv.invoiceNo,
+          total: Number(inv.grandTotal ?? 0),
+          createdAt: inv.createdAt,
+          billId: inv.billId ?? null,
+        })),
+      );
+    } catch (error) {
+      console.error("Failed to fetch available invoices", error);
+      setAvailableInvoices([]);
+    } finally {
+      setAvailableLoading(false);
+    }
+  };
+
+  const handleAddInvoice = async (invoice: InvoiceItem) => {
+    try {
+      const res = await fetch("/api/statement/add-invoice", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          statementId,
+          invoiceId: invoice.id,
+        }),
+      });
+
+      if (!res.ok) {
+        const error = await res.json();
+        console.error("Failed to add invoice:", error);
+        alert(error.error || "Failed to add invoice");
+        return;
+      }
+
+      setCurrentInvoices((prev) => [...prev, invoice]);
+      await fetchAvailableInvoices();
+    } catch (error) {
+      console.error("Failed to add invoice", error);
+      alert("Failed to add invoice");
+    }
+  };
+
+  const handleRemoveInvoice = async (invoiceId: number) => {
+    try {
+      const res = await fetch("/api/statement/remove-invoice", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          statementId,
+          invoiceId,
+        }),
+      });
+
+      if (!res.ok) {
+        const error = await res.json();
+        console.error("Failed to remove invoice:", error);
+        alert(error.error || "Failed to remove invoice");
+        return;
+      }
+
+      setCurrentInvoices((prev) => prev.filter((i) => i.id !== invoiceId));
+      await fetchAvailableInvoices();
+    } catch (error) {
+      console.error("Failed to remove invoice", error);
+      alert("Failed to remove invoice");
+    }
+  };
+
+  useEffect(() => {
+    if (!open) return;
+
+    setCurrentInvoices(selectedInvoices);
+    setSelectedPage(1);
+    setPage(1);
+
+    void fetchAvailableInvoices();
+  }, [open, customerId, selectedInvoices]);
+
+  const filteredInvoiceList = availableInvoices.filter(
     (inv) =>
       !currentInvoices.some((sel) => sel.id === inv.id) &&
-      (invoiceSearch === "" ||
-        inv.invoiceNo.toString().includes(invoiceSearch)),
+      (invoiceSearch2 === "" ||
+        inv.invoiceNo.toString().includes(invoiceSearch2)),
   );
   const pagedInvoiceList = filteredInvoiceList.slice(
     (page - 1) * pageSize,
@@ -209,7 +314,7 @@ export default function EditStatementDialog({
                           className="border-b border-zinc-700/80 last:border-b-0"
                         >
                           <TableCell className="border-r border-zinc-700/80">
-                            {inv.invoiceNo}
+                            HS{inv.invoiceNo}
                           </TableCell>
                           <TableCell className="border-r border-zinc-700/80">
                             <Input
@@ -244,13 +349,7 @@ export default function EditStatementDialog({
                             <Button
                               size="icon"
                               variant="destructive"
-                              onClick={() =>
-                                setCurrentInvoices(
-                                  currentInvoices.filter(
-                                    (i) => i.id !== inv.id,
-                                  ),
-                                )
-                              }
+                              onClick={() => handleRemoveInvoice(inv.id)}
                               className="hover:text-red-600 hover:cursor-pointer"
                             >
                               <Trash2 className="w-10 h-10" />
@@ -299,8 +398,11 @@ export default function EditStatementDialog({
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
               <Input
                 type="text"
-                value={invoiceSearch}
-                onChange={(e) => setInvoiceSearch2(e.target.value)}
+                value={invoiceSearch2}
+                onChange={(e) => {
+                  setInvoiceSearch2(e.target.value);
+                  setPage(1);
+                }}
                 placeholder="ค้นหา InvoiceNo เช่น 1201"
                 className="h-9 w-full rounded-lg border-zinc-600 bg-zinc-900/70 pl-9 text-white placeholder:text-zinc-400 focus-visible:ring-1 focus-visible:ring-blue-500"
               />
@@ -348,7 +450,16 @@ export default function EditStatementDialog({
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {pagedInvoiceList.length === 0 ? (
+                    {availableLoading ? (
+                      <TableRow className="border-b border-zinc-600/90">
+                        <TableCell
+                          colSpan={5}
+                          className="border-x border-zinc-700/80 text-center text-zinc-400"
+                        >
+                          กำลังโหลด...
+                        </TableCell>
+                      </TableRow>
+                    ) : pagedInvoiceList.length === 0 ? (
                       <TableRow className="border-b border-zinc-600/90">
                         <TableCell
                           colSpan={5}
@@ -364,7 +475,7 @@ export default function EditStatementDialog({
                           className="border-b border-zinc-700/80 last:border-b-0"
                         >
                           <TableCell className="border-r border-zinc-700/80">
-                            {inv.invoiceNo}
+                            HS{inv.invoiceNo}
                           </TableCell>
                           <TableCell className="border-r border-zinc-700/80">
                             {new Date(inv.createdAt).toLocaleDateString(
@@ -372,7 +483,7 @@ export default function EditStatementDialog({
                             )}
                           </TableCell>
                           <TableCell className="border-r border-zinc-700/80">
-                            -
+                            {inv.billId ?? "-"}
                           </TableCell>
                           <TableCell className="border-r border-zinc-700/80">
                             {inv.total.toLocaleString("th-TH", {
@@ -383,9 +494,7 @@ export default function EditStatementDialog({
                           <TableCell className="border-r border-zinc-700/80">
                             <Button
                               size="icon"
-                              onClick={() =>
-                                setCurrentInvoices([...currentInvoices, inv])
-                              }
+                              onClick={() => handleAddInvoice(inv)}
                               aria-label="Select invoice"
                               className="group rounded-full cursor-pointer"
                             >
@@ -428,23 +537,7 @@ export default function EditStatementDialog({
               </>
             )}
           </div>
-          {/* ข้อความแนะนำ */}
-          <div className="text-xs text-zinc-400 mt-2">
-            ค้นหา/เพิ่ม/ลบ invoice แล้วกด "บันทึก" เพื่ออัปเดต statement
-          </div>
         </div>
-        <DialogFooter className="flex justify-end gap-2 mt-4">
-          <Button
-            onClick={() => {
-              onUpdate(currentInvoices.map((i) => i.id));
-              setOpen(false);
-            }}
-            disabled={loading}
-            className="bg-blue-600 hover:bg-blue-700 text-white"
-          >
-            บันทึก
-          </Button>
-        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

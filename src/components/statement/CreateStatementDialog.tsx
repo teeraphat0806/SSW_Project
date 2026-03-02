@@ -55,6 +55,8 @@ export default function CreateStatementDialog({
   loading,
 }: CreateStatementDialogProps) {
   const [open, setOpen] = useState(false);
+  const [customerOpen, setCustomerOpen] = useState(false);
+  const [customerSearch, setCustomerSearch] = useState("");
   const [selectedCustomer, setSelectedCustomer] = useState<
     string | number | null
   >(null);
@@ -174,14 +176,14 @@ export default function CreateStatementDialog({
             <div className="flex flex-col">
               <span className="text-xs mb-1">ลูกค้า</span>
               <SelectCustomer
-                open={false}
-                setOpen={() => {}}
+                open={customerOpen}
+                setOpen={setCustomerOpen}
                 selectedCustomerId={selectedCustomer}
                 setSelectedCustomer={setSelectedCustomer}
                 customers={customers}
-                search={""}
-                setSearch={() => {}}
-                loading={false}
+                search={customerSearch}
+                setSearch={setCustomerSearch}
+                loading={loading}
               />
             </div>
             <div className="flex flex-col">

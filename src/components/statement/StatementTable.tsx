@@ -12,11 +12,12 @@ import {
 export interface Statement {
   id: number;
   statementNo: number;
+  customerId: number;
   customerName: string;
   createdAt: string;
   totalIncome: number;
   invoiceCount: number;
-  invoices?: InvoiceItem[]; // เพิ่ม field สำหรับ mock
+  invoices?: InvoiceItem[];
 }
 
 export interface InvoiceItem {
@@ -25,7 +26,6 @@ export interface InvoiceItem {
   total: number;
   createdAt: string;
 }
-
 
 export interface StatementTableProps {
   data: Statement[];
@@ -36,7 +36,6 @@ export interface StatementTableProps {
   onEdit?: (statementId: number, invoiceIds: number[]) => void;
 }
 
-
 export default function StatementTable({
   data,
   loading,
@@ -45,15 +44,6 @@ export default function StatementTable({
   onPageChange,
   onEdit,
 }: StatementTableProps) {
-  // mock allInvoices (ควรดึงจาก API จริง)
-  const allInvoices = [
-    { id: 1, invoiceNo: 10000001, total: 20000, createdAt: new Date().toISOString() },
-    { id: 2, invoiceNo: 10000002, total: 30000, createdAt: new Date().toISOString() },
-    { id: 3, invoiceNo: 10000003, total: 15000, createdAt: new Date().toISOString() },
-    { id: 4, invoiceNo: 10000004, total: 25000, createdAt: new Date().toISOString() },
-    { id: 5, invoiceNo: 10000005, total: 12000, createdAt: new Date().toISOString() },
-    { id: 6, invoiceNo: 10000006, total: 18000, createdAt: new Date().toISOString() },
-  ];
   return (
     <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-sm border border-zinc-200 dark:border-zinc-800 overflow-hidden">
       <div className="overflow-x-auto">
@@ -71,13 +61,13 @@ export default function StatementTable({
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={5} className="text-center py-8">
+                <TableCell colSpan={6} className="text-center py-8">
                   กำลังโหลด...
                 </TableCell>
               </TableRow>
             ) : data.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="text-center py-8">
+                <TableCell colSpan={6} className="text-center py-8">
                   ไม่พบข้อมูล
                 </TableCell>
               </TableRow>
@@ -85,7 +75,7 @@ export default function StatementTable({
               data.map((item) => (
                 <TableRow key={item.id}>
                   <TableCell>
-                    {item.statementNo.toString().padStart(6, "0")}
+                    HS{item.statementNo.toString().padStart(6, "0")}
                   </TableCell>
                   <TableCell>{item.customerName}</TableCell>
                   <TableCell>{item.invoiceCount}</TableCell>
@@ -101,8 +91,8 @@ export default function StatementTable({
                   <TableCell>
                     <EditStatementDialog
                       statementId={item.id}
-                      selectedInvoices={item.invoices || allInvoices.slice(0, item.invoiceCount)}
-                      allInvoices={allInvoices}
+                      customerId={item.customerId}
+                      selectedInvoices={item.invoices || []}
                       loading={false}
                       onUpdate={(invoiceIds) => {
                         if (onEdit) onEdit(item.id, invoiceIds);
