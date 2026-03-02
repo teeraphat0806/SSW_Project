@@ -32,7 +32,7 @@ type ApiReceipt = {
     weight: number | null;
     price: number;
     cuttingMethod?: CuttingMethod;
-    job?: number | null;
+    job?: string | null;
     total: number;
     isOD?: boolean;
     isServices?: boolean;
@@ -111,7 +111,7 @@ export default function ReceiptClient({ id }: { id: string }) {
           thickness: s.thickness,
           width: s.width ?? 0,
           length: s.length,
-          job: s.job?.toString() ?? null, // API ไม่มี job → ใส่ null
+          job: s.job ?? null,
           amount: s.amount,
           weight: s.weight,
           price: s.price,

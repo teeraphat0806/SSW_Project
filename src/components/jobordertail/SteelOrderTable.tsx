@@ -20,7 +20,7 @@ export type SteelItem = {
   weight: number; // ถ้าส่งมาเป็น 0 ระบบจะคำนวณให้, ถ้ามีค่า > 0 จะใช้ค่านั้นเลย
   detail?: string;
   density: number;
-  job?: number;
+  job?: string;
   discount?: number | null;
   cuttingMethod: CuttingMethod;
   shape: ShapeSteel;

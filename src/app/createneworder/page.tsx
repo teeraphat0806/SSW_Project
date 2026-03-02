@@ -60,7 +60,7 @@ type SteelItem = {
   isOD: boolean;
   isServices: boolean;
   isPerAmount: boolean;
-  job?: number | null;
+  job?: string | null;
 };
 
 type SteelType = {
@@ -101,7 +101,7 @@ type OcrParseResponse = {
       thickness: number | null;
       quantity: number | null;
       cuttingMethod: CuttingMethod;
-      job: number | null;
+      job: string | null;
       notes: string | null;
       isOD: boolean | null;
       isServices: boolean | null;
@@ -573,7 +573,7 @@ const NewJobOrder = () => {
         discount: null,
         density: Number(matchedType?.density ?? 0.0000079),
         cuttingMethod: x.raw?.cuttingMethod ?? "normal",
-        job: x.raw?.job ?? null,
+        job: x.raw?.job ? String(x.raw.job) : null,
         isOD: x.raw?.isOD ?? false,
         isServices: x.raw?.isServices ?? false,
         isPerAmount: x.raw?.isServices ?? false,
@@ -679,7 +679,7 @@ const NewJobOrder = () => {
 
     if (!headOrder.deliveryDate) return "กรุณากรอกวันที่ต้องการสินค้า";
 
-    if (useJob == true && steelItems.some((item) => !item.job)) {
+    if (useJob == true && steelItems.some((item) => !item.job?.trim())) {
       return "กรุณากรอกหมายเลข Job ในรายการเหล็กที่เลือก";
     }
     if (steelItems.length === 0)

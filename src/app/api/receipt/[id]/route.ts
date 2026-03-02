@@ -118,7 +118,7 @@ type ApiReceipt = {
     price: number;
     weight: number | null;
     total: number;
-    job?: number | null;
+    job?: string | null;
     cuttingMethod?: CuttingMethod;
     discount?: number | null;
     isOD: boolean;

@@ -55,7 +55,7 @@ type SteelItem = {
   detail?: string | null;
   weight?: number | null;
   shape: ShapeSteel;
-  job?: number | null;
+  job?: string | null;
   cuttingMethod: CuttingMethod;
   price: number;
   discount: number | null;
@@ -869,18 +869,18 @@ export default function DetailItem<T extends JobWithSteel>({
                           Job No.
                         </label>
                         <Input
-                          type="number"
+                          type="text"
                           value={item.job ?? ""}
                           onChange={(e) =>
                             patchSteelItem(idx, {
                               job:
-                                e.target.value === ""
+                                e.target.value.trim() === ""
                                   ? null
-                                  : Number(e.target.value),
+                                  : e.target.value,
                             } as any)
                           }
                           placeholder="No."
-                          className={`h-10 border-zinc-200 bg-white text-center dark:border-zinc-700 dark:bg-zinc-900 ${noNumberSpinnerClass}`}
+                          className="h-10 border-zinc-200 bg-white text-center dark:border-zinc-700 dark:bg-zinc-900"
                         />
                       </div>
                     )}

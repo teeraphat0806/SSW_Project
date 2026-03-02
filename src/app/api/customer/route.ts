@@ -66,13 +66,31 @@ export async function GET(req: NextRequest) {
     // sort
     const { key: sortKey, dir } = parseSort(searchParams.get("sort"));
 
+    const searchDigits = digitsOnly(search);
     const where: Prisma.CustomerWhereInput =
       search.length > 0
         ? {
             OR: [
               { name: { contains: search, mode: "insensitive" } },
-
-              { telSearch: { contains: search, mode: "insensitive" } },
+              { email: { contains: search, mode: "insensitive" } },
+              { taxNumber: { contains: search, mode: "insensitive" } },
+              { tel: { contains: search, mode: "insensitive" } },
+              ...(searchDigits
+                ? [
+                    {
+                      telSearch: {
+                        contains: searchDigits,
+                        mode: "insensitive" as const,
+                      },
+                    },
+                    {
+                      faxNumberSearch: {
+                        contains: searchDigits,
+                        mode: "insensitive" as const,
+                      },
+                    },
+                  ]
+                : []),
             ],
           }
         : {};
