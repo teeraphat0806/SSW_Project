@@ -98,6 +98,7 @@ export default function Dashboard() {
 
   // filters
   const [searchTerm, setSearchTerm] = useState("");
+  const [searchResetKey, setSearchResetKey] = useState(0);
   const [statusFilter, setStatusFilter] = useState("");
   const [invoiceFilter, setInvoiceFilter] = useState("");
   const [dateFrom, setDateFrom] = useState("");
@@ -325,6 +326,7 @@ export default function Dashboard() {
               <SearchDebounce
                 placeholder="ชื่อลูกค้า, เลข PO ,  รหัสออเดอร์"
                 onSearchChange={(value) => setSearchTerm(value)}
+                resetKey={searchResetKey}
               />
               {/* <Search
                 className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 group-focus-within:text-blue-500 transition-colors"
@@ -430,6 +432,7 @@ export default function Dashboard() {
             <button
               onClick={() => {
                 setSearchTerm("");
+                setSearchResetKey((k) => k + 1);
                 setStatusFilter("");
                 setInvoiceFilter("");
                 setDateFrom("");
