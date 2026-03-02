@@ -6,11 +6,13 @@ import { useDebounce } from "@uidotdev/usehooks";
 interface SearchBoxProps {
   onSearchChange?: (value: string) => void;
   placeholder?: string;
+  resetKey?: number;
 }
 
 export default function SearchDebounce({
   onSearchChange,
   placeholder,
+  resetKey,
 }: SearchBoxProps) {
   const [search, setSearch] = React.useState("");
 
@@ -20,6 +22,10 @@ export default function SearchDebounce({
     onSearchChange?.(debounce);
     console.log("Debounced Search Value:", debounce);
   }, [debounce, onSearchChange]);
+
+  React.useEffect(() => {
+    setSearch("");
+  }, [resetKey]);
 
   return (
     <>
