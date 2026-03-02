@@ -177,7 +177,7 @@ model Product {
   actualWeight  Float?
   total         Float?
   cuttingMethod CuttingMethod @default(normal)
-  job           Int?
+  job           String?
   discount      Float?
   unitPrice     Float         @default(0)
   isOD          Boolean       @default(false)

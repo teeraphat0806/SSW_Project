@@ -41,7 +41,7 @@ export type SteelItemType = {
   length: number;
   thickness: number;
   cuttingMethod?: CuttingMethod;
-  job?: number | null;
+  job?: string | null;
   notes: string;
   weight?: number | null;
   price: number;
@@ -803,19 +803,19 @@ export default function AddItem({
                             Job No.
                           </label>
                           <Input
-                            type="number"
+                            type="text"
                             value={item.job ?? ""}
                             onChange={(e) =>
                               updateSteelItem(
                                 item.id,
                                 "job",
-                                e.target.value === ""
+                                e.target.value.trim() === ""
                                   ? null
-                                  : Number(e.target.value),
+                                  : e.target.value,
                               )
                             }
                             placeholder="No."
-                            className={`h-10 border-zinc-200 bg-white text-center dark:border-zinc-700 dark:bg-zinc-900 ${noNumberSpinnerClass}`}
+                            className="h-10 border-zinc-200 bg-white text-center dark:border-zinc-700 dark:bg-zinc-900"
                           />
                         </div>
                       )}

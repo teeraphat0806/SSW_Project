@@ -29,7 +29,7 @@ type ApiJobOrder = {
     detail?: string | null;
     weight?: number | null;
     shape: ShapeSteel;
-    job: number | null;
+    job: string | null;
     cuttingMethod: CuttingMethod;
     discount?: number | null;
     price: number;
@@ -163,7 +163,7 @@ const SteelLineSchema = z.object({
   weight: z.number().nonnegative().nullable().optional(),
   detail: z.string().nullable().optional(),
   cuttingMethod: z.enum(["normal", "FB", "RM", "CNC"]).optional(),
-  job: z.number().int().nullable().optional(),
+  job: z.string().trim().nullable().optional(),
   discount: z.number().nonnegative().nullable().optional(),
   price: z.number().nonnegative(),
   isOD: z.boolean().optional(),

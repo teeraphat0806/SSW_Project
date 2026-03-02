@@ -59,7 +59,7 @@ type ApiJobOrder = {
     weight?: number | null;
     unitPrice: number;
     shape: ShapeSteel;
-    job?: number | null;
+    job?: string | null;
     cuttingMethod: CuttingMethod;
     density: number;
     isOD: boolean;
@@ -96,7 +96,7 @@ type Joborder = {
     unitPrice: number;
     shape: ShapeSteel;
     density: number;
-    job?: number | null;
+    job?: string | null;
     cuttingMethod: CuttingMethod;
     isOD: boolean;
     isServices: boolean;
@@ -272,7 +272,7 @@ type PatchPayload = {
     isServices: boolean;
     isPerAmount: boolean;
 
-    job?: number | null;
+    job?: string | null;
     cuttingMethod?: CuttingMethod;
     discount?: number | null;
     price?: number;
@@ -336,7 +336,8 @@ const UpdateOrderPage = ({ id }: { id: string }) => {
     if (hasAnyJob) setUseJob(true);
   }, [hasAnyJob]);
 
-  const hasMissingJob = useJob && (job?.steel ?? []).some((s) => s.job == null);
+  const hasMissingJob =
+    useJob && (job?.steel ?? []).some((s) => !s.job?.trim());
 
   const fetchSteel = async (name: string, cancelledRef?: () => boolean) => {
     setLoadingSteel(true);

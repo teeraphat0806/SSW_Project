@@ -39,7 +39,7 @@ type OcrUpstreamResponse = {
       thickness: number | null;
       quantity: number | null;
       cuttingMethod: CuttingMethod | string | null;
-      job: number | null;
+      job: string | number | null;
       notes: string | null;
       matchedSteelTypeId: number | null;
       confidence: number | null;
@@ -249,7 +249,7 @@ export async function POST(request: NextRequest) {
           thickness: it.thickness ?? null,
           quantity: it.quantity ?? null,
           cuttingMethod,
-          job: it.job ?? null,
+          job: it.job != null ? String(it.job) : null,
           notes: it.notes ?? null,
           confidence: it.confidence ?? null,
         },
