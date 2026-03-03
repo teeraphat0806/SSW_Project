@@ -1,5 +1,6 @@
 import React from "react";
 import EditStatementDialog from "./EditStatementDialog";
+import StatementReceiptDialog from "./StatementReceiptDialog";
 import {
   Table,
   TableHeader,
@@ -33,7 +34,7 @@ export interface StatementTableProps {
   page: number;
   totalPages: number;
   onPageChange: (page: number) => void;
-  onEdit?: (statementId: number, invoiceIds: number[]) => void;
+  onEdit?: (statementId: number, invoiceIds: number[]) => Promise<void> | void;
 }
 
 export default function StatementTable({
@@ -56,27 +57,26 @@ export default function StatementTable({
               <TableHead>ยอดรวมรายได้</TableHead>
               <TableHead>วันที่สร้าง</TableHead>
               <TableHead>แก้ไข</TableHead>
+              <TableHead>พิมพ์</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center py-8">
+                <TableCell colSpan={7} className="text-center py-8">
                   กำลังโหลด...
                 </TableCell>
               </TableRow>
             ) : data.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center py-8">
+                <TableCell colSpan={7} className="text-center py-8">
                   ไม่พบข้อมูล
                 </TableCell>
               </TableRow>
             ) : (
               data.map((item) => (
                 <TableRow key={item.id}>
-                  <TableCell>
-                    HS{item.statementNo.toString().padStart(6, "0")}
-                  </TableCell>
+                  <TableCell>HS{item.statementNo.toString()}</TableCell>
                   <TableCell>{item.customerName}</TableCell>
                   <TableCell>{item.invoiceCount}</TableCell>
                   <TableCell>
@@ -97,6 +97,12 @@ export default function StatementTable({
                       onUpdate={(invoiceIds) => {
                         if (onEdit) onEdit(item.id, invoiceIds);
                       }}
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <StatementReceiptDialog
+                      customerId={item.customerId}
+                      statementNo={item.statementNo}
                     />
                   </TableCell>
                 </TableRow>

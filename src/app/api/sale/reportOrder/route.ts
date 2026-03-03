@@ -233,30 +233,55 @@ export async function GET(req: NextRequest) {
       },
     });
 
-    const invoiceNumber = await prisma.invoice.findFirst({
-      where: {codetoinvoice: bills[0]?.OrderPO?.codetoinvoice},
-      select: { invoiceNo: true },
-    })
-    
+    // Get unique codetoinvoice values and fetch all invoices
+    const codetoinvoices = bills
+      .map((b) => b.OrderPO?.codetoinvoice)
+      .filter((c) => c !== null && c !== undefined)
+      .map((c) =>
+        typeof c === "string" ? parseInt(c as string, 10) : (c as number),
+      );
+
+    const invoiceMap = new Map<number | string, number>();
+    if (codetoinvoices.length > 0) {
+      const invoices = await prisma.invoice.findMany({
+        where: {
+          codetoinvoice: {
+            in: codetoinvoices as number[],
+          },
+        },
+        select: {
+          codetoinvoice: true,
+          invoiceNo: true,
+        },
+      });
+
+      invoices.forEach((inv) => {
+        invoiceMap.set(inv.codetoinvoice, inv.invoiceNo);
+      });
+    }
+
     // Format the data
-    const formattedBills = bills.map((bill) => ({
-      id: bill.id,
-      createdAt: bill.createdAt?.toISOString() || null,
-      invoiceNo:invoiceNumber?.invoiceNo || null,
-      customerName: bill.Customer?.name || "ไม่ระบุ",
-      customerAddress: bill.Customer?.address || "",
-      grandTotal: bill.grandTotal || 0,
-      formatted: {
-        createdAt: bill.createdAt
-          ? bill.createdAt.toLocaleDateString("th-TH", {
-              year: "numeric",
-              month: "long",
-              day: "numeric",
-            })
-          : "-",
-        grandTotal: `฿${(bill.grandTotal || 0).toLocaleString("en-US")}`,
-      },
-    }));
+    const formattedBills = bills.map((bill) => {
+      const code = bill.OrderPO?.codetoinvoice;
+      return {
+        id: bill.id,
+        createdAt: bill.createdAt?.toISOString() || null,
+        invoiceNo: invoiceMap.get(code ?? 0) || null,
+        customerName: bill.Customer?.name || "ไม่ระบุ",
+        customerAddress: bill.Customer?.address || "",
+        grandTotal: bill.grandTotal || 0,
+        formatted: {
+          createdAt: bill.createdAt
+            ? bill.createdAt.toLocaleDateString("th-TH", {
+                year: "numeric",
+                month: "long",
+                day: "numeric",
+              })
+            : "-",
+          grandTotal: `฿${(bill.grandTotal || 0).toLocaleString("en-US")}`,
+        },
+      };
+    });
 
     // Calculate summary
     const totalBills = formattedBills.length;

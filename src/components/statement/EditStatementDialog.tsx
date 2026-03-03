@@ -48,7 +48,7 @@ interface EditStatementDialogProps {
   statementId: number;
   customerId: number;
   selectedInvoices: InvoiceItem[];
-  onUpdate: (invoiceIds: number[]) => void;
+  onUpdate: (invoiceIds: number[]) => Promise<void> | void;
   loading: boolean;
 }
 
@@ -71,6 +71,22 @@ export default function EditStatementDialog({
   const [showSelectedTable, setShowSelectedTable] = useState(true);
   const [showAvailableTable, setShowAvailableTable] = useState(true);
   const [selectedPage, setSelectedPage] = useState(1);
+  const [saving, setSaving] = useState(false);
+  const [customerName, setCustomerName] = useState("");
+
+  const fetchCustomerName = async () => {
+    try {
+      const res = await fetch(`/api/customer/${customerId}`, {
+        cache: "no-store",
+      });
+      if (!res.ok) throw new Error("Failed to fetch customer");
+      const data = await res.json();
+      setCustomerName(data.name || "");
+    } catch (error) {
+      console.error("Failed to fetch customer name", error);
+      setCustomerName("");
+    }
+  };
 
   const fetchAvailableInvoices = async () => {
     setAvailableLoading(true);
@@ -105,56 +121,32 @@ export default function EditStatementDialog({
     }
   };
 
-  const handleAddInvoice = async (invoice: InvoiceItem) => {
+  const handleAddInvoice = (invoice: InvoiceItem) => {
+    if (currentInvoices.some((item) => item.id === invoice.id)) return;
+    setCurrentInvoices([...currentInvoices, invoice]);
+  };
+
+  const handleRemoveInvoice = (invoiceId: number) => {
+    setCurrentInvoices(currentInvoices.filter((i) => i.id !== invoiceId));
+  };
+
+  const handleSave = async () => {
+    setSaving(true);
     try {
-      const res = await fetch("/api/statement/add-invoice", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          statementId,
-          invoiceId: invoice.id,
-        }),
-      });
-
-      if (!res.ok) {
-        const error = await res.json();
-        console.error("Failed to add invoice:", error);
-        alert(error.error || "Failed to add invoice");
-        return;
-      }
-
-      setCurrentInvoices((prev) => [...prev, invoice]);
-      await fetchAvailableInvoices();
+      await onUpdate(currentInvoices.map((inv) => inv.id));
+      setOpen(false);
     } catch (error) {
-      console.error("Failed to add invoice", error);
-      alert("Failed to add invoice");
+      console.error("Failed to save statement", error);
+      alert("Failed to save statement");
+    } finally {
+      setSaving(false);
     }
   };
 
-  const handleRemoveInvoice = async (invoiceId: number) => {
-    try {
-      const res = await fetch("/api/statement/remove-invoice", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          statementId,
-          invoiceId,
-        }),
-      });
-
-      if (!res.ok) {
-        const error = await res.json();
-        console.error("Failed to remove invoice:", error);
-        alert(error.error || "Failed to remove invoice");
-        return;
-      }
-
-      setCurrentInvoices((prev) => prev.filter((i) => i.id !== invoiceId));
-      await fetchAvailableInvoices();
-    } catch (error) {
-      console.error("Failed to remove invoice", error);
-      alert("Failed to remove invoice");
-    }
+  const hasChanges = () => {
+    if (currentInvoices.length !== selectedInvoices.length) return true;
+    const selectedIds = new Set(selectedInvoices.map((inv) => inv.id));
+    return currentInvoices.some((inv) => !selectedIds.has(inv.id));
   };
 
   useEffect(() => {
@@ -163,9 +155,27 @@ export default function EditStatementDialog({
     setCurrentInvoices(selectedInvoices);
     setSelectedPage(1);
     setPage(1);
-
+    setInvoiceSearch("");
+    setInvoiceSearch2("");
+    void fetchCustomerName();
     void fetchAvailableInvoices();
   }, [open, customerId, selectedInvoices]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [invoiceSearch2]);
+
+  useEffect(() => {
+    setSelectedPage(1);
+  }, [invoiceSearch]);
+
+  // Filter selected invoices with search
+  const filteredSelectedInvoices = currentInvoices.filter((inv) => {
+    const matchesSearch = invoiceSearch
+      ? inv.invoiceNo.toString().includes(invoiceSearch)
+      : true;
+    return matchesSearch;
+  });
 
   const filteredInvoiceList = availableInvoices.filter(
     (inv) =>
@@ -181,11 +191,12 @@ export default function EditStatementDialog({
     Math.ceil(filteredInvoiceList.length / pageSize) || 1;
 
   // Selected invoices pagination
-  const pagedSelectedInvoices = currentInvoices.slice(
+  const pagedSelectedInvoices = filteredSelectedInvoices.slice(
     (selectedPage - 1) * pageSize,
     selectedPage * pageSize,
   );
-  const selectedTotalPages = Math.ceil(currentInvoices.length / pageSize) || 1;
+  const selectedTotalPages =
+    Math.ceil(filteredSelectedInvoices.length / pageSize) || 1;
 
   // รวมยอด invoice ที่เลือกแล้ว
   const selectedTotalAmount = currentInvoices.reduce(
@@ -207,17 +218,22 @@ export default function EditStatementDialog({
           size="icon"
           variant="outline"
           aria-label="Edit statement"
-          className="cursor-pointer border-zinc-600 text-zinc-100 hover:border-blue-500 hover:bg-blue-500/15 hover:text-blue-400"
+          className="cursor-pointer border-zinc-600 text-zinc-100 hover:border-blue-500  "
         >
           <button className="p-2 rounded-lg flex flex-row items-center gap-2 text-blue-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 dark:hover:text-blue-400 transition-all">
             <Edit size={18} />
           </button>
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto bg-zinc-900 text-white rounded-2xl p-6 shadow-xl border border-zinc-700">
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto bg-white dark:bg-zinc-900 text-gray-900 dark:text-white rounded-2xl p-6 shadow-xl border border-gray-200 dark:border-zinc-700">
         <DialogHeader>
           <DialogTitle className="text-xl font-bold mb-2">
-            แก้ไข Invoice ใน Statement #{statementId}
+            <div className="flex gap-4">
+              <span>แก้ไข Invoice ในใบเสร็จรับเงิน</span>{" "}
+              <span className="text-blue-600 dark:text-blue-400">
+                #HS{statementId.toString()}
+              </span>
+            </div>
           </DialogTitle>
         </DialogHeader>
         <div
@@ -225,15 +241,27 @@ export default function EditStatementDialog({
           style={{ maxHeight: "80vh", overflowY: "auto" }}
         >
           {/* Row: ค้นหา invoice */}
-          <div className="flex flex-wrap gap-3 items-center bg-zinc-800 rounded-xl px-4 py-2 mb-1">
+          <div className="flex flex-wrap gap-3 items-center rounded-xl px-4 py-2 mb-1">
             <div className="flex items-center gap-2">
-              <span className="text-xs text-zinc-400">เลือกแล้ว</span>
+              <span className="text-xs text-gray-500 dark:text-zinc-400">
+                ลูกค้า
+              </span>
+              <span className="inline-block bg-blue-600/90 text-white text-base font-bold rounded-lg px-3 py-1 shadow-sm">
+                {customerName || "N/A"}
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-gray-500 dark:text-zinc-400">
+                เลือกแล้ว
+              </span>
               <span className="inline-block bg-blue-600/90 text-white text-base font-bold rounded-lg px-3 py-1 shadow-sm">
                 {currentInvoices.length} ใบ
               </span>
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-xs text-zinc-400">ยอดรวม</span>
+              <span className="text-xs text-gray-500 dark:text-zinc-400">
+                ยอดรวม
+              </span>
               <span className="inline-block bg-green-600/90 text-white text-base font-bold rounded-lg px-3 py-1 shadow-sm">
                 {selectedTotalAmount.toLocaleString("th-TH", {
                   style: "currency",
@@ -246,19 +274,19 @@ export default function EditStatementDialog({
           <div className="flex items-center justify-between gap-4">
             <span className="font-semibold">Invoice ที่เลือกแล้ว</span>
             <div className="ml-auto relative w-full max-w-xs">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400 dark:text-zinc-400" />
               <Input
                 type="text"
                 value={invoiceSearch}
                 onChange={(e) => setInvoiceSearch(e.target.value)}
                 placeholder="ค้นหา InvoiceNo เช่น 1201"
-                className="h-9 w-full rounded-lg border-zinc-600 bg-zinc-900/70 pl-9 text-white placeholder:text-zinc-400 focus-visible:ring-1 focus-visible:ring-blue-500"
+                className="h-9 w-full rounded-lg border-gray-300 dark:border-zinc-600 bg-white dark:bg-zinc-900/70 pl-9 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-zinc-400 focus-visible:ring-1 focus-visible:ring-blue-500"
               />
             </div>
             <Button
               size="icon"
               variant="ghost"
-              className="group h-8 w-8 rounded-full border border-zinc-600/80 bg-zinc-700/60 text-zinc-100 shadow-sm transition-all duration-200 hover:scale-105 hover:border-zinc-400 hover:bg-zinc-600 hover:shadow-md active:scale-95"
+              className="group h-8 w-8 rounded-full border border-gray-300 dark:border-zinc-600/80 bg-gray-100 dark:bg-zinc-700/60 text-gray-700 dark:text-zinc-100 shadow-sm transition-all duration-200 hover:scale-105 hover:border-gray-400 dark:hover:border-zinc-400 hover:bg-gray-200 dark:hover:bg-zinc-600 hover:shadow-md active:scale-95"
               onClick={() => setShowSelectedTable((v) => !v)}
               aria-label={
                 showSelectedTable
@@ -274,24 +302,24 @@ export default function EditStatementDialog({
             </Button>
           </div>
           <div
-            className="bg-zinc-800 rounded-xl mt-2"
+            className="rounded-xl mt-2"
             style={{ maxHeight: 260, overflowY: "auto" }}
           >
             {showSelectedTable && (
               <>
-                <Table className="border border-zinc-600/90">
-                  <TableHeader className="bg-zinc-700/40">
-                    <TableRow className="border-b border-zinc-600/90">
-                      <TableHead className="border-r border-zinc-600/90">
+                <Table className="border border-gray-300 dark:border-zinc-600/90">
+                  <TableHeader className="bg-gray-50 dark:bg-zinc-800/50">
+                    <TableRow className="border-b border-gray-300 dark:border-zinc-600/90">
+                      <TableHead className="border-r border-gray-300 dark:border-zinc-600/90">
                         InvoiceNo
                       </TableHead>
-                      <TableHead className="border-r border-zinc-600/90">
+                      <TableHead className="border-r border-gray-300 dark:border-zinc-600/90">
                         วันที่ออก
                       </TableHead>
-                      <TableHead className="border-r border-zinc-600/90">
+                      <TableHead className="border-r border-gray-300 dark:border-zinc-600/90">
                         BillId
                       </TableHead>
-                      <TableHead className="border-r border-zinc-600/90">
+                      <TableHead className="border-r border-gray-300 dark:border-zinc-600/90">
                         GrandTotal
                       </TableHead>
                       <TableHead>ลบ</TableHead>
@@ -299,10 +327,10 @@ export default function EditStatementDialog({
                   </TableHeader>
                   <TableBody>
                     {pagedSelectedInvoices.length === 0 ? (
-                      <TableRow className="border-b border-zinc-600/90">
+                      <TableRow className="border-b border-gray-300 dark:border-zinc-600/90">
                         <TableCell
                           colSpan={5}
-                          className="border-x border-zinc-700/80 text-center text-zinc-400"
+                          className="border-x border-gray-300 dark:border-zinc-700/80 text-center text-gray-500 dark:text-zinc-400"
                         >
                           ยังไม่มีการเลือก
                         </TableCell>
@@ -311,15 +339,15 @@ export default function EditStatementDialog({
                       pagedSelectedInvoices.map((inv) => (
                         <TableRow
                           key={inv.id}
-                          className="border-b border-zinc-700/80 last:border-b-0"
+                          className="border-b border-gray-200 dark:border-zinc-700/80 last:border-b-0"
                         >
-                          <TableCell className="border-r border-zinc-700/80">
+                          <TableCell className="border-r border-gray-200 dark:border-zinc-700/80">
                             HS{inv.invoiceNo}
                           </TableCell>
-                          <TableCell className="border-r border-zinc-700/80">
+                          <TableCell className="border-r border-gray-200 dark:border-zinc-700/80">
                             <Input
                               type="date"
-                              className="bg-zinc-800 border-zinc-700 text-white w-36"
+                              className="bg-gray-50 dark:bg-zinc-800 border-gray-300 dark:border-zinc-700 text-gray-900 dark:text-white w-36"
                               value={(() => {
                                 // แปลงวันที่เป็น yyyy-MM-dd
                                 const d = new Date(inv.createdAt);
@@ -336,16 +364,16 @@ export default function EditStatementDialog({
                               }
                             />
                           </TableCell>
-                          <TableCell className="border-r border-zinc-700/80">
-                            -
+                          <TableCell className="border-r border-gray-200 dark:border-zinc-700/80">
+                            {inv.billId ?? "-"}
                           </TableCell>
-                          <TableCell className="border-r border-zinc-700/80">
+                          <TableCell className="border-r border-gray-200 dark:border-zinc-700/80">
                             {inv.total.toLocaleString("th-TH", {
                               style: "currency",
                               currency: "THB",
                             })}
                           </TableCell>
-                          <TableCell className="border-r border-zinc-700/80">
+                          <TableCell className="border-r border-gray-200 dark:border-zinc-700/80">
                             <Button
                               size="icon"
                               variant="destructive"
@@ -360,16 +388,16 @@ export default function EditStatementDialog({
                     )}
                   </TableBody>
                 </Table>
-                <div className="py-4 px-6 border-t border-zinc-700 flex items-center justify-between bg-zinc-900/50 mt-2 rounded-b-xl">
-                  <span className="text-sm text-zinc-400">
+                <div className="py-4 px-6 border-t border-gray-200 dark:border-zinc-700 flex items-center justify-between bg-gray-50 dark:bg-zinc-900/50 mt-2 rounded-b-xl">
+                  <span className="text-sm text-gray-500 dark:text-zinc-400">
                     หน้า {selectedPage} จาก {selectedTotalPages} (ทั้งหมด{" "}
-                    {currentInvoices.length} รายการ)
+                    {filteredSelectedInvoices.length} รายการ)
                   </span>
                   <div className="flex gap-2">
                     <Button
                       size="icon"
                       variant="outline"
-                      className="bg-zinc-800 border-zinc-700 text-white"
+                      className="bg-white dark:bg-zinc-800 border-gray-300 dark:border-zinc-700 text-gray-900 dark:text-white"
                       onClick={() => setSelectedPage(selectedPage - 1)}
                       disabled={selectedPage <= 1}
                       aria-label="Previous page"
@@ -379,7 +407,7 @@ export default function EditStatementDialog({
                     <Button
                       size="icon"
                       variant="outline"
-                      className="bg-zinc-800 border-zinc-700 text-white"
+                      className="bg-white dark:bg-zinc-800 border-gray-300 dark:border-zinc-700 text-gray-900 dark:text-white"
                       onClick={() => setSelectedPage(selectedPage + 1)}
                       disabled={selectedPage >= selectedTotalPages}
                       aria-label="Next page"
@@ -395,22 +423,19 @@ export default function EditStatementDialog({
           <div className="flex items-center justify-between gap-4">
             <span className="font-semibold">Invoice ที่เลือกได้</span>
             <div className="ml-auto relative w-full max-w-xs">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400 dark:text-zinc-400" />
               <Input
                 type="text"
                 value={invoiceSearch2}
-                onChange={(e) => {
-                  setInvoiceSearch2(e.target.value);
-                  setPage(1);
-                }}
+                onChange={(e) => setInvoiceSearch2(e.target.value)}
                 placeholder="ค้นหา InvoiceNo เช่น 1201"
-                className="h-9 w-full rounded-lg border-zinc-600 bg-zinc-900/70 pl-9 text-white placeholder:text-zinc-400 focus-visible:ring-1 focus-visible:ring-blue-500"
+                className="h-9 w-full rounded-lg border-gray-300 dark:border-zinc-600 bg-white dark:bg-zinc-900/70 pl-9 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-zinc-400 focus-visible:ring-1 focus-visible:ring-blue-500"
               />
             </div>
             <Button
               size="icon"
               variant="ghost"
-              className="group h-8 w-8 rounded-full border border-zinc-600/80 bg-zinc-700/60 text-zinc-100 shadow-sm transition-all duration-200 hover:scale-105 hover:border-zinc-400 hover:bg-zinc-600 hover:shadow-md active:scale-95"
+              className="group h-8 w-8 rounded-full border border-gray-300 dark:border-zinc-600/80 bg-gray-100 dark:bg-zinc-700/60 text-gray-700 dark:text-zinc-100 shadow-sm transition-all duration-200 hover:scale-105 hover:border-gray-400 dark:hover:border-zinc-400 hover:bg-gray-200 dark:hover:bg-zinc-600 hover:shadow-md active:scale-95"
               onClick={() => setShowAvailableTable((v) => !v)}
               aria-label={
                 showAvailableTable
@@ -426,24 +451,24 @@ export default function EditStatementDialog({
             </Button>
           </div>
           <div
-            className="bg-zinc-800 rounded-xl mt-2"
+            className=" rounded-xl mt-2"
             style={{ maxHeight: 260, overflowY: "auto" }}
           >
             {showAvailableTable && (
               <>
-                <Table className="border border-zinc-600/90">
-                  <TableHeader className="bg-zinc-700/40">
-                    <TableRow className="border-b border-zinc-600/90">
-                      <TableHead className="border-r border-zinc-600/90">
+                <Table className="border border-gray-300 dark:border-zinc-600/90">
+                  <TableHeader className="bg-gray-50 dark:bg-zinc-800/50">
+                    <TableRow className="border-b border-gray-300 dark:border-zinc-600/90">
+                      <TableHead className="border-r border-gray-300 dark:border-zinc-600/90">
                         InvoiceNo
                       </TableHead>
-                      <TableHead className="border-r border-zinc-600/90">
+                      <TableHead className="border-r border-gray-300 dark:border-zinc-600/90">
                         วันที่ Invoice
                       </TableHead>
-                      <TableHead className="border-r border-zinc-600/90">
+                      <TableHead className="border-r border-gray-300 dark:border-zinc-600/90">
                         BillId
                       </TableHead>
-                      <TableHead className="border-r border-zinc-600/90">
+                      <TableHead className="border-r border-gray-300 dark:border-zinc-600/90">
                         GrandTotal
                       </TableHead>
                       <TableHead>เลือก</TableHead>
@@ -451,19 +476,19 @@ export default function EditStatementDialog({
                   </TableHeader>
                   <TableBody>
                     {availableLoading ? (
-                      <TableRow className="border-b border-zinc-600/90">
+                      <TableRow className="border-b border-gray-300 dark:border-zinc-600/90">
                         <TableCell
                           colSpan={5}
-                          className="border-x border-zinc-700/80 text-center text-zinc-400"
+                          className="border-x border-gray-300 dark:border-zinc-700/80 text-center text-gray-500 dark:text-zinc-400"
                         >
                           กำลังโหลด...
                         </TableCell>
                       </TableRow>
                     ) : pagedInvoiceList.length === 0 ? (
-                      <TableRow className="border-b border-zinc-600/90">
+                      <TableRow className="border-b border-gray-300 dark:border-zinc-600/90">
                         <TableCell
                           colSpan={5}
-                          className="border-x border-zinc-700/80 text-center text-zinc-400"
+                          className="border-x border-gray-300 dark:border-zinc-700/80 text-center text-gray-500 dark:text-zinc-400"
                         >
                           ไม่พบข้อมูล
                         </TableCell>
@@ -472,26 +497,26 @@ export default function EditStatementDialog({
                       pagedInvoiceList.map((inv) => (
                         <TableRow
                           key={inv.id}
-                          className="border-b border-zinc-700/80 last:border-b-0"
+                          className="border-b border-gray-200 dark:border-zinc-700/80 last:border-b-0"
                         >
-                          <TableCell className="border-r border-zinc-700/80">
+                          <TableCell className="border-r border-gray-200 dark:border-zinc-700/80">
                             HS{inv.invoiceNo}
                           </TableCell>
-                          <TableCell className="border-r border-zinc-700/80">
+                          <TableCell className="border-r border-gray-200 dark:border-zinc-700/80">
                             {new Date(inv.createdAt).toLocaleDateString(
                               "th-TH",
                             )}
                           </TableCell>
-                          <TableCell className="border-r border-zinc-700/80">
+                          <TableCell className="border-r border-gray-200 dark:border-zinc-700/80">
                             {inv.billId ?? "-"}
                           </TableCell>
-                          <TableCell className="border-r border-zinc-700/80">
+                          <TableCell className="border-r border-gray-200 dark:border-zinc-700/80">
                             {inv.total.toLocaleString("th-TH", {
                               style: "currency",
                               currency: "THB",
                             })}
                           </TableCell>
-                          <TableCell className="border-r border-zinc-700/80">
+                          <TableCell className="border-r border-gray-200 dark:border-zinc-700/80">
                             <Button
                               size="icon"
                               onClick={() => handleAddInvoice(inv)}
@@ -506,7 +531,7 @@ export default function EditStatementDialog({
                     )}
                   </TableBody>
                 </Table>
-                <div className="py-4 px-6 border-t border-zinc-700 flex items-center justify-between bg-zinc-900/50 mt-2 rounded-b-xl">
+                <div className="py-4 px-6 border-t border-zinc-700 flex items-center justify-between  mt-2 rounded-b-xl">
                   <span className="text-sm text-zinc-400">
                     หน้า {page} จาก {invoiceTotalPages} (ทั้งหมด{" "}
                     {filteredInvoiceList.length} รายการ)
@@ -515,7 +540,7 @@ export default function EditStatementDialog({
                     <Button
                       size="icon"
                       variant="outline"
-                      className="bg-zinc-800 border-zinc-700 text-white"
+                      className=" bg-white dark:bg-zinc-800 border-gray-300 dark:border-zinc-700 text-gray-900 dark:text-white"
                       onClick={() => setPage(page - 1)}
                       disabled={page <= 1}
                       aria-label="Previous page"
@@ -525,7 +550,7 @@ export default function EditStatementDialog({
                     <Button
                       size="icon"
                       variant="outline"
-                      className="bg-zinc-800 border-zinc-700 text-white"
+                      className=" bg-white dark:bg-zinc-800 border-gray-300 dark:border-zinc-700 text-gray-900 dark:text-white"
                       onClick={() => setPage(page + 1)}
                       disabled={page >= invoiceTotalPages}
                       aria-label="Next page"
@@ -538,6 +563,23 @@ export default function EditStatementDialog({
             )}
           </div>
         </div>
+        <DialogFooter className="flex justify-end gap-2 mt-4 pt-4 border-t border-gray-200 dark:border-zinc-700">
+          <Button
+            variant="outline"
+            onClick={() => setOpen(false)}
+            disabled={saving}
+            className="bg-white dark:bg-zinc-800 border-gray-300 dark:border-zinc-700 text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-zinc-700"
+          >
+            ยกเลิก
+          </Button>
+          <Button
+            onClick={handleSave}
+            disabled={saving || !hasChanges()}
+            className="bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-800 text-white disabled:opacity-50"
+          >
+            {saving ? "กำลังบันทึก..." : "บันทึก"}
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

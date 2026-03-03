@@ -33,6 +33,7 @@ type StatementDetailApiResponse = {
         OrderPO?: {
           bill?: {
             grandTotal?: number | null;
+            id: number;
           } | null;
         } | null;
       } | null;
@@ -134,6 +135,7 @@ export default function StatementPage() {
                 invoiceNo: invoiceItem.invoice!.invoiceNo,
                 total: invoiceItem.invoice?.OrderPO?.bill?.grandTotal ?? 0,
                 createdAt: invoiceItem.invoice!.createdAt,
+                billId: invoiceItem.invoice?.OrderPO?.bill?.id ?? null,
               })),
           };
         },
@@ -190,9 +192,23 @@ export default function StatementPage() {
     statementId: number,
     invoiceIds: number[],
   ) => {
-    // Invoice changes are already saved via add-invoice/remove-invoice APIs
-    // Just refresh the statement list
-    await fetchStatements(page);
+    try {
+      const res = await fetch("/api/statement", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ statementId, invoiceIds }),
+      });
+
+      if (!res.ok) {
+        const error = await res.json().catch(() => ({}));
+        throw new Error(error.error || "Failed to update statement invoices");
+      }
+
+      await fetchStatements(page);
+    } catch (error) {
+      console.error("Failed to update statement", error);
+      throw error;
+    }
   };
 
   return (
@@ -200,10 +216,10 @@ export default function StatementPage() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-white">
-            ใบวางบิล
+            ใบเสร็จรับเงิน
           </h1>
           <p className="text-zinc-500 dark:text-zinc-400 mt-1">
-            รายการใบวางบิลที่ถูกสร้าง
+            รายการใบเสร็จรับเงินทั้งหมดที่ออกให้ลูกค้า
           </p>
         </div>
         <CreateStatementDialog

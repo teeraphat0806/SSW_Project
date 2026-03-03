@@ -143,7 +143,11 @@ export default function Sidebar() {
                   className={`group relative w-full rounded-lg py-2.5 px-3 flex items-center transition-all duration-200 text-foreground hover:bg-accent hover:text-accent-foreground ${
                     expanded ? "justify-start" : "justify-center"
                   }`}
-                  title={`Theme: ${resolvedTheme === "dark" ? "Dark" : "Light"}`}
+                  title={
+                    mounted
+                      ? `Theme: ${resolvedTheme === "dark" ? "Dark" : "Light"}`
+                      : "Theme"
+                  }
                 >
                   <div className="text-muted-foreground group-hover:text-accent-foreground">
                     {mounted && resolvedTheme === "dark" ? (
@@ -161,7 +165,11 @@ export default function Sidebar() {
                   </span>
                   {expanded && (
                     <span className="ml-auto rounded-md border px-2 py-0.5 text-xs text-muted-foreground">
-                      {resolvedTheme === "dark" ? "Dark" : "Light"}
+                      {mounted
+                        ? resolvedTheme === "dark"
+                          ? "Dark"
+                          : "Light"
+                        : "-"}
                     </span>
                   )}
                 </button>
