@@ -124,7 +124,7 @@ export const InvoiceExcelSample: React.FC<Inv71LikeInvoiceProps> = ({
         {/* แถวแรก: ซ้ายบริษัท, ขวาเลขที่/วันที่/เครดิต/ผู้จัดทำ */}
         <div className="flex justify-between gap-4">
           {/* ซ้าย: ข้อมูลบริษัท */}
-          <div className="space-y-2 max-w-[10cm] ml-13">
+          <div className="space-y-2 max-w-[9cm] ml-13">
             <div className="font-base">
               {companyNameTokens.length > 0
                 ? companyNameTokens.map((token, index) => (
