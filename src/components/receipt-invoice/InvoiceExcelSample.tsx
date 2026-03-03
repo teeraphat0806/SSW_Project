@@ -122,7 +122,7 @@ export const InvoiceExcelSample: React.FC<Inv71LikeInvoiceProps> = ({
         {/* แถวแรก: ซ้ายบริษัท, ขวาเลขที่/วันที่/เครดิต/ผู้จัดทำ */}
         <div className="flex justify-between gap-4">
           {/* ซ้าย: ข้อมูลบริษัท */}
-          <div className="space-y-2 max-w-[8cm] ml-13">
+          <div className="space-y-2 max-w-[10cm] ml-13">
             <div className="font-base">{companyName}</div>
             <div className="mt-1">{addressLine1}</div>
             <div>{addressLine2}</div>
@@ -262,13 +262,13 @@ export const InvoiceExcelSample: React.FC<Inv71LikeInvoiceProps> = ({
                   <td className="pt-0.5 pr-1 pl-0">{idx + 1}</td>
                   <td className="pt-0.5 pr-1">{steelDisplay}</td>
                   <td className="pt-0.5 pr-1 text-left pl-1">{jobDisplay}</td>
-                  <td className="pt-0.5 pr-1 text-left pl-5">{item.amount}</td>
-                  <td className="pt-0.5 pr-1 text-left">{weightDisplay}</td>
-                  <td className="pt-0.5 pr-1 text-left pl-5">
+                  <td className="pt-0.5 pr-1 text-right pl-5">{item.amount}</td>
+                  <td className="pt-0.5 pr-1 text-right">{weightDisplay}</td>
+                  <td className="pt-0.5 pr-1 text-right pl-5">
                     {showPriceAndTotal ? formatNumber(item.price) : ""}
                   </td>
                   <td className="pt-0.5 pr-0 text-left"></td>
-                  <td className="pt-0.5 pr-8 pl-4 text-left">
+                  <td className="pt-0.5 pr-8 pl-4 text-right">
                     {showPriceAndTotal ? formatNumber(item.total) : ""}
                   </td>
                 </tr>
