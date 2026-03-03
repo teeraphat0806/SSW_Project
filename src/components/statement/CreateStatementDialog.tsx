@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Trash2,
   Check,
@@ -63,76 +63,29 @@ export default function CreateStatementDialog({
   const [date, setDate] = useState("");
   const [invoiceSearch, setInvoiceSearch] = useState("");
   const [selectedInvoices, setSelectedInvoices] = useState<InvoiceItem[]>([]);
-  const [invoiceList, setInvoiceList] = useState<InvoiceItem[]>([
-    // mock data
-    {
-      id: 1,
-      invoiceNo: 1201,
-      total: 10000,
-      createdAt: new Date().toISOString(),
-    },
-    {
-      id: 2,
-      invoiceNo: 1202,
-      total: 20000,
-      createdAt: new Date().toISOString(),
-    },
-    {
-      id: 3,
-      invoiceNo: 1203,
-      total: 30000,
-      createdAt: new Date().toISOString(),
-    },
-    {
-      id: 4,
-      invoiceNo: 1204,
-      total: 40000,
-      createdAt: new Date().toISOString(),
-    },
-    {
-      id: 5,
-      invoiceNo: 1205,
-      total: 50000,
-      createdAt: new Date().toISOString(),
-    },
-    {
-      id: 6,
-      invoiceNo: 1206,
-      total: 60000,
-      createdAt: new Date().toISOString(),
-    },
-    {
-      id: 7,
-      invoiceNo: 1207,
-      total: 70000,
-      createdAt: new Date().toISOString(),
-    },
-    {
-      id: 8,
-      invoiceNo: 1208,
-      total: 80000,
-      createdAt: new Date().toISOString(),
-    },
-    {
-      id: 9,
-      invoiceNo: 1209,
-      total: 90000,
-      createdAt: new Date().toISOString(),
-    },
-    {
-      id: 10,
-      invoiceNo: 1210,
-      total: 100000,
-      createdAt: new Date().toISOString(),
-    },
-  ]);
+  const [invoiceList, setInvoiceList] = useState<InvoiceItem[]>([]);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(5);
   const [showSelectedTable, setShowSelectedTable] = useState(true);
   const [showSelectedTable2, setShowSelectedTable2] = useState(true);
   const [selectedPage, setSelectedPage] = useState(1);
-
-  // TODO: fetch invoiceList by customer and search
+  useEffect(() => {
+    if (selectedCustomer) {
+      setInvoiceList([]);
+      try {
+        const fetchInvoices = async () => {
+          fetch(`/api/invoices?customerId=${selectedCustomer}`)
+            .then((res) => res.json())
+            .then((data) => {
+              setInvoiceList(data);
+            });
+        };
+      } catch (error) {
+        console.error("Error fetching invoices:", error);
+      }
+    }
+  }, [selectedCustomer]);
+// TODO: fetch invoiceList by customer and search
 
   const totalIncome = selectedInvoices.reduce((sum, inv) => sum + inv.total, 0);
 
