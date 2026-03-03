@@ -22,6 +22,7 @@ type ApiJobOrder = {
   billid: number;
   poNumber: string | null;
   codetoinvoice: number;
+  codeCustomer: string;
   customerId: string;
   customerName: string;
   customerEmail: string | null;
@@ -78,6 +79,7 @@ export async function GET(
           select: {
             id: true,
             deliveryDate: true,
+            codeCustomer: true,
             vatRate: true,
             deliveredBy: true,
             deliveredById: true,
@@ -155,6 +157,7 @@ export async function GET(
       billid: bill.id,
       poNumber: jobOrder.poNumber,
       codetoinvoice: jobOrder.codetoinvoice,
+      codeCustomer: bill.codeCustomer,
       customerId: customer.id.toString(),
       customerName: customer.name,
       customerEmail: customer.email,

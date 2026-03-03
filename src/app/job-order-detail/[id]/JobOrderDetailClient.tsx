@@ -51,6 +51,7 @@ type ApiJobOrder = {
   billid: number;
   poNumber: string | null;
   codetoinvoice: number;
+  codeCustomer: string;
   customerId: string | null;
   customerName: string | null;
   customerEmail: string | null;
@@ -94,6 +95,7 @@ export type JobOrder = {
   billid: number;
   poNumber: string | null;
   codetoinvoice: number;
+  codeCustomer: string;
   customerId: string;
   customerName: string;
   customerEmail: string | null;
@@ -139,6 +141,7 @@ const tojobOrder = (api: ApiJobOrder): JobOrder => {
     billid: api.billid,
     // ✅ ใช้ ?? "" เพื่อแปลง null เป็น empty string
     codetoinvoice: api.codetoinvoice,
+    codeCustomer: api.codeCustomer,
     customerId: api.customerId ?? "",
     customerName: api.customerName ?? "",
     customerEmail: api.customerEmail ?? null,
@@ -192,12 +195,12 @@ const InfoStat = ({
   icon: React.ComponentType<any>;
 }) => (
   <div className="flex items-start gap-3 rounded-lg border p-3 bg-background hover:bg-hover transition-colors">
-    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-background border shadow-sm text-primary">
-      {Icon && <Icon className="h-5 w-5" />}
+    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-background border shadow-sm text-primary">
+      {Icon && <Icon className="h-4 w-4" />}
     </div>
     <div className="space-y-1">
       <p className="text-xs font-medium text-muted-foreground">{label}</p>
-      <p className="text-sm font-semibold text-foreground">{value}</p>
+      <p className="text-xs font-semibold text-foreground">{value}</p>
     </div>
   </div>
 );
@@ -496,8 +499,8 @@ const JobOrderDetailPage = ({ id }: { id: string }) => {
                 {/* Order Info */}
                 <div className="grid grid-cols-2 gap-4 sm:grid-cols-2 lg:grid-cols-4">
                   <InfoStat
-                    label="Order ID"
-                    value={`#${jobOrder?.codetoinvoice || "N/A"}`}
+                    label="รหัสลูกค้า"
+                    value={jobOrder?.codeCustomer || "N/A"}
                     icon={Hash}
                   />
                   <InfoStat
