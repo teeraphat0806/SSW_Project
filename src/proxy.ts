@@ -15,11 +15,11 @@ export async function proxy(request: NextRequest) {
     { prefix: "/superadminDashboard", allowedRoles: ["superadmin"] },
     {
       prefix: "/chatbot",
-      allowedRoles: ["superadmin", "clerk", "supervisor"],
+      allowedRoles: ["superadmin"],
     },
     {
       prefix: "/steel-Dashboard",
-      allowedRoles: ["superadmin", "clerk", "supervisor"],
+      allowedRoles: ["superadmin", "clerk", "supervisor", "delivery"],
     },
     {
       prefix: "/customer-Dashboard",
@@ -33,7 +33,7 @@ export async function proxy(request: NextRequest) {
       prefix: "/expenseDashboard",
       allowedRoles: ["superadmin", "clerk", "supervisor"],
     },
-    { prefix: "/payroll", allowedRoles: ["superadmin", "clerk", "supervisor"] },
+    { prefix: "/payroll", allowedRoles: ["superadmin"] },
     {
       prefix: "/receipt-invoice",
       allowedRoles: ["superadmin", "clerk", "supervisor"],
