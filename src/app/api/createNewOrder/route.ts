@@ -98,10 +98,7 @@ export async function POST(req: NextRequest) {
     const steelPairs = Array.from(
       new Set(
         orderPO.products.map((p) =>
-          createSteelKey(
-            String(p.steelType).trim(),
-            p.shape as ShapeSteel,
-          ),
+          createSteelKey(String(p.steelType).trim(), p.shape as ShapeSteel),
         ),
       ),
     ).map((key) => {
@@ -120,105 +117,78 @@ export async function POST(req: NextRequest) {
       });
 
       // สร้าง map ไว้ค้นหาเหล็กเร็ว ๆ
-      const steelMap = new Map<
-        string,
-        typeof steelList[number]
-      >();
+      const steelMap = new Map<string, (typeof steelList)[number]>();
 
       steelList.forEach((steel) => {
-        const key = createSteelKey(
-          steel.codeSteel,
-          steel.shape as ShapeSteel,
-        );
+        const key = createSteelKey(steel.codeSteel, steel.shape as ShapeSteel);
         steelMap.set(key, steel);
       });
 
       // 6️⃣ ตรวจว่ามีเหล็กรายการไหนที่หาไม่เจอบ้าง (รวมทุกตัว)
       const missingSteels = steelPairs.filter(
-        (pair) =>
-          !steelMap.has(createSteelKey(pair.codeSteel, pair.shape)),
+        (pair) => !steelMap.has(createSteelKey(pair.codeSteel, pair.shape)),
       );
 
       if (missingSteels.length > 0) {
-        throw new Error(
-          formatMissingSteelMessage(missingSteels),
-        );
+        throw new Error(formatMissingSteelMessage(missingSteels));
       }
 
       // 7️⃣ คำนวณข้อมูลสินค้าแต่ละรายการ
-      const calculatedProducts = orderPO.products.map(
-        (product, index) => {
-          const code = String(product.steelType).trim();
-          const shape = product.shape as ShapeSteel;
+      const calculatedProducts = orderPO.products.map((product, index) => {
+        const code = String(product.steelType).trim();
+        const shape = product.shape as ShapeSteel;
 
-          const steel = steelMap.get(
-            createSteelKey(code, shape),
-          );
+        const steel = steelMap.get(createSteelKey(code, shape));
 
-          // ปกติจะไม่เข้าเงื่อนไขนี้ เพราะเช็ก missing ไปก่อนหน้าแล้ว
-          if (!steel) {
-            throw new Error(
-              `SteelType not found: ${code} (${shape})`,
-            );
-          }
+        // ปกติจะไม่เข้าเงื่อนไขนี้ เพราะเช็ก missing ไปก่อนหน้าแล้ว
+        if (!steel) {
+          throw new Error(`SteelType not found: ${code} (${shape})`);
+        }
 
-          const unitPrice =
-            product.price ?? steel.price;
+        const unitPrice = product.price ?? steel.price;
 
-          const result = calculateWeightDetails({
-            shape,
-            amount: product.amount,
-            width: product.wide ?? undefined,
-            length: product.length,
-            thickness: product.thickness,
-            density: steel.density,
-            price: unitPrice,
-            weight: product.weight ?? null,
-            total: null,
-            discount: product.discount ?? null,
-            isOD: product.isOD ?? false,
-            isServices:
-              product.isServices ?? false,
-            isPerAmount:
-              product.isPerAmount ?? false,
-          });
+        const result = calculateWeightDetails({
+          shape,
+          amount: product.amount,
+          width: product.wide ?? undefined,
+          length: product.length,
+          thickness: product.thickness,
+          density: steel.density,
+          price: unitPrice,
+          weight: product.weight ?? null,
+          total: null,
+          discount: product.discount ?? null,
+          isOD: product.isOD ?? false,
+          isServices: product.isServices ?? false,
+          isPerAmount: product.isPerAmount ?? false,
+        });
 
-          return {
-            product,
-            steel,
-            unitPrice,
-            total: result.total,
-            index,
-          };
-        },
-      );
+        return {
+          product,
+          steel,
+          unitPrice,
+          total: result.total,
+          index,
+        };
+      });
 
       // 8️⃣ คำนวณยอดรวมทั้งหมด
       const subtotal = round2(
-        calculatedProducts.reduce(
-          (sum, item) => sum + item.total,
-          0,
-        ),
+        calculatedProducts.reduce((sum, item) => sum + item.total, 0),
       );
 
       const discount = round2(
         calculatedProducts.reduce(
-          (sum, item) =>
-            sum + Number(item.product.discount ?? 0),
+          (sum, item) => sum + Number(item.product.discount ?? 0),
           0,
         ),
       );
 
-      const subtotalAfterDiscount =
-        subtotal - discount;
+      const subtotalAfterDiscount = subtotal - discount;
 
-      const vat = round2(
-        (subtotalAfterDiscount * 7) / 100,
-      );
+      const vat = round2((subtotalAfterDiscount * 7) / 100);
 
-      const grandTotal = round2(
-        subtotalAfterDiscount + vat,
-      );
+      const grandTotal = round2(subtotalAfterDiscount + vat);
 
       // 9️⃣ สร้าง Bill และ OrderPO พร้อม Product
       return tx.bill.create({
@@ -235,6 +205,10 @@ export async function POST(req: NextRequest) {
               id: Number(auth.session.user?.id),
             },
           },
+          Staff_Bill_deliveredByToStaff: {
+            connect: { id: 10 },
+          },
+          deliveredBy: "นายวิรุณ ม่วงศรี",
 
           subtotal,
           discount,
@@ -243,8 +217,7 @@ export async function POST(req: NextRequest) {
 
           OrderPO: {
             create: {
-              poNumber:
-                orderPO.poNumber ?? null,
+              poNumber: orderPO.poNumber ?? null,
               Customer: {
                 connect: {
                   id: data.customerId,
@@ -254,58 +227,32 @@ export async function POST(req: NextRequest) {
               total: subtotal,
 
               Product: {
-                create: calculatedProducts.map(
-                  (item) => ({
-                    SteelType: {
-                      connect: {
-                        id: item.steel.id,
-                      },
+                create: calculatedProducts.map((item) => ({
+                  SteelType: {
+                    connect: {
+                      id: item.steel.id,
                     },
-                    sequence:
-                      item.product.sequence ??
-                      item.index + 1,
+                  },
+                  sequence: item.product.sequence ?? item.index + 1,
 
-                    wide:
-                      item.product.wide ?? null,
-                    length: item.product.length,
-                    thickness:
-                      item.product.thickness,
-                    amount:
-                      item.product.amount,
+                  wide: item.product.wide ?? null,
+                  length: item.product.length,
+                  thickness: item.product.thickness,
+                  amount: item.product.amount,
 
-                    unitPrice:
-                      item.unitPrice,
-                    actualWeight:
-                      item.product.weight ??
-                      null,
-                    discount:
-                      item.product.discount ??
-                      null,
-                    detail:
-                      item.product.detail ??
-                      null,
-                    job:
-                      item.product.job ?? null,
-                    cuttingMethod:
-                      item.product
-                        .cuttingMethod ??
-                      "normal",
+                  unitPrice: item.unitPrice,
+                  actualWeight: item.product.weight ?? null,
+                  discount: item.product.discount ?? null,
+                  detail: item.product.detail ?? null,
+                  job: item.product.job ?? null,
+                  cuttingMethod: item.product.cuttingMethod ?? "normal",
 
-                    isOD:
-                      item.product.isOD ??
-                      false,
-                    isServices:
-                      item.product
-                        .isServices ??
-                      false,
-                    isPerAmount:
-                      item.product
-                        .isPerAmount ??
-                      false,
+                  isOD: item.product.isOD ?? false,
+                  isServices: item.product.isServices ?? false,
+                  isPerAmount: item.product.isPerAmount ?? false,
 
-                    total: item.total,
-                  }),
-                ),
+                  total: item.total,
+                })),
               },
             },
           },
@@ -323,14 +270,8 @@ export async function POST(req: NextRequest) {
       status: 201,
     });
   } catch (error) {
-    const message =
-      error instanceof Error
-        ? error.message
-        : String(error);
+    const message = error instanceof Error ? error.message : String(error);
 
-    return NextResponse.json(
-      { error: message },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

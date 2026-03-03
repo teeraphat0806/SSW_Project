@@ -90,7 +90,7 @@ export default function SteelTypeDetailModal({
   const [showInModal, setShowInModal] = useState(false);
   const [submittingIn, setSubmittingIn] = useState(false);
 
-  const [displayUnit, setDisplayUnit] = useState<"mm" | "cm" | "m">("m");
+  const [displayUnit, setDisplayUnit] = useState<"mm" | "cm" | "m">("mm");
 
   // --- ส่วนของ JSX ---
   const [inForm, setInForm] = useState({
@@ -98,7 +98,7 @@ export default function SteelTypeDetailModal({
     width: "",
     length: "",
     quantity: 1,
-    unit: "m" as "mm" | "cm" | "m", // Default เป็น m
+    unit: "mm" as "mm" | "cm" | "m", // Default เป็น mm
   });
 
   // ฟังก์ชันช่วยแปลงค่าหน่วยเป็น mm
@@ -166,10 +166,17 @@ export default function SteelTypeDetailModal({
 
   useEffect(() => {
     if (open && steelTypeId) {
+      setDisplayUnit("mm");
       fetchData();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, steelTypeId]);
+
+  useEffect(() => {
+    if (showInModal) {
+      setInForm((prev) => ({ ...prev, unit: "mm" }));
+    }
+  }, [showInModal]);
 
   const handleStockIn = async () => {
     if (!steelTypeId || !data) return;
@@ -213,7 +220,7 @@ export default function SteelTypeDetailModal({
         width: "",
         length: "",
         quantity: 1,
-        unit: "m",
+        unit: "mm",
       });
       setShowInModal(false);
 
@@ -612,7 +619,7 @@ export default function SteelTypeDetailModal({
                         ชิ้น{" "}
                         {data.shape === "square"
                           ? "หนา × กว้าง × ยาว"
-                          : "หนา × ยาว"}
+                          : "กลม × ยาว"}
                       </div>
                     </div>
 
@@ -786,7 +793,7 @@ export default function SteelTypeDetailModal({
             <div className="p-6 space-y-6">
               {/* Unit Selector - Modern Tab Style */}
               <div className="bg-gray-100 dark:bg-zinc-800/50 p-1.5 rounded-2xl flex gap-1">
-                {(["mm", "cm", "m"] as const).map((u) => (
+                {(["m", "cm", "mm"] as const).map((u) => (
                   <button
                     key={u}
                     onClick={() => setInForm((prev) => ({ ...prev, unit: u }))}
@@ -813,8 +820,8 @@ export default function SteelTypeDetailModal({
                 {/* Thickness */}
                 <div className="space-y-1.5">
                   <label className="text-[13px] font-semibold text-gray-600 dark:text-zinc-400 ml-1">
-                    ความหนา ({inForm.unit}){" "}
-                    <span className="text-red-500">*</span>
+                    {data.shape === "square" ? "ความหนา" : "กลม"} ({inForm.unit}
+                    ) <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="number"
