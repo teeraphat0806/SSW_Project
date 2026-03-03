@@ -296,7 +296,7 @@ export const InvoiceExcelSample: React.FC<Inv71LikeInvoiceProps> = ({
         {/* ===== โซนรวมยอด (ติดล่างเสมอ) ===== */}
         {/* เอา mb-45 ออก แล้วคุมระยะจากขอบล่างด้วย pb-[8mm] ที่ container แทน */}
         <div className="mt-auto">
-          <div className="space-y-[2px] mr-5">
+          <div className="space-y-[2px] mr-0">
             <div className="flex justify-between">
               <span className="flex-1" />
               <span className="w-[160px] text-right">
@@ -333,8 +333,8 @@ export const InvoiceExcelSample: React.FC<Inv71LikeInvoiceProps> = ({
             </div>
           </div>
 
-          <div className="mt-6 flex mr-5">
-            <div className="flex-1 ml-10">
+          <div className="mt-6 flex mr-0">
+            <div className="flex-1 ml-7">
               {!shouldShowTotals ? "" : totalTextThai}
             </div>
             <div className="w-[160px] text-right font-semibold">
