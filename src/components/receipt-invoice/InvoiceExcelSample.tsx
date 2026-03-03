@@ -283,7 +283,7 @@ export const InvoiceExcelSample: React.FC<Inv71LikeInvoiceProps> = ({
                   <td className="pt-0.5 pr-1 text-right pl-5">
                     {showPriceAndTotal ? formatNumber(item.price) : ""}
                   </td>
-                  <td className="pt-0.5 pr-15 text-left"></td>
+                  <td className="pt-0.5 pr-30 text-left"></td>
                   <td className="pt-0.5 pr-0 pl-4 text-right">
                     {showPriceAndTotal ? formatNumber(item.total) : ""}
                   </td>
