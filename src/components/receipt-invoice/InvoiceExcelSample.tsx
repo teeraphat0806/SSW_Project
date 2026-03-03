@@ -84,6 +84,8 @@ export const InvoiceExcelSample: React.FC<Inv71LikeInvoiceProps> = ({
     (items?.some((item) => item.isServices === true) ?? false) ||
     !(items?.[0]?.weight == null || items?.[0]?.weight === 0);
 
+  const companyNameTokens = companyName.trim().split(/\s+/).filter(Boolean);
+
   return (
     <>
       <style
@@ -122,8 +124,17 @@ export const InvoiceExcelSample: React.FC<Inv71LikeInvoiceProps> = ({
         {/* แถวแรก: ซ้ายบริษัท, ขวาเลขที่/วันที่/เครดิต/ผู้จัดทำ */}
         <div className="flex justify-between gap-4">
           {/* ซ้าย: ข้อมูลบริษัท */}
-          <div className="space-y-2 max-w-[10cm] ml-13">
-            <div className="font-base">{companyName}</div>
+          <div className="space-y-2 max-w-[8cm] ml-13">
+            <div className="font-base">
+              {companyNameTokens.length > 0
+                ? companyNameTokens.map((token, index) => (
+                    <React.Fragment key={`${token}-${index}`}>
+                      {index > 0 ? " " : ""}
+                      <span className="whitespace-nowrap">{token}</span>
+                    </React.Fragment>
+                  ))
+                : companyName}
+            </div>
             <div className="mt-1">{addressLine1}</div>
             <div>{addressLine2}</div>
             <div className="mt-1">
@@ -145,9 +156,14 @@ export const InvoiceExcelSample: React.FC<Inv71LikeInvoiceProps> = ({
             <div className="ml-20">
               <span>{credit}&nbsp;วัน</span>
             </div>
-            <div>
-              <span>{poNumber || ""}</span>
-            </div>
+            {poNumber ? (
+              <div>
+                <span>{poNumber}</span>
+              </div>
+            ) : (
+              <div className="h-1"></div>
+            )}
+
             <div>
               <span>{"J.Sirikran"}</span>
             </div>
@@ -155,7 +171,7 @@ export const InvoiceExcelSample: React.FC<Inv71LikeInvoiceProps> = ({
         </div>
 
         {/* ระยะห่างก่อนหัวคอลัมน์ (ลดลงจาก mt-19) */}
-        <div className="h-[20mm]" />
+        <div className="h-[25mm]" />
 
         {/* หัวคอลัมน์แบบ Excel (ไม่มีกรอบ) */}
         <table className="w-full text-sm">
