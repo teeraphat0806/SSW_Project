@@ -372,7 +372,7 @@ export default function Home() {
               </button>
             </div>
             <div className="flex items-center gap-3 justify-between sm:justify-end">
-              <p className="font-medium text-sm sm:text-base">DeepSeek V3</p>
+              {/* <p className="font-medium text-sm sm:text-base">DeepSeek V3</p> */}
               <button
                 onClick={handleSend}
                 disabled={isLoading || !userText.trim()}

@@ -86,26 +86,7 @@ export function PrintReportModal({
               />
               ใบคุม INVOICE
             </label>
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="radio"
-                name="printType"
-                value="receipt"
-                checked={printType === "receipt"}
-                onChange={() => setPrintType("receipt")}
-              />
-              ใบเสร็จรับเงิน
-            </label>
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="radio"
-                name="printType"
-                value="billing"
-                checked={printType === "billing"}
-                onChange={() => setPrintType("billing")}
-              />
-              ใบวางบิล
-            </label>
+           
             <label className="flex items-center gap-2 cursor-pointer">
               <input
                 type="radio"
@@ -262,26 +243,6 @@ export function PrintReportModal({
           </div>
         )}
 
-        {/* Customer Selection for receipt/billing */}
-        {(printType === "receipt" || printType === "billing") && (
-          <div className="border-t pt-4 mb-4">
-            <label className="block text-sm font-medium mb-2">
-              เลือกลูกค้า
-            </label>
-            <select
-              className="w-full border rounded px-3 py-2 text-foreground bg-background"
-              value={selectedPrintCustomer}
-              onChange={(e) => setSelectedPrintCustomer(e.target.value)}
-            >
-              <option value="all">ทั้งหมด (แยกใบต่อ 1 ลูกค้า)</option>
-              {customers.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.code} - {c.name}
-                </option>
-              ))}
-            </select>
-          </div>
-        )}
 
         {/* Action Buttons */}
         <div className="flex gap-2 justify-end mt-6">
