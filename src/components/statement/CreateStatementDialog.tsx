@@ -9,6 +9,8 @@ import {
   ChevronLeft,
   ChevronRight,
   Search,
+  CheckSquare,
+  X,
 } from "lucide-react";
 import {
   Dialog,
@@ -149,21 +151,54 @@ export default function CreateStatementDialog({
     0,
   );
 
+  const handleRemoveAll = () => {
+    setSelectedInvoices([]);
+  };
+
+  const handleSelectAll = () => {
+    const newInvoices = filteredInvoiceList.filter(
+      (inv) => !selectedInvoices.some((sel) => sel.id === inv.id),
+    );
+    setSelectedInvoices([...selectedInvoices, ...newInvoices]);
+  };
+
   // Filter selected invoices table with its own search
   const filteredSelectedInvoices = selectedInvoices.filter((inv) => {
-    const matchesSearch = selectedInvoiceSearch
-      ? inv.invoiceNo.toString().includes(selectedInvoiceSearch)
-      : true;
-    return matchesSearch;
+    if (!selectedInvoiceSearch) return true;
+
+    const searchLower = selectedInvoiceSearch.toLowerCase();
+    const invoiceNoMatch = inv.invoiceNo.toString().includes(searchLower);
+    const dateMatch = formatThaiDateLong(inv.createdAt)
+      .toLowerCase()
+      .includes(searchLower);
+    const billIdMatch = inv.billId
+      ? inv.billId.toString().includes(searchLower)
+      : false;
+    const totalMatch =
+      inv.total.toString().includes(searchLower) ||
+      inv.total.toLocaleString("th-TH").includes(searchLower);
+
+    return invoiceNoMatch || dateMatch || billIdMatch || totalMatch;
   });
 
   // Filter invoiceList: remove those already selected and apply search
   const filteredInvoiceList = invoiceList.filter((inv) => {
-    const isNotSelected = !selectedInvoices.some((sel) => sel.id === inv.id);
-    const matchesSearch = availableInvoiceSearch
-      ? inv.invoiceNo.toString().includes(availableInvoiceSearch)
-      : true;
-    return isNotSelected && matchesSearch;
+    if (selectedInvoices.some((sel) => sel.id === inv.id)) return false;
+    if (!availableInvoiceSearch) return true;
+
+    const searchLower = availableInvoiceSearch.toLowerCase();
+    const invoiceNoMatch = inv.invoiceNo.toString().includes(searchLower);
+    const dateMatch = formatThaiDateLong(inv.createdAt)
+      .toLowerCase()
+      .includes(searchLower);
+    const billIdMatch = inv.billId
+      ? inv.billId.toString().includes(searchLower)
+      : false;
+    const totalMatch =
+      inv.total.toString().includes(searchLower) ||
+      inv.total.toLocaleString("th-TH").includes(searchLower);
+
+    return invoiceNoMatch || dateMatch || billIdMatch || totalMatch;
   });
   const pagedInvoiceList = filteredInvoiceList.slice(
     (page - 1) * pageSize,
@@ -194,9 +229,9 @@ export default function CreateStatementDialog({
         </div>
       </DialogTrigger>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto bg-white dark:bg-zinc-900 text-gray-900 dark:text-white rounded-2xl p-6 shadow-xl border border-gray-200 dark:border-zinc-700">
-        <DialogHeader>
+        <DialogHeader >
           <DialogTitle className="text-xl font-bold mb-2">
-            สร้างใบเสร็จรับเงิน (Statement) ใหม่
+            สร้างใบเสร็จรับเงินใหม่
           </DialogTitle>
         </DialogHeader>
         <div
@@ -253,10 +288,21 @@ export default function CreateStatementDialog({
                 type="text"
                 value={selectedInvoiceSearch}
                 onChange={(e) => setSelectedInvoiceSearch(e.target.value)}
-                placeholder="ค้นหา InvoiceNo เช่น 1201"
+                placeholder="ค้นหาเลขที่ Invoice,วันที่ออก,เลขที่บิล,ยอดรวม"
                 className="h-9 w-full rounded-lg border-gray-300 dark:border-zinc-600 bg-white dark:bg-zinc-900/70 pl-9 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-zinc-400 focus-visible:ring-1 focus-visible:ring-blue-500"
               />
             </div>
+            <Button
+              size="icon"
+              variant="ghost"
+              className="group h-8 w-8 rounded-full border border-red-300 dark:border-red-600/80 bg-red-100 dark:bg-red-700/60 text-red-700 dark:text-red-100 shadow-sm transition-all duration-200 hover:scale-105 hover:border-red-400 dark:hover:border-red-400 hover:bg-red-200 dark:hover:bg-red-600 hover:shadow-md active:scale-95"
+              onClick={handleRemoveAll}
+              disabled={selectedInvoices.length === 0}
+              aria-label="Remove all selected invoices"
+              title="ลบทั้งหมด"
+            >
+              <X className="h-4 w-4 transition-transform duration-200 group-hover:rotate-90" />
+            </Button>
             <div className="flex items-center justify-between mb-2">
               <Button
                 size="icon"
@@ -288,10 +334,10 @@ export default function CreateStatementDialog({
                   <TableHeader className="bg-gray-100 dark:bg-zinc-700/40">
                     <TableRow className="border-b border-gray-300 dark:border-zinc-600/90">
                       <TableHead className="border-r border-gray-300 dark:border-zinc-600/90">
-                        InvoiceNo
+                        เลขที่ Invoice
                       </TableHead>
                       <TableHead className="border-r border-gray-300 dark:border-zinc-600/90">
-                        วันที่ Invoice
+                        วันที่ออก
                       </TableHead>
                       <TableHead className="border-r border-gray-300 dark:border-zinc-600/90">
                         เลขที่บิล
@@ -394,10 +440,21 @@ export default function CreateStatementDialog({
                 type="text"
                 value={availableInvoiceSearch}
                 onChange={(e) => setAvailableInvoiceSearch(e.target.value)}
-                placeholder="ค้นหา InvoiceNo เช่น 1201"
+                placeholder="ค้นหาเลขที่ Invoice,วันที่ออก,เลขที่บิล,ยอดรวม"
                 className="h-9 w-full rounded-lg border-gray-300 dark:border-zinc-600 bg-white dark:bg-zinc-900/70 pl-9 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-zinc-400 focus-visible:ring-1 focus-visible:ring-blue-500"
               />
             </div>
+            <Button
+              size="icon"
+              variant="ghost"
+              className="group h-8 w-8 rounded-full border border-green-300 dark:border-green-600/80 bg-green-100 dark:bg-green-700/60 text-green-700 dark:text-green-100 shadow-sm transition-all duration-200 hover:scale-105 hover:border-green-400 dark:hover:border-green-400 hover:bg-green-200 dark:hover:bg-green-600 hover:shadow-md active:scale-95"
+              onClick={handleSelectAll}
+              disabled={filteredInvoiceList.length === 0}
+              aria-label="Select all available invoices"
+              title="เลือกทั้งหมด"
+            >
+              <CheckSquare className="h-4 w-4 transition-transform duration-200 group-hover:scale-110" />
+            </Button>
             <div className="flex items-center justify-between mb-2">
               <Button
                 size="icon"
@@ -428,10 +485,10 @@ export default function CreateStatementDialog({
                   <TableHeader className="bg-gray-100 dark:bg-zinc-700/40">
                     <TableRow className="border-b border-gray-300 dark:border-zinc-600/90">
                       <TableHead className="border-r border-gray-300 dark:border-zinc-600/90">
-                        InvoiceNo
+                        เลขที่ Invoice
                       </TableHead>
                       <TableHead className="border-r border-gray-300 dark:border-zinc-600/90">
-                        วันที่ Invoice
+                        วันที่ออก
                       </TableHead>
                       <TableHead className="border-r border-gray-300 dark:border-zinc-600/90">
                         เลขที่บิล
@@ -525,7 +582,7 @@ export default function CreateStatementDialog({
           {/* ข้อความแนะนำ */}
           <div className="text-xs text-gray-500 dark:text-zinc-400 mt-2">
             เลือก ลูกค้า → เลือก invoice → กด "สร้างใบเสร็จรับเงิน" – (Fake)
-            จะสร้างเลข statementNo ให้เอง
+            จะสร้างเลข InvoiceNo ให้เอง
           </div>
         </div>
         <DialogFooter className="flex justify-end gap-2 mt-4">

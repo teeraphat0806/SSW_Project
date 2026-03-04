@@ -3,7 +3,6 @@ import React, { useCallback, useEffect, useState } from "react";
 import StatementTable from "../../components/statement/StatementTable";
 import type { Statement } from "../../components/statement/StatementTable";
 import CreateStatementDialog from "../../components/statement/CreateStatementDialog";
-
 type StatementListItem = {
   id: number;
   statementNo: number;
@@ -55,109 +54,133 @@ export default function StatementPage() {
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
 
-  const fetchStatements = useCallback(async (currentPage: number) => {
-    setLoading(true);
-    try {
-      const listRes = await fetch(
-        `/api/statement?limit=${PAGE_SIZE}&page=${currentPage}`,
-        { cache: "no-store" },
-      );
-
-      if (!listRes.ok) {
-        throw new Error("Failed to fetch statement list");
-      }
-
-      const listJson: {
-        statementItems?: StatementListItem[];
-        total?: number;
-      } = await listRes.json();
-
-      const statementItems = Array.isArray(listJson.statementItems)
-        ? listJson.statementItems
-        : [];
-      const customerMap = new Map<number, string>();
-
-      const customersRes = await fetch("/api/statement/customer", {
-        cache: "no-store",
-      });
-      if (customersRes.ok) {
-        const customersJson: Array<{ id: number; name: string }> =
-          await customersRes.json();
-        customersJson.forEach((customer) => {
-          customerMap.set(customer.id, customer.name);
+  const fetchStatements = useCallback(
+    async (
+      currentPage: number,
+      search?: string,
+      from?: string,
+      to?: string,
+    ) => {
+      setLoading(true);
+      try {
+        const params = new URLSearchParams({
+          limit: PAGE_SIZE.toString(),
+          page: currentPage.toString(),
         });
-        setCustomers(
-          Array.from(customerMap.entries()).map(([id, name]) => ({ id, name })),
+
+        if (search) params.append("search", search);
+        if (from) params.append("dateFrom", from);
+        if (to) params.append("dateTo", to);
+
+        const listRes = await fetch(`/api/statement?${params.toString()}`, {
+          cache: "no-store",
+        });
+
+        if (!listRes.ok) {
+          throw new Error("Failed to fetch statement list");
+        }
+
+        const listJson: {
+          statementItems?: StatementListItem[];
+          total?: number;
+        } = await listRes.json();
+
+        const statementItems = Array.isArray(listJson.statementItems)
+          ? listJson.statementItems
+          : [];
+        const customerMap = new Map<number, string>();
+
+        const customersRes = await fetch("/api/statement/customer", {
+          cache: "no-store",
+        });
+        if (customersRes.ok) {
+          const customersJson: Array<{ id: number; name: string }> =
+            await customersRes.json();
+          customersJson.forEach((customer) => {
+            customerMap.set(customer.id, customer.name);
+          });
+          setCustomers(
+            Array.from(customerMap.entries()).map(([id, name]) => ({
+              id,
+              name,
+            })),
+          );
+        } else {
+          console.error("Failed to fetch /api/statement/customer", {
+            status: customersRes.status,
+          });
+        }
+
+        const detailResults = await Promise.all(
+          statementItems.map(async (item) => {
+            try {
+              const detailRes = await fetch(`/api/statement/${item.id}`, {
+                cache: "no-store",
+              });
+
+              if (!detailRes.ok) return null;
+
+              const detailJson: StatementDetailApiResponse =
+                await detailRes.json();
+              return detailJson;
+            } catch {
+              return null;
+            }
+          }),
         );
-      } else {
-        console.error("Failed to fetch /api/statement/customer", {
-          status: customersRes.status,
-        });
+
+        const mappedStatements: Statement[] = statementItems.map(
+          (item, index) => {
+            const detail = detailResults[index];
+            const detailInvoices = detail?.statement?.items ?? [];
+            return {
+              id: item.id,
+              statementNo: item.statementNo,
+              customerId: item.customerId,
+              customerName:
+                detail?.statement?.Customer?.name ??
+                `ลูกค้า #${item.customerId}`,
+              createdAt: item.createdAt,
+              totalIncome: detail?.totals?.grandTotal ?? 0,
+              invoiceCount:
+                detail?.totals?.countInvoices ?? detailInvoices.length,
+              invoices: detailInvoices
+                .filter((invoiceItem) => invoiceItem.invoice)
+                .map((invoiceItem) => ({
+                  id: invoiceItem.invoice!.id,
+                  invoiceNo: invoiceItem.invoice!.invoiceNo,
+                  total: invoiceItem.invoice?.OrderPO?.bill?.grandTotal ?? 0,
+                  createdAt: invoiceItem.invoice!.createdAt,
+                  billId: invoiceItem.invoice?.OrderPO?.bill?.id ?? null,
+                })),
+            };
+          },
+        );
+
+        setStatements(mappedStatements);
+
+        const total = typeof listJson.total === "number" ? listJson.total : 0;
+        setTotalPages(Math.max(1, Math.ceil(total / PAGE_SIZE)));
+      } catch (error) {
+        console.error("Failed to fetch statements", error);
+        setStatements([]);
+        setCustomers([]);
+        setTotalPages(1);
+      } finally {
+        setLoading(false);
       }
-
-      const detailResults = await Promise.all(
-        statementItems.map(async (item) => {
-          try {
-            const detailRes = await fetch(`/api/statement/${item.id}`, {
-              cache: "no-store",
-            });
-
-            if (!detailRes.ok) return null;
-
-            const detailJson: StatementDetailApiResponse =
-              await detailRes.json();
-            return detailJson;
-          } catch {
-            return null;
-          }
-        }),
-      );
-
-      const mappedStatements: Statement[] = statementItems.map(
-        (item, index) => {
-          const detail = detailResults[index];
-          const detailInvoices = detail?.statement?.items ?? [];
-          return {
-            id: item.id,
-            statementNo: item.statementNo,
-            customerId: item.customerId,
-            customerName:
-              detail?.statement?.Customer?.name ?? `ลูกค้า #${item.customerId}`,
-            createdAt: item.createdAt,
-            totalIncome: detail?.totals?.grandTotal ?? 0,
-            invoiceCount:
-              detail?.totals?.countInvoices ?? detailInvoices.length,
-            invoices: detailInvoices
-              .filter((invoiceItem) => invoiceItem.invoice)
-              .map((invoiceItem) => ({
-                id: invoiceItem.invoice!.id,
-                invoiceNo: invoiceItem.invoice!.invoiceNo,
-                total: invoiceItem.invoice?.OrderPO?.bill?.grandTotal ?? 0,
-                createdAt: invoiceItem.invoice!.createdAt,
-                billId: invoiceItem.invoice?.OrderPO?.bill?.id ?? null,
-              })),
-          };
-        },
-      );
-
-      setStatements(mappedStatements);
-
-      const total = typeof listJson.total === "number" ? listJson.total : 0;
-      setTotalPages(Math.max(1, Math.ceil(total / PAGE_SIZE)));
-    } catch (error) {
-      console.error("Failed to fetch statements", error);
-      setStatements([]);
-      setCustomers([]);
-      setTotalPages(1);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+    },
+    [],
+  );
 
   useEffect(() => {
-    void fetchStatements(page);
-  }, [page, fetchStatements]);
+    console.log("Fetching with:", { page, searchTerm, dateFrom, dateTo });
+    void fetchStatements(page, searchTerm, dateFrom, dateTo);
+  }, [page, searchTerm, dateFrom, dateTo, fetchStatements]);
 
   const handleCreateStatement = async (data: {
     customerId: number;
@@ -180,7 +203,7 @@ export default function StatementPage() {
       }
 
       setPage(1);
-      await fetchStatements(1);
+      await fetchStatements(1, searchTerm, dateFrom, dateTo);
     } catch (error) {
       console.error("Failed to create statement", error);
     } finally {
@@ -208,7 +231,7 @@ export default function StatementPage() {
         throw new Error(error.error || "Failed to update statement invoices");
       }
 
-      await fetchStatements(page);
+      await fetchStatements(page, searchTerm, dateFrom, dateTo);
     } catch (error) {
       console.error("Failed to update statement", error);
       throw error;
@@ -232,7 +255,6 @@ export default function StatementPage() {
           loading={loading}
         />
       </div>
-
       <StatementTable
         data={statements}
         loading={loading}
@@ -240,6 +262,31 @@ export default function StatementPage() {
         totalPages={totalPages}
         onPageChange={setPage}
         onEdit={handleEditStatement}
+        searchTerm={searchTerm}
+        onSearchChange={(value) => {
+          console.log("Search changed to:", value);
+          setSearchTerm(value);
+          setPage(1);
+        }}
+        dateFrom={dateFrom}
+        dateTo={dateTo}
+        onDateFromChange={(value) => {
+          console.log("DateFrom changed to:", value);
+          setDateFrom(value);
+          setPage(1);
+        }}
+        onDateToChange={(value) => {
+          console.log("DateTo changed to:", value);
+          setDateTo(value);
+          setPage(1);
+        }}
+        onClearFilters={() => {
+          console.log("Clearing filters");
+          setSearchTerm("");
+          setDateFrom("");
+          setDateTo("");
+          setPage(1);
+        }}
       />
     </div>
   );

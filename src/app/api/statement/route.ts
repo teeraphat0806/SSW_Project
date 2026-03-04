@@ -16,24 +16,79 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const limitParam = searchParams.get("limit");
     const pageParam = searchParams.get("page");
+    const searchParam = searchParams.get("search");
+    const dateFromParam = searchParams.get("dateFrom");
+    const dateToParam = searchParams.get("dateTo");
 
     const limit = limitParam ? parseInt(limitParam, 10) : 10;
     const page = pageParam ? parseInt(pageParam, 10) : 1;
 
     const usePagination = limitParam !== null && pageParam !== null;
 
+    // Build where clause based on filters
+    const where: any = {};
+
+    // Search by customer name or statement number
+    if (searchParam && searchParam.trim()) {
+      const searchTerm = searchParam.trim();
+      const isNumber = /^\d+$/.test(searchTerm);
+
+      if (isNumber) {
+        // If search term is a number, search by statementNo
+        const statementNo = parseInt(searchTerm, 10);
+        where.statementNo = statementNo;
+      } else {
+        // Search by customer name - find matching customer IDs first
+        const customers = await prisma.customer.findMany({
+          where: {
+            name: {
+              contains: searchTerm,
+            },
+          },
+          select: { id: true },
+        });
+
+        if (customers.length === 0) {
+          // No matching customers, return empty result
+          return NextResponse.json({
+            statementItems: [],
+            total: 0,
+            page: usePagination ? page : undefined,
+            limit: usePagination ? limit : undefined,
+          });
+        }
+
+        where.customerId = {
+          in: customers.map((c) => c.id),
+        };
+      }
+    }
+
+    // Filter by date range
+    if (dateFromParam || dateToParam) {
+      where.createdAt = {};
+      if (dateFromParam) {
+        where.createdAt.gte = new Date(`${dateFromParam}T00:00:00.000Z`);
+      }
+      if (dateToParam) {
+        where.createdAt.lte = new Date(`${dateToParam}T23:59:59.999Z`);
+      }
+    }
+
     let statementItems;
     let total;
     if (usePagination) {
-      total = await prisma.statement.count();
+      total = await prisma.statement.count({ where });
       statementItems = await prisma.statement.findMany({
+        where,
         orderBy: { createdAt: "desc" },
         skip: (page - 1) * limit,
         take: limit,
       });
     } else {
-      total = await prisma.statement.count();
+      total = await prisma.statement.count({ where });
       statementItems = await prisma.statement.findMany({
+        where,
         orderBy: { createdAt: "desc" },
       });
     }

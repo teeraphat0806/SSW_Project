@@ -8,6 +8,8 @@ import {
   ChevronLeft,
   ChevronRight,
   Search,
+  CheckSquare,
+  X,
 } from "lucide-react";
 import {
   Dialog,
@@ -138,6 +140,17 @@ export default function EditStatementDialog({
     setCurrentInvoices(currentInvoices.filter((i) => i.id !== invoiceId));
   };
 
+  const handleRemoveAll = () => {
+    setCurrentInvoices([]);
+  };
+
+  const handleSelectAll = () => {
+    const newInvoices = filteredInvoiceList.filter(
+      (inv) => !currentInvoices.some((sel) => sel.id === inv.id),
+    );
+    setCurrentInvoices([...currentInvoices, ...newInvoices]);
+  };
+
   const handleSave = async () => {
     setSaving(true);
     try {
@@ -189,18 +202,41 @@ export default function EditStatementDialog({
 
   // Filter selected invoices with search
   const filteredSelectedInvoices = currentInvoices.filter((inv) => {
-    const matchesSearch = invoiceSearch
-      ? inv.invoiceNo.toString().includes(invoiceSearch)
-      : true;
-    return matchesSearch;
+    if (!invoiceSearch) return true;
+
+    const searchLower = invoiceSearch.toLowerCase();
+    const invoiceNoMatch = inv.invoiceNo.toString().includes(searchLower);
+    const dateMatch = formatThaiDateLong(inv.createdAt)
+      .toLowerCase()
+      .includes(searchLower);
+    const billIdMatch = inv.billId
+      ? inv.billId.toString().includes(searchLower)
+      : false;
+    const totalMatch =
+      inv.total.toString().includes(searchLower) ||
+      inv.total.toLocaleString("th-TH").includes(searchLower);
+
+    return invoiceNoMatch || dateMatch || billIdMatch || totalMatch;
   });
 
-  const filteredInvoiceList = availableInvoices.filter(
-    (inv) =>
-      !currentInvoices.some((sel) => sel.id === inv.id) &&
-      (invoiceSearch2 === "" ||
-        inv.invoiceNo.toString().includes(invoiceSearch2)),
-  );
+  const filteredInvoiceList = availableInvoices.filter((inv) => {
+    if (currentInvoices.some((sel) => sel.id === inv.id)) return false;
+    if (!invoiceSearch2) return true;
+
+    const searchLower = invoiceSearch2.toLowerCase();
+    const invoiceNoMatch = inv.invoiceNo.toString().includes(searchLower);
+    const dateMatch = formatThaiDateLong(inv.createdAt)
+      .toLowerCase()
+      .includes(searchLower);
+    const billIdMatch = inv.billId
+      ? inv.billId.toString().includes(searchLower)
+      : false;
+    const totalMatch =
+      inv.total.toString().includes(searchLower) ||
+      inv.total.toLocaleString("th-TH").includes(searchLower);
+
+    return invoiceNoMatch || dateMatch || billIdMatch || totalMatch;
+  });
   const pagedInvoiceList = filteredInvoiceList.slice(
     (page - 1) * pageSize,
     page * pageSize,
@@ -308,10 +344,21 @@ export default function EditStatementDialog({
                 type="text"
                 value={invoiceSearch}
                 onChange={(e) => setInvoiceSearch(e.target.value)}
-                placeholder="ค้นหา InvoiceNo เช่น 1201"
+                placeholder="ค้นหาเลขที่ Invoice,วันที่ออก,เลขที่บิล,ยอดรวม"
                 className="h-9 w-full rounded-lg border-gray-300 dark:border-zinc-600 bg-white dark:bg-zinc-900/70 pl-9 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-zinc-400 focus-visible:ring-1 focus-visible:ring-blue-500"
               />
             </div>
+            <Button
+              size="icon"
+              variant="ghost"
+              className="group h-8 w-8 rounded-full border border-red-300 dark:border-red-600/80 bg-red-100 dark:bg-red-700/60 text-red-700 dark:text-red-100 shadow-sm transition-all duration-200 hover:scale-105 hover:border-red-400 dark:hover:border-red-400 hover:bg-red-200 dark:hover:bg-red-600 hover:shadow-md active:scale-95"
+              onClick={handleRemoveAll}
+              disabled={currentInvoices.length === 0}
+              aria-label="Remove all selected invoices"
+              title="ลบทั้งหมด"
+            >
+              <X className="h-4 w-4 transition-transform duration-200 group-hover:rotate-90" />
+            </Button>
             <Button
               size="icon"
               variant="ghost"
@@ -440,10 +487,21 @@ export default function EditStatementDialog({
                 type="text"
                 value={invoiceSearch2}
                 onChange={(e) => setInvoiceSearch2(e.target.value)}
-                placeholder="ค้นหา InvoiceNo เช่น 1201"
+                placeholder="ค้นหาเลขที่ Invoice,วันที่ออก,เลขที่บิล,ยอดรวม"
                 className="h-9 w-full rounded-lg border-gray-300 dark:border-zinc-600 bg-white dark:bg-zinc-900/70 pl-9 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-zinc-400 focus-visible:ring-1 focus-visible:ring-blue-500"
               />
             </div>
+            <Button
+              size="icon"
+              variant="ghost"
+              className="group h-8 w-8 rounded-full border border-green-300 dark:border-green-600/80 bg-green-100 dark:bg-green-700/60 text-green-700 dark:text-green-100 shadow-sm transition-all duration-200 hover:scale-105 hover:border-green-400 dark:hover:border-green-400 hover:bg-green-200 dark:hover:bg-green-600 hover:shadow-md active:scale-95"
+              onClick={handleSelectAll}
+              disabled={filteredInvoiceList.length === 0}
+              aria-label="Select all available invoices"
+              title="เลือกทั้งหมด"
+            >
+              <CheckSquare className="h-4 w-4 transition-transform duration-200 group-hover:scale-110" />
+            </Button>
             <Button
               size="icon"
               variant="ghost"
