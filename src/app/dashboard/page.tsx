@@ -249,7 +249,7 @@ export default function Dashboard() {
           </p>
         </div>
         <div className="flex gap-2">
-          <Link href="/statement" title="ดูเสร็จรับเงิน/ใบวางบิล">
+          {/* <Link href="/statement" title="ดูเสร็จรับเงิน/ใบวางบิล">
             <button
               type="button"
               className="flex items-center justify-center bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 px-3 py-2.5 rounded-xl shadow-sm transition-all hover:scale-105 active:scale-95"
@@ -257,7 +257,7 @@ export default function Dashboard() {
             >
               <Printer size={18} />
             </button>
-          </Link>
+          </Link> */}
 
           <Link href="/createneworder">
             <button className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl font-medium shadow-lg shadow-blue-500/20 transition-all hover:scale-105 active:scale-95">

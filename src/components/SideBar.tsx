@@ -11,6 +11,7 @@ import {
   Moon,
   Sun,
   BaggageClaim,
+  Printer,
 } from "lucide-react";
 import { useSession, signOut } from "next-auth/react";
 import * as Avatar from "@radix-ui/react-avatar";
@@ -20,6 +21,7 @@ import Logo from "../components/Logo";
 import type { Session } from "next-auth";
 import { useEffect, useState } from "react";
 import { useTheme } from "next-themes";
+import { icon } from "leaflet";
 
 const MENU_ITEMS = [
   {
@@ -46,6 +48,11 @@ const MENU_ITEMS = [
         label: "เบิกรายจ่าย",
         icon: <BaggageClaim size={20} />,
         href: "/expenseDashboard",
+      },
+      {
+        label: "ใบเสร็จรับเงิน/ใบวางบิล",
+        icon: <Printer size={20} />,
+        href: "/statement",
       },
     ],
   },
