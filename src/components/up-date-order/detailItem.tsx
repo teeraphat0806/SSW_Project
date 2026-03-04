@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useState, useEffect } from "react";
+import React, { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -12,6 +12,7 @@ import {
   Layers,
   Package,
   CheckIcon,
+  CalendarDays,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -110,6 +111,26 @@ const fmtKg = (n: number) =>
     maximumFractionDigits: 2,
   }).format(n);
 
+// ฟังก์ชั่นช่วยแปลงวันที่ให้เป็นรูปแบบที่ input[type="date"] ต้องการ (YYYY-MM-DD)
+const toDateInputValue = (value?: string | null) => {
+  if (!value) return "";
+  const directIso = String(value).match(/^(\d{4}-\d{2}-\d{2})/);
+  if (directIso?.[1]) return directIso[1];
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return "";
+  return parsed.toISOString().split("T")[0];
+};
+
+// ฟังก์ชั่นช่วยแปลงวันที่ให้เป็นรูปแบบ วัน/เดือน/ปี (D/M/YYYY) หรือแสดง "วัน/เดือน/ปี" ถ้าแปลงไม่ได้
+const toDayMonthYear = (value?: string | null) => {
+  const iso = toDateInputValue(value);
+  if (!iso) return "วัน/เดือน/ปี";
+  const [year, month, day] = iso.split("-");
+  if (!year || !month || !day) return "วัน/เดือน/ปี";
+  return `${day}/${month}/${year}`;
+};
+
+//
 function SteelSearchSelect({
   value,
   fallbackLabel,
@@ -401,37 +422,53 @@ export default function DetailItem<T extends JobWithSteel>({
           </div>
 
           {/* Bill Created Date */}
-          <div className="w-[130px] shrink-0">
+          <div className="relative w-[130px] shrink-0">
             <label className="mb-1.5 block text-sm font-medium text-zinc-500 dark:text-zinc-400">
               วันที่สร้างบิล
             </label>
             <Input
               type="date"
-              value={job.createdAt ?? ""}
+              value={toDateInputValue(job.createdAt)}
               onChange={(e) =>
                 setJob((prev) =>
                   prev ? { ...prev, createdAt: e.target.value } : prev,
                 )
               }
-              className="h-10 w-full border-zinc-200 bg-white text-sm dark:border-zinc-700 dark:bg-zinc-900"
+              className="absolute bottom-0 left-0 z-10 h-10 w-full cursor-pointer opacity-0"
             />
+            <div className="pointer-events-none h-10 w-full rounded-md border border-zinc-200 bg-white px-3 text-sm dark:border-zinc-700 dark:bg-zinc-900">
+              <div className="flex h-full items-center justify-between">
+                <span className="text-zinc-900 dark:text-zinc-100">
+                  {toDayMonthYear(job.createdAt)}
+                </span>
+                <CalendarDays className="h-4 w-4 text-zinc-400" />
+              </div>
+            </div>
           </div>
 
           {/* Delivery Date */}
-          <div className="w-[130px] shrink-0">
+          <div className="relative w-[130px] shrink-0">
             <label className="mb-1.5 block text-sm font-medium text-zinc-500 dark:text-zinc-400">
               กำหนดส่งสินค้า
             </label>
             <Input
               type="date"
-              value={job.deliveryDate ?? ""}
+              value={toDateInputValue(job.deliveryDate)}
               onChange={(e) =>
                 setJob((prev) =>
                   prev ? { ...prev, deliveryDate: e.target.value } : prev,
                 )
               }
-              className="h-10 w-full border-zinc-200 bg-white text-sm dark:border-zinc-700 dark:bg-zinc-900"
+              className="absolute bottom-0 left-0 z-10 h-10 w-full cursor-pointer opacity-0"
             />
+            <div className="pointer-events-none h-10 w-full rounded-md border border-zinc-200 bg-white px-3 text-sm dark:border-zinc-700 dark:bg-zinc-900">
+              <div className="flex h-full items-center justify-between">
+                <span className="text-zinc-900 dark:text-zinc-100">
+                  {toDayMonthYear(job.deliveryDate)}
+                </span>
+                <CalendarDays className="h-4 w-4 text-zinc-400" />
+              </div>
+            </div>
           </div>
 
           {/* Add */}
