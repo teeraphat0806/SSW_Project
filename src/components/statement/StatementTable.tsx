@@ -34,7 +34,10 @@ export interface StatementTableProps {
   page: number;
   totalPages: number;
   onPageChange: (page: number) => void;
-  onEdit?: (statementId: number, invoiceIds: number[]) => Promise<void> | void;
+  onEdit?: (
+    statementId: number,
+    payload: { invoiceIds: number[]; statementDate?: string },
+  ) => Promise<void> | void;
 }
 
 export default function StatementTable({
@@ -92,10 +95,11 @@ export default function StatementTable({
                     <EditStatementDialog
                       statementId={item.id}
                       customerId={item.customerId}
+                      statementCreatedAt={item.createdAt}
                       selectedInvoices={item.invoices || []}
                       loading={false}
-                      onUpdate={(invoiceIds) => {
-                        if (onEdit) onEdit(item.id, invoiceIds);
+                      onUpdate={(payload) => {
+                        if (onEdit) onEdit(item.id, payload);
                       }}
                     />
                   </TableCell>

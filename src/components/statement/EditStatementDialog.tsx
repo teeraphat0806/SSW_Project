@@ -27,7 +27,7 @@ import {
   TableRow,
   TableCell,
 } from "../ui/table";
-
+import { formatThaiDateLong } from "@/lib/dateformat";
 interface InvoiceItem {
   id: number;
   invoiceNo: number;
@@ -47,14 +47,19 @@ interface CustomerInvoiceApiItem {
 interface EditStatementDialogProps {
   statementId: number;
   customerId: number;
+  statementCreatedAt: string;
   selectedInvoices: InvoiceItem[];
-  onUpdate: (invoiceIds: number[]) => Promise<void> | void;
+  onUpdate: (payload: {
+    invoiceIds: number[];
+    statementDate?: string;
+  }) => Promise<void> | void;
   loading: boolean;
 }
 
 export default function EditStatementDialog({
   statementId,
   customerId,
+  statementCreatedAt,
   selectedInvoices,
   onUpdate,
   loading,
@@ -73,6 +78,9 @@ export default function EditStatementDialog({
   const [selectedPage, setSelectedPage] = useState(1);
   const [saving, setSaving] = useState(false);
   const [customerName, setCustomerName] = useState("");
+  const [statementDate, setStatementDate] = useState(
+    new Date(statementCreatedAt).toISOString().split("T")[0],
+  );
 
   const fetchCustomerName = async () => {
     try {
@@ -133,7 +141,10 @@ export default function EditStatementDialog({
   const handleSave = async () => {
     setSaving(true);
     try {
-      await onUpdate(currentInvoices.map((inv) => inv.id));
+      await onUpdate({
+        invoiceIds: currentInvoices.map((inv) => inv.id),
+        statementDate,
+      });
       setOpen(false);
     } catch (error) {
       console.error("Failed to save statement", error);
@@ -144,6 +155,12 @@ export default function EditStatementDialog({
   };
 
   const hasChanges = () => {
+    const initialStatementDate = new Date(statementCreatedAt)
+      .toISOString()
+      .split("T")[0];
+
+    if (statementDate !== initialStatementDate) return true;
+
     if (currentInvoices.length !== selectedInvoices.length) return true;
     const selectedIds = new Set(selectedInvoices.map((inv) => inv.id));
     return currentInvoices.some((inv) => !selectedIds.has(inv.id));
@@ -157,9 +174,10 @@ export default function EditStatementDialog({
     setPage(1);
     setInvoiceSearch("");
     setInvoiceSearch2("");
+    setStatementDate(new Date(statementCreatedAt).toISOString().split("T")[0]);
     void fetchCustomerName();
     void fetchAvailableInvoices();
-  }, [open, customerId, selectedInvoices]);
+  }, [open, customerId, selectedInvoices, statementCreatedAt]);
 
   useEffect(() => {
     setPage(1);
@@ -220,9 +238,9 @@ export default function EditStatementDialog({
           aria-label="Edit statement"
           className="cursor-pointer border-zinc-600 text-zinc-100 hover:border-blue-500  "
         >
-          <button className="p-2 rounded-lg flex flex-row items-center gap-2 text-blue-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 dark:hover:text-blue-400 transition-all">
+          <span className="p-2 rounded-lg flex flex-row items-center gap-2 text-blue-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 dark:hover:text-blue-400 transition-all">
             <Edit size={18} />
-          </button>
+          </span>
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto bg-white dark:bg-zinc-900 text-gray-900 dark:text-white rounded-2xl p-6 shadow-xl border border-gray-200 dark:border-zinc-700">
@@ -257,6 +275,17 @@ export default function EditStatementDialog({
               <span className="inline-block bg-blue-600/90 text-white text-base font-bold rounded-lg px-3 py-1 shadow-sm">
                 {currentInvoices.length} ใบ
               </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-gray-500 dark:text-zinc-400">
+                วันที่ออกใบวางบิล
+              </span>
+              <Input
+                type="date"
+                value={statementDate}
+                onChange={(e) => setStatementDate(e.target.value)}
+                className="h-9 w-45 rounded-lg border-gray-300 dark:border-zinc-600 bg-white dark:bg-zinc-900/70 text-gray-900 dark:text-white"
+              />
             </div>
             <div className="flex items-center gap-2">
               <span className="text-xs text-gray-500 dark:text-zinc-400">
@@ -311,16 +340,16 @@ export default function EditStatementDialog({
                   <TableHeader className="bg-gray-50 dark:bg-zinc-800/50">
                     <TableRow className="border-b border-gray-300 dark:border-zinc-600/90">
                       <TableHead className="border-r border-gray-300 dark:border-zinc-600/90">
-                        InvoiceNo
+                        เลขที่ Invoice
                       </TableHead>
                       <TableHead className="border-r border-gray-300 dark:border-zinc-600/90">
                         วันที่ออก
                       </TableHead>
                       <TableHead className="border-r border-gray-300 dark:border-zinc-600/90">
-                        BillId
+                        เลขที่บิล
                       </TableHead>
                       <TableHead className="border-r border-gray-300 dark:border-zinc-600/90">
-                        GrandTotal
+                        ยอดรวม
                       </TableHead>
                       <TableHead>ลบ</TableHead>
                     </TableRow>
@@ -345,24 +374,7 @@ export default function EditStatementDialog({
                             HS{inv.invoiceNo}
                           </TableCell>
                           <TableCell className="border-r border-gray-200 dark:border-zinc-700/80">
-                            <Input
-                              type="date"
-                              className="bg-gray-50 dark:bg-zinc-800 border-gray-300 dark:border-zinc-700 text-gray-900 dark:text-white w-36"
-                              value={(() => {
-                                // แปลงวันที่เป็น yyyy-MM-dd
-                                const d = new Date(inv.createdAt);
-                                const yyyy = d.getFullYear();
-                                const mm = String(d.getMonth() + 1).padStart(
-                                  2,
-                                  "0",
-                                );
-                                const dd = String(d.getDate()).padStart(2, "0");
-                                return `${yyyy}-${mm}-${dd}`;
-                              })()}
-                              onChange={(e) =>
-                                handleDateChange(inv.id, e.target.value)
-                              }
-                            />
+                            {formatThaiDateLong(inv.createdAt)}
                           </TableCell>
                           <TableCell className="border-r border-gray-200 dark:border-zinc-700/80">
                             {inv.billId ?? "-"}
@@ -460,16 +472,16 @@ export default function EditStatementDialog({
                   <TableHeader className="bg-gray-50 dark:bg-zinc-800/50">
                     <TableRow className="border-b border-gray-300 dark:border-zinc-600/90">
                       <TableHead className="border-r border-gray-300 dark:border-zinc-600/90">
-                        InvoiceNo
+                        เลขที่ Invoice
                       </TableHead>
                       <TableHead className="border-r border-gray-300 dark:border-zinc-600/90">
-                        วันที่ Invoice
+                        วันที่ออก
                       </TableHead>
                       <TableHead className="border-r border-gray-300 dark:border-zinc-600/90">
-                        BillId
+                        เลขที่บิล
                       </TableHead>
                       <TableHead className="border-r border-gray-300 dark:border-zinc-600/90">
-                        GrandTotal
+                        ยอดรวม
                       </TableHead>
                       <TableHead>เลือก</TableHead>
                     </TableRow>
@@ -503,9 +515,7 @@ export default function EditStatementDialog({
                             HS{inv.invoiceNo}
                           </TableCell>
                           <TableCell className="border-r border-gray-200 dark:border-zinc-700/80">
-                            {new Date(inv.createdAt).toLocaleDateString(
-                              "th-TH",
-                            )}
+                            {formatThaiDateLong(inv.createdAt)}
                           </TableCell>
                           <TableCell className="border-r border-gray-200 dark:border-zinc-700/80">
                             {inv.billId ?? "-"}

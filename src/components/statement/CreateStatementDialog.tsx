@@ -29,7 +29,7 @@ import {
   TableRow,
   TableCell,
 } from "../ui/table";
-
+import { formatThaiDateLong } from "@/lib/dateformat";
 interface CustomerOption {
   id: number;
   name: string;
@@ -294,10 +294,10 @@ export default function CreateStatementDialog({
                         วันที่ Invoice
                       </TableHead>
                       <TableHead className="border-r border-gray-300 dark:border-zinc-600/90">
-                        BillId
+                        เลขที่บิล
                       </TableHead>
                       <TableHead className="border-r border-gray-300 dark:border-zinc-600/90">
-                        GrandTotal
+                        ยอดรวม
                       </TableHead>
                       <TableHead>ลบ</TableHead>
                     </TableRow>
@@ -322,9 +322,7 @@ export default function CreateStatementDialog({
                             {inv.invoiceNo}
                           </TableCell>
                           <TableCell className="border-r border-gray-200 dark:border-zinc-700/80">
-                            {new Date(inv.createdAt).toLocaleDateString(
-                              "th-TH",
-                            )}
+                            {formatThaiDateLong(inv.createdAt)}
                           </TableCell>
                           <TableCell className="border-r border-gray-200 dark:border-zinc-700/80">
                             {inv.billId ?? "-"}
@@ -436,10 +434,10 @@ export default function CreateStatementDialog({
                         วันที่ Invoice
                       </TableHead>
                       <TableHead className="border-r border-gray-300 dark:border-zinc-600/90">
-                        BillId
+                        เลขที่บิล
                       </TableHead>
                       <TableHead className="border-r border-gray-300 dark:border-zinc-600/90">
-                        GrandTotal
+                        ยอดรวม
                       </TableHead>
                       <TableHead>เลือก</TableHead>
                     </TableRow>
@@ -464,9 +462,7 @@ export default function CreateStatementDialog({
                             {inv.invoiceNo}
                           </TableCell>
                           <TableCell className="border-r border-gray-200 dark:border-zinc-700/80">
-                            {new Date(inv.createdAt).toLocaleDateString(
-                              "th-TH",
-                            )}
+                            {formatThaiDateLong(inv.createdAt)}
                           </TableCell>
                           <TableCell className="border-r border-gray-200 dark:border-zinc-700/80">
                             {inv.billId ?? "-"}

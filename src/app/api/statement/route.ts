@@ -65,6 +65,8 @@ export async function PATCH(req: NextRequest) {
   try {
     const body = await req.json();
     const statementId = Number(body.statementId);
+    const rawStatementDate =
+      typeof body.statementDate === "string" ? body.statementDate.trim() : "";
     const rawInvoiceIds: number[] = Array.isArray(body.invoiceIds)
       ? body.invoiceIds.map(Number)
       : [];
@@ -85,6 +87,26 @@ export async function PATCH(req: NextRequest) {
         { error: "invoiceIds must be a non-empty array" },
         { status: 400 },
       );
+    }
+
+    let parsedStatementDate: Date | null = null;
+    if (rawStatementDate) {
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(rawStatementDate)) {
+        return NextResponse.json(
+          { error: "statementDate must be in YYYY-MM-DD format" },
+          { status: 400 },
+        );
+      }
+
+      const candidate = new Date(`${rawStatementDate}T00:00:00.000Z`);
+      if (Number.isNaN(candidate.getTime())) {
+        return NextResponse.json(
+          { error: "statementDate is invalid" },
+          { status: 400 },
+        );
+      }
+
+      parsedStatementDate = candidate;
     }
 
     await prisma.$transaction(async (tx) => {
@@ -149,6 +171,13 @@ export async function PATCH(req: NextRequest) {
           invoiceId,
         })),
       });
+
+      if (parsedStatementDate) {
+        await tx.statement.update({
+          where: { id: statement.id },
+          data: { createdAt: parsedStatementDate },
+        });
+      }
     });
 
     const totals = await calcStatementTotals(statementId);

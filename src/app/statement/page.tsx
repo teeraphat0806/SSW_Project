@@ -190,13 +190,17 @@ export default function StatementPage() {
 
   const handleEditStatement = async (
     statementId: number,
-    invoiceIds: number[],
+    payload: { invoiceIds: number[]; statementDate?: string },
   ) => {
     try {
       const res = await fetch("/api/statement", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ statementId, invoiceIds }),
+        body: JSON.stringify({
+          statementId,
+          invoiceIds: payload.invoiceIds,
+          statementDate: payload.statementDate,
+        }),
       });
 
       if (!res.ok) {

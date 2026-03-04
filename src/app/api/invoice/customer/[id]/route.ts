@@ -39,7 +39,6 @@ export async function GET(
       OrderPO: {
         customerId,
       },
-      statementItem: null,
     };
 
     const [total, invoices] = await prisma.$transaction([
