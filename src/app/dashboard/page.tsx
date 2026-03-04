@@ -5,6 +5,7 @@ import Link from "next/link";
 import {
   Search,
   Plus,
+  Printer,
   ChevronLeft,
   ChevronRight,
   Filter,
@@ -247,13 +248,24 @@ export default function Dashboard() {
             ภาพรวมคำสั่งซื้อและการจัดการสถานะ
           </p>
         </div>
+        <div className="flex gap-2">
+          {/* <Link href="/statement" title="ดูเสร็จรับเงิน/ใบวางบิล">
+            <button
+              type="button"
+              className="flex items-center justify-center bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 px-3 py-2.5 rounded-xl shadow-sm transition-all hover:scale-105 active:scale-95"
+              aria-label="ดูเสร็จรับเงิน/ใบวางบิล"
+            >
+              <Printer size={18} />
+            </button>
+          </Link> */}
 
-        <Link href="/createneworder">
-          <button className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl font-medium shadow-lg shadow-blue-500/20 transition-all hover:scale-105 active:scale-95">
-            <Plus size={20} />
-            <span>สร้าง Order ใหม่</span>
-          </button>
-        </Link>
+          <Link href="/createneworder">
+            <button className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl font-medium shadow-lg shadow-blue-500/20 transition-all hover:scale-105 active:scale-95">
+              <Plus size={20} />
+              <span>สร้าง Order ใหม่</span>
+            </button>
+          </Link>
+        </div>
       </div>
 
       {/* Stats Cards */}

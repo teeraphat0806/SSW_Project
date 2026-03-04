@@ -12,6 +12,7 @@ import {
   UserRound,
   Boxes,
   BaggageClaim,
+  Printer,
 } from "lucide-react";
 import Link from "next/link";
 import { signOut, useSession } from "next-auth/react";
@@ -90,6 +91,12 @@ export default function NavbarWithSidebar() {
             label="เบิกรายจ่าย"
             href="/expenseDashboard"
           />
+          <SidebarItem
+            icon={<Printer size={20} />}
+            label="ใบเสร็จรับเงิน/ใบวางบิล"
+            href="/statement"
+          />
+
           <SidebarItem
             icon={<Users size={20} />}
             label="พนักงาน"

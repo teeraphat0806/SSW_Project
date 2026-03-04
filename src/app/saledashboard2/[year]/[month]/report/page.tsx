@@ -206,7 +206,7 @@ export default function SalesReportPage() {
                   ชื่อลูกค้า
                 </th>
                 <th className="border-2 border-black px-3 py-2 text-lg font-bold text-center">
-                  มอดขาย (฿)
+                  ยอดขาย (฿)
                 </th>
               </tr>
             </thead>
@@ -234,7 +234,12 @@ export default function SalesReportPage() {
                       })}
                     </td>
                     <td className="border-2 border-black px-3 py-2 text-lg text-center">
-                      {bill.invoiceNo || "-"}
+                      {(() => {
+                        if (bill.invoiceNo) {
+                          return `HS${bill.invoiceNo}`;
+                        }
+                        return "-";
+                      })()}
                     </td>
                     <td className="border-2 border-black px-3 py-2 text-lg">
                       {bill.customerName}
