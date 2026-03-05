@@ -62,19 +62,27 @@ interface CreateStatementDialogProps {
     invoiceIds: number[];
   }) => void;
   loading: boolean;
+  preSelectCustomerId?: number | null;
+  preSelectInvoiceIds?: number[];
+  openInitially?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
 export default function CreateStatementDialog({
   customers,
   onCreate,
   loading,
+  preSelectCustomerId,
+  preSelectInvoiceIds = [],
+  openInitially = false,
+  onOpenChange,
 }: CreateStatementDialogProps) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(openInitially);
   const [customerOpen, setCustomerOpen] = useState(false);
   const [customerSearch, setCustomerSearch] = useState("");
   const [selectedCustomer, setSelectedCustomer] = useState<
     string | number | null
-  >(null);
+  >(preSelectCustomerId ?? null);
   const [date, setDate] = useState("");
   const [selectedInvoiceSearch, setSelectedInvoiceSearch] = useState("");
   const [availableInvoiceSearch, setAvailableInvoiceSearch] = useState("");
@@ -86,6 +94,20 @@ export default function CreateStatementDialog({
   const [showSelectedTable2, setShowSelectedTable2] = useState(true);
   const [selectedPage, setSelectedPage] = useState(1);
   const router = useRouter();
+
+  // Update open state in parent if provided
+  const handleOpenChange = (newOpen: boolean) => {
+    setOpen(newOpen);
+    onOpenChange?.(newOpen);
+  };
+
+  // Sync openInitially
+  useEffect(() => {
+    if (openInitially) {
+      setOpen(true);
+    }
+  }, [openInitially]);
+
   useEffect(() => {
     if (selectedCustomer) {
       setInvoiceList([]);
@@ -139,6 +161,22 @@ export default function CreateStatementDialog({
       setAvailableInvoiceSearch("");
     }
   }, [selectedCustomer, customers]);
+
+  // Pre-select invoices after fetching
+  useEffect(() => {
+    if (
+      preSelectInvoiceIds &&
+      preSelectInvoiceIds.length > 0 &&
+      invoiceList.length > 0
+    ) {
+      const preSelected = invoiceList.filter((inv) =>
+        preSelectInvoiceIds.includes(inv.id),
+      );
+      if (preSelected.length > 0) {
+        setSelectedInvoices(preSelected);
+      }
+    }
+  }, [invoiceList, preSelectInvoiceIds]);
 
   useEffect(() => {
     setPage(1);
@@ -217,7 +255,7 @@ export default function CreateStatementDialog({
   const selectedTotalPages =
     Math.ceil(filteredSelectedInvoices.length / pageSize) || 1;
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <div className="flex gap-4">
         <Button
           className="bg-gray-200 hover:bg-gray-300 text-gray-800 dark:bg-zinc-700 dark:hover:bg-zinc-600 dark:text-white inline-flex items-center gap-2"
