@@ -24,6 +24,7 @@ import {
 import { Input } from "../../components/ui/input";
 import { Label } from "../../components/ui/label";
 import CreateStatementDialog from "@/components/statement/CreateStatementDialog";
+import StatementReceiptDialog from "@/components/statement/StatementReceiptDialog";
 
 type ActionKey =
   | "edit"
@@ -45,6 +46,12 @@ type ActionItem = {
 type PreSelectInvoiceData = {
   customerId: number;
   invoiceId: number;
+};
+
+type StatementData = {
+  id: number;
+  statementNo: number;
+  customerId: number;
 };
 
 const openPoUrl = (objectKey: string) =>
@@ -88,10 +95,36 @@ export function QuickAction({
     null,
   );
   const [checkingInvoice, setCheckingInvoice] = React.useState(false);
+  const [customers, setCustomers] = React.useState<
+    Array<{ id: number; name: string }>
+  >([]);
+  const [statementData, setStatementData] =
+    React.useState<StatementData | null>(null);
+  const [viewStatementDialogOpen, setViewStatementDialogOpen] =
+    React.useState(false);
 
   const poKeys = Array.isArray(keyPo) ? keyPo.filter(Boolean) : [];
   const hasPo = poKeys.length > 0;
   const isCanceled = status === "canceled";
+
+  // Fetch customers list for dropdown
+  React.useEffect(() => {
+    const fetchCustomers = async () => {
+      try {
+        const res = await fetch("/api/statement/customer", {
+          cache: "no-store",
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setCustomers(data);
+        }
+      } catch (error) {
+        console.error("[QuickAction] Failed to fetch customers:", error);
+      }
+    };
+
+    fetchCustomers();
+  }, []);
 
   // เช็คว่า Invoice มีอยู่หรือไม่
   React.useEffect(() => {
@@ -103,28 +136,49 @@ export function QuickAction({
     const checkInvoice = async () => {
       setCheckingInvoice(true);
       try {
-        // Check if OrderPO has invoice by querying OrderPO with Invoice relation
-        const res = await fetch(`/api/orderPo/${orderId}`, {
+        // Check if OrderPO has invoice using dedicated invoice check endpoint
+        const res = await fetch(`/api/orderPo/${orderId}/invoice`, {
           cache: "no-store",
         });
         if (!res.ok) {
+          console.log("[QuickAction] API call failed:", res.status);
           setInvoiceExists(false);
           return;
         }
 
-        const orderData = await res.json();
-        // Check if Invoice exists (orderData.Invoice will exist if there's an invoice)
-        const hasInvoice = orderData?.Invoice != null;
+        const data = await res.json();
+        console.log("[QuickAction] Invoice check result:", data);
+
+        // Check if Invoice exists
+        const hasInvoice = data.hasInvoice && data.invoice != null;
         setInvoiceExists(hasInvoice);
 
         if (hasInvoice) {
+          console.log(
+            "[QuickAction] Setting pre-select data for invoice:",
+            data.invoice.id,
+          );
           setPreSelectData({
             customerId: Number(customerId),
-            invoiceId: orderData.Invoice.id,
+            invoiceId: data.invoice.id,
           });
+
+          // Check if statement exists for this invoice
+          if (data.statement) {
+            console.log(
+              "[QuickAction] Statement already exists:",
+              data.statement,
+            );
+            setStatementData(data.statement);
+          } else {
+            console.log("[QuickAction] No statement yet for this invoice");
+            setStatementData(null);
+          }
+        } else {
+          console.log("[QuickAction] No invoice found for this order");
         }
       } catch (error) {
-        console.error("Failed to check invoice:", error);
+        console.error("[QuickAction] Failed to check invoice:", error);
         setInvoiceExists(false);
       } finally {
         setCheckingInvoice(false);
@@ -180,7 +234,15 @@ export function QuickAction({
       label: "พิมพ์ใบเสร็จรับเงิน",
       disabled: isCanceled || invoiceExists === false || checkingInvoice,
       icon: Printer,
-      run: () => setBillingDialogOpen(true),
+      run: () => {
+        // If statement already exists, open view dialog
+        if (statementData) {
+          setViewStatementDialogOpen(true);
+        } else {
+          // Otherwise, open create dialog
+          setBillingDialogOpen(true);
+        }
+      },
     },
     // NOTE: pofile จะ render แยกเป็น dropdown ด้านล่าง (เพราะต้องรองรับหลายไฟล์)
   ];
@@ -446,15 +508,22 @@ export function QuickAction({
         </DialogContent>
       </Dialog>
 
-      {/* Statement Dialog for pre-selected invoice */}
-      {billingDialogOpen && preSelectData && (
+      {/* View Statement Dialog - if statement already exists */}
+      {viewStatementDialogOpen && statementData && (
+        <StatementReceiptDialog
+          customerId={statementData.customerId}
+          statementNo={statementData.statementNo}
+          openInitially={true}
+          onOpenChange={(open) => {
+            setViewStatementDialogOpen(open);
+          }}
+        />
+      )}
+
+      {/* Create Statement Dialog - for creating new statement with pre-selected invoice */}
+      {billingDialogOpen && preSelectData && customers.length > 0 && (
         <CreateStatementDialog
-          customers={[
-            {
-              id: preSelectData.customerId,
-              name: "ลูกค้า",
-            },
-          ]}
+          customers={customers}
           preSelectCustomerId={preSelectData.customerId}
           preSelectInvoiceIds={[preSelectData.invoiceId]}
           openInitially={true}
