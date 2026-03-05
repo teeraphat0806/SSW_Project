@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/permissions";
 import prisma from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
+import z from "zod";
 
 type ApiError = {
   status: number;
@@ -28,7 +29,7 @@ export async function POST(
   _req: NextRequest,
   context: { params: Promise<{ id: string }> },
 ) {
-  const authResult = await requireAuth(["superadmin", "accountant", "clerk"]);
+  const authResult = await requireAuth(["superadmin", "supervisor", "clerk"]);
   if ("response" in authResult) return authResult.response;
 
   const { id } = await context.params;
@@ -58,7 +59,10 @@ export async function POST(
             });
 
             if (existingInvoice) {
-              throw createApiError(400, "ใบแจ้งหนี้สำหรับ Order PO นี้มีอยู่แล้ว");
+              throw createApiError(
+                400,
+                "ใบแจ้งหนี้สำหรับ Order PO นี้มีอยู่แล้ว",
+              );
             }
 
             const lastInvoice = await tx.invoice.findFirst({
