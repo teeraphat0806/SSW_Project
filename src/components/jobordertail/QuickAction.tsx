@@ -87,6 +87,7 @@ export function QuickAction({
   const [loadingKey, setLoadingKey] = React.useState<ActionKey | null>(null);
   const [tempReceiptDialog, setTempReceiptDialog] = React.useState(false);
   const [orderData, setOrderData] = React.useState<any>(null);
+  const [selectedItems, setSelectedItems] = React.useState<any[]>([]);
   const [deliveryAddress, setDeliveryAddress] = React.useState("");
   const [preSelectData, setPreSelectData] =
     React.useState<PreSelectInvoiceData | null>(null);
@@ -220,6 +221,7 @@ export function QuickAction({
           const res = await fetch(`/api/receipt/${billid}`);
           const data = await res.json();
           setOrderData(data);
+          setSelectedItems(data.steel || []);
           setDeliveryAddress(data.customer?.address || "");
           setTempReceiptDialog(true);
         } catch (error) {
@@ -275,10 +277,30 @@ export function QuickAction({
       });
       return;
     }
+    if (selectedItems.length === 0) {
+      toast.error("กรุณาเลือกรายการสินค้าอย่างน้อย 1 รายการ", {
+        position: "bottom-right",
+      });
+      return;
+    }
+    // Store complete data with selected items and delivery address
+    const tempReceiptData = {
+      ...orderData,
+      steel: selectedItems,
+      customer: {
+        ...orderData.customer,
+        address: deliveryAddress,
+      },
+    };
+    sessionStorage.setItem("tempReceiptData", JSON.stringify(tempReceiptData));
     setTempReceiptDialog(false);
     router.push(
       `/receipt-invoice/${billid}?isTemporary=true&deliveryAddress=${encodeURIComponent(deliveryAddress)}`,
     );
+  };
+
+  const handleRemoveItem = (index: number) => {
+    setSelectedItems((prev) => prev.filter((_, i) => i !== index));
   };
 
   // const openAll = () => {
@@ -447,7 +469,9 @@ export function QuickAction({
 
               {/* Items List */}
               <div>
-                <Label className="text-sm font-semibold">รายการสินค้า</Label>
+                <Label className="text-sm font-semibold">
+                  รายการสินค้า ({selectedItems.length} รายการ)
+                </Label>
                 <div className="mt-2 border rounded-lg overflow-hidden">
                   <table className="w-full text-sm">
                     <thead className="bg-muted">
@@ -456,22 +480,47 @@ export function QuickAction({
                         <th className="p-2 text-left">ขนาด</th>
                         <th className="p-2 text-center">จำนวน</th>
                         <th className="p-2 text-right">น้ำหนัก</th>
+                        <th className="p-2 text-center w-16">ลบ</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {orderData.steel?.map((item: any, index: number) => (
-                        <tr key={index} className="border-t">
-                          <td className="p-2">{item.steelType}</td>
-                          <td className="p-2">
-                            {item.thickness} x {item.width || 0} x {item.length}{" "}
-                            mm
-                          </td>
-                          <td className="p-2 text-center">{item.amount}</td>
-                          <td className="p-2 text-right">
-                            {(item.weight ?? 0).toFixed(2)}
+                      {selectedItems.length === 0 ? (
+                        <tr>
+                          <td
+                            colSpan={5}
+                            className="p-4 text-center text-muted-foreground"
+                          >
+                            ไม่มีรายการสินค้า
                           </td>
                         </tr>
-                      ))}
+                      ) : (
+                        selectedItems.map((item: any, index: number) => (
+                          <tr
+                            key={index}
+                            className="border-t hover:bg-muted/50"
+                          >
+                            <td className="p-2">{item.steelType}</td>
+                            <td className="p-2">
+                              {item.thickness} x {item.width || 0} x{" "}
+                              {item.length} mm
+                            </td>
+                            <td className="p-2 text-center">{item.amount}</td>
+                            <td className="p-2 text-right">
+                              {(item.weight ?? 0).toFixed(2)}
+                            </td>
+                            <td className="p-2 text-center">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleRemoveItem(index)}
+                                className="h-7 w-7 p-0 text-red-500 hover:text-red-700 hover:bg-red-50"
+                              >
+                                ×
+                              </Button>
+                            </td>
+                          </tr>
+                        ))
+                      )}
                     </tbody>
                   </table>
                 </div>
