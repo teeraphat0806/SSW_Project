@@ -2,7 +2,8 @@ import React, { useEffect, useState } from "react";
 import {
   Trash2,
   Check,
-  Edit,
+  ArrowRightLeft,
+  FilePlus2,
   ChevronUp,
   ChevronDown,
   ChevronLeft,
@@ -20,6 +21,7 @@ import {
   DialogFooter,
 } from "../ui/dialog";
 import { Button } from "../ui/button";
+import SelectCustomer from "../SelectCustomer";
 import { Input } from "../ui/input";
 import {
   Table,
@@ -30,6 +32,11 @@ import {
   TableCell,
 } from "../ui/table";
 import { formatThaiDateLong } from "@/lib/dateformat";
+import { useRouter } from "next/navigation";
+interface CustomerOption {
+  id: number;
+  name: string;
+}
 interface InvoiceItem {
   id: number;
   invoiceNo: number;
@@ -38,173 +45,130 @@ interface InvoiceItem {
   billId?: number | null;
 }
 
-interface CustomerInvoiceApiItem {
+interface InvoiceApiItem {
   id: number;
-  invoiceNo: number;
+  invoiceNo: number | string;
+  total?: number | string | null;
+  grandTotal?: number | string | null;
+  billId?: number | string | null;
   createdAt: string;
-  grandTotal: number;
-  billId?: number | null;
 }
 
-interface EditStatementDialogProps {
-  statementId: number;
-  customerId: number;
-  statementCreatedAt: string;
-  selectedInvoices: InvoiceItem[];
-  onUpdate: (payload: {
+interface CreateAcquittanceDialogProps {
+  customers: CustomerOption[];
+  onCreate: (data: {
+    customerId: number;
+    date: string;
     invoiceIds: number[];
-    statementDate?: string;
-  }) => Promise<void> | void;
+  }) => void;
   loading: boolean;
 }
 
-export default function EditStatementDialog({
-  statementId,
-  customerId,
-  statementCreatedAt,
-  selectedInvoices,
-  onUpdate,
+export default function CreateAcquittanceDialog({
+  customers,
+  onCreate,
   loading,
-}: EditStatementDialogProps) {
+}: CreateAcquittanceDialogProps) {
   const [open, setOpen] = useState(false);
-  const [invoiceSearch, setInvoiceSearch] = useState("");
-  const [invoiceSearch2, setInvoiceSearch2] = useState("");
-  const [currentInvoices, setCurrentInvoices] =
-    useState<InvoiceItem[]>(selectedInvoices);
-  const [availableInvoices, setAvailableInvoices] = useState<InvoiceItem[]>([]);
-  const [availableLoading, setAvailableLoading] = useState(false);
+  const [customerOpen, setCustomerOpen] = useState(false);
+  const [customerSearch, setCustomerSearch] = useState("");
+  const [selectedCustomer, setSelectedCustomer] = useState<
+    string | number | null
+  >(null);
+  const [date, setDate] = useState("");
+  const [selectedInvoiceSearch, setSelectedInvoiceSearch] = useState("");
+  const [availableInvoiceSearch, setAvailableInvoiceSearch] = useState("");
+  const [selectedInvoices, setSelectedInvoices] = useState<InvoiceItem[]>([]);
+  const [invoiceList, setInvoiceList] = useState<InvoiceItem[]>([]);
   const [page, setPage] = useState(1);
-  const [pageSize] = useState(5);
+  const [pageSize, setPageSize] = useState(5);
   const [showSelectedTable, setShowSelectedTable] = useState(true);
-  const [showAvailableTable, setShowAvailableTable] = useState(true);
+  const [showSelectedTable2, setShowSelectedTable2] = useState(true);
   const [selectedPage, setSelectedPage] = useState(1);
-  const [saving, setSaving] = useState(false);
-  const [customerName, setCustomerName] = useState("");
-  const [statementDate, setStatementDate] = useState(
-    new Date(statementCreatedAt).toISOString().split("T")[0],
+  const router = useRouter();
+  useEffect(() => {
+    if (selectedCustomer) {
+      setInvoiceList([]);
+      setSelectedInvoices([]);
+      setPage(1);
+      setSelectedPage(1);
+      setSelectedInvoiceSearch("");
+      setAvailableInvoiceSearch("");
+      const fetchInvoices = async () => {
+        try {
+          const customer = customers.find(
+            (c) => c.id === Number(selectedCustomer),
+          );
+          if (!customer) {
+            console.error("Customer not found");
+            setInvoiceList([]);
+            return;
+          }
+          const res = await fetch(`/api/invoice/customer/${customer.id}`);
+          if (!res.ok) {
+            throw new Error(`Failed to fetch invoices: ${res.status}`);
+          }
+          const data = await res.json();
+          const items: InvoiceApiItem[] = Array.isArray(data)
+            ? data
+            : Array.isArray(data?.items)
+              ? data.items
+              : [];
+
+          const normalizedInvoices: InvoiceItem[] = items.map((item) => ({
+            id: Number(item.id),
+            invoiceNo: Number(item.invoiceNo),
+            total: Number(item.total ?? item.grandTotal ?? 0),
+            billId: Number(item.billId) || null,
+            createdAt: item.createdAt,
+          }));
+
+          setInvoiceList(normalizedInvoices);
+        } catch (error) {
+          console.error("Error fetching invoices:", error);
+          setInvoiceList([]);
+        }
+      };
+      fetchInvoices();
+    } else {
+      setInvoiceList([]);
+      setSelectedInvoices([]);
+      setPage(1);
+      setSelectedPage(1);
+      setSelectedInvoiceSearch("");
+      setAvailableInvoiceSearch("");
+    }
+  }, [selectedCustomer, customers]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [availableInvoiceSearch]);
+
+  useEffect(() => {
+    setSelectedPage(1);
+  }, [selectedInvoiceSearch]);
+
+  const totalIncome = selectedInvoices.reduce(
+    (sum, inv) => sum + Number(inv.total ?? 0),
+    0,
   );
 
-  const fetchCustomerName = async () => {
-    try {
-      const res = await fetch(`/api/customer/${customerId}`, {
-        cache: "no-store",
-      });
-      if (!res.ok) throw new Error("Failed to fetch customer");
-      const data = await res.json();
-      setCustomerName(data.name || "");
-    } catch (error) {
-      console.error("Failed to fetch customer name", error);
-      setCustomerName("");
-    }
-  };
-
-  const fetchAvailableInvoices = async () => {
-    setAvailableLoading(true);
-    try {
-      const res = await fetch(`/api/invoice/customer/${customerId}`, {
-        cache: "no-store",
-      });
-
-      if (!res.ok) throw new Error("Failed to fetch customer invoices");
-
-      const data = await res.json();
-      const apiItems: CustomerInvoiceApiItem[] = Array.isArray(data)
-        ? data
-        : Array.isArray(data?.items)
-          ? data.items
-          : [];
-
-      setAvailableInvoices(
-        apiItems.map((inv) => ({
-          id: inv.id,
-          invoiceNo: inv.invoiceNo,
-          total: Number(inv.grandTotal ?? 0),
-          createdAt: inv.createdAt,
-          billId: inv.billId ?? null,
-        })),
-      );
-    } catch (error) {
-      console.error("Failed to fetch available invoices", error);
-      setAvailableInvoices([]);
-    } finally {
-      setAvailableLoading(false);
-    }
-  };
-
-  const handleAddInvoice = (invoice: InvoiceItem) => {
-    if (currentInvoices.some((item) => item.id === invoice.id)) return;
-    setCurrentInvoices([...currentInvoices, invoice]);
-  };
-
-  const handleRemoveInvoice = (invoiceId: number) => {
-    setCurrentInvoices(currentInvoices.filter((i) => i.id !== invoiceId));
-  };
-
   const handleRemoveAll = () => {
-    setCurrentInvoices([]);
+    setSelectedInvoices([]);
   };
 
   const handleSelectAll = () => {
     const newInvoices = filteredInvoiceList.filter(
-      (inv) => !currentInvoices.some((sel) => sel.id === inv.id),
+      (inv) => !selectedInvoices.some((sel) => sel.id === inv.id),
     );
-    setCurrentInvoices([...currentInvoices, ...newInvoices]);
+    setSelectedInvoices([...selectedInvoices, ...newInvoices]);
   };
 
-  const handleSave = async () => {
-    setSaving(true);
-    try {
-      await onUpdate({
-        invoiceIds: currentInvoices.map((inv) => inv.id),
-        statementDate,
-      });
-      setOpen(false);
-    } catch (error) {
-      console.error("Failed to save statement", error);
-      alert("Failed to save statement");
-    } finally {
-      setSaving(false);
-    }
-  };
+  // Filter selected invoices table with its own search
+  const filteredSelectedInvoices = selectedInvoices.filter((inv) => {
+    if (!selectedInvoiceSearch) return true;
 
-  const hasChanges = () => {
-    const initialStatementDate = new Date(statementCreatedAt)
-      .toISOString()
-      .split("T")[0];
-
-    if (statementDate !== initialStatementDate) return true;
-
-    if (currentInvoices.length !== selectedInvoices.length) return true;
-    const selectedIds = new Set(selectedInvoices.map((inv) => inv.id));
-    return currentInvoices.some((inv) => !selectedIds.has(inv.id));
-  };
-
-  useEffect(() => {
-    if (!open) return;
-
-    setCurrentInvoices(selectedInvoices);
-    setSelectedPage(1);
-    setPage(1);
-    setInvoiceSearch("");
-    setInvoiceSearch2("");
-    setStatementDate(new Date(statementCreatedAt).toISOString().split("T")[0]);
-    void fetchCustomerName();
-    void fetchAvailableInvoices();
-  }, [open, customerId, selectedInvoices, statementCreatedAt]);
-
-  useEffect(() => {
-    setPage(1);
-  }, [invoiceSearch2]);
-
-  useEffect(() => {
-    setSelectedPage(1);
-  }, [invoiceSearch]);
-
-  // Filter selected invoices with search
-  const filteredSelectedInvoices = currentInvoices.filter((inv) => {
-    if (!invoiceSearch) return true;
-
-    const searchLower = invoiceSearch.toLowerCase();
+    const searchLower = selectedInvoiceSearch.toLowerCase();
     const invoiceNoMatch = inv.invoiceNo.toString().includes(searchLower);
     const dateMatch = formatThaiDateLong(inv.createdAt)
       .toLowerCase()
@@ -219,11 +183,12 @@ export default function EditStatementDialog({
     return invoiceNoMatch || dateMatch || billIdMatch || totalMatch;
   });
 
-  const filteredInvoiceList = availableInvoices.filter((inv) => {
-    if (currentInvoices.some((sel) => sel.id === inv.id)) return false;
-    if (!invoiceSearch2) return true;
+  // Filter invoiceList: remove those already selected and apply search
+  const filteredInvoiceList = invoiceList.filter((inv) => {
+    if (selectedInvoices.some((sel) => sel.id === inv.id)) return false;
+    if (!availableInvoiceSearch) return true;
 
-    const searchLower = invoiceSearch2.toLowerCase();
+    const searchLower = availableInvoiceSearch.toLowerCase();
     const invoiceNoMatch = inv.invoiceNo.toString().includes(searchLower);
     const dateMatch = formatThaiDateLong(inv.createdAt)
       .toLowerCase()
@@ -251,100 +216,84 @@ export default function EditStatementDialog({
   );
   const selectedTotalPages =
     Math.ceil(filteredSelectedInvoices.length / pageSize) || 1;
-
-  // รวมยอด invoice ที่เลือกแล้ว
-  const selectedTotalAmount = currentInvoices.reduce(
-    (sum, inv) => sum + inv.total,
-    0,
-  );
-
-  // ฟังก์ชันแก้ไขวันที่ออก invoice
-  const handleDateChange = (id: number, newDate: string) => {
-    setCurrentInvoices((prev) =>
-      prev.map((inv) => (inv.id === id ? { ...inv, createdAt: newDate } : inv)),
-    );
-  };
-
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
+      <div className="flex gap-4">
         <Button
-          size="icon"
-          variant="outline"
-          aria-label="Edit statement"
-          className="cursor-pointer border-zinc-600 text-zinc-100 hover:border-blue-500  "
+          className="bg-gray-200 hover:bg-gray-300 text-gray-800 dark:bg-zinc-700 dark:hover:bg-zinc-600 dark:text-white inline-flex items-center gap-2"
+          onClick={() => router.push("/statement")}
         >
-          <span className="p-2 rounded-lg flex flex-row items-center gap-2 text-blue-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 dark:hover:text-blue-400 transition-all">
-            <Edit size={18} />
-          </span>
+          <ArrowRightLeft className="h-4 w-4" />
+          สลับเป็นใบเสร็จรับเงิน
         </Button>
-      </DialogTrigger>
+        <DialogTrigger asChild>
+          <Button className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl font-medium shadow-lg shadow-blue-500/20 transition-all hover:scale-105 active:scale-95 inline-flex items-center gap-2">
+            <FilePlus2 className="h-4 w-4" />
+            สร้างใบวางบิล
+          </Button>
+        </DialogTrigger>
+      </div>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto bg-white dark:bg-zinc-900 text-gray-900 dark:text-white rounded-2xl p-6 shadow-xl border border-gray-200 dark:border-zinc-700">
         <DialogHeader>
           <DialogTitle className="text-xl font-bold mb-2">
-            <div className="flex gap-4">
-              <span>แก้ไข Invoice ในใบเสร็จรับเงิน</span>{" "}
-              <span className="text-blue-600 dark:text-blue-400">
-                #HS{statementId.toString()}
-              </span>
-            </div>
+            สร้างใบวางบิลใหม่
           </DialogTitle>
         </DialogHeader>
         <div
           className="flex flex-col gap-4"
           style={{ maxHeight: "80vh", overflowY: "auto" }}
         >
-          {/* Row: ค้นหา invoice */}
-          <div className="flex flex-wrap gap-3 items-center rounded-xl px-4 py-2 mb-1">
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-gray-500 dark:text-zinc-400">
-                ลูกค้า
-              </span>
-              <span className="inline-block bg-blue-600/90 text-white text-base font-bold rounded-lg px-3 py-1 shadow-sm">
-                {customerName || "N/A"}
-              </span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-gray-500 dark:text-zinc-400">
-                เลือกแล้ว
-              </span>
-              <span className="inline-block bg-blue-600/90 text-white text-base font-bold rounded-lg px-3 py-1 shadow-sm">
-                {currentInvoices.length} ใบ
-              </span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-gray-500 dark:text-zinc-400">
-                วันที่ออกใบวางบิล
-              </span>
-              <Input
-                type="date"
-                value={statementDate}
-                onChange={(e) => setStatementDate(e.target.value)}
-                className="h-9 w-45 rounded-lg border-gray-300 dark:border-zinc-600 bg-white dark:bg-zinc-900/70 text-gray-900 dark:text-white"
+          {/* Row: ลูกค้า, วันที่, ยอดรวม, หมายเหตุ */}
+          <div className="flex flex-wrap gap-3 items-center rounded-2xl bg-gray-50 dark:bg-zinc-800 p-4">
+            <div className="flex flex-col">
+              <span className="text-xs mb-1">ลูกค้า</span>
+              <SelectCustomer
+                open={customerOpen}
+                setOpen={setCustomerOpen}
+                selectedCustomerId={selectedCustomer}
+                setSelectedCustomer={setSelectedCustomer}
+                customers={customers}
+                search={customerSearch}
+                setSearch={setCustomerSearch}
+                loading={loading}
               />
             </div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-gray-500 dark:text-zinc-400">
-                ยอดรวม
-              </span>
-              <span className="inline-block bg-green-600/90 text-white text-base font-bold rounded-lg px-3 py-1 shadow-sm">
-                {selectedTotalAmount.toLocaleString("th-TH", {
+            <div className="flex flex-col">
+              <span className="text-xs mb-1">วันที่ออก</span>
+              <Input
+                type="date"
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+                className="w-36 bg-gray-50 dark:bg-zinc-800 border-gray-300 dark:border-zinc-700 text-gray-900 dark:text-white"
+              />
+            </div>
+            <div className="flex flex-col">
+              <span className="text-xs mb-1">เลือกแล้ว</span>
+              <div className="bg-gray-100 dark:bg-zinc-800 rounded px-3 py-1 min-w-15 text-center">
+                {selectedInvoices.length} ใบ
+              </div>
+            </div>
+            <div className="flex flex-col">
+              <span className="text-xs mb-1">ยอดรวม (ประมาณ)</span>
+              <div className="bg-gray-100 dark:bg-zinc-800 rounded px-3 py-1 min-w-25 text-center">
+                {totalIncome.toLocaleString("th-TH", {
                   style: "currency",
                   currency: "THB",
                 })}
-              </span>
+              </div>
             </div>
           </div>
-          {/* Section: Invoice ที่เลือกแล้ว (ซ่อน/แสดงได้) */}
-          <div className="flex items-center justify-between gap-4">
+          {/* Row: ค้นหา invoice, pagination */}
+
+          <div className="flex items-center justify-between gap-3">
             <span className="font-semibold">Invoice ที่เลือกแล้ว</span>
             <div className="ml-auto relative w-full max-w-xs">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400 dark:text-zinc-400" />
               <Input
                 type="text"
-                value={invoiceSearch}
-                onChange={(e) => setInvoiceSearch(e.target.value)}
-                placeholder="ค้นหาเลขที่ Invoice,วันที่ออก,เลขที่บิล,ยอดรวม"
+                value={selectedInvoiceSearch}
+                onChange={(e) => setSelectedInvoiceSearch(e.target.value)}
+                placeholder="ค้นหาเลขที่ใบวางบิล,วันที่ออก,เลขที่บิล,ยอดรวม"
                 className="h-9 w-full rounded-lg border-gray-300 dark:border-zinc-600 bg-white dark:bg-zinc-900/70 pl-9 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-zinc-400 focus-visible:ring-1 focus-visible:ring-blue-500"
               />
             </div>
@@ -353,41 +302,44 @@ export default function EditStatementDialog({
               variant="ghost"
               className="group h-8 w-8 rounded-full border border-red-300 dark:border-red-600/80 bg-red-100 dark:bg-red-700/60 text-red-700 dark:text-red-100 shadow-sm transition-all duration-200 hover:scale-105 hover:border-red-400 dark:hover:border-red-400 hover:bg-red-200 dark:hover:bg-red-600 hover:shadow-md active:scale-95"
               onClick={handleRemoveAll}
-              disabled={currentInvoices.length === 0}
+              disabled={selectedInvoices.length === 0}
               aria-label="Remove all selected invoices"
               title="ลบทั้งหมด"
             >
               <X className="h-4 w-4 transition-transform duration-200 group-hover:rotate-90" />
             </Button>
-            <Button
-              size="icon"
-              variant="ghost"
-              className="group h-8 w-8 rounded-full border border-gray-300 dark:border-zinc-600/80 bg-gray-100 dark:bg-zinc-700/60 text-gray-700 dark:text-zinc-100 shadow-sm transition-all duration-200 hover:scale-105 hover:border-gray-400 dark:hover:border-zinc-400 hover:bg-gray-200 dark:hover:bg-zinc-600 hover:shadow-md active:scale-95"
-              onClick={() => setShowSelectedTable((v) => !v)}
-              aria-label={
-                showSelectedTable
-                  ? "Hide selected invoices"
-                  : "Show selected invoices"
-              }
-            >
-              {showSelectedTable ? (
-                <ChevronUp className="h-4 w-4 transition-transform duration-200 group-hover:-translate-y-0.5" />
-              ) : (
-                <ChevronDown className="h-4 w-4 transition-transform duration-200 group-hover:translate-y-0.5" />
-              )}
-            </Button>
+            <div className="flex items-center justify-between mb-2">
+              <Button
+                size="icon"
+                variant="ghost"
+                className="group h-8 w-8 rounded-full border border-gray-300 dark:border-zinc-600/80 bg-gray-100 dark:bg-zinc-700/60 text-gray-700 dark:text-zinc-100 shadow-sm transition-all duration-200 hover:scale-105 hover:border-gray-400 dark:hover:border-zinc-400 hover:bg-gray-200 dark:hover:bg-zinc-600 hover:shadow-md active:scale-95"
+                onClick={() => setShowSelectedTable((v) => !v)}
+                aria-label={
+                  showSelectedTable
+                    ? "Hide selected invoices"
+                    : "Show selected invoices"
+                }
+              >
+                {showSelectedTable ? (
+                  <ChevronUp className="h-4 w-4 transition-transform duration-200 group-hover:-translate-y-0.5" />
+                ) : (
+                  <ChevronDown className="h-4 w-4 transition-transform duration-200 group-hover:translate-y-0.5" />
+                )}
+              </Button>
+            </div>
           </div>
+
           <div
-            className="rounded-xl mt-2"
+            className="bg-gray-50 dark:bg-zinc-800 rounded-xl mt-2"
             style={{ maxHeight: 260, overflowY: "auto" }}
           >
             {showSelectedTable && (
               <>
                 <Table className="border border-gray-300 dark:border-zinc-600/90">
-                  <TableHeader className="bg-gray-50 dark:bg-zinc-800/50">
+                  <TableHeader className="bg-gray-100 dark:bg-zinc-700/40">
                     <TableRow className="border-b border-gray-300 dark:border-zinc-600/90">
                       <TableHead className="border-r border-gray-300 dark:border-zinc-600/90">
-                        เลขที่ Invoice
+                        เลขที่ใบวางบิล
                       </TableHead>
                       <TableHead className="border-r border-gray-300 dark:border-zinc-600/90">
                         วันที่ออก
@@ -418,7 +370,7 @@ export default function EditStatementDialog({
                           className="border-b border-gray-200 dark:border-zinc-700/80 last:border-b-0"
                         >
                           <TableCell className="border-r border-gray-200 dark:border-zinc-700/80">
-                            HS{inv.invoiceNo}
+                            {inv.invoiceNo}
                           </TableCell>
                           <TableCell className="border-r border-gray-200 dark:border-zinc-700/80">
                             {formatThaiDateLong(inv.createdAt)}
@@ -427,7 +379,7 @@ export default function EditStatementDialog({
                             {inv.billId ?? "-"}
                           </TableCell>
                           <TableCell className="border-r border-gray-200 dark:border-zinc-700/80">
-                            {inv.total.toLocaleString("th-TH", {
+                            {Number(inv.total ?? 0).toLocaleString("th-TH", {
                               style: "currency",
                               currency: "THB",
                             })}
@@ -436,7 +388,13 @@ export default function EditStatementDialog({
                             <Button
                               size="icon"
                               variant="destructive"
-                              onClick={() => handleRemoveInvoice(inv.id)}
+                              onClick={() => {
+                                setSelectedInvoices(
+                                  selectedInvoices.filter(
+                                    (i) => i.id !== inv.id,
+                                  ),
+                                );
+                              }}
                               className="hover:text-red-600 hover:cursor-pointer"
                             >
                               <Trash2 className="w-10 h-10" />
@@ -447,6 +405,7 @@ export default function EditStatementDialog({
                     )}
                   </TableBody>
                 </Table>
+                {/* Pagination for selected invoices */}
                 <div className="py-4 px-6 border-t border-gray-200 dark:border-zinc-700 flex items-center justify-between bg-gray-50 dark:bg-zinc-900/50 mt-2 rounded-b-xl">
                   <span className="text-sm text-gray-500 dark:text-zinc-400">
                     หน้า {selectedPage} จาก {selectedTotalPages} (ทั้งหมด{" "}
@@ -478,16 +437,15 @@ export default function EditStatementDialog({
               </>
             )}
           </div>
-          {/* Section: Invoice ที่เลือกได้ (ยังไม่ถูกเลือก) */}
-          <div className="flex items-center justify-between gap-4">
+          <div className="flex items-center justify-between gap-3">
             <span className="font-semibold">Invoice ที่เลือกได้</span>
             <div className="ml-auto relative w-full max-w-xs">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400 dark:text-zinc-400" />
               <Input
                 type="text"
-                value={invoiceSearch2}
-                onChange={(e) => setInvoiceSearch2(e.target.value)}
-                placeholder="ค้นหาเลขที่ Invoice,วันที่ออก,เลขที่บิล,ยอดรวม"
+                value={availableInvoiceSearch}
+                onChange={(e) => setAvailableInvoiceSearch(e.target.value)}
+                placeholder="ค้นหาเลขที่ใบวางบิล,วันที่ออก,เลขที่บิล,ยอดรวม"
                 className="h-9 w-full rounded-lg border-gray-300 dark:border-zinc-600 bg-white dark:bg-zinc-900/70 pl-9 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-zinc-400 focus-visible:ring-1 focus-visible:ring-blue-500"
               />
             </div>
@@ -502,35 +460,37 @@ export default function EditStatementDialog({
             >
               <CheckSquare className="h-4 w-4 transition-transform duration-200 group-hover:scale-110" />
             </Button>
-            <Button
-              size="icon"
-              variant="ghost"
-              className="group h-8 w-8 rounded-full border border-gray-300 dark:border-zinc-600/80 bg-gray-100 dark:bg-zinc-700/60 text-gray-700 dark:text-zinc-100 shadow-sm transition-all duration-200 hover:scale-105 hover:border-gray-400 dark:hover:border-zinc-400 hover:bg-gray-200 dark:hover:bg-zinc-600 hover:shadow-md active:scale-95"
-              onClick={() => setShowAvailableTable((v) => !v)}
-              aria-label={
-                showAvailableTable
-                  ? "Hide available invoices"
-                  : "Show available invoices"
-              }
-            >
-              {showAvailableTable ? (
-                <ChevronUp className="h-4 w-4 transition-transform duration-200 group-hover:-translate-y-0.5" />
-              ) : (
-                <ChevronDown className="h-4 w-4 transition-transform duration-200 group-hover:translate-y-0.5" />
-              )}
-            </Button>
+            <div className="flex items-center justify-between mb-2">
+              <Button
+                size="icon"
+                variant="ghost"
+                className="group h-8 w-8 rounded-full border border-gray-300 dark:border-zinc-600/80 bg-gray-100 dark:bg-zinc-700/60 text-gray-700 dark:text-zinc-100 shadow-sm transition-all duration-200 hover:scale-105 hover:border-gray-400 dark:hover:border-zinc-400 hover:bg-gray-200 dark:hover:bg-zinc-600 hover:shadow-md active:scale-95"
+                onClick={() => setShowSelectedTable2((v) => !v)}
+                aria-label={
+                  showSelectedTable2
+                    ? "Hide selected invoices"
+                    : "Show selected invoices"
+                }
+              >
+                {showSelectedTable2 ? (
+                  <ChevronUp className="h-4 w-4 transition-transform duration-200 group-hover:-translate-y-0.5" />
+                ) : (
+                  <ChevronDown className="h-4 w-4 transition-transform duration-200 group-hover:translate-y-0.5" />
+                )}
+              </Button>
+            </div>
           </div>
           <div
-            className=" rounded-xl mt-2"
+            className="bg-gray-50 dark:bg-zinc-800 rounded-xl mt-2"
             style={{ maxHeight: 260, overflowY: "auto" }}
           >
-            {showAvailableTable && (
+            {showSelectedTable2 && (
               <>
                 <Table className="border border-gray-300 dark:border-zinc-600/90">
-                  <TableHeader className="bg-gray-50 dark:bg-zinc-800/50">
+                  <TableHeader className="bg-gray-100 dark:bg-zinc-700/40">
                     <TableRow className="border-b border-gray-300 dark:border-zinc-600/90">
                       <TableHead className="border-r border-gray-300 dark:border-zinc-600/90">
-                        เลขที่ Invoice
+                        เลขที่ใบวางบิล
                       </TableHead>
                       <TableHead className="border-r border-gray-300 dark:border-zinc-600/90">
                         วันที่ออก
@@ -545,16 +505,7 @@ export default function EditStatementDialog({
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {availableLoading ? (
-                      <TableRow className="border-b border-gray-300 dark:border-zinc-600/90">
-                        <TableCell
-                          colSpan={5}
-                          className="border-x border-gray-300 dark:border-zinc-700/80 text-center text-gray-500 dark:text-zinc-400"
-                        >
-                          กำลังโหลด...
-                        </TableCell>
-                      </TableRow>
-                    ) : pagedInvoiceList.length === 0 ? (
+                    {pagedInvoiceList.length === 0 ? (
                       <TableRow className="border-b border-gray-300 dark:border-zinc-600/90">
                         <TableCell
                           colSpan={5}
@@ -570,7 +521,7 @@ export default function EditStatementDialog({
                           className="border-b border-gray-200 dark:border-zinc-700/80 last:border-b-0"
                         >
                           <TableCell className="border-r border-gray-200 dark:border-zinc-700/80">
-                            HS{inv.invoiceNo}
+                            {inv.invoiceNo}
                           </TableCell>
                           <TableCell className="border-r border-gray-200 dark:border-zinc-700/80">
                             {formatThaiDateLong(inv.createdAt)}
@@ -579,7 +530,7 @@ export default function EditStatementDialog({
                             {inv.billId ?? "-"}
                           </TableCell>
                           <TableCell className="border-r border-gray-200 dark:border-zinc-700/80">
-                            {inv.total.toLocaleString("th-TH", {
+                            {Number(inv.total ?? 0).toLocaleString("th-TH", {
                               style: "currency",
                               currency: "THB",
                             })}
@@ -587,7 +538,9 @@ export default function EditStatementDialog({
                           <TableCell className="border-r border-gray-200 dark:border-zinc-700/80">
                             <Button
                               size="icon"
-                              onClick={() => handleAddInvoice(inv)}
+                              onClick={() => {
+                                setSelectedInvoices([...selectedInvoices, inv]);
+                              }}
                               aria-label="Select invoice"
                               className="group rounded-full cursor-pointer"
                             >
@@ -599,8 +552,9 @@ export default function EditStatementDialog({
                     )}
                   </TableBody>
                 </Table>
-                <div className="py-4 px-6 border-t border-zinc-700 flex items-center justify-between  mt-2 rounded-b-xl">
-                  <span className="text-sm text-zinc-400">
+
+                <div className="py-4 px-6 border-t border-gray-200 dark:border-zinc-700 flex items-center justify-between bg-gray-50 dark:bg-zinc-900/50 mt-2 rounded-b-xl">
+                  <span className="text-sm text-gray-500 dark:text-zinc-400">
                     หน้า {page} จาก {invoiceTotalPages} (ทั้งหมด{" "}
                     {filteredInvoiceList.length} รายการ)
                   </span>
@@ -608,7 +562,7 @@ export default function EditStatementDialog({
                     <Button
                       size="icon"
                       variant="outline"
-                      className=" bg-white dark:bg-zinc-800 border-gray-300 dark:border-zinc-700 text-gray-900 dark:text-white"
+                      className="bg-white dark:bg-zinc-800 border-gray-300 dark:border-zinc-700 text-gray-900 dark:text-white"
                       onClick={() => setPage(page - 1)}
                       disabled={page <= 1}
                       aria-label="Previous page"
@@ -618,7 +572,7 @@ export default function EditStatementDialog({
                     <Button
                       size="icon"
                       variant="outline"
-                      className=" bg-white dark:bg-zinc-800 border-gray-300 dark:border-zinc-700 text-gray-900 dark:text-white"
+                      className="bg-white dark:bg-zinc-800 border-gray-300 dark:border-zinc-700 text-gray-900 dark:text-white"
                       onClick={() => setPage(page + 1)}
                       disabled={page >= invoiceTotalPages}
                       aria-label="Next page"
@@ -630,22 +584,39 @@ export default function EditStatementDialog({
               </>
             )}
           </div>
+          {/* ข้อความแนะนำ */}
+          <div className="text-xs text-gray-500 dark:text-zinc-400 mt-2">
+            เลือก ลูกค้า → เลือก invoice → กด "สร้างใบวางบิล" – (Fake)
+            จะสร้างเลข InvoiceNo ให้เอง
+          </div>
         </div>
-        <DialogFooter className="flex justify-end gap-2 mt-4 pt-4 border-t border-gray-200 dark:border-zinc-700">
+        <DialogFooter className="flex justify-end gap-2 mt-4">
           <Button
             variant="outline"
-            onClick={() => setOpen(false)}
-            disabled={saving}
-            className="bg-white dark:bg-zinc-800 border-gray-300 dark:border-zinc-700 text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-zinc-700"
+            className="bg-white dark:bg-zinc-800 border-gray-300 dark:border-zinc-700 text-gray-900 dark:text-white"
           >
-            ยกเลิก
+            พิมพ์
           </Button>
           <Button
-            onClick={handleSave}
-            disabled={saving || !hasChanges()}
-            className="bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-800 text-white disabled:opacity-50"
+            onClick={() => {
+              if (selectedCustomer && date && selectedInvoices.length > 0) {
+                onCreate({
+                  customerId: Number(selectedCustomer),
+                  date,
+                  invoiceIds: selectedInvoices.map((i) => i.id),
+                });
+                setOpen(false);
+              }
+            }}
+            disabled={
+              loading ||
+              !selectedCustomer ||
+              !date ||
+              selectedInvoices.length === 0
+            }
+            className="bg-blue-600 hover:bg-blue-700 text-white"
           >
-            {saving ? "กำลังบันทึก..." : "บันทึก"}
+            สร้างใบวางบิล
           </Button>
         </DialogFooter>
       </DialogContent>

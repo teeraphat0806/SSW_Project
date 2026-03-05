@@ -23,8 +23,16 @@ import {
 } from "../../components/ui/dialog";
 import { Input } from "../../components/ui/input";
 import { Label } from "../../components/ui/label";
+import CreateStatementDialog from "@/components/statement/CreateStatementDialog";
+import StatementReceiptDialog from "@/components/statement/StatementReceiptDialog";
 
-type ActionKey = "edit" | "print" | "pofile" | "printcutter" | "printtemporary";
+type ActionKey =
+  | "edit"
+  | "print"
+  | "pofile"
+  | "printcutter"
+  | "printtemporary"
+  | "printbilling";
 
 type ActionItem = {
   key: ActionKey;
@@ -33,6 +41,17 @@ type ActionItem = {
   run: () => Promise<void> | void;
   visible?: boolean;
   disabled?: boolean;
+};
+
+type PreSelectInvoiceData = {
+  customerId: number;
+  invoiceId: number;
+};
+
+type StatementData = {
+  id: number;
+  statementNo: number;
+  customerId: number;
 };
 
 const openPoUrl = (objectKey: string) =>
@@ -47,10 +66,14 @@ export function QuickAction({
   orderId,
   status,
   keyPo,
+  customerId,
+  codetoinvoice,
 }: {
   billid: string | number;
   orderId: string | number;
   keyPo?: string[];
+  customerId?: string | number | null;
+  codetoinvoice?: number | null;
   status:
     | "pending"
     | "cutting"
@@ -65,10 +88,105 @@ export function QuickAction({
   const [tempReceiptDialog, setTempReceiptDialog] = React.useState(false);
   const [orderData, setOrderData] = React.useState<any>(null);
   const [deliveryAddress, setDeliveryAddress] = React.useState("");
+  const [preSelectData, setPreSelectData] =
+    React.useState<PreSelectInvoiceData | null>(null);
+  const [billingDialogOpen, setBillingDialogOpen] = React.useState(false);
+  const [invoiceExists, setInvoiceExists] = React.useState<boolean | null>(
+    null,
+  );
+  const [checkingInvoice, setCheckingInvoice] = React.useState(false);
+  const [customers, setCustomers] = React.useState<
+    Array<{ id: number; name: string }>
+  >([]);
+  const [statementData, setStatementData] =
+    React.useState<StatementData | null>(null);
+  const [viewStatementDialogOpen, setViewStatementDialogOpen] =
+    React.useState(false);
 
   const poKeys = Array.isArray(keyPo) ? keyPo.filter(Boolean) : [];
   const hasPo = poKeys.length > 0;
   const isCanceled = status === "canceled";
+
+  // Fetch customers list for dropdown
+  React.useEffect(() => {
+    const fetchCustomers = async () => {
+      try {
+        const res = await fetch("/api/statement/customer", {
+          cache: "no-store",
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setCustomers(data);
+        }
+      } catch (error) {
+        console.error("[QuickAction] Failed to fetch customers:", error);
+      }
+    };
+
+    fetchCustomers();
+  }, []);
+
+  // เช็คว่า Invoice มีอยู่หรือไม่
+  React.useEffect(() => {
+    if (!codetoinvoice || !customerId) {
+      setInvoiceExists(false);
+      return;
+    }
+
+    const checkInvoice = async () => {
+      setCheckingInvoice(true);
+      try {
+        // Check if OrderPO has invoice using dedicated invoice check endpoint
+        const res = await fetch(`/api/orderPo/${orderId}/invoice`, {
+          cache: "no-store",
+        });
+        if (!res.ok) {
+          console.log("[QuickAction] API call failed:", res.status);
+          setInvoiceExists(false);
+          return;
+        }
+
+        const data = await res.json();
+        console.log("[QuickAction] Invoice check result:", data);
+
+        // Check if Invoice exists
+        const hasInvoice = data.hasInvoice && data.invoice != null;
+        setInvoiceExists(hasInvoice);
+
+        if (hasInvoice) {
+          console.log(
+            "[QuickAction] Setting pre-select data for invoice:",
+            data.invoice.id,
+          );
+          setPreSelectData({
+            customerId: Number(customerId),
+            invoiceId: data.invoice.id,
+          });
+
+          // Check if statement exists for this invoice
+          if (data.statement) {
+            console.log(
+              "[QuickAction] Statement already exists:",
+              data.statement,
+            );
+            setStatementData(data.statement);
+          } else {
+            console.log("[QuickAction] No statement yet for this invoice");
+            setStatementData(null);
+          }
+        } else {
+          console.log("[QuickAction] No invoice found for this order");
+        }
+      } catch (error) {
+        console.error("[QuickAction] Failed to check invoice:", error);
+        setInvoiceExists(false);
+      } finally {
+        setCheckingInvoice(false);
+      }
+    };
+
+    checkInvoice();
+  }, [codetoinvoice, customerId, orderId]);
 
   const actions: ActionItem[] = [
     {
@@ -111,7 +229,21 @@ export function QuickAction({
         }
       },
     },
-
+    {
+      key: "printbilling",
+      label: "พิมพ์ใบเสร็จรับเงิน",
+      disabled: isCanceled || invoiceExists === false || checkingInvoice,
+      icon: Printer,
+      run: () => {
+        // If statement already exists, open view dialog
+        if (statementData) {
+          setViewStatementDialogOpen(true);
+        } else {
+          // Otherwise, open create dialog
+          setBillingDialogOpen(true);
+        }
+      },
+    },
     // NOTE: pofile จะ render แยกเป็น dropdown ด้านล่าง (เพราะต้องรองรับหลายไฟล์)
   ];
 
@@ -375,6 +507,57 @@ export function QuickAction({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* View Statement Dialog - if statement already exists */}
+      {viewStatementDialogOpen && statementData && (
+        <StatementReceiptDialog
+          customerId={statementData.customerId}
+          statementNo={statementData.statementNo}
+          openInitially={true}
+          onOpenChange={(open) => {
+            setViewStatementDialogOpen(open);
+          }}
+        />
+      )}
+
+      {/* Create Statement Dialog - for creating new statement with pre-selected invoice */}
+      {billingDialogOpen && preSelectData && customers.length > 0 && (
+        <CreateStatementDialog
+          customers={customers}
+          preSelectCustomerId={preSelectData.customerId}
+          preSelectInvoiceIds={[preSelectData.invoiceId]}
+          openInitially={true}
+          onOpenChange={(open) => {
+            setBillingDialogOpen(open);
+          }}
+          onCreate={async (data) => {
+            try {
+              const res = await fetch("/api/statement/create-with-invoices", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(data),
+              });
+              if (res.ok) {
+                toast.success("สร้างใบเสร็จรับเงินสำเร็จ", {
+                  position: "bottom-right",
+                });
+                setBillingDialogOpen(false);
+                // Optionally navigate to statement page
+                // router.push("/statement");
+              } else {
+                toast.error("สร้างใบเสร็จรับเงินล้มเหลว", {
+                  position: "bottom-right",
+                });
+              }
+            } catch (error) {
+              toast.error("เกิดข้อผิดพลาด: " + (error as Error).message, {
+                position: "bottom-right",
+              });
+            }
+          }}
+          loading={false}
+        />
+      )}
     </div>
   );
 }

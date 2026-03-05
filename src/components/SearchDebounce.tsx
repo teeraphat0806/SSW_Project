@@ -19,9 +19,9 @@ export default function SearchDebounce({
   const debounce = useDebounce(search, 400);
 
   React.useEffect(() => {
-    onSearchChange?.(debounce);
     console.log("Debounced Search Value:", debounce);
-  }, [debounce, onSearchChange]);
+    onSearchChange?.(debounce);
+  }, [debounce]);
 
   React.useEffect(() => {
     setSearch("");
