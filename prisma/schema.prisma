@@ -92,7 +92,6 @@ model Bill {
   customerId                    Int
   codeCustomer                  String    @unique
   deliveryDate                  DateTime
-  deliveryOrderNo               String?
   salesName                     String
   deliveredBy                   String?
   description                   String?
@@ -145,7 +144,7 @@ model OrderPO {
 model Invoice {
   id              Int                 @id @default(autoincrement())
   codetoinvoice   Int                 @unique
-  invoiceNo       Int                 @default(autoincrement())
+  invoiceNo       Int                 @unique
   createdAt       DateTime            @default(now())
   OrderPO         OrderPO             @relation("OrderPO_Invoice", fields: [codetoinvoice], references: [codetoinvoice], onDelete: Cascade)
   statementItem   StatementInvoice?

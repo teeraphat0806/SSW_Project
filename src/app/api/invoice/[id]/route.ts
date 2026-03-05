@@ -1,9 +1,31 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/permissions";
 import prisma from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
+
+type ApiError = {
+  status: number;
+  body: { error: string };
+};
+
+function createApiError(status: number, message: string): ApiError {
+  return {
+    status,
+    body: { error: message },
+  };
+}
+
+function isApiError(error: unknown): error is ApiError {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "status" in error &&
+    "body" in error
+  );
+}
 
 export async function POST(
-  req: NextRequest,
+  _req: NextRequest,
   context: { params: Promise<{ id: string }> },
 ) {
   const authResult = await requireAuth(["superadmin", "accountant", "clerk"]);
@@ -16,37 +38,80 @@ export async function POST(
   }
 
   try {
-    const orderPO = await prisma.orderPO.findUnique({
-      where: { id: poId },
-      select: { codetoinvoice: true },
-    });
+    const maxRetry = 3;
+    //
+    for (let attempt = 1; attempt <= maxRetry; attempt++) {
+      try {
+        const newInvoice = await prisma.$transaction(
+          async (tx) => {
+            const orderPO = await tx.orderPO.findUnique({
+              where: { id: poId },
+              select: { codetoinvoice: true },
+            });
 
-    if (!orderPO) {
-      return NextResponse.json(
-        { error: "ไม่พบ Order PO นี้" },
-        { status: 404 },
-      );
+            if (!orderPO) {
+              throw createApiError(404, "ไม่พบ Order PO นี้");
+            }
+
+            const existingInvoice = await tx.invoice.findUnique({
+              where: { codetoinvoice: orderPO.codetoinvoice },
+            });
+
+            if (existingInvoice) {
+              throw createApiError(400, "ใบแจ้งหนี้สำหรับ Order PO นี้มีอยู่แล้ว");
+            }
+
+            const lastInvoice = await tx.invoice.findFirst({
+              orderBy: { invoiceNo: "desc" },
+              select: { invoiceNo: true },
+            });
+
+            const nextInvoiceNo = (lastInvoice?.invoiceNo ?? 0) + 1;
+
+            return tx.invoice.create({
+              data: {
+                codetoinvoice: orderPO.codetoinvoice,
+                invoiceNo: nextInvoiceNo,
+              },
+            });
+          },
+          { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
+        );
+
+        return NextResponse.json(newInvoice, { status: 201 });
+      } catch (error) {
+        if (isApiError(error)) {
+          return NextResponse.json(error.body, { status: error.status });
+        }
+
+        if (error instanceof Prisma.PrismaClientKnownRequestError) {
+          if (error.code === "P2034" && attempt < maxRetry) {
+            continue;
+          }
+
+          if (error.code === "P2002") {
+            const target = Array.isArray(error.meta?.target)
+              ? error.meta?.target.join(",")
+              : String(error.meta?.target ?? "");
+
+            if (target.includes("codetoinvoice")) {
+              return NextResponse.json(
+                { error: "ใบแจ้งหนี้สำหรับ Order PO นี้มีอยู่แล้ว" },
+                { status: 400 },
+              );
+            }
+
+            if (target.includes("invoiceNo") && attempt < maxRetry) {
+              continue;
+            }
+          }
+        }
+
+        throw error;
+      }
     }
-    
-    const existingInvoice = await prisma.invoice.findUnique({
-      where: { codetoinvoice: orderPO.codetoinvoice },
-    });
 
-    if(existingInvoice) {
-      return NextResponse.json(
-        { error: "ใบแจ้งหนี้สำหรับ Order PO นี้มีอยู่แล้ว" },
-        { status: 400 },
-      );
-    }
-
-    const newInvoice = await prisma.invoice.create({
-      data: {
-        codetoinvoice: orderPO.codetoinvoice,
-      }});
-
-    return NextResponse.json(newInvoice, { status: 201 });
-
-
+    throw new Error("Invoice creation retry limit exceeded");
   } catch (error) {
     console.error("Error processing invoice:", error);
     return NextResponse.json(
