@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import {
   Card,
   CardContent,
@@ -30,7 +30,24 @@ import {
 } from "lucide-react";
 import { ShapeSteel, CuttingMethod } from "@/types";
 import { calculateWeightDetails } from "@/lib/calculateGrandTotal";
-
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  KeyboardSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  arrayMove,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import { SteelItemRow } from "./SteelItemRow";
 // --- Types (คงเดิม) ---
 export type SteelItemType = {
   id: string;
@@ -84,6 +101,7 @@ type AddItemProps = {
   pofilelength: number;
   useJob: boolean;
   setUseJob: React.Dispatch<React.SetStateAction<boolean>>;
+  setSteelItems: React.Dispatch<React.SetStateAction<SteelItemType[]>>;
 };
 
 export default function AddItem({
@@ -100,6 +118,7 @@ export default function AddItem({
   pofilelength,
   useJob,
   setUseJob,
+  setSteelItems,
 }: AddItemProps) {
   const today = new Date().toISOString().split("T")[0];
   const MAX_ITEMS = 15;
@@ -119,6 +138,25 @@ export default function AddItem({
     addSteelItem();
   };
 
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    }),
+  );
+
+  const ids = useMemo(() => steelItems.map((x) => x.id), [steelItems]);
+
+  function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+    if (!active || !over || active.id === over.id) return;
+
+    setSteelItems((prev) => {
+      const oldIndex = prev.findIndex((x) => x.id === active.id);
+      const newIndex = prev.findIndex((x) => x.id === over.id);
+      return arrayMove(prev, oldIndex, newIndex); // ✅ state เรียงใหม่จริง
+    });
+  }
   // const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
   //   const selectedDate = e.target.value;
   //   const currentDate = new Date();
@@ -336,533 +374,36 @@ export default function AddItem({
 
         {/* Items */}
         <div className="space-y-3">
-          {steelItems.map((item, idx) => {
-            const isLine = item.shape === "line";
-            const selectedType = steelTypes.find(
-              (t) => t.name === item.steelType && t.shape === item.shape,
-            );
-            const selectedValue = selectedType ? String(selectedType.id) : "";
-            const estKg = calculateWeightDetails({
-              shape: item.shape,
-              amount: item.quantity,
-              width: item.width ?? undefined,
-              length: item.length,
-              thickness: item.thickness,
-              density: item.density,
-              price: item.price,
-              discount: item.discount ?? null,
-              isOD: item.isOD,
-              isServices: item.isServices,
-              isPerAmount: item.isPerAmount,
-              weight: null,
-            }).weight;
-            return (
-              <div key={item.id} className="group relative">
-                <div className="absolute -left-2 top-4 z-10 hidden h-6 w-6 items-center justify-center rounded-full bg-zinc-800 text-sm font-bold text-white shadow-sm dark:bg-blue-600 lg:flex">
-                  {idx + 1}
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
+          >
+            <SortableContext items={ids} strategy={verticalListSortingStrategy}>
+              {steelItems.map((item, idx) => (
+                <SteelItemRow
+                  key={item.id}
+                  item={item}
+                  idx={idx}
+                  steelTypes={steelTypes}
+                  useJob={useJob}
+                  searchItem={searchItem}
+                  setsearchItem={setsearchItem}
+                  loadingSteel={loadingSteel}
+                  updateSteelItem={updateSteelItem}
+                  removeSteelItem={removeSteelItem}
+                  steelItemsLength={steelItems.length}
+                />
+              ))}
+
+              {steelItems.length === 0 && (
+                <div className="text-center py-10 border-2 border-dashed rounded-xl bg-slate-50 text-slate-400 dark:bg-zinc-950/20 dark:text-zinc-500 dark:border-zinc-800">
+                  <Package className="mx-auto h-10 w-10 mb-2 opacity-50" />
+                  <p>ยังไม่มีรายการเหล็ก กดปุ่ม "เพิ่ม" เพื่อเริ่มรายการ</p>
                 </div>
-
-                <div className="group relative mb-4 rounded-xl border border-zinc-200 bg-white p-4 shadow-sm transition-all hover:shadow-md dark:border-zinc-800 dark:bg-zinc-900/50">
-                  <div className="flex flex-col gap-y-3">
-                    {/* --- ROW 1: ข้อมูลสเปคเหล็ก (Type, Dimensions, Quantity) --- */}
-                    <div className="grid grid-cols-1 gap-4 lg:grid-cols-12 lg:items-start">
-                      {/* 1. Steel Type */}
-                      <div className="lg:col-span-3">
-                        <label className="mb-1.5 block text-xs font-medium text-zinc-500 dark:text-zinc-400">
-                          ประเภทเหล็ก
-                        </label>
-                        <Select
-                          value={selectedValue}
-                          onValueChange={(value) => {
-                            const selected = steelTypes.find(
-                              (t) => String(t.id) === value,
-                            );
-                            if (selected) {
-                              updateSteelItem(
-                                item.id,
-                                "steelType",
-                                selected.name,
-                              );
-                              updateSteelItem(item.id, "shape", selected.shape);
-                              updateSteelItem(
-                                item.id,
-                                "price",
-                                Number(selected.price ?? 0),
-                              );
-                              updateSteelItem(
-                                item.id,
-                                "density",
-                                Number(selected.density ?? item.density ?? 0),
-                              );
-                              if (selected.shape === "line") {
-                                updateSteelItem(item.id, "width", null);
-                                updateSteelItem(item.id, "isOD", false);
-                              }
-                            }
-                          }}
-                        >
-                          <SelectTrigger className="h-10 w-full border-zinc-200 bg-zinc-50/50 text-sm focus:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100">
-                            <SelectValue placeholder="เลือกประเภท" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <div className="sticky top-0 z-10 border-b border-zinc-200 bg-white px-2 py-2 dark:border-zinc-800 dark:bg-zinc-950">
-                              <Input
-                                placeholder="🔍 ค้นหา..."
-                                value={searchItem}
-                                onChange={(e) => setsearchItem(e.target.value)}
-                                className="h-9 text-sm"
-                              />
-                            </div>
-                            {loadingSteel ? (
-                              <div className="p-2 text-center text-sm text-muted-foreground">
-                                กำลังโหลด...
-                              </div>
-                            ) : steelTypes.length === 0 ? (
-                              <div className="p-2 text-center text-sm text-muted-foreground">
-                                ไม่พบข้อมูล
-                              </div>
-                            ) : (
-                              <div className="max-h-48 overflow-y-auto">
-                                {steelTypes.map((type) => (
-                                  <SelectItem
-                                    key={type.id}
-                                    value={String(type.id)}
-                                  >
-                                    <span className="font-medium">
-                                      {type.name}
-                                    </span>
-                                    <span className="ml-2 text-xs text-muted-foreground">
-                                      {type.shape === "square"
-                                        ? "(แผ่น)"
-                                        : type.shape === "line"
-                                          ? "(เพลา)"
-                                          : ""}
-                                    </span>
-                                    {/* {type.shape === "line" && (
-                                    <span className="ml-2 text-xs text-muted-foreground">
-                                      Ø
-                                    </span>
-                                  )} */}
-                                  </SelectItem>
-                                ))}
-                              </div>
-                            )}
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      {/* 2. Dimensions */}
-                      <div className="lg:col-span-5">
-                        <div
-                          className={`grid gap-2 ${
-                            isLine ? "grid-cols-2" : "grid-cols-3"
-                          }`}
-                        >
-                          {/* Thickness */}
-                          <div>
-                            <label className="mb-1.5 block text-center text-xs font-medium text-zinc-500 dark:text-zinc-400">
-                              {isLine ? "กลม" : "หนา"}
-                            </label>
-                            <div className="relative">
-                              <Input
-                                type="number"
-                                min="0"
-                                step="0.01"
-                                inputMode="decimal"
-                                className={`h-10 border-zinc-200 bg-white pr-7 text-center hover:border-blue-400 focus-visible:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-900 ${noNumberSpinnerClass}`}
-                                value={item.thickness ?? 0}
-                                onChange={(e) =>
-                                  updateSteelItem(
-                                    item.id,
-                                    "thickness",
-                                    Math.max(0, Number(e.target.value || 0)),
-                                  )
-                                }
-                              />
-                              <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-zinc-400">
-                                mm
-                              </span>
-                            </div>
-                          </div>
-
-                          {/* Width (Only Square) */}
-                          {!isLine && (
-                            <div>
-                              <label className="mb-1.5 block text-center text-xs font-medium text-zinc-500 dark:text-zinc-400">
-                                {item.isOD === true ? "OD." : "กว้าง"}
-                              </label>
-                              <div className="relative">
-                                <Input
-                                  type="number"
-                                  min="0"
-                                  step="0.01"
-                                  inputMode="decimal"
-                                  className={`h-10 border-zinc-200 bg-white pr-7 text-center hover:border-blue-400 focus-visible:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-900 ${noNumberSpinnerClass}`}
-                                  value={item.width ?? 0}
-                                  onChange={(e) =>
-                                    updateSteelItem(
-                                      item.id,
-                                      "width",
-                                      Math.max(0, Number(e.target.value || 0)),
-                                    )
-                                  }
-                                />
-                                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-zinc-400">
-                                  mm
-                                </span>
-                              </div>
-                            </div>
-                          )}
-
-                          {/* Length */}
-                          <div>
-                            <label className="mb-1.5 block text-center text-xs font-medium text-zinc-500 dark:text-zinc-400">
-                              {item.isOD === true ? "ID." : "ยาว"}
-                            </label>
-                            <div className="relative">
-                              <Input
-                                type="number"
-                                min="0"
-                                step="0.01"
-                                inputMode="decimal"
-                                className={`h-10 border-zinc-200 bg-white pr-7 text-center hover:border-blue-400 focus-visible:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-900 ${noNumberSpinnerClass}`}
-                                value={item.length ?? 0}
-                                onChange={(e) =>
-                                  updateSteelItem(
-                                    item.id,
-                                    "length",
-                                    Math.max(0, Number(e.target.value || 0)),
-                                  )
-                                }
-                              />
-                              <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-zinc-400">
-                                mm
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* 3. Quantity */}
-                      <div className="lg:col-span-2">
-                        <label className="mb-1.5 block text-center text-xs font-medium text-zinc-500 dark:text-zinc-400">
-                          จำนวน
-                        </label>
-                        <Input
-                          type="number"
-                          min={0}
-                          className={`h-10 w-full border-blue-200 bg-blue-50 text-center font-bold text-blue-700 shadow-sm focus-visible:ring-blue-500 dark:border-blue-900 dark:bg-blue-900/20 dark:text-blue-400 ${noNumberSpinnerClass}`}
-                          value={item.quantity ?? 1}
-                          onChange={(e) =>
-                            updateSteelItem(
-                              item.id,
-                              "quantity",
-                              Math.max(1, Number(e.target.value || 1)),
-                            )
-                          }
-                        />
-                      </div>
-
-                      <div className="lg:col-span-2">
-                        <label className="mb-1.5 block text-center text-xs font-medium text-zinc-500 dark:text-zinc-400">
-                          น้ำหนักประมาณ {fmtKg(estKg)} Kg.
-                        </label>
-                        <div className="relative">
-                          <Input
-                            type="number"
-                            min={0}
-                            step="0.01"
-                            inputMode="decimal"
-                            className={`h-10 border-zinc-200 bg-white pr-8 text-right font-mono text-sm hover:border-blue-400 focus-visible:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 ${noNumberSpinnerClass}`}
-                            value={item.weight ?? 0}
-                            onChange={(e) =>
-                              updateSteelItem(
-                                item.id,
-                                "weight",
-                                Math.max(0, Number(e.target.value || 0)),
-                              )
-                            }
-                          />
-                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-zinc-400">
-                            Kg.
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* เส้นคั่นบางๆ เพื่อแบ่งโซน (Optional) */}
-                    <div className="border-t border-dashed border-zinc-200 dark:border-zinc-800" />
-
-                    {/* --- ROW 2: รายละเอียดเพิ่มเติม (Cutting, Job, Note, Action) --- */}
-                    <div className="flex flex-col gap-4 lg:flex-row lg:flex-wrap lg:items-end">
-                      {/* 4. Cutting Method */}
-                      <div className="flex-none">
-                        <label className="mb-1.5 block text-xs font-medium text-zinc-500 dark:text-zinc-400">
-                          วิธีตัด
-                        </label>
-                        <Select
-                          value={item.cuttingMethod ?? "normal"}
-                          onValueChange={(value) =>
-                            updateSteelItem(
-                              item.id,
-                              "cuttingMethod",
-                              value as CuttingMethod,
-                            )
-                          }
-                        >
-                          <SelectTrigger className="h-10 w-full min-w-[160px] border-zinc-200 bg-white text-sm focus:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100">
-                            <SelectValue placeholder="เลือกวิธีตัด" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="normal">ตัดปกติ</SelectItem>
-                            <SelectItem value="FB">F/P</SelectItem>
-                            <SelectItem value="RM">R/M</SelectItem>
-                            <SelectItem value="CNC">CNC</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      {!isLine && (
-                        <div className="flex-none">
-                          <label className="mb-1.5 block text-xs font-medium text-zinc-500 dark:text-zinc-400">
-                            OD
-                          </label>
-                          <button
-                            type="button"
-                            onClick={() =>
-                              updateSteelItem(
-                                item.id,
-                                "isOD",
-                                item.isOD === true ? false : true,
-                              )
-                            }
-                            disabled={isLine}
-                            className={`flex h-10 items-center gap-2 rounded-lg border px-3 text-sm transition-all
-                            ${
-                              item.isOD === true
-                                ? "border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
-                                : "border-zinc-200 bg-white text-zinc-600 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800"
-                            }
-                            ${isLine ? "opacity-50 cursor-not-allowed" : ""}`}
-                          >
-                            <div
-                              className={`h-4 w-4 rounded border flex items-center justify-center
-                              ${
-                                item.isOD === true
-                                  ? "border-blue-500 bg-blue-500"
-                                  : "border-zinc-300 bg-white"
-                              }`}
-                            >
-                              {item.isOD === true && (
-                                <CheckIcon className="w-3 h-3 text-white" />
-                              )}
-                            </div>
-                            OD
-                          </button>
-                        </div>
-                      )}
-
-                      <div className="flex-none">
-                        <label className="mb-1.5 block text-xs font-medium text-zinc-500 dark:text-zinc-400">
-                          Services
-                        </label>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const nextIsServices = !item.isServices;
-                            updateSteelItem(
-                              item.id,
-                              "isServices",
-                              nextIsServices,
-                            );
-                            updateSteelItem(
-                              item.id,
-                              "isPerAmount",
-                              nextIsServices ? true : item.isPerAmount,
-                            );
-                          }}
-                          className={`flex h-10 items-center gap-2 rounded-lg border px-3 text-sm transition-all
-                            ${
-                              item.isServices === true
-                                ? "border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
-                                : "border-zinc-200 bg-white text-zinc-600 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800"
-                            }
-                           `}
-                        >
-                          <div
-                            className={`h-4 w-4 rounded border flex items-center justify-center
-                              ${
-                                item.isServices === true
-                                  ? "border-blue-500 bg-blue-500"
-                                  : "border-zinc-300 bg-white"
-                              }`}
-                          >
-                            {item.isServices === true && (
-                              <CheckIcon className="w-3 h-3 text-white" />
-                            )}
-                          </div>
-                          M/S
-                        </button>
-                      </div>
-
-                      <div className="flex-none">
-                        <label className="mb-1.5 block text-xs font-medium text-zinc-500 dark:text-zinc-400">
-                          การคิดราคา
-                        </label>
-                        <button
-                          type="button"
-                          onClick={() =>
-                            updateSteelItem(
-                              item.id,
-                              "isPerAmount",
-                              !item.isPerAmount,
-                            )
-                          }
-                          className={`flex h-10 items-center gap-2 rounded-lg border px-3 text-sm transition-all
-                            ${
-                              item.isPerAmount === true
-                                ? "border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
-                                : "border-zinc-200 bg-white text-zinc-600 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800"
-                            }
-                           `}
-                        >
-                          <div
-                            className={`h-4 w-4 rounded border flex items-center justify-center
-                              ${
-                                item.isPerAmount === true
-                                  ? "border-blue-500 bg-blue-500"
-                                  : "border-zinc-300 bg-white"
-                              }`}
-                          >
-                            {item.isPerAmount === true && (
-                              <CheckIcon className="w-3 h-3 text-white" />
-                            )}
-                          </div>
-                          ต่อชิ้น
-                        </button>
-                      </div>
-
-                      <div className="w-full sm:w-40 lg:w-32 flex-none">
-                        <label className="mb-1.5 block text-xs font-medium text-zinc-500 dark:text-zinc-400">
-                          {item.isPerAmount === false
-                            ? "ราคาต่อหน่วย (บาท)"
-                            : "ราคาต่อชิ้น (บาท)"}
-                        </label>
-                        <div className="relative">
-                          <Input
-                            type="number"
-                            min={0}
-                            value={item.price ?? 0}
-                            onChange={(e) =>
-                              updateSteelItem(
-                                item.id,
-                                "price",
-                                Math.max(0, Number(e.target.value || 0)),
-                              )
-                            }
-                            placeholder="0"
-                            className={`h-10 border-zinc-200 bg-white text-right pr-8 dark:border-zinc-700 dark:bg-zinc-900 ${noNumberSpinnerClass}`}
-                          />
-                          <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-zinc-400">
-                            ฿
-                          </span>
-                        </div>
-                      </div>
-
-                      <div className="w-full sm:w-40 lg:w-32 flex-none">
-                        <label className="mb-1.5 block text-xs font-medium text-zinc-500 dark:text-zinc-400">
-                          ส่วนลด (บาท)
-                        </label>
-                        <div className="relative">
-                          <Input
-                            type="number"
-                            min={0}
-                            value={item.discount ?? ""}
-                            onChange={(e) =>
-                              updateSteelItem(
-                                item.id,
-                                "discount",
-                                e.target.value === ""
-                                  ? null
-                                  : Math.max(0, Number(e.target.value)),
-                              )
-                            }
-                            placeholder="0"
-                            className={`h-10 border-zinc-200 bg-white text-right pr-8 dark:border-zinc-700 dark:bg-zinc-900 ${noNumberSpinnerClass}`}
-                          />
-                          <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-zinc-400">
-                            ฿
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* 5. Job (แสดงเฉพาะตอน useJob เป็น true) */}
-                      {useJob && (
-                        <div className="w-full lg:w-32 flex-none">
-                          <label className="mb-1.5 block text-xs font-medium text-zinc-500 dark:text-zinc-400">
-                            Job No.
-                          </label>
-                          <Input
-                            type="text"
-                            value={item.job ?? ""}
-                            onChange={(e) =>
-                              updateSteelItem(
-                                item.id,
-                                "job",
-                                e.target.value.trim() === ""
-                                  ? null
-                                  : e.target.value,
-                              )
-                            }
-                            placeholder="No."
-                            className="h-10 border-zinc-200 bg-white text-center dark:border-zinc-700 dark:bg-zinc-900"
-                          />
-                        </div>
-                      )}
-
-                      {/* 6. Note (ใช้ flex-1 เพื่อดันให้เต็มพื้นที่ที่เหลือ แล้วจะส่งปุ่มลบไปขวาสุด) */}
-                      <div className="flex-1 min-w-[150px]">
-                        <label className="mb-1.5 block text-xs font-medium text-zinc-500 dark:text-zinc-400">
-                          หมายเหตุ
-                        </label>
-                        <Input
-                          value={item.notes || ""}
-                          onChange={(e) =>
-                            updateSteelItem(item.id, "notes", e.target.value)
-                          }
-                          placeholder="รายละเอียดเพิ่มเติม..."
-                          className="h-10 border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-900"
-                        />
-                      </div>
-
-                      {/* 7. Delete Button (อยู่ขวาสุดเสมอในแนวนอน) */}
-                      <div className="flex-none pb-1">
-                        {" "}
-                        {/* pb-1 เพื่อจัด center กับ input สูง 10 */}
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => removeSteelItem(item.id)}
-                          disabled={steelItems.length <= 1}
-                          className="h-9 w-9 text-zinc-400 hover:bg-red-50 hover:text-red-600 disabled:opacity-30 dark:text-zinc-600 dark:hover:bg-red-900/20 dark:hover:text-red-400"
-                        >
-                          <Trash2 className="h-5 w-5" />
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-
-          {/* Empty state */}
-          {steelItems.length === 0 && (
-            <div className="text-center py-10 border-2 border-dashed rounded-xl bg-slate-50 text-slate-400 dark:bg-zinc-950/20 dark:text-zinc-500 dark:border-zinc-800">
-              <Package className="mx-auto h-10 w-10 mb-2 opacity-50" />
-              <p>ยังไม่มีรายการเหล็ก กดปุ่ม "เพิ่ม" เพื่อเริ่มรายการ</p>
-            </div>
-          )}
+              )}
+            </SortableContext>
+          </DndContext>
         </div>
 
         {/* Add button bottom (ให้เหมือนบน) */}
