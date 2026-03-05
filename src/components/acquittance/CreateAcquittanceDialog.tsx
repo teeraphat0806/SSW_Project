@@ -54,7 +54,7 @@ interface InvoiceApiItem {
   createdAt: string;
 }
 
-interface CreateStatementDialogProps {
+interface CreateAcquittanceDialogProps {
   customers: CustomerOption[];
   onCreate: (data: {
     customerId: number;
@@ -64,11 +64,11 @@ interface CreateStatementDialogProps {
   loading: boolean;
 }
 
-export default function CreateStatementDialog({
+export default function CreateAcquittanceDialog({
   customers,
   onCreate,
   loading,
-}: CreateStatementDialogProps) {
+}: CreateAcquittanceDialogProps) {
   const [open, setOpen] = useState(false);
   const [customerOpen, setCustomerOpen] = useState(false);
   const [customerSearch, setCustomerSearch] = useState("");
@@ -221,22 +221,22 @@ export default function CreateStatementDialog({
       <div className="flex gap-4">
         <Button
           className="bg-gray-200 hover:bg-gray-300 text-gray-800 dark:bg-zinc-700 dark:hover:bg-zinc-600 dark:text-white inline-flex items-center gap-2"
-          onClick={() => router.push("/acquittance")}
+          onClick={() => router.push("/statement")}
         >
           <ArrowRightLeft className="h-4 w-4" />
-          สลับเป็นใบวางบิล
+          สลับเป็นใบเสร็จรับเงิน
         </Button>
         <DialogTrigger asChild>
           <Button className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl font-medium shadow-lg shadow-blue-500/20 transition-all hover:scale-105 active:scale-95 inline-flex items-center gap-2">
             <FilePlus2 className="h-4 w-4" />
-            สร้างใบเสร็จรับเงิน
+            สร้างใบวางบิล
           </Button>
         </DialogTrigger>
       </div>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto bg-white dark:bg-zinc-900 text-gray-900 dark:text-white rounded-2xl p-6 shadow-xl border border-gray-200 dark:border-zinc-700">
         <DialogHeader>
           <DialogTitle className="text-xl font-bold mb-2">
-            สร้างใบเสร็จรับเงินใหม่
+            สร้างใบวางบิลใหม่
           </DialogTitle>
         </DialogHeader>
         <div
@@ -293,7 +293,7 @@ export default function CreateStatementDialog({
                 type="text"
                 value={selectedInvoiceSearch}
                 onChange={(e) => setSelectedInvoiceSearch(e.target.value)}
-                placeholder="ค้นหาเลขที่ Invoice,วันที่ออก,เลขที่บิล,ยอดรวม"
+                placeholder="ค้นหาเลขที่ใบวางบิล,วันที่ออก,เลขที่บิล,ยอดรวม"
                 className="h-9 w-full rounded-lg border-gray-300 dark:border-zinc-600 bg-white dark:bg-zinc-900/70 pl-9 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-zinc-400 focus-visible:ring-1 focus-visible:ring-blue-500"
               />
             </div>
@@ -339,7 +339,7 @@ export default function CreateStatementDialog({
                   <TableHeader className="bg-gray-100 dark:bg-zinc-700/40">
                     <TableRow className="border-b border-gray-300 dark:border-zinc-600/90">
                       <TableHead className="border-r border-gray-300 dark:border-zinc-600/90">
-                        เลขที่ Invoice
+                        เลขที่ใบวางบิล
                       </TableHead>
                       <TableHead className="border-r border-gray-300 dark:border-zinc-600/90">
                         วันที่ออก
@@ -445,7 +445,7 @@ export default function CreateStatementDialog({
                 type="text"
                 value={availableInvoiceSearch}
                 onChange={(e) => setAvailableInvoiceSearch(e.target.value)}
-                placeholder="ค้นหาเลขที่ Invoice,วันที่ออก,เลขที่บิล,ยอดรวม"
+                placeholder="ค้นหาเลขที่ใบวางบิล,วันที่ออก,เลขที่บิล,ยอดรวม"
                 className="h-9 w-full rounded-lg border-gray-300 dark:border-zinc-600 bg-white dark:bg-zinc-900/70 pl-9 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-zinc-400 focus-visible:ring-1 focus-visible:ring-blue-500"
               />
             </div>
@@ -490,7 +490,7 @@ export default function CreateStatementDialog({
                   <TableHeader className="bg-gray-100 dark:bg-zinc-700/40">
                     <TableRow className="border-b border-gray-300 dark:border-zinc-600/90">
                       <TableHead className="border-r border-gray-300 dark:border-zinc-600/90">
-                        เลขที่ Invoice
+                        เลขที่ใบวางบิล
                       </TableHead>
                       <TableHead className="border-r border-gray-300 dark:border-zinc-600/90">
                         วันที่ออก
@@ -586,7 +586,7 @@ export default function CreateStatementDialog({
           </div>
           {/* ข้อความแนะนำ */}
           <div className="text-xs text-gray-500 dark:text-zinc-400 mt-2">
-            เลือก ลูกค้า → เลือก invoice → กด "สร้างใบเสร็จรับเงิน" – (Fake)
+            เลือก ลูกค้า → เลือก invoice → กด "สร้างใบวางบิล" – (Fake)
             จะสร้างเลข InvoiceNo ให้เอง
           </div>
         </div>
@@ -616,7 +616,7 @@ export default function CreateStatementDialog({
             }
             className="bg-blue-600 hover:bg-blue-700 text-white"
           >
-            สร้างใบเสร็จรับเงิน
+            สร้างใบวางบิล
           </Button>
         </DialogFooter>
       </DialogContent>

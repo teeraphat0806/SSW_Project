@@ -62,6 +62,10 @@ export async function proxy(request: NextRequest) {
       prefix: "/statement",
       allowedRoles: ["superadmin", "clerk", "supervisor"],
     },
+    {
+      prefix: "/acquittance",
+      allowedRoles: ["superadmin", "clerk", "supervisor"],
+    },
   ];
 
   const matchedRoute = protectedRoutes.find(({ prefix }) =>

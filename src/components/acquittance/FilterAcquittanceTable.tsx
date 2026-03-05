@@ -1,7 +1,7 @@
 import { X } from "lucide-react";
 import SearchDebounce from "@/components/SearchDebounce";
 
-interface FilterStatementTableProps {
+interface FilterAcquittanceTableProps {
   searchTerm: string;
   onSearchChange: (value: string) => void;
   dateFrom: string;
@@ -11,7 +11,7 @@ interface FilterStatementTableProps {
   onClearFilters: () => void;
 }
 
-export default function FilterStatementTable({
+export default function FilterAcquittanceTable({
   searchTerm,
   onSearchChange,
   dateFrom,
@@ -19,7 +19,7 @@ export default function FilterStatementTable({
   onDateFromChange,
   onDateToChange,
   onClearFilters,
-}: FilterStatementTableProps) {
+}: FilterAcquittanceTableProps) {
   return (
     <div className="bg-white dark:bg-zinc-900 rounded-2xl p-5 shadow-sm border border-zinc-200 dark:border-zinc-800 mb-6">
       {/* เปลี่ยน items-end เป็น items-center หรือ items-end ตามความเหมาะสม แต่ Grid จัดการเรื่องความสูงไว้แล้ว */}
@@ -31,10 +31,9 @@ export default function FilterStatementTable({
           </label>
           <div className="relative group">
             <SearchDebounce
-              placeholder="ชื่อลูกค้า, เลขที่ Statement"
+              placeholder="ชื่อลูกค้า, เลขที่ acquittance"
               onSearchChange={onSearchChange}
             />
-            
           </div>
         </div>
 
