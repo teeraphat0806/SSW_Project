@@ -144,7 +144,7 @@ export default function StatementReceiptDialog({
   const thaiShortDate = `${String(currentDate.getDate()).padStart(2, "0")}/${String(currentDate.getMonth() + 1).padStart(2, "0")}/${(currentDate.getFullYear() + 543).toString().slice(-2)}`;
 
   // เลขที่เอกสาร
-  const documentNo = `HS${statementNo.toString()}`;
+  const documentNo = `${statementNo.toString()}`;
 
   useEffect(() => {
     if (!open) return;

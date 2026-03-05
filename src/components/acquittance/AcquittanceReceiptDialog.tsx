@@ -348,7 +348,7 @@ export default function AcquittanceReceiptDialog({
                             <th className="th">ลำดับ</th>
                             <th className="th">วัน เดือน ปี</th>
                             <th className="th">เลขที่</th>
-                            <th className="th">จำนวนเงิน</th>
+                            <th className="th th-right">จำนวนเงิน</th>
                           </tr>
                         </thead>
 
@@ -381,7 +381,7 @@ export default function AcquittanceReceiptDialog({
                                   <td className="td">
                                     HS{bill.invoiceNo || "-"}
                                   </td>
-                                  <td className="td">
+                                  <td className="td td-right">
                                     {bill.grandTotal.toLocaleString("en-US", {
                                       minimumFractionDigits: 2,
                                     })}
@@ -490,8 +490,16 @@ export default function AcquittanceReceiptDialog({
               padding-bottom: 4px;
             }
 
+            .th-right {
+              text-align: right !important;
+            }
+
             .td {
               font-size: 15px;
+            }
+
+            .td-right {
+              text-align: right !important;
             }
 
             .avoid-break {

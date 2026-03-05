@@ -29,18 +29,18 @@ model Staff {
   currentSalary                Float
   updatedAt                    DateTime          @updatedAt
   taxid                        String?
+  positionId                   Int?
   hireStatus                   Boolean           @default(true)
   TerminationDate              DateTime?
-  positionId                   Int?
   Bill_Bill_deliveredByToStaff Bill[]            @relation("Bill_deliveredByToStaff")
   Bill_Bill_salesNameToStaff   Bill[]            @relation("Bill_salesNameToStaff")
   ExpenseCategory              ExpenseCategory[]
   orderLinks                   OrderPOStaff[]
   jobPosition                  JobPosition?      @relation(fields: [positionId], references: [id])
   user                         User?             @relation("UserStaff", fields: [userId], references: [id])
+  employments                  StaffEmployment[]
   StaffIncome                  StaffIncome[]
   StaffSalary                  StaffSalary[]
-  employments                  StaffEmployment[]
 
   @@index([positionId])
 }
@@ -52,8 +52,7 @@ model StaffEmployment {
   endDate   DateTime?
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
-
-  Staff Staff @relation(fields: [staffId], references: [id], onDelete: Cascade)
+  Staff     Staff     @relation(fields: [staffId], references: [id], onDelete: Cascade)
 
   @@unique([staffId, endDate])
   @@index([staffId, startDate(sort: Desc)])
@@ -81,10 +80,10 @@ model Customer {
   updatedAt       DateTime      @updatedAt
   faxNumberSearch String?       @unique
   telSearch       String?       @unique
+  Acquittances    Acquittance[]
   Bill            Bill[]
   OrderPO         OrderPO[]
   Statements      Statement[]
-  Acquittances    Acquittance[]
 }
 
 model Bill {
@@ -146,9 +145,9 @@ model Invoice {
   codetoinvoice   Int                 @unique
   invoiceNo       Int                 @unique
   createdAt       DateTime            @default(now())
+  acquittanceItem AcquittanceInvoice?
   OrderPO         OrderPO             @relation("OrderPO_Invoice", fields: [codetoinvoice], references: [codetoinvoice], onDelete: Cascade)
   statementItem   StatementInvoice?
-  acquittanceItem AcquittanceInvoice?
 
   @@index([codetoinvoice])
   @@index([invoiceNo])
@@ -168,15 +167,13 @@ model OrderPOStaff {
 }
 
 model Statement {
-  id          Int @id @default(autoincrement())
-  statementNo Int @default(autoincrement()) // เลขใบวางบิล (โชว์บนเอกสาร)
+  id          Int                @id @default(autoincrement())
+  statementNo Int                @default(autoincrement())
   customerId  Int
-
-  Customer Customer           @relation(fields: [customerId], references: [id])
-  items    StatementInvoice[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+  Customer    Customer           @relation(fields: [customerId], references: [id])
+  items       StatementInvoice[]
 
   @@index([statementNo])
   @@index([customerId, createdAt])
@@ -184,27 +181,23 @@ model Statement {
 
 model StatementInvoice {
   statementId Int
-  invoiceId   Int
-
-  statement Statement @relation(fields: [statementId], references: [id], onDelete: Cascade)
-  invoice   Invoice   @relation(fields: [invoiceId], references: [id], onDelete: Restrict)
+  invoiceId   Int       @unique
+  invoice     Invoice   @relation(fields: [invoiceId], references: [id])
+  statement   Statement @relation(fields: [statementId], references: [id], onDelete: Cascade)
 
   @@id([statementId, invoiceId])
-  @@unique([invoiceId])
   @@index([statementId])
   @@index([invoiceId])
 }
 
 model Acquittance {
-  id            Int      @id @default(autoincrement())
-  acquittanceNo Int      @default(autoincrement()) // เลขใบเสร็จรับเงิน (โชว์บนเอกสาร)
+  id            Int                  @id @default(autoincrement())
+  acquittanceNo Int                  @default(autoincrement())
   customerId    Int
-  createdAt     DateTime @default(now())
-
-  Customer Customer             @relation(fields: [customerId], references: [id])
-  items    AcquittanceInvoice[]
-
-  updatedAt DateTime @updatedAt
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
+  Customer      Customer             @relation(fields: [customerId], references: [id])
+  items         AcquittanceInvoice[]
 
   @@index([acquittanceNo])
   @@index([customerId, createdAt])
@@ -212,12 +205,11 @@ model Acquittance {
 
 model AcquittanceInvoice {
   acquittanceId Int
-  invoiceId     Int
+  invoiceId     Int         @unique
   acquittance   Acquittance @relation(fields: [acquittanceId], references: [id], onDelete: Cascade)
-  invoice       Invoice     @relation(fields: [invoiceId], references: [id], onDelete: Restrict)
+  invoice       Invoice     @relation(fields: [invoiceId], references: [id])
 
   @@id([acquittanceId, invoiceId])
-  @@unique([invoiceId]) // invoice 1 ใบอยู่ได้แค่ 1 acquittance
   @@index([acquittanceId])
   @@index([invoiceId])
 }
@@ -225,7 +217,6 @@ model AcquittanceInvoice {
 model Product {
   id            Int           @id @default(autoincrement())
   orderPOId     Int
-  sequence      Int
   steelId       Int
   wide          Float?
   length        Float
@@ -241,6 +232,7 @@ model Product {
   isOD          Boolean       @default(false)
   isPerAmount   Boolean       @default(false)
   isServices    Boolean       @default(false)
+  sequence      Int
   OrderPO       OrderPO       @relation(fields: [orderPOId], references: [id], onDelete: Cascade)
   SteelType     SteelType     @relation(fields: [steelId], references: [id])
 
