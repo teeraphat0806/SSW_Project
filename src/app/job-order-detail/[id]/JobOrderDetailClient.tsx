@@ -655,6 +655,8 @@ const JobOrderDetailPage = ({ id }: { id: string }) => {
                 status={jobOrder?.status || "pending"}
                 keyPo={jobOrder?.key || []}
                 billid={jobOrder?.billid || ""}
+                customerId={jobOrder?.customerId}
+                codetoinvoice={jobOrder?.codetoinvoice}
               />
             </div>
           </aside>

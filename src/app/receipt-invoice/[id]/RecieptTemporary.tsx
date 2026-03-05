@@ -75,10 +75,18 @@ export default function ReceiptTemporary({
   };
 
   React.useEffect(() => {
-    fetch(`/api/receipt/${id}`)
-      .then((res) => res.json())
-      .then(setData)
-      .catch(console.error);
+    // Get data from sessionStorage instead of API
+    const tempDataStr = sessionStorage.getItem("tempReceiptData");
+    if (tempDataStr) {
+      try {
+        const tempData = JSON.parse(tempDataStr);
+        setData(tempData);
+        // Clear sessionStorage after use
+        sessionStorage.removeItem("tempReceiptData");
+      } catch (e) {
+        console.error("Failed to parse tempReceiptData:", e);
+      }
+    }
   }, [id]);
 
   if (!data)
@@ -129,101 +137,30 @@ export default function ReceiptTemporary({
         </div>
 
         {/* Customer + Invoice Row */}
-        <div className="mt-3 grid grid-cols-2 gap-4 text-xs">
-          <div className="leading-5">
-            <div className="flex gap-20">
+        <div className="mt-3 grid grid-cols-[1fr_auto] items-start gap-6 text-xs">
+          <div className="leading-5 space-y-1 min-w-0">
+            <div className="grid grid-cols-[72px_1fr] gap-2">
               <div className="font-semibold">ลูกค้า</div>
-              <span>{data.customer.name}</span>
+              <span className="break-words">{data.customer.name}</span>
             </div>
-            <div className="flex gap-11">
+            <div className="grid grid-cols-[72px_1fr] gap-2">
               <div className="font-semibold">สถานที่จัดส่ง</div>
-              <span>{deliveryAddress || data.customer.address}</span>
+              <span className="break-words">
+                {deliveryAddress || data.customer.address}
+              </span>
             </div>
           </div>
-          <div className="space-y-1">
-            <div className="flex gap-20">
-              <span className="font-semibold">เลขที่</span>
-              <span>{data.invoiceNo}</span>
-            </div>
-            <div className="flex gap-20">
-              <span className="font-semibold">วันที่</span>
+          <div className="space-y-1 justify-self-end">
+            <div className="grid grid-cols-[84px_auto] gap-2">
+              <span className="font-semibold">วันที่ส่งสินค้า</span>
               <span>
                 {new Date(data.deliveryDate).toLocaleDateString("th-TH")}
               </span>
             </div>
-          </div>
-        </div>
-
-        {/* Order Info Table */}
-        <div
-          className="mt-2 border border-black"
-          style={
-            {
-              border: "1px solid #000",
-              WebkitPrintColorAdjust: "exact",
-              printColorAdjust: "exact",
-            } as React.CSSProperties
-          }
-        >
-          <div className="grid grid-cols-4 text-[11px]">
-            <div
-              className="border-r border-black px-2 py-1 text-center font-semibold"
-              style={{ borderRight: "1px solid #000" }}
-            >
-              เลขที่ใบสั่งซื้อ
-              <div className="text-[9px] font-normal">ORDER NO.</div>
+            <div className="grid grid-cols-[84px_auto] gap-2">
+              <span className="font-semibold">กำหนดชำระเงิน</span>
+              <span>{data.credit || ""} วัน</span>
             </div>
-            <div
-              className="border-r border-black px-2 py-1 text-center font-semibold"
-              style={{ borderRight: "1px solid #000" }}
-            >
-              วันที่ส่งสินค้า
-              <div className="text-[9px] font-normal">ORDER DATE</div>
-            </div>
-            <div
-              className="border-r border-black px-2 py-1 text-center font-semibold"
-              style={{ borderRight: "1px solid #000" }}
-            >
-              กำหนดชำระเงิน
-              <div className="text-[9px] font-normal">TERM</div>
-            </div>
-            <div className="px-2 py-1 text-center font-semibold">
-              วันที่ครบกำหนดชำระเงิน
-              <div className="text-[9px] font-normal">DUEDATE</div>
-            </div>
-          </div>
-          <div className="grid grid-cols-4 text-[11px]">
-            <div
-              className="border-t border-r border-black px-2 py-1 text-center"
-              style={{
-                borderTop: "1px solid #000",
-                borderRight: "1px solid #000",
-              }}
-            >
-              {data.invoiceNo}
-            </div>
-            <div
-              className="border-t border-r border-black px-2 py-1 text-center"
-              style={{
-                borderTop: "1px solid #000",
-                borderRight: "1px solid #000",
-              }}
-            >
-              {new Date(data.deliveryDate).toLocaleDateString("th-TH")}
-            </div>
-            <div
-              className="border-t border-r border-black px-2 py-1 text-center"
-              style={{
-                borderTop: "1px solid #000",
-                borderRight: "1px solid #000",
-              }}
-            >
-              {data.credit || "30"}
-            </div>
-            <div
-              className="border-t border-black px-2 py-1 text-center"
-              style={{ borderTop: "1px solid #000" }}
-            ></div>
           </div>
         </div>
 
@@ -257,14 +194,6 @@ export default function ReceiptTemporary({
                 น้ำหนัก
                 <div className="text-[9px] font-normal">WEIGHT</div>
               </th>
-              <th className="p-1 text-center w-20" style={headerCellStyle}>
-                ราคา/หน่วย
-                <div className="text-[9px] font-normal">PRICE/UNIT</div>
-              </th>
-              <th className="p-1 text-center w-20" style={headerCellStyle}>
-                จำนวนเงิน
-                <div className="text-[9px] font-normal">AMOUNT</div>
-              </th>
             </tr>
           </thead>
           <tbody>
@@ -283,15 +212,11 @@ export default function ReceiptTemporary({
                 <td className="p-1 text-right" style={cellStyle}>
                   {(item.weight ?? 0).toFixed(2)}
                 </td>
-                <td className="p-1 text-right" style={cellStyle}></td>
-                <td className="p-1 text-right" style={cellStyle}></td>
               </tr>
             ))}
             {Array.from({ length: Math.max(0, 15 - data.steel.length) }).map(
               (_, i) => (
                 <tr key={`empty-${i}`} style={{ height: "20px" }}>
-                  <td style={cellStyle}></td>
-                  <td style={cellStyle}></td>
                   <td style={cellStyle}></td>
                   <td style={cellStyle}></td>
                   <td style={cellStyle}></td>
@@ -304,64 +229,9 @@ export default function ReceiptTemporary({
               <td style={lastRowCellStyle}></td>
               <td style={lastRowCellStyle}></td>
               <td style={lastRowCellStyle}></td>
-              <td style={lastRowCellStyle}></td>
-              <td style={lastRowCellStyle}></td>
             </tr>
           </tbody>
         </table>
-
-        {/* Summary Box (Right) */}
-        <div className="flex justify-end">
-          <table
-            className="border-collapse text-[11px] w-[180px]"
-            style={
-              {
-                borderCollapse: "collapse",
-                WebkitPrintColorAdjust: "exact",
-                printColorAdjust: "exact",
-              } as React.CSSProperties
-            }
-          >
-            <tbody>
-              <tr>
-                <td className="px-2 py-0.5">รวมยอดเงิน</td>
-                <td
-                  className="px-2 py-0.5 text-right"
-                  style={{ border: "1px solid #000" }}
-                >
-                  -
-                </td>
-              </tr>
-              <tr>
-                <td className="px-2 py-0.5">หัก ส่วนลด</td>
-                <td
-                  className="px-2 py-0.5 text-right"
-                  style={{ border: "1px solid #000" }}
-                >
-                  -
-                </td>
-              </tr>
-              <tr>
-                <td className="px-2 py-0.5">ยอดเงินหลังหักส่วนลด</td>
-                <td
-                  className="px-2 py-0.5 text-right"
-                  style={{ border: "1px solid #000" }}
-                >
-                  -
-                </td>
-              </tr>
-              <tr>
-                <td className="px-2 py-0.5">ภาษีมูลค่าเพิ่ม</td>
-                <td
-                  className="px-2 py-0.5 text-right"
-                  style={{ border: "1px solid #000" }}
-                >
-                  0.00
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
 
         {/* Signature Section */}
         <div className="mt-6 grid grid-cols-2 gap-8 text-[11px]">

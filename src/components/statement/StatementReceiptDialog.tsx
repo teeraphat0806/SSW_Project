@@ -11,20 +11,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-const MONTH_NAMES = [
-  "มกราคม",
-  "กุมภาพันธ์",
-  "มีนาคม",
-  "เมษายน",
-  "พฤษภาคม",
-  "มิถุนายน",
-  "กรกฎาคม",
-  "สิงหาคม",
-  "กันยายน",
-  "ตุลาคม",
-  "พฤศจิกายน",
-  "ธันวาคม",
-];
 
 // ฟังก์ชันแปลงตัวเลขเป็นตัวอักษรภาษาไทย
 function numberToThaiText(number: number): string {
@@ -123,23 +109,42 @@ interface CustomerData {
 interface StatementReceiptDialogProps {
   customerId: number;
   statementNo: number;
+  openInitially?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
 export default function StatementReceiptDialog({
   customerId,
   statementNo,
+  openInitially = false,
+  onOpenChange,
 }: StatementReceiptDialogProps) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(openInitially);
   const [invoices, setInvoices] = useState<InvoiceData[]>([]);
   const [customer, setCustomer] = useState<CustomerData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Handle open state changes
+  const handleOpenChange = (newOpen: boolean) => {
+    setOpen(newOpen);
+    if (onOpenChange) {
+      onOpenChange(newOpen);
+    }
+  };
+
+  // Sync with openInitially prop
+  useEffect(() => {
+    if (openInitially !== undefined) {
+      setOpen(openInitially);
+    }
+  }, [openInitially]);
   // วันที่ปัจจุบัน (พ.ศ. แบบย่อ)
   const currentDate = new Date();
   const thaiShortDate = `${String(currentDate.getDate()).padStart(2, "0")}/${String(currentDate.getMonth() + 1).padStart(2, "0")}/${(currentDate.getFullYear() + 543).toString().slice(-2)}`;
 
   // เลขที่เอกสาร
-  const documentNo = `HS${statementNo.toString()}`;
+  const documentNo = `${statementNo.toString()}`;
 
   useEffect(() => {
     if (!open) return;
@@ -192,7 +197,7 @@ export default function StatementReceiptDialog({
     window.print();
   };
   const handleClose = () => {
-    setOpen(false);
+    handleOpenChange(false);
   };
   // แบ่งข้อมูลเป็นหน้า (ประมาณ 15 แถวต่อหน้า)
   const ITEMS_PER_PAGE = 15;
@@ -205,7 +210,7 @@ export default function StatementReceiptDialog({
   const totalAmount = invoices.reduce((sum, inv) => sum + inv.grandTotal, 0);
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         <Button
           size="icon"

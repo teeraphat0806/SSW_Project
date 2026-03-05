@@ -46,26 +46,26 @@ interface CustomerInvoiceApiItem {
   billId?: number | null;
 }
 
-interface EditStatementDialogProps {
-  statementId: number;
+interface EditAcquittanceDialogProps {
+  acquittanceId: number;
   customerId: number;
-  statementCreatedAt: string;
+  acquittanceCreatedAt: string;
   selectedInvoices: InvoiceItem[];
   onUpdate: (payload: {
     invoiceIds: number[];
-    statementDate?: string;
+    acquittanceDate?: string;
   }) => Promise<void> | void;
   loading: boolean;
 }
 
-export default function EditStatementDialog({
-  statementId,
+export default function EditAcquittanceDialog({
+  acquittanceId,
   customerId,
-  statementCreatedAt,
+  acquittanceCreatedAt,
   selectedInvoices,
   onUpdate,
   loading,
-}: EditStatementDialogProps) {
+}: EditAcquittanceDialogProps) {
   const [open, setOpen] = useState(false);
   const [invoiceSearch, setInvoiceSearch] = useState("");
   const [invoiceSearch2, setInvoiceSearch2] = useState("");
@@ -80,8 +80,8 @@ export default function EditStatementDialog({
   const [selectedPage, setSelectedPage] = useState(1);
   const [saving, setSaving] = useState(false);
   const [customerName, setCustomerName] = useState("");
-  const [statementDate, setStatementDate] = useState(
-    new Date(statementCreatedAt).toISOString().split("T")[0],
+  const [acquittanceDate, setAcquittanceDate] = useState(
+    new Date(acquittanceCreatedAt).toISOString().split("T")[0],
   );
 
   const fetchCustomerName = async () => {
@@ -156,23 +156,23 @@ export default function EditStatementDialog({
     try {
       await onUpdate({
         invoiceIds: currentInvoices.map((inv) => inv.id),
-        statementDate,
+        acquittanceDate,
       });
       setOpen(false);
     } catch (error) {
-      console.error("Failed to save statement", error);
-      alert("Failed to save statement");
+      console.error("Failed to save acquittance", error);
+      alert("Failed to save acquittance");
     } finally {
       setSaving(false);
     }
   };
 
   const hasChanges = () => {
-    const initialStatementDate = new Date(statementCreatedAt)
+    const initialAcquittanceDate = new Date(acquittanceCreatedAt)
       .toISOString()
       .split("T")[0];
 
-    if (statementDate !== initialStatementDate) return true;
+    if (acquittanceDate !== initialAcquittanceDate) return true;
 
     if (currentInvoices.length !== selectedInvoices.length) return true;
     const selectedIds = new Set(selectedInvoices.map((inv) => inv.id));
@@ -187,10 +187,12 @@ export default function EditStatementDialog({
     setPage(1);
     setInvoiceSearch("");
     setInvoiceSearch2("");
-    setStatementDate(new Date(statementCreatedAt).toISOString().split("T")[0]);
+    setAcquittanceDate(
+      new Date(acquittanceCreatedAt).toISOString().split("T")[0],
+    );
     void fetchCustomerName();
     void fetchAvailableInvoices();
-  }, [open, customerId, selectedInvoices, statementCreatedAt]);
+  }, [open, customerId, selectedInvoices, acquittanceCreatedAt]);
 
   useEffect(() => {
     setPage(1);
@@ -271,7 +273,7 @@ export default function EditStatementDialog({
         <Button
           size="icon"
           variant="outline"
-          aria-label="Edit statement"
+          aria-label="Edit acquittance"
           className="cursor-pointer border-zinc-600 text-zinc-100 hover:border-blue-500  "
         >
           <span className="p-2 rounded-lg flex flex-row items-center gap-2 text-blue-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 dark:hover:text-blue-400 transition-all">
@@ -283,9 +285,9 @@ export default function EditStatementDialog({
         <DialogHeader>
           <DialogTitle className="text-xl font-bold mb-2">
             <div className="flex gap-4">
-              <span>แก้ไข Invoice ในใบเสร็จรับเงิน</span>{" "}
+              <span>แก้ไข Invoice ในใบวางบิล</span>{" "}
               <span className="text-blue-600 dark:text-blue-400">
-                #HS{statementId.toString()}
+                #HS{acquittanceId.toString()}
               </span>
             </div>
           </DialogTitle>
@@ -318,8 +320,8 @@ export default function EditStatementDialog({
               </span>
               <Input
                 type="date"
-                value={statementDate}
-                onChange={(e) => setStatementDate(e.target.value)}
+                value={acquittanceDate}
+                onChange={(e) => setAcquittanceDate(e.target.value)}
                 className="h-9 w-45 rounded-lg border-gray-300 dark:border-zinc-600 bg-white dark:bg-zinc-900/70 text-gray-900 dark:text-white"
               />
             </div>
@@ -340,7 +342,7 @@ export default function EditStatementDialog({
             <span className="font-semibold">Invoice ที่เลือกแล้ว</span>
             <div className="ml-auto relative w-full max-w-xs">
               <SearchDebounce
-                placeholder="ค้นหาเลขที่ Invoice,วันที่ออก,เลขที่บิล,ยอดรวม"
+                placeholder="ค้นหาเลขที่ใบวางบิล,วันที่ออก,เลขที่บิล,ยอดรวม"
                 onSearchChange={setInvoiceSearch}
               />
             </div>
@@ -383,7 +385,7 @@ export default function EditStatementDialog({
                   <TableHeader className="bg-gray-50 dark:bg-zinc-800/50">
                     <TableRow className="border-b border-gray-300 dark:border-zinc-600/90">
                       <TableHead className="border-r border-gray-300 dark:border-zinc-600/90">
-                        เลขที่ Invoice
+                        เลขที่ใบวางบิล
                       </TableHead>
                       <TableHead className="border-r border-gray-300 dark:border-zinc-600/90">
                         วันที่ออก
@@ -479,7 +481,7 @@ export default function EditStatementDialog({
             <span className="font-semibold">Invoice ที่เลือกได้</span>
             <div className="ml-auto relative w-full max-w-xs">
               <SearchDebounce
-                placeholder="ค้นหาเลขที่ Invoice,วันที่ออก,เลขที่บิล,ยอดรวม"
+                placeholder="ค้นหาเลขที่ใบวางบิล,วันที่ออก,เลขที่บิล,ยอดรวม"
                 onSearchChange={setInvoiceSearch2}
               />
             </div>
@@ -522,7 +524,7 @@ export default function EditStatementDialog({
                   <TableHeader className="bg-gray-50 dark:bg-zinc-800/50">
                     <TableRow className="border-b border-gray-300 dark:border-zinc-600/90">
                       <TableHead className="border-r border-gray-300 dark:border-zinc-600/90">
-                        เลขที่ Invoice
+                        เลขที่ใบวางบิล
                       </TableHead>
                       <TableHead className="border-r border-gray-300 dark:border-zinc-600/90">
                         วันที่ออก

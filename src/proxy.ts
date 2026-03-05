@@ -56,7 +56,15 @@ export async function proxy(request: NextRequest) {
     },
     {
       prefix: "/map",
-      allowedRoles: [], // ไม่อนุญาตให้ใครเข้าได้เลย
+      allowedRoles: [],
+    },
+    {
+      prefix: "/statement",
+      allowedRoles: ["superadmin", "clerk", "supervisor"],
+    },
+    {
+      prefix: "/acquittance",
+      allowedRoles: ["superadmin", "clerk", "supervisor"],
     },
   ];
 

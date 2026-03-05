@@ -8,7 +8,8 @@ import {
   ChevronDown,
   ChevronLeft,
   ChevronRight,
-  Search,
+  CheckSquare,
+  X,
 } from "lucide-react";
 import {
   Dialog,
@@ -21,6 +22,7 @@ import {
 import { Button } from "../ui/button";
 import SelectCustomer from "../SelectCustomer";
 import { Input } from "../ui/input";
+import SearchDebounce from "@/components/SearchDebounce";
 import {
   Table,
   TableHeader,
@@ -29,7 +31,8 @@ import {
   TableRow,
   TableCell,
 } from "../ui/table";
-
+import { formatThaiDateLong } from "@/lib/dateformat";
+import { useRouter } from "next/navigation";
 interface CustomerOption {
   id: number;
   name: string;
@@ -59,19 +62,27 @@ interface CreateStatementDialogProps {
     invoiceIds: number[];
   }) => void;
   loading: boolean;
+  preSelectCustomerId?: number | null;
+  preSelectInvoiceIds?: number[];
+  openInitially?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
 export default function CreateStatementDialog({
   customers,
   onCreate,
   loading,
+  preSelectCustomerId,
+  preSelectInvoiceIds = [],
+  openInitially = false,
+  onOpenChange,
 }: CreateStatementDialogProps) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(openInitially);
   const [customerOpen, setCustomerOpen] = useState(false);
   const [customerSearch, setCustomerSearch] = useState("");
   const [selectedCustomer, setSelectedCustomer] = useState<
     string | number | null
-  >(null);
+  >(preSelectCustomerId ?? null);
   const [date, setDate] = useState("");
   const [selectedInvoiceSearch, setSelectedInvoiceSearch] = useState("");
   const [availableInvoiceSearch, setAvailableInvoiceSearch] = useState("");
@@ -82,6 +93,21 @@ export default function CreateStatementDialog({
   const [showSelectedTable, setShowSelectedTable] = useState(true);
   const [showSelectedTable2, setShowSelectedTable2] = useState(true);
   const [selectedPage, setSelectedPage] = useState(1);
+  const router = useRouter();
+
+  // Update open state in parent if provided
+  const handleOpenChange = (newOpen: boolean) => {
+    setOpen(newOpen);
+    onOpenChange?.(newOpen);
+  };
+
+  // Sync openInitially
+  useEffect(() => {
+    if (openInitially) {
+      setOpen(true);
+    }
+  }, [openInitially]);
+
   useEffect(() => {
     if (selectedCustomer) {
       setInvoiceList([]);
@@ -136,6 +162,22 @@ export default function CreateStatementDialog({
     }
   }, [selectedCustomer, customers]);
 
+  // Pre-select invoices after fetching
+  useEffect(() => {
+    if (
+      preSelectInvoiceIds &&
+      preSelectInvoiceIds.length > 0 &&
+      invoiceList.length > 0
+    ) {
+      const preSelected = invoiceList.filter((inv) =>
+        preSelectInvoiceIds.includes(inv.id),
+      );
+      if (preSelected.length > 0) {
+        setSelectedInvoices(preSelected);
+      }
+    }
+  }, [invoiceList, preSelectInvoiceIds]);
+
   useEffect(() => {
     setPage(1);
   }, [availableInvoiceSearch]);
@@ -149,21 +191,54 @@ export default function CreateStatementDialog({
     0,
   );
 
+  const handleRemoveAll = () => {
+    setSelectedInvoices([]);
+  };
+
+  const handleSelectAll = () => {
+    const newInvoices = filteredInvoiceList.filter(
+      (inv) => !selectedInvoices.some((sel) => sel.id === inv.id),
+    );
+    setSelectedInvoices([...selectedInvoices, ...newInvoices]);
+  };
+
   // Filter selected invoices table with its own search
   const filteredSelectedInvoices = selectedInvoices.filter((inv) => {
-    const matchesSearch = selectedInvoiceSearch
-      ? inv.invoiceNo.toString().includes(selectedInvoiceSearch)
-      : true;
-    return matchesSearch;
+    if (!selectedInvoiceSearch) return true;
+
+    const searchLower = selectedInvoiceSearch.toLowerCase();
+    const invoiceNoMatch = inv.invoiceNo.toString().includes(searchLower);
+    const dateMatch = formatThaiDateLong(inv.createdAt)
+      .toLowerCase()
+      .includes(searchLower);
+    const billIdMatch = inv.billId
+      ? inv.billId.toString().includes(searchLower)
+      : false;
+    const totalMatch =
+      inv.total.toString().includes(searchLower) ||
+      inv.total.toLocaleString("th-TH").includes(searchLower);
+
+    return invoiceNoMatch || dateMatch || billIdMatch || totalMatch;
   });
 
   // Filter invoiceList: remove those already selected and apply search
   const filteredInvoiceList = invoiceList.filter((inv) => {
-    const isNotSelected = !selectedInvoices.some((sel) => sel.id === inv.id);
-    const matchesSearch = availableInvoiceSearch
-      ? inv.invoiceNo.toString().includes(availableInvoiceSearch)
-      : true;
-    return isNotSelected && matchesSearch;
+    if (selectedInvoices.some((sel) => sel.id === inv.id)) return false;
+    if (!availableInvoiceSearch) return true;
+
+    const searchLower = availableInvoiceSearch.toLowerCase();
+    const invoiceNoMatch = inv.invoiceNo.toString().includes(searchLower);
+    const dateMatch = formatThaiDateLong(inv.createdAt)
+      .toLowerCase()
+      .includes(searchLower);
+    const billIdMatch = inv.billId
+      ? inv.billId.toString().includes(searchLower)
+      : false;
+    const totalMatch =
+      inv.total.toString().includes(searchLower) ||
+      inv.total.toLocaleString("th-TH").includes(searchLower);
+
+    return invoiceNoMatch || dateMatch || billIdMatch || totalMatch;
   });
   const pagedInvoiceList = filteredInvoiceList.slice(
     (page - 1) * pageSize,
@@ -180,23 +255,26 @@ export default function CreateStatementDialog({
   const selectedTotalPages =
     Math.ceil(filteredSelectedInvoices.length / pageSize) || 1;
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <div className="flex gap-4">
-          <Button className="bg-gray-200 hover:bg-gray-300 text-gray-800 dark:bg-zinc-700 dark:hover:bg-zinc-600 dark:text-white inline-flex items-center gap-2">
-            <ArrowRightLeft className="h-4 w-4" />
-            สลับเป็นใบวางบิล
-          </Button>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
+      <div className="flex gap-4">
+        <Button
+          className="bg-gray-200 hover:bg-gray-300 text-gray-800 dark:bg-zinc-700 dark:hover:bg-zinc-600 dark:text-white inline-flex items-center gap-2"
+          onClick={() => router.push("/acquittance")}
+        >
+          <ArrowRightLeft className="h-4 w-4" />
+          สลับเป็นใบวางบิล
+        </Button>
+        <DialogTrigger asChild>
           <Button className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl font-medium shadow-lg shadow-blue-500/20 transition-all hover:scale-105 active:scale-95 inline-flex items-center gap-2">
             <FilePlus2 className="h-4 w-4" />
             สร้างใบเสร็จรับเงิน
           </Button>
-        </div>
-      </DialogTrigger>
+        </DialogTrigger>
+      </div>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto bg-white dark:bg-zinc-900 text-gray-900 dark:text-white rounded-2xl p-6 shadow-xl border border-gray-200 dark:border-zinc-700">
         <DialogHeader>
           <DialogTitle className="text-xl font-bold mb-2">
-            สร้างใบเสร็จรับเงิน (Statement) ใหม่
+            สร้างใบเสร็จรับเงินใหม่
           </DialogTitle>
         </DialogHeader>
         <div
@@ -248,15 +326,22 @@ export default function CreateStatementDialog({
           <div className="flex items-center justify-between gap-3">
             <span className="font-semibold">Invoice ที่เลือกแล้ว</span>
             <div className="ml-auto relative w-full max-w-xs">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400 dark:text-zinc-400" />
-              <Input
-                type="text"
-                value={selectedInvoiceSearch}
-                onChange={(e) => setSelectedInvoiceSearch(e.target.value)}
-                placeholder="ค้นหา InvoiceNo เช่น 1201"
-                className="h-9 w-full rounded-lg border-gray-300 dark:border-zinc-600 bg-white dark:bg-zinc-900/70 pl-9 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-zinc-400 focus-visible:ring-1 focus-visible:ring-blue-500"
+              <SearchDebounce
+                placeholder="ค้นหาเลขที่ Invoice,วันที่ออก,เลขที่บิล,ยอดรวม"
+                onSearchChange={setSelectedInvoiceSearch}
               />
             </div>
+            <Button
+              size="icon"
+              variant="ghost"
+              className="group h-8 w-8 rounded-full border border-red-300 dark:border-red-600/80 bg-red-100 dark:bg-red-700/60 text-red-700 dark:text-red-100 shadow-sm transition-all duration-200 hover:scale-105 hover:border-red-400 dark:hover:border-red-400 hover:bg-red-200 dark:hover:bg-red-600 hover:shadow-md active:scale-95"
+              onClick={handleRemoveAll}
+              disabled={selectedInvoices.length === 0}
+              aria-label="Remove all selected invoices"
+              title="ลบทั้งหมด"
+            >
+              <X className="h-4 w-4 transition-transform duration-200 group-hover:rotate-90" />
+            </Button>
             <div className="flex items-center justify-between mb-2">
               <Button
                 size="icon"
@@ -288,16 +373,16 @@ export default function CreateStatementDialog({
                   <TableHeader className="bg-gray-100 dark:bg-zinc-700/40">
                     <TableRow className="border-b border-gray-300 dark:border-zinc-600/90">
                       <TableHead className="border-r border-gray-300 dark:border-zinc-600/90">
-                        InvoiceNo
+                        เลขที่ Invoice
                       </TableHead>
                       <TableHead className="border-r border-gray-300 dark:border-zinc-600/90">
-                        วันที่ Invoice
+                        วันที่ออก
                       </TableHead>
                       <TableHead className="border-r border-gray-300 dark:border-zinc-600/90">
-                        BillId
+                        เลขที่บิล
                       </TableHead>
                       <TableHead className="border-r border-gray-300 dark:border-zinc-600/90">
-                        GrandTotal
+                        ยอดรวม
                       </TableHead>
                       <TableHead>ลบ</TableHead>
                     </TableRow>
@@ -322,9 +407,7 @@ export default function CreateStatementDialog({
                             {inv.invoiceNo}
                           </TableCell>
                           <TableCell className="border-r border-gray-200 dark:border-zinc-700/80">
-                            {new Date(inv.createdAt).toLocaleDateString(
-                              "th-TH",
-                            )}
+                            {formatThaiDateLong(inv.createdAt)}
                           </TableCell>
                           <TableCell className="border-r border-gray-200 dark:border-zinc-700/80">
                             {inv.billId ?? "-"}
@@ -391,15 +474,22 @@ export default function CreateStatementDialog({
           <div className="flex items-center justify-between gap-3">
             <span className="font-semibold">Invoice ที่เลือกได้</span>
             <div className="ml-auto relative w-full max-w-xs">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400 dark:text-zinc-400" />
-              <Input
-                type="text"
-                value={availableInvoiceSearch}
-                onChange={(e) => setAvailableInvoiceSearch(e.target.value)}
-                placeholder="ค้นหา InvoiceNo เช่น 1201"
-                className="h-9 w-full rounded-lg border-gray-300 dark:border-zinc-600 bg-white dark:bg-zinc-900/70 pl-9 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-zinc-400 focus-visible:ring-1 focus-visible:ring-blue-500"
+              <SearchDebounce
+                placeholder="ค้นหาเลขที่ Invoice,วันที่ออก,เลขที่บิล,ยอดรวม"
+                onSearchChange={setAvailableInvoiceSearch}
               />
             </div>
+            <Button
+              size="icon"
+              variant="ghost"
+              className="group h-8 w-8 rounded-full border border-green-300 dark:border-green-600/80 bg-green-100 dark:bg-green-700/60 text-green-700 dark:text-green-100 shadow-sm transition-all duration-200 hover:scale-105 hover:border-green-400 dark:hover:border-green-400 hover:bg-green-200 dark:hover:bg-green-600 hover:shadow-md active:scale-95"
+              onClick={handleSelectAll}
+              disabled={filteredInvoiceList.length === 0}
+              aria-label="Select all available invoices"
+              title="เลือกทั้งหมด"
+            >
+              <CheckSquare className="h-4 w-4 transition-transform duration-200 group-hover:scale-110" />
+            </Button>
             <div className="flex items-center justify-between mb-2">
               <Button
                 size="icon"
@@ -430,16 +520,16 @@ export default function CreateStatementDialog({
                   <TableHeader className="bg-gray-100 dark:bg-zinc-700/40">
                     <TableRow className="border-b border-gray-300 dark:border-zinc-600/90">
                       <TableHead className="border-r border-gray-300 dark:border-zinc-600/90">
-                        InvoiceNo
+                        เลขที่ Invoice
                       </TableHead>
                       <TableHead className="border-r border-gray-300 dark:border-zinc-600/90">
-                        วันที่ Invoice
+                        วันที่ออก
                       </TableHead>
                       <TableHead className="border-r border-gray-300 dark:border-zinc-600/90">
-                        BillId
+                        เลขที่บิล
                       </TableHead>
                       <TableHead className="border-r border-gray-300 dark:border-zinc-600/90">
-                        GrandTotal
+                        ยอดรวม
                       </TableHead>
                       <TableHead>เลือก</TableHead>
                     </TableRow>
@@ -464,9 +554,7 @@ export default function CreateStatementDialog({
                             {inv.invoiceNo}
                           </TableCell>
                           <TableCell className="border-r border-gray-200 dark:border-zinc-700/80">
-                            {new Date(inv.createdAt).toLocaleDateString(
-                              "th-TH",
-                            )}
+                            {formatThaiDateLong(inv.createdAt)}
                           </TableCell>
                           <TableCell className="border-r border-gray-200 dark:border-zinc-700/80">
                             {inv.billId ?? "-"}
@@ -529,7 +617,7 @@ export default function CreateStatementDialog({
           {/* ข้อความแนะนำ */}
           <div className="text-xs text-gray-500 dark:text-zinc-400 mt-2">
             เลือก ลูกค้า → เลือก invoice → กด "สร้างใบเสร็จรับเงิน" – (Fake)
-            จะสร้างเลข statementNo ให้เอง
+            จะสร้างเลข InvoiceNo ให้เอง
           </div>
         </div>
         <DialogFooter className="flex justify-end gap-2 mt-4">

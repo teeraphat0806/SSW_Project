@@ -1,6 +1,6 @@
 import React from "react";
-import EditStatementDialog from "./EditStatementDialog";
-import StatementReceiptDialog from "./StatementReceiptDialog";
+import EditAcquittanceDialog from "./EditAcquittanceDialog";
+import AcquittanceReceiptDialog from "./AcquittanceReceiptDialog";
 import SearchDebounce from "@/components/SearchDebounce";
 import { X } from "lucide-react";
 import {
@@ -12,9 +12,9 @@ import {
   TableCell,
 } from "../ui/table";
 
-export interface Statement {
+export interface Acquittance {
   id: number;
-  statementNo: number;
+  acquittanceNo: number;
   customerId: number;
   customerName: string;
   createdAt: string;
@@ -30,15 +30,15 @@ export interface InvoiceItem {
   createdAt: string;
 }
 
-export interface StatementTableProps {
-  data: Statement[];
+export interface AcquittanceTableProps {
+  data: Acquittance[];
   loading: boolean;
   page: number;
   totalPages: number;
   onPageChange: (page: number) => void;
   onEdit?: (
-    statementId: number,
-    payload: { invoiceIds: number[]; statementDate?: string },
+    acquittanceId: number,
+    payload: { invoiceIds: number[]; acquittanceDate?: string },
   ) => Promise<void> | void;
   searchTerm?: string;
   onSearchChange?: (value: string) => void;
@@ -49,7 +49,7 @@ export interface StatementTableProps {
   onClearFilters?: () => void;
 }
 
-export default function StatementTable({
+export default function AcquittanceTable({
   data,
   loading,
   page,
@@ -63,7 +63,7 @@ export default function StatementTable({
   onDateFromChange,
   onDateToChange,
   onClearFilters,
-}: StatementTableProps) {
+}: AcquittanceTableProps) {
   return (
     <>
       {/* Filter Section */}
@@ -76,7 +76,7 @@ export default function StatementTable({
             </label>
             <div className="relative group">
               <SearchDebounce
-                placeholder="ชื่อลูกค้า, เลขที่ Statement"
+                placeholder="ชื่อลูกค้า, เลขที่ Acquittance"
                 onSearchChange={onSearchChange}
               />
             </div>
@@ -163,7 +163,7 @@ export default function StatementTable({
               ) : (
                 data.map((item) => (
                   <TableRow key={item.id}>
-                    <TableCell>HS{item.statementNo.toString()}</TableCell>
+                    <TableCell>HS{item.acquittanceNo.toString()}</TableCell>
                     <TableCell>{item.customerName}</TableCell>
                     <TableCell>{item.invoiceCount}</TableCell>
                     <TableCell>
@@ -176,10 +176,10 @@ export default function StatementTable({
                       {new Date(item.createdAt).toLocaleDateString("th-TH")}
                     </TableCell>
                     <TableCell>
-                      <EditStatementDialog
-                        statementId={item.id}
+                      <EditAcquittanceDialog
+                        acquittanceId={item.id}
                         customerId={item.customerId}
-                        statementCreatedAt={item.createdAt}
+                        acquittanceCreatedAt={item.createdAt}
                         selectedInvoices={item.invoices || []}
                         loading={false}
                         onUpdate={(payload) => {
@@ -188,9 +188,10 @@ export default function StatementTable({
                       />
                     </TableCell>
                     <TableCell>
-                      <StatementReceiptDialog
+                      <AcquittanceReceiptDialog
                         customerId={item.customerId}
-                        statementNo={item.statementNo}
+                        acquittanceNo={item.acquittanceNo}
+                        acquittanceId={item.id}
                       />
                     </TableCell>
                   </TableRow>

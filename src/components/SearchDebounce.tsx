@@ -20,7 +20,6 @@ export default function SearchDebounce({
 
   React.useEffect(() => {
     onSearchChange?.(debounce);
-    console.log("Debounced Search Value:", debounce);
   }, [debounce, onSearchChange]);
 
   React.useEffect(() => {
