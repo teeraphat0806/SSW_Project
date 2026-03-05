@@ -886,6 +886,7 @@ const NewJobOrder = () => {
                 <div className="mb-4">
                   <AddItem
                     steelItems={steelItems}
+                    setSteelItems={setSteelItems}
                     updateSteelItem={updateSteelItem}
                     addSteelItem={addSteelItem}
                     removeSteelItem={removeSteelItem}
