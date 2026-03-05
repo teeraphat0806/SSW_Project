@@ -84,6 +84,8 @@ export const InvoiceExcelSample: React.FC<Inv71LikeInvoiceProps> = ({
     (items?.some((item) => item.isServices === true) ?? false) ||
     !(items?.[0]?.weight == null || items?.[0]?.weight === 0);
 
+  const companyNameTokens = companyName.trim().split(/\s+/).filter(Boolean);
+
   return (
     <>
       <style
@@ -122,8 +124,17 @@ export const InvoiceExcelSample: React.FC<Inv71LikeInvoiceProps> = ({
         {/* แถวแรก: ซ้ายบริษัท, ขวาเลขที่/วันที่/เครดิต/ผู้จัดทำ */}
         <div className="flex justify-between gap-4">
           {/* ซ้าย: ข้อมูลบริษัท */}
-          <div className="space-y-2 max-w-[8cm] ml-13">
-            <div className="font-base">{companyName}</div>
+          <div className="space-y-2 max-w-[9cm] ml-13">
+            <div className="font-base">
+              {companyNameTokens.length > 0
+                ? companyNameTokens.map((token, index) => (
+                    <React.Fragment key={`${token}-${index}`}>
+                      {index > 0 ? " " : ""}
+                      <span className="whitespace-nowrap">{token}</span>
+                    </React.Fragment>
+                  ))
+                : companyName}
+            </div>
             <div className="mt-1">{addressLine1}</div>
             <div>{addressLine2}</div>
             <div className="mt-1">
@@ -142,12 +153,17 @@ export const InvoiceExcelSample: React.FC<Inv71LikeInvoiceProps> = ({
             <div>
               <span>{date} </span>
             </div>
-            <div className="ml-20">
+            <div className="ml-0">
               <span>{credit}&nbsp;วัน</span>
             </div>
-            <div>
-              <span>{poNumber || ""}</span>
-            </div>
+            {poNumber ? (
+              <div>
+                <span>{poNumber}</span>
+              </div>
+            ) : (
+              <div className="h-1"></div>
+            )}
+
             <div>
               <span>{"J.Sirikran"}</span>
             </div>
@@ -155,7 +171,7 @@ export const InvoiceExcelSample: React.FC<Inv71LikeInvoiceProps> = ({
         </div>
 
         {/* ระยะห่างก่อนหัวคอลัมน์ (ลดลงจาก mt-19) */}
-        <div className="h-[20mm]" />
+        <div className="h-[25mm]" />
 
         {/* หัวคอลัมน์แบบ Excel (ไม่มีกรอบ) */}
         <table className="w-full text-sm">
@@ -263,12 +279,12 @@ export const InvoiceExcelSample: React.FC<Inv71LikeInvoiceProps> = ({
                   <td className="pt-0.5 pr-1">{steelDisplay}</td>
                   <td className="pt-0.5 pr-1 text-left pl-1">{jobDisplay}</td>
                   <td className="pt-0.5 pr-1 text-left pl-5">{item.amount}</td>
-                  <td className="pt-0.5 pr-1 text-left">{weightDisplay}</td>
-                  <td className="pt-0.5 pr-1 text-left pl-5">
+                  <td className="pt-0.5 pr-1 text-right">{weightDisplay}</td>
+                  <td className="pt-0.5 pr-1 text-right pl-5">
                     {showPriceAndTotal ? formatNumber(item.price) : ""}
                   </td>
-                  <td className="pt-0.5 pr-0 text-left"></td>
-                  <td className="pt-0.5 pr-8 pl-4 text-left">
+                  <td className="pt-0.5 pr-30 text-left"></td>
+                  <td className="pt-0.5 pr-0 pl-4 text-right">
                     {showPriceAndTotal ? formatNumber(item.total) : ""}
                   </td>
                 </tr>
@@ -280,7 +296,7 @@ export const InvoiceExcelSample: React.FC<Inv71LikeInvoiceProps> = ({
         {/* ===== โซนรวมยอด (ติดล่างเสมอ) ===== */}
         {/* เอา mb-45 ออก แล้วคุมระยะจากขอบล่างด้วย pb-[8mm] ที่ container แทน */}
         <div className="mt-auto">
-          <div className="space-y-[2px] mr-5">
+          <div className="space-y-[2px] mr-0">
             <div className="flex justify-between">
               <span className="flex-1" />
               <span className="w-[160px] text-right">
@@ -317,8 +333,8 @@ export const InvoiceExcelSample: React.FC<Inv71LikeInvoiceProps> = ({
             </div>
           </div>
 
-          <div className="mt-6 flex mr-5">
-            <div className="flex-1 ml-10">
+          <div className="mt-6 flex mr-0">
+            <div className="flex-1 ml-7">
               {!shouldShowTotals ? "" : totalTextThai}
             </div>
             <div className="w-[160px] text-right font-semibold">
