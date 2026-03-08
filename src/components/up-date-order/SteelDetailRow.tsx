@@ -3,7 +3,7 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Trash2, CheckIcon } from "lucide-react";
+import { Trash2, CheckIcon, Copy } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   Select,
@@ -158,6 +158,7 @@ type SteelDetailRowProps = {
   steelOptions: SteelOption[];
   useJob: boolean;
   patchSteelItem: (index: number, patch: Partial<SteelItem>) => void;
+  onCopyItem: (index: number) => void;
   removeSteelItem: (index: number) => void;
   steelItemsLength: number;
 };
@@ -170,6 +171,7 @@ export function SteelDetailRow({
   steelOptions,
   useJob,
   patchSteelItem,
+  onCopyItem,
   removeSteelItem,
   steelItemsLength,
 }: SteelDetailRowProps) {
@@ -610,9 +612,21 @@ export function SteelDetailRow({
               />
             </div>
 
-            {/* Delete */}
-            <div className="flex-none pb-1 lg:ml-auto">
+            {/* Copy + Delete */}
+            <div className="flex-none pb-1 lg:ml-auto flex items-center gap-1">
               <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                disabled={steelItemsLength >= 15}
+                onClick={() => onCopyItem(idx)}
+                className="h-9 w-9 text-zinc-400 hover:bg-blue-50 hover:text-blue-600 dark:text-zinc-600 dark:hover:bg-blue-900/20 dark:hover:text-blue-400"
+                title="คัดลอกรายการ"
+              >
+                <Copy className="h-4 w-4" />
+              </Button>
+              <Button
+                type="button"
                 variant="ghost"
                 size="icon"
                 onClick={() => removeSteelItem(idx)}

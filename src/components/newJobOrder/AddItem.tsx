@@ -138,6 +138,25 @@ export default function AddItem({
     addSteelItem();
   };
 
+  const copySteelItem = (id: SteelItemType["id"]) => {
+    if (steelItems.length >= MAX_ITEMS) {
+      alert(`เพิ่มได้สูงสุด ${MAX_ITEMS} รายการเท่านั้น`);
+      return;
+    }
+    // หารายการที่จะคัดลอก
+
+    const sourceItem = steelItems.find((item) => item.id === id);
+      if (!sourceItem) return;
+
+      // สร้างรายการใหม่แต่ทำให้idไม่ซ้ำ
+      const newItem: SteelItemType = {
+        ...sourceItem,
+        id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      };
+      // เพิ่มรายการใหม่เข้าไปใน state
+      setSteelItems((prev) => [...prev, newItem]);
+  };
+
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
     useSensor(KeyboardSensor, {
@@ -391,6 +410,7 @@ export default function AddItem({
                   setsearchItem={setsearchItem}
                   loadingSteel={loadingSteel}
                   updateSteelItem={updateSteelItem}
+                  onCopyItem={copySteelItem}
                   removeSteelItem={removeSteelItem}
                   steelItemsLength={steelItems.length}
                 />
