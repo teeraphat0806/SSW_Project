@@ -378,6 +378,32 @@ export default function DetailItem<T extends JobWithSteel>({
     addSteelItem();
   };
 
+  const copySteelItem = (index: number) => {
+    const steelList = job?.steel ?? [];
+    //ตรวจดูว่าเกิน15มั้ย
+    if ((job?.steel?.length ?? 0) >= MAX_ITEMS) {
+      toast.error(`เพิ่มได้สูงสุด ${MAX_ITEMS} รายการเท่านั้น`, {
+        position: "bottom-right",
+      });
+      return;
+    }
+    //หา item ที่จะคัดลอก
+    const source = steelList[index];
+    if(!source) return;
+
+    //แยก id ออกเพื่อไม่ให้ซ้ำกับ item ที่มีอยู่แล้ว
+    const { id, ...itemWithoutId } = source;
+    
+    setJob((prev) => {
+      if (!prev) return prev;
+      return{
+        ...prev,
+        steel: [...(prev.steel ?? []), itemWithoutId as SteelItem]
+      }
+    })
+
+  }
+
   // ✅ ลบเหล็ก
   const removeSteelItem = (index: number) => {
     setJob((prev) => {
@@ -565,6 +591,7 @@ export default function DetailItem<T extends JobWithSteel>({
                 steelOptions={steelOptions}
                 useJob={useJob}
                 patchSteelItem={patchSteelItem}
+                onCopyItem={copySteelItem}
                 removeSteelItem={removeSteelItem}
                 steelItemsLength={job.steel.length}
               />

@@ -9,7 +9,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Trash2, CheckIcon } from "lucide-react";
+import { Trash2, CheckIcon, Copy } from "lucide-react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { calculateWeightDetails } from "@/lib/calculateGrandTotal";
@@ -56,6 +56,7 @@ type SteelItemRowProps = {
     field: K,
     value: SteelItemType[K],
   ) => void;
+  onCopyItem: (id: string) => void;
   removeSteelItem: (id: string) => void;
   steelItemsLength: number;
 };
@@ -72,6 +73,7 @@ export function SteelItemRow({
   setsearchItem,
   loadingSteel,
   updateSteelItem,
+  onCopyItem,
   removeSteelItem,
   steelItemsLength,
 }: SteelItemRowProps) {
@@ -149,7 +151,11 @@ export function SteelItemRow({
                   if (selected) {
                     updateSteelItem(item.id, "steelType", selected.name);
                     updateSteelItem(item.id, "shape", selected.shape);
-                    updateSteelItem(item.id, "price", Number(selected.price ?? 0));
+                    updateSteelItem(
+                      item.id,
+                      "price",
+                      Number(selected.price ?? 0),
+                    );
                     updateSteelItem(
                       item.id,
                       "density",
@@ -185,10 +191,7 @@ export function SteelItemRow({
                   ) : (
                     <div className="max-h-48 overflow-y-auto">
                       {steelTypes.map((type) => (
-                        <SelectItem
-                          key={type.id}
-                          value={String(type.id)}
-                        >
+                        <SelectItem key={type.id} value={String(type.id)}>
                           <span className="font-medium">{type.name}</span>
                           <span className="ml-2 text-xs text-muted-foreground">
                             {type.shape === "square"
@@ -463,11 +466,7 @@ export function SteelItemRow({
               <button
                 type="button"
                 onClick={() =>
-                  updateSteelItem(
-                    item.id,
-                    "isPerAmount",
-                    !item.isPerAmount,
-                  )
+                  updateSteelItem(item.id, "isPerAmount", !item.isPerAmount)
                 }
                 className={`flex h-10 items-center gap-2 rounded-lg border px-3 text-sm transition-all
                   ${
@@ -561,9 +560,7 @@ export function SteelItemRow({
                     updateSteelItem(
                       item.id,
                       "job",
-                      e.target.value.trim() === ""
-                        ? null
-                        : e.target.value,
+                      e.target.value.trim() === "" ? null : e.target.value,
                     )
                   }
                   placeholder="No."
@@ -587,9 +584,21 @@ export function SteelItemRow({
               />
             </div>
 
-            {/* Delete Button */}
-            <div className="flex-none pb-1">
+            {/* Copy + Delete Button */}
+            <div className="flex-none pb-1 flex items-center gap-1">
               <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                disabled={steelItemsLength >= 15}
+                onClick={() => onCopyItem(item.id)}
+                className="h-9 w-9 text-zinc-400 hover:bg-blue-50 hover:text-blue-600 dark:text-zinc-600 dark:hover:bg-blue-900/20 dark:hover:text-blue-400"
+                title="คัดลอกรายการ"
+              >
+                <Copy className="h-4 w-4" />
+              </Button>
+              <Button
+                type="button"
                 variant="ghost"
                 size="icon"
                 onClick={() => removeSteelItem(item.id)}
