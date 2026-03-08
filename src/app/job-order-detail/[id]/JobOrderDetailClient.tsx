@@ -200,7 +200,12 @@ const InfoStat = ({
     </div>
     <div className="space-y-1">
       <p className="text-xs font-medium text-muted-foreground">{label}</p>
-      <p className="text-xs font-semibold text-foreground">{value}</p>
+      <p
+        className="text-xs font-semibold text-foreground whitespace-nowrap overflow-hidden text-ellipsis"
+        title={value}
+      >
+        {value}
+      </p>
     </div>
   </div>
 );
