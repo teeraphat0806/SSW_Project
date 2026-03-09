@@ -41,7 +41,7 @@ model Staff {
   employments                  StaffEmployment[]
   StaffIncome                  StaffIncome[]
   StaffSalary                  StaffSalary[]
-
+  quotation                    Quotation[]
   @@index([positionId])
 }
 
@@ -84,6 +84,34 @@ model Customer {
   Bill            Bill[]
   OrderPO         OrderPO[]
   Statements      Statement[]
+  quotation       Quotation[]
+}
+
+model Quotation {
+    id            Int       @id @default(autoincrement())
+    quotationNo   String    @unique
+    customerId    Int?
+    customerName  String
+    companyName   String
+    address       String
+    tel           String?
+    fax           String?
+    credit        Int       @default(30)
+    salesName     String
+    salesNameId   Int
+    description   String?
+    vatRate       Float     @default(7.0)
+    subtotal      Float?
+    grandTotal    Float?
+    deliveryDate  String    
+    createdAt     DateTime  @default(now())
+    updatedAt     DateTime  @updatedAt
+    
+    OrderPO       OrderPO? @relation("Quotation_OrderPO")
+    staff         Staff    @relation(fields: [salesNameId], references: [id])
+    customer      Customer? @relation(fields: [customerId],references: [id])
+
+    @@index([customerId])
 }
 
 model Bill {
@@ -120,6 +148,7 @@ model OrderPO {
   poNumber      String?
   customerId    Int?
   billId        Int?           @unique
+  quotationId   Int?           @unique
   status        JobStatus      @default(pending)
   total         Float
   completedAt   DateTime?
@@ -127,6 +156,7 @@ model OrderPO {
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
   codetoinvoice Int            @unique @default(autoincrement())
+  Quotation     Quotation?     @relation("Quotation_OrderPO",fields:[quotationId],references:[id])
   Invoice       Invoice?       @relation("OrderPO_Invoice")
   bill          Bill?          @relation(fields: [billId], references: [id])
   Customer      Customer?      @relation(fields: [customerId], references: [id])
@@ -223,6 +253,8 @@ model Product {
   thickness     Float
   amount        Int
   detail        String?
+  surface       String?
+  tolerance     Float?
   actualWeight  Float?
   total         Float?
   cuttingMethod CuttingMethod @default(normal)
@@ -237,7 +269,7 @@ model Product {
   SteelType     SteelType     @relation(fields: [steelId], references: [id])
 
   @@index([orderPOId])
-  @@index([orderPOId, sequence])
+  @@unique([orderPOId, sequence])
   @@index([steelId])
 }
 
