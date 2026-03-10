@@ -91,7 +91,6 @@ function buildWhere({
     where.Invoice = { is: null };
   }
 
-
   // 2) date range (createdAt)
   if (from || to) {
     where.createdAt = {};
@@ -118,6 +117,8 @@ function buildWhere({
       return { OR: orConditions };
     });
   }
+
+  where.bill = { NOT: null }; // ต้องมีบิลถึงจะนับยอดรวมใน dashboard
 
   return where;
 }

@@ -101,6 +101,7 @@ model Quotation {
     salesNameId   Int
     description   String?
     vatRate       Float     @default(7.0)
+    vat           Float?
     subtotal      Float?
     grandTotal    Float?
     deliveryDate  String    
