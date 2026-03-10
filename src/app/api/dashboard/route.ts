@@ -118,7 +118,7 @@ function buildWhere({
     });
   }
 
-  where.bill = { NOT: null }; // ต้องมีบิลถึงจะนับยอดรวมใน dashboard
+  where.bill = { NOT: undefined }; // ต้องมีบิลถึงจะนับยอดรวมใน dashboard
 
   return where;
 }
