@@ -14,6 +14,9 @@ import {
 import { Button } from "../components/ui/button";
 import { Check } from "lucide-react";
 import { cn } from "../lib/utils";
+import { useState, useEffect } from "react";
+import { useDebounce } from "@uidotdev/usehooks";
+import { set } from "zod";
 
 type CustomerOption = {
   id: string | number;
@@ -24,9 +27,7 @@ type SelectCustomerProps = {
   open: boolean;
   setOpen: (open: boolean) => void;
   selectedCustomerId: string | number | null;
-  setSelectedCustomer: React.Dispatch<
-    React.SetStateAction<string | number | null>
-  >;
+  setSelectedCustomer: (customerId: string | number | null) => void;
   customers: CustomerOption[];
   search: string;
   setSearch: (value: string) => void;
@@ -44,6 +45,13 @@ export default function SelectCustomer({
   loading,
 }: SelectCustomerProps) {
   const selectedCustomer = customers.find((c) => c.id === selectedCustomerId);
+  const [inputValue, setInputValue] = useState(search);
+  const debounceSearch = useDebounce(inputValue, 400);
+
+  useEffect(() => {
+    setSearch(debounceSearch);
+  }, [debounceSearch, setSearch]);
+
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
@@ -66,8 +74,8 @@ export default function SelectCustomer({
         >
           <CommandInput
             placeholder="ค้นหาบริษัท..."
-            value={search}
-            onValueChange={(value) => setSearch(value)}
+            value={inputValue}
+            onValueChange={setInputValue}
           />
           <CommandList>
             {loading && (
@@ -77,6 +85,7 @@ export default function SelectCustomer({
             )}
             <CommandEmpty>ไม่พบลูกค้า</CommandEmpty>
             <CommandGroup>
+              {/* แสดงเฉพาะลูกค้าที่ไม่ใช่ลูกค้าที่ถูกเลือกอยู่แล้ว */}
               {customers
                 .filter((customer) => customer.id !== selectedCustomerId)
                 .map((customer) => (
@@ -86,6 +95,7 @@ export default function SelectCustomer({
                     className="bg-background text-foreground hover:bg-accent hover:text-accent-foreground"
                     onSelect={() => {
                       setSelectedCustomer(customer.id);
+                      setInputValue("");
                       setSearch("");
                       setOpen(false);
                     }}
@@ -96,7 +106,7 @@ export default function SelectCustomer({
                         "ml-auto h-4 w-4",
                         selectedCustomerId === customer.id
                           ? "opacity-100"
-                          : "opacity-0"
+                          : "opacity-0",
                       )}
                     />
                   </CommandItem>

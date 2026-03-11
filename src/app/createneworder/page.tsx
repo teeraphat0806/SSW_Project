@@ -133,11 +133,11 @@ const NewJobOrder = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [UploadFile, setUploadFile] = useState<File[]>([]); //ดึงไฟล์อัปโหลด
   const [showForm, setShowForm] = useState(false); //แสดงหรือซ่อนข้อมุลลูกค้า
-  const toggleForm = () => setShowForm(!showForm); //ฟังก์ชั่นแสดงฟอร์มลูกค้า
+
   const [open, setOpen] = useState(false); //เปิดหรือปิด SelectCustomer
   const [useJob, setUseJob] = useState(false);
   // ลูกค้า
-  const [customers, setCustomers] = useState<{ id: string; name: string }[]>(
+  const [customers, setCustomers] = useState<{ id: number; name: string }[]>(
     [],
   );
   const [searchCustomer, setSearchCustomer] = useState(""); // เก็บค่าที่ค้นหาลูกค้า
@@ -164,11 +164,11 @@ const NewJobOrder = () => {
     }>;
   } | null>(null);
   const ocrAbortRef = useRef<AbortController | null>(null);
-
-  const [selectedCustomerId, setSelectedCustomerId] = useState<
-    string | number | null
-  >(null);
   // เก็บ ID ลูกค้าที่เลือกจาก SelectCustomer
+  const [selectedCustomerId, setSelectedCustomerId] = useState<number | null>(
+    null,
+  );
+
   const [headOrder, setheadOrder] = useState<{
     poNumber: string | null;
     credit: number;
@@ -272,10 +272,12 @@ const NewJobOrder = () => {
 
         const json: CustomerApiResponse = await res.json();
 
+
+        
         if (!ignore) {
           setCustomers(
             json.data.map((c: CustomerApiItem) => ({
-              id: c.id.toString(),
+              id: c.id,
               name: c.name,
             })),
           );
@@ -534,7 +536,7 @@ const NewJobOrder = () => {
 
     // 2) customer: match -> select / else -> showForm + fill
     if (data.customerMatch?.matched && data.customerMatch.customerId) {
-      setSelectedCustomerId(String(data.customerMatch.customerId));
+      setSelectedCustomerId(data.customerMatch.customerId);
       setShowForm(false);
     } else {
       setSelectedCustomerId(null);
@@ -742,16 +744,18 @@ const NewJobOrder = () => {
                     กำลังเพิ่มข้อมูลลูกค้าใหม่...
                   </div>
                 ) : (
-                  <SelectCustomer
-                    open={open}
-                    setOpen={setOpen}
-                    selectedCustomerId={selectedCustomerId}
-                    setSelectedCustomer={setSelectedCustomerId}
-                    customers={customers}
-                    search={searchCustomer}
-                    setSearch={setSearchCustomer}
-                    loading={loading}
-                  />
+                    <SelectCustomer
+                      open={open}
+                      setOpen={setOpen}
+                      selectedCustomerId={selectedCustomerId}
+                      setSelectedCustomer={(id) =>
+                        setSelectedCustomerId(id == null ? null : Number(id))
+                      }
+                      customers={customers}
+                      search={searchCustomer}
+                      setSearch={setSearchCustomer}
+                      loading={loading}
+                    />
                 )}
               </div>
 
@@ -759,7 +763,7 @@ const NewJobOrder = () => {
               <div className="flex items-center gap-2">
                 {/* Toggle Form Button */}
                 <button
-                  onClick={toggleForm}
+                  onClick={() => setShowForm((prev) => !prev)}
                   className={cn(
                     "flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 border",
                     showForm

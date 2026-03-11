@@ -37,7 +37,7 @@ export const CreateNewQuotationSchema = z.object({
           cuttingMethod: z.enum(["normal", "FB", "RM", "CNC"]).optional(),
           weight: z.number().nonnegative().nullable().optional(),
           discount: z.number().nonnegative().nullable().optional(),
-          price: z.number().nonnegative().optional(),
+          price: z.number().nonnegative(),
           surfaceT: string().optional(),
           toleranceT: number().optional(),
           surfaceW: string().optional(),
