@@ -254,8 +254,12 @@ model Product {
   thickness     Float
   amount        Int
   detail        String?
-  surface       String?
-  tolerance     Float?
+  surfaceT       String?
+  toleranceT     Float?
+  surfaceW       String?
+  toleranceW     Float?
+  surfaceL       String?
+  toleranceL     Float?
   actualWeight  Float?
   total         Float?
   cuttingMethod CuttingMethod @default(normal)
