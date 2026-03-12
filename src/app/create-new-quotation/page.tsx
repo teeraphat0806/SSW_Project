@@ -18,7 +18,7 @@ import { Separator } from "@/components/ui/separator";
 import { ToastContainer, toast } from "react-toastify";
 import CustomerForm from "@/components/create-new-quotation/CustomerForm";
 import CustomerInfoBox from "@/components/newJobOrder/CustomerInfoBox";
-import AddItem from "@/components/newJobOrder/AddItem";
+import AddItem from "@/components/create-new-quotation/AddItem";
 import "../globals.css";
 import {
   ArrowLeft,
@@ -40,8 +40,17 @@ import { cn } from "@/lib/utils";
 import { is } from "date-fns/locale";
 import { CuttingMethod, ShapeSteel } from "@/types";
 import { Item } from "@radix-ui/react-accordion";
+import { set } from "zod";
 
 const maxItem = 15;
+
+export type SteelType = {
+  id: string;
+  steelType: string; // ใช้แสดงใน Select
+  shape: ShapeSteel;
+  price: number;
+  density: number;
+};
 
 type CustomerApiItem = {
   id: number;
@@ -50,6 +59,14 @@ type CustomerApiItem = {
 
 type CustomerApiResponse = {
   data: CustomerApiItem[];
+};
+
+type CustomerDetail = {
+  id: number;
+  name: string | null;
+  address: string | null;
+  tel: string | null;
+  faxNumber: string | null;
 };
 
 type HeadOrder = {
@@ -61,15 +78,8 @@ type HeadOrder = {
   deliveryDate: string;
   createdAt: Date | null;
 };
-type SteelSelect = {
-  id: number;
-  steelType: string;
-  shape: ShapeSteel;
-  price: number;
-  density: number;
-};
 
-type SteelItem = {
+export type SteelItem = {
   id: string;
   SteelId: number;
   steelType: string;
@@ -82,8 +92,9 @@ type SteelItem = {
   detail?: string | null;
   cuttingMethod: CuttingMethod;
   weight?: number | null;
-  price?: number;
+  price: number;
   discount?: number | null;
+  density: number;
   surfaceT?: string | null;
   toleranceT?: number | null;
   surfaceW?: string | null;
@@ -99,6 +110,9 @@ export default function CreateNewQuotationPage() {
   const router = useRouter();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const [loadingSteel, setLoadingSteel] = useState(false);
+  const [searchItem, setsearchItem] = useState("");
 
   // Form data customer
   const [formData, setFormData] = useState<CustomerFormData>({
@@ -127,7 +141,7 @@ export default function CreateNewQuotationPage() {
   );
   const [searchCustomer, setSearchCustomer] = useState("");
   const [loading, setLoading] = useState(false);
-
+  const [steelTypes, setSteelTypes] = useState<SteelType[]>([]);
   const [SteelItem, setSteelItem] = useState<SteelItem[]>([
     {
       id: "",
@@ -143,6 +157,7 @@ export default function CreateNewQuotationPage() {
       cuttingMethod: "normal",
       weight: null,
       price: 0,
+      density: 0.0000079,
       surfaceT: null,
       toleranceT: null,
       surfaceW: null,
@@ -154,6 +169,45 @@ export default function CreateNewQuotationPage() {
       isPerAmount: false,
     },
   ]);
+
+  useEffect(() => {
+    if (!selectedCustomerId) return;
+
+    const ac = new AbortController();
+
+    const fetchCustomerDetail = async () => {
+      try {
+        const res = await fetch(`/api/customer/${selectedCustomerId}`, {
+          signal: ac.signal,
+          cache: "no-store",
+        });
+        if (!res.ok) throw new Error("Failed to fetch customer detail");
+
+        const data: CustomerDetail = await res.json();
+
+        const telValue =
+          data.tel && data.tel.trim() !== "" ? data.tel.trim() : null;
+        const faxValue =
+          data.faxNumber && data.faxNumber.trim() !== ""
+            ? data.faxNumber.trim()
+            : null;
+
+        setFormData((prev) => ({
+          ...prev,
+          companyName: data.name ?? "",
+          address: data.address ?? "",
+          tel: telValue,
+          fax: faxValue,
+        }));
+      } catch (error) {
+        if ((error as { name?: string }).name === "AbortError") return;
+        console.error("Error fetching customer detail:", error);
+      }
+    };
+
+    fetchCustomerDetail();
+    return () => ac.abort();
+  }, [selectedCustomerId]);
 
   const updateFormData = <Key extends keyof CustomerFormData>(
     field: Key,
@@ -177,12 +231,88 @@ export default function CreateNewQuotationPage() {
     { id: 5, name: "A.Prapaporn" },
   ];
 
-  const selectedCustomer = customers.find((c) => c.id === selectedCustomerId);
-  const headerCustomerName = showForm
-    ? formData.customerName
-    : (selectedCustomer?.name ?? "");
+  const updateSteelItem = <key extends keyof SteelItem>(
+    id: SteelItem["id"],
+    field: key,
+    value: SteelItem[key],
+  ) =>
+    setSteelItem((prev) =>
+      prev.map((item) => (item.id === id ? { ...item, [field]: value } : item)),
+    );
+
+  const addSteelItem = () => {
+    const firstSteelType = steelTypes[0];
+    const firstShape: ShapeSteel = firstSteelType?.shape ?? "square";
+    const newItem: SteelItem = {
+      id: uuidv4(),
+      SteelId: firstSteelType ? Number(firstSteelType.id) : 0,
+      steelType: firstSteelType ? firstSteelType.steelType : "",
+      shape: firstShape,
+      sequence: SteelItem.length + 1,
+      wide: firstShape === "line" ? null : 0,
+      length: 0,
+      thickness: 0,
+      amount: 0,
+      detail: null,
+      cuttingMethod: "normal",
+      weight: null,
+      price: Number(firstSteelType?.price ?? 0),
+      density: Number(firstSteelType?.density ?? 0.0000079),
+      surfaceT: null,
+      toleranceT: null,
+      surfaceW: null,
+      toleranceW: null,
+      surfaceL: null,
+      toleranceL: null,
+      isOD: false,
+      isServices: false,
+      isPerAmount: false,
+    };
+    setSteelItem((prev) => [...prev, newItem]);
+  };
+
+  const removeSteelItem = (id: SteelItem["id"]) => {
+    if (SteelItem.length > 1) {
+      setSteelItem((prev) => prev.filter((item) => item.id !== id));
+    }
+  };
+
   useEffect(() => {
     let ignore = false;
+
+    const fetchSteelTypes = async () => {
+      setLoadingSteel(true);
+      try {
+        const param = new URLSearchParams();
+        if (searchItem.trim() !== "") {
+          param.set("search", searchItem.trim());
+        }
+        param.set("status", "active");
+        const urlSteelType = `/api/steelType?${param.toString()}`;
+        const res = await fetch(urlSteelType);
+        if (!res.ok) throw new Error("Error fetching steel types");
+
+        const data = await res.json();
+
+        if (!ignore) {
+          const formattedData = data.map((t: any) => ({
+            // ใช้ any ชั่วคราวเพื่อเช็ค
+            id: t.id.toString(),
+            steelType: t.codeSteel, // 👈 เปลี่ยนจาก t.steelType เป็น t.codeSteel ให้ตรงกับ Log
+            shape: t.shape,
+            price: Number(t.price ?? 0),
+            density: Number(t.density ?? 0.0000079),
+          }));
+
+          setSteelTypes(formattedData);
+        }
+      } catch (e) {
+        console.error(e);
+        if (!ignore) setSteelTypes([]); // ล้างเฉพาะรายการ "ประเภทเหล็ก"
+      } finally {
+        if (!ignore) setLoadingSteel(false);
+      }
+    };
 
     const fetchCustomers = async () => {
       setLoading(true);
@@ -214,12 +344,12 @@ export default function CreateNewQuotationPage() {
       }
     };
 
+    fetchSteelTypes();
     fetchCustomers();
-
     return () => {
       ignore = true;
     };
-  }, [searchCustomer]);
+  }, [searchCustomer, searchItem]);
 
   // เช้คว่ามีรายการที่ตัดแบบ F/B แต่ไม่ได้กรอกค่า surfaceT หรือ toleranceT หรือไม่
   const hasInvalidFBItem = SteelItem.some((item) => {
@@ -236,11 +366,13 @@ export default function CreateNewQuotationPage() {
   });
 
   const validateForm = () => {
-    if (showForm) {
-      if (!formData.customerName.trim()) return "กรุณากรอกชื่อลูกค้า";
-      if (!formData.companyName.trim()) return "กรุณากรอกชื่อบริษัท";
-      if (!formData.address.trim()) return "กรุณากรอกที่อยู่";
-    }
+    if (!formData.customerName.trim()) return "กรุณากรอกชื่อลูกค้า";
+    if (!formData.companyName.trim()) return "กรุณากรอกชื่อบริษัท";
+    if (!formData.address.trim()) return "กรุณากรอกที่อยู่";
+
+    if (!headOrder.quotationNo.trim()) return "กรุณากรอกเลขที่ใบเสนอราคา";
+    // if (!headOrder.credit) return "กรุณากรอก Credit";
+
     if (!headOrder.salesName.trim() || !headOrder.salesNameId)
       return "กรุณาเลือกผู้ขาย";
 
@@ -258,6 +390,12 @@ export default function CreateNewQuotationPage() {
       )
     )
       return "ขนาดของเหล็กต้องมากกว่า 0";
+    if (SteelItem.some((item) => !item.SteelId || item.SteelId <= 0))
+      return "กรุณาเลือกประเภทเหล็ก";
+
+    if (SteelItem.some((item) => !item.amount || item.amount <= 0))
+      return "จำนวนต้องมากกว่า 0";
+
     if (hasInvalidFBItem) {
       return "กรุณากรอกค่า surfaceT และ toleranceT ในออเดอร์ที่ตัดแบบ F/B";
     }
@@ -277,18 +415,28 @@ export default function CreateNewQuotationPage() {
     setIsSubmitting(true);
 
     try {
+      const optionalString = (value: string | null | undefined) => {
+        const trimmed = (value ?? "").trim();
+        return trimmed === "" ? undefined : trimmed;
+      };
+
+      const optionalNumber = (value: number | null | undefined) => {
+        if (value == null) return undefined;
+        return Number.isFinite(value) ? value : undefined;
+      };
+
       const payload = {
         customerId: selectedCustomerId ?? undefined,
         customerName: formData.customerName,
         companyName: formData.companyName,
         address: formData.address,
-        tel: formData.tel ?? null,
-        fax: formData.fax ?? null,
+        tel: optionalString(formData.tel),
+        fax: optionalString(formData.fax),
         credit: headOrder.credit ?? undefined,
         quotationNo: headOrder.quotationNo,
         salesName: headOrder.salesName,
         salesNameId: headOrder.salesNameId,
-        description: headOrder.description ?? null,
+        description: optionalString(headOrder.description ?? undefined),
         deliveryDate: headOrder.deliveryDate,
         createdAt: headOrder.createdAt ?? new Date(),
         orderPO: {
@@ -298,20 +446,20 @@ export default function CreateNewQuotationPage() {
             steelType: item.steelType,
             shape: item.shape,
             sequence: item.sequence ?? index + 1,
-            wide: item.wide ?? undefined,
+            wide: item.wide ?? null,
             length: item.length,
             thickness: item.thickness,
             amount: item.amount,
-            detail: item.detail ?? null,
+            detail: optionalString(item.detail ?? undefined),
             cuttingMethod: item.cuttingMethod ?? "normal",
             weight: item.weight ?? null,
             price: item.price ?? 0,
-            surfaceT: item.surfaceT ?? null,
-            toleranceT: item.toleranceT ?? null,
-            surfaceW: item.surfaceW ?? null,
-            toleranceW: item.toleranceW ?? null,
-            surfaceL: item.surfaceL ?? null,
-            toleranceL: item.toleranceL ?? null,
+            surfaceT: optionalString(item.surfaceT ?? undefined),
+            toleranceT: optionalNumber(item.toleranceT ?? undefined),
+            surfaceW: optionalString(item.surfaceW ?? undefined),
+            toleranceW: optionalNumber(item.toleranceW ?? undefined),
+            surfaceL: optionalString(item.surfaceL ?? undefined),
+            toleranceL: optionalNumber(item.toleranceL ?? undefined),
             isOD: item.isOD ?? false,
             isServices: item.isServices ?? false,
             isPerAmount: item.isPerAmount ?? false,
@@ -327,10 +475,8 @@ export default function CreateNewQuotationPage() {
       const rawText = await response.text();
 
       if (!response.ok) {
-        toast.error("เกิดข้ผิดพลาดในการสร้างใบเสนอราคาใหม่", {
-          position: "bottom-right",
-        });
-        throw new Error("เกิดข้ผิดพลาดในการสร้างใบเสนอราคาใหม่");
+        console.log("Error response from server:", rawText);
+        throw new Error(rawText);
       }
       let resData: any = null;
       try {
@@ -356,6 +502,11 @@ export default function CreateNewQuotationPage() {
       setIsSubmitting(false);
     }
   };
+
+  //จำนวนรวมของเหล็ก
+  const totalQuantity = SteelItem.reduce((sum, item) => sum + item.amount, 0);
+  //จำนวนประเภทเหล็ก
+  const totalTypes = new Set(SteelItem.map((item) => item.SteelId)).size;
 
   return (
     <div className="container mx-auto p-6">
@@ -469,9 +620,14 @@ export default function CreateNewQuotationPage() {
                         <Label htmlFor="headerCustomerName">ชื่อลูกค้า</Label>
                         <Input
                           id="headerCustomerName"
-                          value={headerCustomerName}
+                          value={formData.customerName ?? ""}
+                          onChange={(e) =>
+                            setFormData((prev) => ({
+                              ...prev,
+                              customerName: e.target.value,
+                            }))
+                          }
                           placeholder="สมพงษ์ โลหะกิจ"
-                          disabled
                           className="mt-1"
                         />
                       </div>
@@ -607,22 +763,17 @@ export default function CreateNewQuotationPage() {
               </div>
               {/* AddItem */}
               <div className="mb-4">
-                {/* <AddItem
-                steelItems={steelItems}
-                setSteelItems={setSteelItems}
-                updateSteelItem={updateSteelItem}
-                addSteelItem={addSteelItem}
-                removeSteelItem={removeSteelItem}
-                steelTypes={steelTypes}
-                headOrder={headOrder}
-                setheadOrder={setheadOrder}
-                searchItem={searchItem}
-                setsearchItem={setsearchItem}
-                loadingSteel={loadingSteel}
-                pofilelength={UploadFile.length}
-                useJob={useJob}
-                setUseJob={setUseJob}
-              /> */}
+                <AddItem
+                  SteelItem={SteelItem}
+                  setSteelItems={setSteelItem}
+                  updateSteelItem={updateSteelItem}
+                  addSteelItem={addSteelItem}
+                  removeSteelItem={removeSteelItem}
+                  steelTypes={steelTypes}
+                  searchItem={searchItem}
+                  setsearchItem={setsearchItem}
+                  loadingSteel={loadingSteel}
+                />
               </div>
 
               <div>
@@ -650,7 +801,7 @@ export default function CreateNewQuotationPage() {
                         </div>
 
                         <span className="text-lg font-bold text-zinc-900 dark:text-zinc-100 font-mono">
-                          {/* {totalQuantity.toLocaleString()} */}
+                          {totalQuantity.toLocaleString()}
                           <span className="ml-1 text-xs font-normal text-zinc-500">
                             ชิ้น
                           </span>
@@ -666,7 +817,7 @@ export default function CreateNewQuotationPage() {
                             <span>ประเภทเหล็ก</span>
                           </div>
                           <span className="font-semibold text-zinc-700 dark:text-zinc-200">
-                            {/* {totalTypes} */}
+                            {totalTypes}
                             <span className="ml-1 text-xs font-normal text-zinc-400">
                               รายการ
                             </span>
@@ -677,10 +828,10 @@ export default function CreateNewQuotationPage() {
                         <div className="flex items-center justify-between text-sm">
                           <div className="flex items-center gap-2 text-zinc-500 dark:text-zinc-400">
                             <Calendar className="w-4 h-4" />
-                            <span>กำหนดส่งสินค้า</span>
+                            <span>ผู้ขาย</span>
                           </div>
                           <span className="font-semibold text-zinc-700 dark:text-zinc-200">
-                            {/* {formatDate(headOrder.deliveryDate)} */}
+                            {headOrder.salesName}
                           </span>
                         </div>
                       </div>
