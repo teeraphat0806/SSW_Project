@@ -8,8 +8,8 @@ export type ApiQuotation = {
   customerId: number | null;
   customerName: string;
   companyName: string;
-  address: String;
-  tel: String | null;
+  address: string;
+  tel: string | null;
   fax: string | null;
   credit: number;
   quotationNo: string;

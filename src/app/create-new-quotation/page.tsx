@@ -243,12 +243,16 @@ export default function CreateNewQuotationPage() {
   const addSteelItem = () => {
     const firstSteelType = steelTypes[0];
     const firstShape: ShapeSteel = firstSteelType?.shape ?? "square";
+    const nextSequence =
+      SteelItem.length > 0
+        ? Math.max(...SteelItem.map((item) => item.sequence ?? 0)) + 1
+        : 1;
     const newItem: SteelItem = {
       id: uuidv4(),
       SteelId: firstSteelType ? Number(firstSteelType.id) : 0,
       steelType: firstSteelType ? firstSteelType.steelType : "",
       shape: firstShape,
-      sequence: SteelItem.length + 1,
+      sequence: nextSequence,
       wide: firstShape === "line" ? null : 0,
       length: 0,
       thickness: 0,
@@ -273,7 +277,11 @@ export default function CreateNewQuotationPage() {
 
   const removeSteelItem = (id: SteelItem["id"]) => {
     if (SteelItem.length > 1) {
-      setSteelItem((prev) => prev.filter((item) => item.id !== id));
+      setSteelItem((prev) =>
+        prev
+          .filter((item) => item.id !== id)
+          .map((item, index) => ({ ...item, sequence: index + 1 })),
+      );
     }
   };
 
@@ -447,7 +455,7 @@ export default function CreateNewQuotationPage() {
             SteelId: item.SteelId,
             steelType: item.steelType,
             shape: item.shape,
-            sequence: item.sequence ?? index + 1,
+            sequence: index + 1,
             wide: item.wide ?? null,
             length: item.length,
             thickness: item.thickness,

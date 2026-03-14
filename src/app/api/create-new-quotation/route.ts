@@ -123,7 +123,7 @@ export async function POST(req: NextRequest) {
               Product: {
                 create: calculatedProducts.map((item) => ({
                   SteelType: { connect: { id: Number(item.products.SteelId) } },
-                  sequence: item.products.sequence ?? item.index + 1,
+                  sequence: item.index + 1,
                   wide: item.products.wide ?? undefined,
                   length: item.products.length,
                   thickness: item.products.thickness,
