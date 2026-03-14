@@ -118,7 +118,9 @@ function buildWhere({
     });
   }
 
-  where.bill = { NOT: undefined }; // ต้องมีบิลถึงจะนับยอดรวมใน dashboard
+  // ต้องมี billId ถึงจะแสดงในหน้าหลัก (กันเคส null และข้อมูลหลุดเป็น 0)
+  // ใช้ gt: 0 เพื่อให้ Prisma ตัด null ออกอัตโนมัติด้วย
+  where.billId = { gt: 0 };
 
   return where;
 }

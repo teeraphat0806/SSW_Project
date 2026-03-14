@@ -16,9 +16,8 @@ export type CustomerFormData = {
   companyName: string;
   address: string;
   tel: string | null;
-  fax: string| null;
+  fax: string | null;
 };
-
 
 type CustomerFormProps = {
   formData: CustomerFormData;
@@ -46,24 +45,20 @@ export default function CustomerForm({
       <CardContent className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
           <div>
-            <Label htmlFor="customerName">
+            <Label htmlFor="companyName">
               ชื่อบริษัท <span className="text-red-500">*</span>
             </Label>
             <Input
-              id="customerName"
-              value={formData.customerName}
-              onChange={(e) => updateFormData("customerName", e.target.value)}
+              id="companyName"
+              value={formData.companyName}
+              onChange={(e) => updateFormData("companyName", e.target.value)}
               placeholder="บริษัท ABC จำกัด"
               className="mt-1"
             />
           </div>
-         
-         
-          
+
           <div>
-            <Label htmlFor="customerPhone">
-              เบอร์โทร
-            </Label>
+            <Label htmlFor="customerPhone">เบอร์โทร</Label>
             <Input
               id="customerPhone"
               type="text"
@@ -81,11 +76,8 @@ export default function CustomerForm({
             />
           </div>
 
-         
           <div>
-            <Label htmlFor="fax">
-              Fax
-            </Label>
+            <Label htmlFor="fax">Fax</Label>
             <Input
               id="fax"
               type="text"
