@@ -67,7 +67,6 @@ export async function POST(req: NextRequest) {
     "superadmin",
     "supervisor",
     "clerk",
-    "delivery",
   ]);
 
   if ("response" in auth) return auth.response;
