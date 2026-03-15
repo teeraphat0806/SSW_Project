@@ -223,6 +223,13 @@ export default function CreateNewQuotationPage() {
     return `${y}-${m}-${d}`;
   };
 
+  const toDisplayDateValue = (date: Date) => {
+    const d = String(date.getDate()).padStart(2, "0");
+    const m = String(date.getMonth() + 1).padStart(2, "0");
+    const yy = String(date.getFullYear()).slice(-2);
+    return `${d}/${m}/${yy}`;
+  };
+
   const todayValue = toDateInputValue(new Date());
 
   // TODO: Replace with real data from API (id/name).
@@ -728,7 +735,7 @@ export default function CreateNewQuotationPage() {
                         />
                       </div>
 
-                      <div>
+                      <div className="relative">
                         <Label htmlFor="createdAt">วันที่สร้าง</Label>
                         <Input
                           id="createdAt"
@@ -745,8 +752,18 @@ export default function CreateNewQuotationPage() {
                               createdAt: new Date(`${value}T00:00:00`),
                             }));
                           }}
-                          className="mt-1"
+                          className="absolute bottom-0 left-0 z-10 mt-1 h-10 w-full cursor-pointer opacity-0"
                         />
+                        <div className="pointer-events-none mt-1 h-10 w-full rounded-md border border-input bg-transparent px-3 text-sm">
+                          <div className="flex h-full items-center justify-between">
+                            <span className="text-foreground">
+                              {toDisplayDateValue(
+                                headOrder.createdAt ?? new Date(),
+                              )}
+                            </span>
+                            <Calendar className="h-4 w-4 text-muted-foreground" />
+                          </div>
+                        </div>
                       </div>
 
                       <div>

@@ -12,6 +12,7 @@ import { useParams } from "next/navigation";
 import * as React from "react";
 import { useMemo } from "react";
 import { useRouter } from "next/navigation";
+import { tr } from "date-fns/locale";
 
 export default function QuotationDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -147,12 +148,13 @@ export default function QuotationDetailPage() {
       <div className="mb-4 flex items-center justify-between p-4 print:hidden">
         <h1 className="text-lg font-semibold">ใบเสนอราคา (Quotation)</h1>
         <div className="space-x-2">
-          <button
+          {/* <button
             onClick={() => router.push(`/up-date-quotation/${id}`)}
+            disabled={true}
             className="rounded-lg border border-black px-6 py-2 text-sm font-medium text-black hover:bg-gray-100 dark:border-zinc-300 dark:text-zinc-100 dark:hover:bg-zinc-800 cursor-pointer"
           >
             แก้ไข
-          </button>
+          </button> */}
 
           <button
             onClick={handlePrint}

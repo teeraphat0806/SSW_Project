@@ -167,83 +167,90 @@ export async function GET(req: Request) {
   } = getBangkokMonthRange();
 
   // --- Queries ---
-  const [
-    totalFiltered,
-    rows,
-    completedToday,
-    notCompletedTotal,
-    ordersThisMonth,
-  ] = await Promise.all([
-    prisma.orderPO.count({ where }),
-
-    prisma.orderPO.findMany({
-      where,
-      orderBy: { createdAt: "desc" },
-      skip,
-      take: pageSize,
-      select: {
-        id: true,
-        poNumber: true,
-        status: true,
-        total: true,
-        createdAt: true,
-        codetoinvoice: true,
-        Invoice: { select: { invoiceNo: true } },
-        Customer: { select: { name: true } },
-        bill: { select: { grandTotal: true } },
-      },
-    }),
-
-    // completed วันนี้ (อิง completedAt)
-    prisma.orderPO.count({
-      where: {
-        status: "completed",
-        completedAt: { gte: todayStart, lte: todayEnd },
-      },
-    }),
-
-    // ทั้งหมดที่ยังไม่ completed (ทั้งระบบ)
-    prisma.orderPO.count({
-      where: {
-        status: { in: ["pending", "cutting", "weighing", "ready", "shipped"] },
-      },
-    }),
-
-    // ออเดอร์ที่สร้างในเดือนนี้ (ทั้งระบบ) ไม่รวม canceled
-    prisma.orderPO.count({
-      where: {
-        createdAt: { gte: monthStart, lte: monthEnd },
-        status: { not: "canceled" },
-      },
-    }),
-  ]);
-
-  // --- Response mapping ---
-  const data = rows.map((r) => ({
-    id: r.id,
-    poNumber: r.poNumber,
-    status: r.status,
-    codetoinvoice: r.codetoinvoice,
-    invoiceNo: r.Invoice?.invoiceNo ?? null,
-    customerName: r.Customer?.name ?? null,
-    grandTotal: r.bill?.grandTotal ?? r.total,
-    createdAt: r.createdAt.toISOString(),
-  }));
-
-  return Response.json({
-    summary: {
+  try {
+    const [
+      totalFiltered,
+      rows,
       completedToday,
       notCompletedTotal,
       ordersThisMonth,
-      todayBangkok,
-      monthBangkok,
-    },
-    data,
-    pagination: {
-      page,
-      pageSize,
-      total: totalFiltered,
-      totalPages: Math.ceil(totalFiltered / pageSize),
-    },
-  });
+    ] = await Promise.all([
+      prisma.orderPO.count({ where }),
+
+      prisma.orderPO.findMany({
+        where,
+        orderBy: { createdAt: "desc" },
+        skip,
+        take: pageSize,
+        select: {
+          id: true,
+          poNumber: true,
+          status: true,
+          total: true,
+          createdAt: true,
+          codetoinvoice: true,
+          Invoice: { select: { invoiceNo: true } },
+          Customer: { select: { name: true } },
+          bill: { select: { grandTotal: true } },
+        },
+      }),
+
+      // completed วันนี้ (อิง completedAt)
+      prisma.orderPO.count({
+        where: {
+          status: "completed",
+          completedAt: { gte: todayStart, lte: todayEnd },
+        },
+      }),
+
+      // ทั้งหมดที่ยังไม่ completed (ทั้งระบบ)
+      prisma.orderPO.count({
+        where: {
+          status: {
+            in: ["pending", "cutting", "weighing", "ready", "shipped"],
+          },
+        },
+      }),
+
+      // ออเดอร์ที่สร้างในเดือนนี้ (ทั้งระบบ) ไม่รวม canceled
+      prisma.orderPO.count({
+        where: {
+          createdAt: { gte: monthStart, lte: monthEnd },
+          status: { not: "canceled" },
+        },
+      }),
+    ]);
+
+    // --- Response mapping ---
+    const data = rows.map((r) => ({
+      id: r.id,
+      poNumber: r.poNumber,
+      status: r.status,
+      codetoinvoice: r.codetoinvoice,
+      invoiceNo: r.Invoice?.invoiceNo ?? null,
+      customerName: r.Customer?.name ?? null,
+      grandTotal: r.bill?.grandTotal ?? r.total,
+      createdAt: r.createdAt.toISOString(),
+    }));
+
+    return Response.json({
+      summary: {
+        completedToday,
+        notCompletedTotal,
+        ordersThisMonth,
+        todayBangkok,
+        monthBangkok,
+      },
+      data,
+      pagination: {
+        page,
+        pageSize,
+        total: totalFiltered,
+        totalPages: Math.ceil(totalFiltered / pageSize),
+      },
+    });
+  } catch (error) {
+    console.error("cannot fetch dashboard data:", error);
+    return Response.json({ error: "Internal Server Error" }, { status: 500 });
+  }
 }
