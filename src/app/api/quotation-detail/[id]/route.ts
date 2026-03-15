@@ -2,16 +2,15 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { requireAuth } from "@/lib/permissions";
 import { CuttingMethod, ShapeSteel, status } from "@/types";
-import { ApiQuotation } from "../../up-date-quotation/route";
+import { ApiQuotation } from "../../up-date-quotation/[id]/route";
 
 export async function GET(
   req: NextRequest,
   context: { params: Promise<{ id: string }> },
 ) {
-
   const authResult = await requireAuth(["superadmin", "clerk", "supervisor"]);
   if ("response" in authResult) return authResult.response;
-    
+
   const { id } = await context.params;
   const poId = Number(id);
 

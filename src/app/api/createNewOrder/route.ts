@@ -63,11 +63,7 @@ function generateCode(length = 20) {
 
 export async function POST(req: NextRequest) {
   // 1️⃣ ตรวจสอบสิทธิ์ผู้ใช้
-  const auth = await requireAuth([
-    "superadmin",
-    "supervisor",
-    "clerk",
-  ]);
+  const auth = await requireAuth(["superadmin", "supervisor", "clerk"]);
 
   if ("response" in auth) return auth.response;
 
@@ -183,11 +179,9 @@ export async function POST(req: NextRequest) {
         ),
       );
 
-      const subtotalAfterDiscount = subtotal - discount;
+      const vat = round2((subtotal * 7) / 100);
 
-      const vat = round2((subtotalAfterDiscount * 7) / 100);
-
-      const grandTotal = round2(subtotalAfterDiscount + vat);
+      const grandTotal = round2(subtotal + vat);
 
       // 9️⃣ สร้าง Bill และ OrderPO พร้อม Product
       return tx.bill.create({

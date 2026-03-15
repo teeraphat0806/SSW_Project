@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/permissions";
 import { CuttingMethod } from "@/types";
 
-function ThaiBaht(numberStr: string) {
+export function ThaiBaht(numberStr: string) {
   //ตัดสิ่งที่ไม่ต้องการทิ้งลงโถส้วม
   for (var i = 0; i < numberStr.length; i++) {
     numberStr = numberStr.replace(",", ""); //ไม่ต้องการเครื่องหมายคอมมาร์

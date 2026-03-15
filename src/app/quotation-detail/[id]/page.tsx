@@ -1,13 +1,22 @@
 "use client";
-import { ApiQuotation } from "@/app/api/up-date-quotation/route";
+import { ApiQuotation } from "@/app/api/up-date-quotation/[id]/route";
 import { LoadingScreen } from "@/components/Loading";
 import Logo from "@/components/Logo";
+import {
+  calculateBillSummary,
+  calculateWeightDetails,
+  ThaiBaht,
+  type SteelItem,
+} from "@/lib/calculateGrandTotal";
 import { useParams } from "next/navigation";
 import * as React from "react";
+import { useMemo } from "react";
+import { useRouter } from "next/navigation";
 
 export default function QuotationDetailPage() {
   const { id } = useParams<{ id: string }>();
   const [Data, setData] = React.useState<ApiQuotation | null>(null);
+  const router = useRouter();
 
   const handlePrint = () => {
     window.print();
@@ -25,12 +34,62 @@ export default function QuotationDetailPage() {
     fetchData();
   }, [fetchData]);
 
-  if (!Data)
-    return (
-      <div>
-        <LoadingScreen message="กำลังโหลดใบเสนอราคา..." />
-      </div>
-    );
+  const steelItems = Data?.steelItem || [];
+
+  // Normalize api fields to match calculateGrandTotal utility input type.
+  const normalizedSteelItems = useMemo<SteelItem[]>(
+    () =>
+      steelItems.map((item) => ({
+        shape: item.shape,
+        amount: item.amount,
+        width: item.wide,
+        length: item.length,
+        thickness: item.thickness,
+        density: item.density,
+        price: item.price,
+        weight: item.weight,
+        discount: item.discount,
+        isOD: item.isOD,
+        isServices: item.isServices,
+        isPerAmount: item.isPerAmount,
+      })),
+    [steelItems],
+  );
+
+  const calculatedWeightAndTotal = useMemo(
+    () =>
+      steelItems.map((item) => ({
+        item,
+        details: calculateWeightDetails({
+          shape: item.shape,
+
+          amount: item.amount,
+          width: item.wide,
+          length: item.length,
+          thickness: item.thickness,
+
+          density: item.density,
+          weight: item.weight,
+          price: item.price,
+          discount: item.discount,
+
+          isOD: item.isOD,
+          isServices: item.isServices,
+          isPerAmount: item.isPerAmount,
+        }),
+      })),
+    [steelItems],
+  );
+
+  const vatRate = 7;
+  const {
+    subtotal: totalAmount,
+    vat: vatAmount,
+    grandTotal,
+  } = useMemo(
+    () => calculateBillSummary(normalizedSteelItems, vatRate),
+    [normalizedSteelItems, vatRate],
+  );
 
   const headOrder = (
     titleThai: string,
@@ -55,21 +114,6 @@ export default function QuotationDetailPage() {
     );
   };
 
-  // Calculate totals
-  const totalAmount = (Data?.steelItem || []).reduce(
-    (acc: number, item: any) => acc + (item?.amount || 0) * (item?.price || 0),
-    0,
-  );
-  const vatRate = 0.07;
-  const vatAmount = totalAmount * vatRate;
-  const grandTotal = totalAmount + vatAmount;
-
-  // Placeholder function for converting number to Thai words
-  const formatThaiBahtWords = (amount: number) => {
-    // A proper conversion library would be needed here for production.
-    return "[จำนวนเงินรวมทั้งสิ้นเป็นตัวอักษร]";
-  };
-
   // Helper to get surface marking (e.g. v, vv)
   const getSurfaceFinish = (surface?: string | null) => {
     if (!surface) return "";
@@ -77,6 +121,13 @@ export default function QuotationDetailPage() {
   };
 
   // Helper to format tolerance string
+
+  if (!Data)
+    return (
+      <div>
+        <LoadingScreen message="กำลังโหลดใบเสนอราคา..." />
+      </div>
+    );
   const getTolerance = (tolerance?: number | null) => {
     if (!tolerance) return "";
     // This assumes tolerance field maps to +/- value. In image, it's specific +0.1/-0.1.
@@ -95,12 +146,21 @@ export default function QuotationDetailPage() {
       {/* Print Button */}
       <div className="mb-4 flex items-center justify-between p-4 print:hidden">
         <h1 className="text-lg font-semibold">ใบเสนอราคา (Quotation)</h1>
-        <button
-          onClick={handlePrint}
-          className="rounded-lg border border-black px-6 py-2 text-sm font-medium text-black hover:bg-gray-100 dark:border-zinc-300 dark:text-zinc-100 dark:hover:bg-zinc-800 cursor-pointer"
-        >
-          พิมพ์
-        </button>
+        <div className="space-x-2">
+          <button
+            onClick={() => router.push(`/up-date-quotation/${id}`)}
+            className="rounded-lg border border-black px-6 py-2 text-sm font-medium text-black hover:bg-gray-100 dark:border-zinc-300 dark:text-zinc-100 dark:hover:bg-zinc-800 cursor-pointer"
+          >
+            แก้ไข
+          </button>
+
+          <button
+            onClick={handlePrint}
+            className="rounded-lg border border-black px-6 py-2 text-sm font-medium text-black hover:bg-gray-100 dark:border-zinc-300 dark:text-zinc-100 dark:hover:bg-zinc-800 cursor-pointer"
+          >
+            พิมพ์
+          </button>
+        </div>
       </div>
 
       {/* A4 Page */}
@@ -223,56 +283,56 @@ export default function QuotationDetailPage() {
               </tr>
             </thead>
             <tbody>
-              {(Data?.steelItem || []).map((item: any, index: number) => (
+              {(calculatedWeightAndTotal || []).map((entry, index) => (
                 <tr
-                  key={item.SteelId}
+                  key={entry.item.SteelId}
                   className={`${index % 2 !== 0 ? "bg-gray-50" : ""}`}
                 >
                   <td className="border-r border-b border-gray-800 p-2 h-[2.5em] align-middle">
                     {index + 1}
                   </td>
                   <td className="border-r border-b border-gray-800 p-2 h-[2.5em] align-middle">
-                    {item.steelType}
+                    {entry.item.steelType}
                   </td>
                   <td className="border-r border-b border-gray-800 p-2 h-[2.5em] align-middle text-left font-light">
                     <div className="w-full flex justify-between items-center text-[11px]">
                       <span className="font-semibold text-[14px]">
-                        {item.thickness}
+                        {entry.item.thickness}
                       </span>
                       <span className="w-1/3 text-center">
-                        {getSurfaceFinish(item.surfaceT)}
-                        {getTolerance(item.toleranceT)}
+                        {getSurfaceFinish(entry.item.surfaceT)}
+                        {getTolerance(entry.item.toleranceT)}
                       </span>
                       <span className="font-semibold text-[14px]">
-                        {item.wide}
+                        {entry.item.wide}
                       </span>
                       <span className="w-1/3 text-center">
-                        {getSurfaceFinish(item.surfaceW)}
-                        {getTolerance(item.toleranceW)}
+                        {getSurfaceFinish(entry.item.surfaceW)}
+                        {getTolerance(entry.item.toleranceW)}
                       </span>
                       <span className="font-semibold text-[14px]">
-                        {item.length}
+                        {entry.item.length}
                       </span>
                       <span className="w-1/3 text-center">
-                        {getSurfaceFinish(item.surfaceL)}
-                        {getTolerance(item.toleranceL)}
+                        {getSurfaceFinish(entry.item.surfaceL)}
+                        {getTolerance(entry.item.toleranceL)}
                       </span>
                     </div>
                   </td>
                   <td className="border-r border-b border-gray-800 p-2 h-[2.5em] align-middle text-left font-center">
-                    {item.description || ""}
+                    {entry.item.detail || ""}
                   </td>
                   <td className="border-r border-b border-gray-800 p-2 h-[2.5em] align-middle text-center">
-                    {item.amount}
+                    {entry.item.amount}
                   </td>
                   <td className="border-r border-b border-gray-800 p-2 h-[2.5em] align-middle text-center">
-                    {item.isPerAmount ? "Pcs." : "KG."}
+                    {entry.item.isPerAmount ? "Pcs." : "KG."}
                   </td>
                   <td className="border-r border-b border-gray-800 p-2 h-[2.5em] align-middle text-center">
-                    {item.price.toFixed(2)}
+                    {entry.item.price.toFixed(2)}
                   </td>
                   <td className="border-b border-gray-800 p-2 h-[2.5em] align-middle text-right">
-                    {(item.amount * item.price).toFixed(2)}
+                    {entry.details.total.toFixed(2)}
                   </td>
                 </tr>
               ))}
@@ -323,7 +383,7 @@ export default function QuotationDetailPage() {
                   colSpan={5}
                   className="border border-gray-800 px-2 py-1 text-left align-middle text-[13px]"
                 >
-                  หนึ่งพันหนึ่งร้อยยี่สิบสามบาทห้าสิบสตางค์
+                  {ThaiBaht(grandTotal.toString())}
                 </td>
                 <td
                   colSpan={2}
@@ -346,11 +406,11 @@ export default function QuotationDetailPage() {
         <div className="text-[13px] leading-relaxed grid grid-cols-[1fr_2fr] gap-x-12 mb-6">
           <div className="space-y-2">
             <p>
-              <span className="font-semibold">กำหนดส่งสินค้า:</span>{" "}
+              <span className="font-semibold">* กำหนดส่งสินค้า:</span>{" "}
               {Data.deliveryDate}
             </p>
             <p>
-              <span className="font-semibold">กำหนดในใบเสนอราคา:</span> 3 วัน
+              <span className="font-semibold">* กำหนดในใบเสนอราคา:</span> 3 วัน
             </p>
           </div>
           <div className="border border-gray-800 grid grid-cols-3 text-center text-[12px] divide-x divide-gray-800">
@@ -366,7 +426,7 @@ export default function QuotationDetailPage() {
 
             <div className="h-[30mm] px-3 py-2 flex flex-col">
               <p className="mt-7 mb-2 text-[13px] leading-none">
-                ........................................
+                .........{Data.salesName}.........
               </p>
               <p className="font-medium">พนักงานขาย</p>
               <p className="mt-auto font-light">

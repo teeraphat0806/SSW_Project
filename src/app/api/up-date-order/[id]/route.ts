@@ -176,7 +176,6 @@ const steelKey = (codeSteel: string, shape: ShapeSteel) =>
 
 const PatchSchema = z.object({
   status: StatusSchema.optional(),
-  // credit (days) must be a positive integer; allow coercion from string inputs.
   credit: z.coerce.number().int().nonnegative().optional(),
   customerId: z.string().trim().optional(),
   poNumber: z.string().trim().optional(),
@@ -184,21 +183,6 @@ const PatchSchema = z.object({
   createdAt: z.coerce.date().optional(),
   steel: z.array(SteelLineSchema).optional(),
 });
-
-// type UpdateOrderPayload = {
-//   status?: statusType;
-//   customerId?: string;
-//   steel?: Array<{
-//     id: number;
-//     steelType: string;
-//     amount: number;
-//     width?: number;
-//     length: number;
-//     thickness: number;
-//     detail?: string;
-
-//   }>;
-// };
 
 const round2 = (n: number) => Math.round(n * 100) / 100;
 
@@ -274,17 +258,6 @@ export async function PATCH(
             data: { poNumber: null },
           });
         } else {
-          // const poNumberExists = await tx.orderPO.findFirst({
-          //   where: {
-          //     id: { not: poId },
-          //     poNumber: nextPoNumber,
-          //   },
-          //   select: { id: true },
-          // });
-
-          // if (poNumberExists) {
-          //   throw new Error("PO Number already exists");
-          // }
           await tx.orderPO.update({
             where: { id: poId },
             data: { poNumber: nextPoNumber },
@@ -479,9 +452,8 @@ export async function PATCH(
           if (!bill) throw new Error("Bill not found");
 
           const vatRate = bill.vatRate ?? 7;
-          const subtotalafterDiscount = round2(subtotal - discount);
-          const vat = round2(subtotalafterDiscount * (vatRate / 100));
-          const grandTotal = round2(subtotalafterDiscount + vat);
+          const vat = round2(subtotal * (vatRate / 100));
+          const grandTotal = round2(subtotal + vat);
 
           await tx.bill.update({
             where: { id: bill.id },

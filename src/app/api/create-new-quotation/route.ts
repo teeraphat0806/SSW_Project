@@ -88,9 +88,9 @@ export async function POST(req: NextRequest) {
           0,
         ),
       );
-      const subtotalAfterDiscount = subtotal - discount;
-      const vat = round2(((subtotalAfterDiscount - discount) * 7) / 100);
-      const grandTotal = round2(subtotalAfterDiscount + vat);
+
+      const vat = round2((subtotal * 7) / 100);
+      const grandTotal = round2(subtotal + vat);
 
       return tx.quotation.create({
         data: {
