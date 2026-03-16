@@ -103,7 +103,7 @@ export default function QuotationDetailPage() {
         <div className={`font-semibold`}>
           <p className="whitespace-nowrap">{titleThai}:</p>
           {titleEng && (
-            <p className="text-[11px] whitespace-nowrap">{titleEng}:</p>
+            <p className="text-[11px] whitespace-nowrap">{titleEng}</p>
           )}
         </div>
         <p
@@ -203,12 +203,12 @@ export default function QuotationDetailPage() {
         <div className="border border-gray-800 mb-1 text-[13px] leading-relaxed">
           <div className="grid grid-cols-10 border-b border-gray-800">
             <div className="col-span-7 px-3 py-2">
-              {headOrder("ชื่อ", "Attn.", Data.customerName)}
+              {headOrder("ชื่อบริษัท", "Company Name:", Data.companyName)}
             </div>
             <div className="col-span-3 px-3 py-2 border-l border-gray-800">
               {headOrder(
                 "วันที่",
-                "Date",
+                "Date:",
                 new Date(Data.createdAt).toLocaleDateString("th-TH", {
                   year: "2-digit",
                   month: "2-digit",
@@ -221,7 +221,7 @@ export default function QuotationDetailPage() {
 
           <div className="grid grid-cols-10 border-b border-gray-800">
             <div className="col-span-7 px-3 py-2">
-              {headOrder("นามลูกค้า", "Customer Name", Data.companyName)}
+              {headOrder("ชื่อผู้ติดต่อ", "Attn.", Data.customerName)}
             </div>
             <div className="col-span-3 px-3 py-2 border-l border-gray-800">
               {headOrder(
@@ -235,12 +235,12 @@ export default function QuotationDetailPage() {
 
           <div className="grid grid-cols-10  border-gray-800">
             <div className="col-span-7 px-3 py-2">
-              {headOrder("ที่อยู่", "Address", Data.address)}
+              {headOrder("ที่อยู่", "Address:", Data.address)}
             </div>
             <div className="col-span-3 px-3 py-2 border-l border-b border-gray-800">
               {headOrder(
                 "เงือนไขการชำระ",
-                "Cr.Terms",
+                "Cr.Terms:",
                 `${Data.credit} Days`,
                 true,
               )}
@@ -250,9 +250,8 @@ export default function QuotationDetailPage() {
           <div className="grid grid-cols-10">
             <div className="col-span-7 px-3 py-2">
               <p>
-                <span className="font-semibold">Tel.:</span> {Data?.tel || ""}{" "}
-                <span className="ml-4 font-semibold">Fax.:</span>{" "}
-                {Data?.fax || ""}
+                <span className="font-semibold">Tel.</span>{" "}
+                {Data?.tel || ""}{" "}
               </p>
             </div>
             <div className="col-span-3 px-3 py-2 border-l border-gray-800">
@@ -268,7 +267,7 @@ export default function QuotationDetailPage() {
               <tr className="border-b border-gray-800 font-semibold bg-gray-50">
                 <th className="border-r border-gray-800 p-2 w-[5%]">ลำดับ</th>
                 <th className="border-r border-gray-800 p-2 w-[10%]">
-                  ชนิดเหล็ก
+                  เกรดเหล็ก
                 </th>
                 <th className="border-r border-gray-800 p-2 w-[35%]">
                   หนา (T) X กว้าง (W) X ยาว (L){" "}
@@ -405,14 +404,16 @@ export default function QuotationDetailPage() {
         </div>
 
         {/* Terms and Footer Section */}
-        <div className="text-[13px] leading-relaxed grid grid-cols-[1fr_2fr] gap-x-12 mb-6">
+        <div className="text-[10px] leading-relaxed grid grid-cols-[1fr_2fr] gap-x-12 mb-6">
           <div className="space-y-2">
             <p>
-              <span className="font-semibold">* กำหนดส่งสินค้า:</span>{" "}
+              <span className="font-semibold">
+                * กำหนดส่งสินค้าหลังได้รับใบสั่งซื้อ:
+              </span>{" "}
               {Data.deliveryDate}
             </p>
             <p>
-              <span className="font-semibold">* กำหนดในใบเสนอราคา:</span> 3 วัน
+              <span className="font-semibold">* กำหนดยืนราคา:</span> 3 วัน
             </p>
           </div>
           <div className="border border-gray-800 grid grid-cols-3 text-center text-[12px] divide-x divide-gray-800">
