@@ -65,7 +65,7 @@ export async function POST(req: NextRequest) {
           price: unitPrice,
           weight: products.weight ?? null,
           total: null,
-          discount: products.discount ?? null,
+          discount: null,
           isOD: products.isOD ?? false,
           isServices: products.isServices ?? false,
           isPerAmount: products.isPerAmount ?? false,
@@ -89,8 +89,8 @@ export async function POST(req: NextRequest) {
         ),
       );
 
-      const vat = round2((subtotal * 7) / 100);
-      const grandTotal = round2(subtotal + vat);
+      const vat = round2(((subtotal - discount) * 7) / 100);
+      const grandTotal = round2(subtotal - discount + vat);
 
       return tx.quotation.create({
         data: {
@@ -110,7 +110,9 @@ export async function POST(req: NextRequest) {
           vatRate: data.vatRate ?? undefined,
           vat,
           subtotal,
+          discount,
           grandTotal,
+          period: data.period,
           deliveryDate: data.deliveryDate,
           createdAt: data.createdAt ?? new Date(),
 

@@ -23,6 +23,7 @@ export type ApiQuotation = {
   salesName: string;
   salesId: number;
   description: string | null;
+  period: string | null;
   deliveryDate: string;
   createdAt: Date;
   updateAt: Date;
@@ -42,11 +43,11 @@ export type ApiQuotation = {
     discount?: number | null;
     density: number;
     surfaceT?: string | null;
-    toleranceT?: number | null;
+    toleranceT?: string | null;
     surfaceW?: string | null;
-    toleranceW?: number | null;
+    toleranceW?: string | null;
     surfaceL?: string | null;
-    toleranceL?: number | null;
+    toleranceL?: string | null;
     isOD: boolean;
     isServices: boolean;
     isPerAmount: boolean;
@@ -79,6 +80,7 @@ function toApi(order: OrderWithRelation): ApiQuotation {
     salesName: order.Quotation.salesName,
     salesId: order.Quotation.salesNameId,
     description: order.Quotation.description ?? null,
+    period: order.Quotation.period ?? null,
     deliveryDate: order.Quotation.deliveryDate,
     createdAt: order.Quotation.createdAt,
     updateAt: order.Quotation.updatedAt,
@@ -258,7 +260,7 @@ export async function PATCH(
               density: steelInfo.density,
               price: item.price,
               weight: item.weight ?? null,
-              discount: item.discount ?? null,
+              discount: null,
               isOD: item.isOD ?? false,
               isServices: item.isServices ?? false,
               isPerAmount: item.isPerAmount ?? false,
@@ -301,8 +303,8 @@ export async function PATCH(
         const subtotal = sum._sum.total ?? 0;
         const discount = sum._sum.discount ?? 0;
         const vatRate = existing.Quotation?.vatRate ?? 0;
-        const vat = round2(subtotal * (vatRate / 100));
-        const grandTotal = round2(subtotal + vat);
+        const vat = round2((subtotal - discount) * (vatRate / 100));
+        const grandTotal = round2(subtotal - discount + vat);
 
         // รวมกันละอัพเดททีเดียว ไม่ต้อง await หลายรอบ
         const updatePromises = [];
@@ -320,6 +322,7 @@ export async function PATCH(
               where: { id: existing.quotationId },
               data: {
                 subtotal,
+                discount,
                 vat,
                 grandTotal,
               },

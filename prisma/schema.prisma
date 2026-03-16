@@ -104,7 +104,9 @@ model Quotation {
     vat           Float?
     subtotal      Float?
     grandTotal    Float?
-    deliveryDate  String    
+    discount      Float?
+    period        String?
+    deliveryDate  String
     createdAt     DateTime  @default(now())
     updatedAt     DateTime  @updatedAt
     
@@ -255,11 +257,11 @@ model Product {
   amount        Int
   detail        String?
   surfaceT       String?
-  toleranceT     Float?
+  toleranceT     String?
   surfaceW       String?
-  toleranceW     Float?
+  toleranceW     String?
   surfaceL       String?
-  toleranceL     Float?
+  toleranceL     String?
   actualWeight  Float?
   total         Float?
   cuttingMethod CuttingMethod @default(normal)
