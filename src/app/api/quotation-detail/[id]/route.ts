@@ -66,6 +66,7 @@ export async function GET(
       salesName: Quotation.salesName,
       salesId: Quotation.salesNameId,
       description: Quotation.description ?? null,
+      period: Quotation.period,
       deliveryDate: Quotation.deliveryDate,
       createdAt: Quotation.createdAt,
       updateAt: Quotation.updatedAt,

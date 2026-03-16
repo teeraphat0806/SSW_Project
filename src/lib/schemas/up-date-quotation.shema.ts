@@ -13,11 +13,11 @@ const steelItemSchema = z.object({
   discount: z.number().nonnegative().nullable().optional(),
   price: z.number().nonnegative(),
   surfaceT: z.string().nullable().optional(),
-  toleranceT: z.number().nonnegative().nullable().optional(),
+  toleranceT: z.string().nullable().optional(),
   surfaceW: z.string().nullable().optional(),
-  toleranceW: z.number().nonnegative().nullable().optional(),
+  toleranceW: z.string().nullable().optional(),
   surfaceL: z.string().nullable().optional(),
-  toleranceL: z.number().nonnegative().nullable().optional(),
+  toleranceL: z.string().nullable().optional(),
   isOD: z.boolean().optional(),
   isServices: z.boolean().optional(),
   isPerAmount: z.boolean().optional(),
@@ -34,6 +34,6 @@ export const UpDateQuotationSchema = z.object({
   address: z.string().optional(),
   tel: z.string().optional(),
   fax: z.string().optional(),
-
+  period: z.string().optional(),
   steelItem: z.array(steelItemSchema).optional(),
 });

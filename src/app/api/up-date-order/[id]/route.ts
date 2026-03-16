@@ -385,7 +385,7 @@ export async function PATCH(
               density: st.density,
               weight: l.weight ?? null,
               price: l.price,
-              discount: l.discount ?? null,
+              discount: null,
 
               isOD: l.isOD ?? false,
               isServices: l.isServices ?? false,
@@ -452,8 +452,8 @@ export async function PATCH(
           if (!bill) throw new Error("Bill not found");
 
           const vatRate = bill.vatRate ?? 7;
-          const vat = round2(subtotal * (vatRate / 100));
-          const grandTotal = round2(subtotal + vat);
+          const vat = round2((subtotal - discount) * (vatRate / 100));
+          const grandTotal = round2(subtotal - discount + vat);
 
           await tx.bill.update({
             where: { id: bill.id },

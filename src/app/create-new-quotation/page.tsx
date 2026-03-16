@@ -75,6 +75,7 @@ type HeadOrder = {
   salesName: string;
   salesNameId: number;
   description: string | null;
+  period: string | null;
   deliveryDate: string;
   createdAt: Date | null;
 };
@@ -96,11 +97,11 @@ export type SteelItem = {
   discount?: number | null;
   density: number;
   surfaceT?: string | null;
-  toleranceT?: number | null;
+  toleranceT?: string | null;
   surfaceW?: string | null;
-  toleranceW?: number | null;
+  toleranceW?: string | null;
   surfaceL?: string | null;
-  toleranceL?: number | null;
+  toleranceL?: string | null;
   isOD: boolean;
   isServices: boolean;
   isPerAmount: boolean;
@@ -128,6 +129,7 @@ export default function CreateNewQuotationPage() {
     salesName: "J.Sirikarn",
     salesNameId: 1,
     description: null,
+    period: null,
     deliveryDate: "",
     createdAt: new Date(),
   });
@@ -388,7 +390,7 @@ export default function CreateNewQuotationPage() {
     if (!headOrder.deliveryDate.trim())
       return "กรุณากรอกวันที่ส่งของ (Delivery Date)";
     if (!headOrder.quotationNo.trim()) return "กรุณากรอกเลขที่ใบเสนอราคา";
-    // if (!headOrder.credit) return "กรุณากรอก Credit";
+    if (!headOrder.period) return "กรุณากรอกระยะเวลาการยืนราคา";
 
     if (!headOrder.salesName.trim() || !headOrder.salesNameId)
       return "กรุณาเลือกผู้ขาย";
@@ -472,11 +474,11 @@ export default function CreateNewQuotationPage() {
             weight: item.weight ?? null,
             price: item.price ?? 0,
             surfaceT: optionalString(item.surfaceT ?? undefined),
-            toleranceT: optionalNumber(item.toleranceT ?? undefined),
+            toleranceT: optionalString(item.toleranceT ?? undefined),
             surfaceW: optionalString(item.surfaceW ?? undefined),
-            toleranceW: optionalNumber(item.toleranceW ?? undefined),
+            toleranceW: optionalString(item.toleranceW ?? undefined),
             surfaceL: optionalString(item.surfaceL ?? undefined),
-            toleranceL: optionalNumber(item.toleranceL ?? undefined),
+            toleranceL: optionalString(item.toleranceL ?? undefined),
             isOD: item.isOD ?? false,
             isServices: item.isServices ?? false,
             isPerAmount: item.isPerAmount ?? false,
@@ -718,7 +720,7 @@ export default function CreateNewQuotationPage() {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
                       <div>
                         <Label htmlFor="deliveryDate">Delivery Date</Label>
                         <Input
@@ -731,6 +733,22 @@ export default function CreateNewQuotationPage() {
                             }))
                           }
                           placeholder="4-5 วัน"
+                          className="mt-1"
+                        />
+                      </div>
+
+                      <div>
+                        <Label htmlFor="period">วันยืนราคา</Label>
+                        <Input
+                          id="period"
+                          value={headOrder.period ?? ""}
+                          onChange={(e) =>
+                            setheadOrder((prev) => ({
+                              ...prev,
+                              period: e.target.value,
+                            }))
+                          }
+                          placeholder="4 วัน"
                           className="mt-1"
                         />
                       </div>

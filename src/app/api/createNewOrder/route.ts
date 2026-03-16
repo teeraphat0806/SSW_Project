@@ -152,7 +152,7 @@ export async function POST(req: NextRequest) {
           price: unitPrice,
           weight: product.weight ?? null,
           total: null,
-          discount: product.discount ?? null,
+          discount: null,
           isOD: product.isOD ?? false,
           isServices: product.isServices ?? false,
           isPerAmount: product.isPerAmount ?? false,
@@ -179,9 +179,9 @@ export async function POST(req: NextRequest) {
         ),
       );
 
-      const vat = round2((subtotal * 7) / 100);
+      const vat = round2((subtotal - discount) * (7 / 100));
 
-      const grandTotal = round2(subtotal + vat);
+      const grandTotal = round2(subtotal - discount + vat);
 
       // 9️⃣ สร้าง Bill และ OrderPO พร้อม Product
       return tx.bill.create({

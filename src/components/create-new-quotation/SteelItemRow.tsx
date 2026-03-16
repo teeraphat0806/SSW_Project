@@ -227,17 +227,11 @@ export function SteelItemRow({
                         <option value="vvv">vvv</option>
                       </select>
                       <Input
-                        type="number"
-                        step="0.01"
                         placeholder="เผื่อ"
-                        className={`w-1/2 h-7 text-[10px] text-center px-1 ${noNumberSpinnerClass}`}
+                        className={`w-1/2 h-7 text-[10px] text-center px-1 `}
                         value={item.toleranceT ?? ""}
                         onChange={(e) =>
-                          updateSteelItem(
-                            item.id,
-                            "toleranceT",
-                            Number(e.target.value),
-                          )
+                          updateSteelItem(item.id, "toleranceT", e.target.value)
                         }
                       />
                     </div>
@@ -288,13 +282,13 @@ export function SteelItemRow({
                           type="number"
                           step="0.01"
                           placeholder="เผื่อ"
-                          className={`w-1/2 h-7 text-[10px] text-center px-1 ${noNumberSpinnerClass}`}
+                          className={`w-1/2 h-7 text-[10px] text-center px-1`}
                           value={item.toleranceW ?? ""}
                           onChange={(e) =>
                             updateSteelItem(
                               item.id,
                               "toleranceW",
-                              Number(e.target.value),
+                              e.target.value,
                             )
                           }
                         />
@@ -343,17 +337,11 @@ export function SteelItemRow({
                         <option value="vvv">vvv</option>
                       </select>
                       <Input
-                        type="number"
-                        step="0.01"
                         placeholder="เผื่อ"
-                        className={`w-1/2 h-7 text-[10px] text-center px-1 ${noNumberSpinnerClass}`}
+                        className={`w-1/2 h-7 text-[10px] text-center px-1 `}
                         value={item.toleranceL ?? ""}
                         onChange={(e) =>
-                          updateSteelItem(
-                            item.id,
-                            "toleranceL",
-                            Number(e.target.value),
-                          )
+                          updateSteelItem(item.id, "toleranceL", e.target.value)
                         }
                       />
                     </div>

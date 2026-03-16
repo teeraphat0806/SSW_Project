@@ -129,15 +129,15 @@ export default function QuotationDetailPage() {
         <LoadingScreen message="กำลังโหลดใบเสนอราคา..." />
       </div>
     );
-  const getTolerance = (tolerance?: number | null) => {
+  const getTolerance = (tolerance?: string | null) => {
     if (!tolerance) return "";
     // This assumes tolerance field maps to +/- value. In image, it's specific +0.1/-0.1.
     // I will hardcode the tolerance for now, as I don't have the explicit fields for +/-.
     // In a real application, you'd have toleranceMin and toleranceMax.
-    const tolStr = "0.1";
+
     return (
       <div className="text-xs text-center border-t border-dashed border-gray-300">
-        +/- {tolStr}
+        {tolerance}
       </div>
     );
   };
