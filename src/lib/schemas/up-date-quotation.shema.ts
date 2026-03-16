@@ -25,6 +25,9 @@ const steelItemSchema = z.object({
 
 export const UpDateQuotationSchema = z.object({
   credit: z.coerce.number().int().nonnegative().optional(),
+  period: z.string().optional(),
+  quotationNo: z.string().optional(),
+  description: z.string().optional(),
   deliveryDate: z.string().optional(),
   createdAt: z.coerce.date().optional(),
   idBill: z.number().int().positive().nullable().optional(),
@@ -34,6 +37,6 @@ export const UpDateQuotationSchema = z.object({
   address: z.string().optional(),
   tel: z.string().optional(),
   fax: z.string().optional(),
-  period: z.string().optional(),
+
   steelItem: z.array(steelItemSchema).optional(),
 });
