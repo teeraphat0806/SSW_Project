@@ -22,6 +22,12 @@ export default function QuotationDetailPage() {
   const handlePrint = () => {
     window.print();
   };
+  const formatNumber = (num: number) => {
+    return num.toLocaleString("th-TH", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+  };
 
   const fetchData = React.useCallback(() => {
     if (!id) return;
@@ -72,7 +78,7 @@ export default function QuotationDetailPage() {
           density: item.density,
           weight: item.weight,
           price: item.price,
-          discount: item.discount,
+          discount: null,
 
           isOD: item.isOD,
           isServices: item.isServices,
@@ -83,11 +89,7 @@ export default function QuotationDetailPage() {
   );
 
   const vatRate = 7;
-  const {
-    subtotal: totalAmount,
-    vat: vatAmount,
-    grandTotal,
-  } = useMemo(
+  const { subtotal, discount, vat, grandTotal } = useMemo(
     () => calculateBillSummary(normalizedSteelItems, vatRate),
     [normalizedSteelItems, vatRate],
   );
@@ -262,15 +264,16 @@ export default function QuotationDetailPage() {
 
         {/* Main Item Table - Modified to remove Chamfer */}
         <div className="border border-gray-800 mb-4 print:break-inside-avoid">
-          <table className="w-full text-center text-[12px] border-collapse leading-tight">
+          <table className="w-full table-fixed text-center text-[12px] border-collapse leading-tight">
             <thead>
               <tr className="border-b border-gray-800 font-semibold bg-gray-50">
+                {/* 💡 โครงสร้างความกว้างถูกกำหนดไว้ตรงนี้แล้ว (รวมกัน = 100%) */}
                 <th className="border-r border-gray-800 p-2 w-[5%]">ลำดับ</th>
                 <th className="border-r border-gray-800 p-2 w-[10%]">
                   เกรดเหล็ก
                 </th>
                 <th className="border-r border-gray-800 p-2 w-[35%]">
-                  หนา (T) X กว้าง (W) X ยาว (L){" "}
+                  หนา (T) X กว้าง (W) X ยาว (L)
                 </th>
                 <th className="border-r border-gray-800 p-2 w-[10%]">
                   หมายเหตุ
@@ -280,7 +283,8 @@ export default function QuotationDetailPage() {
                 <th className="border-r border-gray-800 p-2 w-[12%]">
                   ราคา/หน่วย
                 </th>
-                <th className="p-2 w-[20%]">จำนวนเงิน/บาท</th>
+                <th className="p-2 w-[10%]">จำนวนเงิน/บาท</th>{" "}
+                {/* 💡 ปรับตรงนี้ให้สมดุลกับ 100% (5+10+35+10+10+8+12+10 = 100) */}
               </tr>
             </thead>
             <tbody>
@@ -295,29 +299,76 @@ export default function QuotationDetailPage() {
                   <td className="border-r border-b border-gray-800 p-2 h-[2.5em] align-middle">
                     {entry.item.steelType}
                   </td>
-                  <td className="border-r border-b border-gray-800 p-2 h-[2.5em] align-middle text-left font-light">
-                    <div className="w-full flex justify-between items-center text-[11px]">
-                      <span className="font-semibold text-[14px]">
-                        {entry.item.thickness}
-                      </span>
-                      <span className="w-1/3 text-center">
-                        {getSurfaceFinish(entry.item.surfaceT)}
-                        {getTolerance(entry.item.toleranceT)}
-                      </span>
-                      <span className="font-semibold text-[14px]">
-                        {entry.item.wide}
-                      </span>
-                      <span className="w-1/3 text-center">
-                        {getSurfaceFinish(entry.item.surfaceW)}
-                        {getTolerance(entry.item.toleranceW)}
-                      </span>
-                      <span className="font-semibold text-[14px]">
-                        {entry.item.length}
-                      </span>
-                      <span className="w-1/3 text-center">
-                        {getSurfaceFinish(entry.item.surfaceL)}
-                        {getTolerance(entry.item.toleranceL)}
-                      </span>
+                  <td className="border-r border-b border-gray-800 p-2 h-[2.5em] align-middle text-center font-light">
+                    {/* 💡 1. เติม h-full เพื่อให้กล่องกางเต็มความสูงของช่อง td */}
+                    <div className="w-full h-full flex justify-between items-start text-[12px]">
+                      {/* --- บล็อกที่ 1: หนา (T) --- */}
+                      <div className="flex-1 flex flex-col items-center leading-tight">
+                        <div className="flex items-baseline justify-center">
+                          <span className="font-semibold text-[14px]">
+                            {entry.item.thickness}
+                          </span>
+                          {getSurfaceFinish(entry.item.surfaceT) && (
+                            <span className="ml-1 text-[11px]">
+                              {getSurfaceFinish(entry.item.surfaceT)}
+                            </span>
+                          )}
+                        </div>
+                        {getTolerance(entry.item.toleranceT) && (
+                          <div className="text-[10px] text-gray-600 mt-[2px]">
+                            {getTolerance(entry.item.toleranceT)}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* 💡 2. เปลี่ยน mt-[2px] เป็น self-center เพื่อดึง X ลงมากึ่งกลางแนวตั้งเสมอ */}
+                      <div className="w-[15px] self-center text-center font-medium text-[11px] text-gray-500">
+                        X
+                      </div>
+
+                      {/* --- บล็อกที่ 2: กว้าง (W) --- */}
+                      <div className="flex-1 flex flex-col items-center leading-tight">
+                        <div className="flex items-baseline justify-center">
+                          <span className="font-semibold text-[14px]">
+                            {entry.item.wide}
+                          </span>
+                          {getSurfaceFinish(entry.item.surfaceW) && (
+                            <span className="ml-1 text-[11px]">
+                              {getSurfaceFinish(entry.item.surfaceW)}
+                            </span>
+                          )}
+                        </div>
+                        {getTolerance(entry.item.toleranceW) && (
+                          <div className="text-[10px] text-gray-600 mt-[2px]">
+                            {getTolerance(entry.item.toleranceW)}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* 💡 2. เปลี่ยนเป็น self-center เช่นกัน */}
+                      <div className="w-[15px] self-center text-center font-medium text-[11px] text-gray-500">
+                        X
+                      </div>
+
+                      {/* --- บล็อกที่ 3: ยาว (L) --- */}
+                      <div className="flex-1 flex flex-col items-center leading-tight">
+                        <div className="flex items-baseline justify-center">
+                          <span className="font-semibold text-[14px]">
+                            {entry.item.length}
+                          </span>
+                          {getSurfaceFinish(entry.item.surfaceL) && (
+                            <span className="ml-1 text-[11px]">
+                              {getSurfaceFinish(entry.item.surfaceL)}
+                            </span>
+                          )}
+                        </div>
+                        {getTolerance(entry.item.toleranceL) && (
+                          <div className="text-[10px] text-gray-600 mt-[2px]">
+                            {getTolerance(entry.item.toleranceL)}
+                            {entry.item.toleranceL === undefined}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </td>
                   <td className="border-r border-b border-gray-800 p-2 h-[2.5em] align-middle text-left font-center">
@@ -339,64 +390,80 @@ export default function QuotationDetailPage() {
               ))}
             </tbody>
             <tfoot>
+              {/* --- แถวที่ 1 --- */}
               <tr>
                 <td
-                  colSpan={5}
-                  className="border-r border-gray-800 px-2 py-1 text-left align-middle text-[13px]"
+                  colSpan={5} // กินพื้นที่ 5 คอลัมน์แรก (5% + 10% + 35% + 10% + 10% = 70%)
+                  rowSpan={3}
+                  className="border-r border-gray-800 px-2 py-1 align-top text-[13px]"
                 >
-                  หมายเหตุ:
+                  <div className="flex gap-2 w-full">
+                    <div className="flex shrink-0 flex-col font-semibold text-left">
+                      <span>หมายเหตุ:</span>
+                      <span>Remark:</span>
+                    </div>
+                    <div className="flex-1 min-w-0 whitespace-pre-wrap break-words text-left">
+                      {Data.description || "-"}
+                    </div>
+                  </div>
                 </td>
+
+                {/* 💡 เอา w-[...] ออกให้หมด เหลือแค่ colSpan={2} ซึ่งจะกินพื้นที่ (หน่วย 8% + ราคา 12% = 20%) */}
                 <td
                   colSpan={2}
-                  className="border-r border-b border-gray-800 px-2 py-1 text-left font-medium"
+                  className="border-b border-r border-gray-800 px-2 py-1 text-left font-medium whitespace-nowrap"
                 >
                   จำนวนเงินรวม
                 </td>
-                <td className="border-b border-gray-800 px-2 py-1 text-right">
-                  {totalAmount.toLocaleString("th-TH", {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2,
-                  })}
+
+                {/* 💡 เอา w-[...] ออกให้หมด มันจะพอดีกับคอลัมน์สุดท้ายของ Thead (10%) */}
+                <td className="border-b border-gray-800 px-2 py-1 text-right whitespace-nowrap">
+                  {formatNumber(subtotal)}
                 </td>
               </tr>
+
+              {/* --- แถวที่ 2 --- */}
               <tr>
                 <td
-                  colSpan={5}
-                  className="border-r border-gray-800 px-2 py-1 text-left align-middle text-[13px]"
+                  colSpan={2}
+                  className="border-b border-r border-gray-800 px-2 py-1 text-left font-medium whitespace-nowrap"
                 >
-                  Remark:
+                  ส่วนลดรวม
                 </td>
+                <td className="border-b border-gray-800 px-2 py-1 text-right whitespace-nowrap">
+                  {discount === 0 ? "" : formatNumber(discount)}
+                </td>
+              </tr>
+
+              {/* --- แถวที่ 3 --- */}
+              <tr>
                 <td
                   colSpan={2}
-                  className="border-r border-b border-gray-800 px-2 py-1 text-left font-medium"
+                  className="border-b border-r border-gray-800 px-2 py-1 text-left font-medium whitespace-nowrap"
                 >
                   ภาษีมูลค่าเพิ่ม 7%
                 </td>
-                <td className="border-b border-gray-800 px-2 py-1 text-right">
-                  {vatAmount.toLocaleString("th-TH", {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2,
-                  })}
+                <td className="border-b border-gray-800 px-2 py-1 text-right whitespace-nowrap">
+                  {formatNumber(vat)}
                 </td>
               </tr>
+
+              {/* --- แถวที่ 4 --- */}
               <tr>
                 <td
                   colSpan={5}
-                  className="border border-gray-800 px-2 py-1 text-left align-middle text-[13px]"
+                  className="border border-gray-800 px-2 py-1 text-left align-middle text-[13px] whitespace-normal"
                 >
-                  {ThaiBaht(grandTotal.toString())}
+                  ({ThaiBaht(grandTotal.toString())})
                 </td>
                 <td
                   colSpan={2}
-                  className="border-r border-b border-gray-800 px-2 py-1 text-left font-medium"
+                  className="border-b border-r border-gray-800 px-2 py-1 text-left font-medium whitespace-nowrap"
                 >
                   จำนวนเงินรวมทั้งสิ้น
                 </td>
-                <td className="border-b border-gray-800 px-2 py-1 text-right">
-                  {grandTotal.toLocaleString("th-TH", {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2,
-                  })}
+                <td className="border-b border-gray-800 px-2 py-1 text-right font-bold whitespace-nowrap">
+                  {formatNumber(grandTotal)}
                 </td>
               </tr>
             </tfoot>
@@ -413,7 +480,8 @@ export default function QuotationDetailPage() {
               {Data.deliveryDate}
             </p>
             <p>
-              <span className="font-semibold">* กำหนดยืนราคา:</span> 3 วัน
+              <span className="font-semibold">* กำหนดยืนราคา:</span>{" "}
+              {Data.period ?? ""}
             </p>
           </div>
           <div className="border border-gray-800 grid grid-cols-3 text-center text-[12px] divide-x divide-gray-800">
