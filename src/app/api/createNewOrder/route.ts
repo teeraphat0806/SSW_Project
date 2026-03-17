@@ -42,7 +42,7 @@ function formatMissingSteelMessage(
 }
 
 // สร้างรหัสสุ่มสำหรับ bill
-function generateCode(length = 20) {
+export function generateCode(length = 20) {
   const charset =
     "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-_";
 
