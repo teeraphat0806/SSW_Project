@@ -190,9 +190,9 @@ export default function QuotationDetailPage() {
             <p className="font-semibold text-[14px]">
               S.S.W.STEEL CENTER CO., LTD.
             </p>
-            <p>888/1 หมู่ที่ 9 ต.บางโฉลง อ.บางพลี จ.สมุทรปราการ 10540</p>
+            <p>888/1 หมู่ที่ 9 ต.บางปลา อ.บางพลี จ.สมุทรปราการ 10540</p>
             <p>888/1 Moo.9 T.Bangpla, A.Bangplee, Samutprakarn 10540</p>
-            <p>โทร: 0-2181-6700-4 E-mail : ssw.steelcenter@yahoo.com</p>
+            <p>Tel: 0-2181-6700-4 E-mail : ssw.steelcenter@yahoo.com</p>
           </div>
         </div>
 
