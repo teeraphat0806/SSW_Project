@@ -14,7 +14,7 @@ type ApiJobOrder = {
   customerEmail: string | null;
   customerPhone: string | null;
   customerAddress: string;
-  customerTaxId: string;
+  customerTaxId: string | null;
   customerFax: string | null;
   deliveryDate: Date;
   createdAt: Date;

@@ -85,6 +85,7 @@ function toApi(order: OrderWithRelation): ApiQuotation {
     createdAt: order.Quotation.createdAt,
     updateAt: order.Quotation.updatedAt,
     steelItem: order.Product.map((product) => ({
+      id: product.id,
       SteelId: product.SteelType.id,
       steelType: product.SteelType.codeSteel,
       shape: product.SteelType.shape,

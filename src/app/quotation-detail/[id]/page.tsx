@@ -155,7 +155,7 @@ export default function QuotationDetailPage() {
             onClick={() => router.push(`/up-date-quotation/${id}`)}
             className="group flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-6 py-2 text-sm font-medium text-white shadow-sm transition-all hover:bg-blue-700 hover:shadow active:scale-95 dark:bg-blue-500 dark:hover:bg-blue-600 cursor-pointer"
           >
-            <Pencil/>
+            <Pencil />
             แก้ไข
           </button>
 
@@ -269,7 +269,7 @@ export default function QuotationDetailPage() {
           <table className="w-full table-fixed text-center text-[11px] border-collapse leading-tight">
             <thead>
               <tr className="border-b border-gray-800 font-semibold bg-gray-50">
-                {/* 💡 โครงสร้างความกว้างถูกกำหนดไว้ตรงนี้แล้ว (รวมกัน = 100%) */}
+                {/* โครงสร้างความกว้างถูกกำหนดไว้ตรงนี้แล้ว (รวมกัน = 100%) */}
                 <th className="border-r border-gray-800 p-1 w-[5%]">ลำดับ</th>
                 <th className="border-r border-gray-800 p-1 w-[10%]">
                   เกรดเหล็ก
@@ -285,14 +285,13 @@ export default function QuotationDetailPage() {
                 <th className="border-r border-gray-800 p-1 w-[12%]">
                   ราคา/หน่วย
                 </th>
-                <th className="p-1 w-[10%]">จำนวนเงิน/บาท</th>{" "}
-                {/* 💡 ปรับตรงนี้ให้สมดุลกับ 100% (5+10+35+10+10+8+12+10 = 100) */}
+                <th className="p-1 w-[10%]">จำนวนเงิน/บาท</th>
               </tr>
             </thead>
             <tbody>
               {(calculatedWeightAndTotal || []).map((entry, index) => (
                 <tr
-                  key={entry.item.SteelId}
+                  key={index}
                   className={`${index % 2 !== 0 ? "bg-gray-50" : ""}`}
                 >
                   <td className="border-r border-b border-gray-800 px-1 py-0.5 h-[2.1em] align-middle">
@@ -301,74 +300,87 @@ export default function QuotationDetailPage() {
                   <td className="border-r border-b border-gray-800 px-1 py-0.5 h-[2.1em] align-middle">
                     {entry.item.steelType}
                   </td>
-                  <td className="border-r border-b border-gray-800 px-1 py-0.5 h-[2.1em] align-middle text-center font-light">
-                    {/* 💡 1. เติม h-full เพื่อให้กล่องกางเต็มความสูงของช่อง td */}
-                    <div className="w-full h-full flex justify-between items-start text-[11px]">
-                      {/* --- บล็อกที่ 1: หนา (T) --- */}
-                      <div className="flex-1 flex flex-col items-center leading-tight">
-                        <div className="flex items-baseline justify-center">
-                          <span className="font-semibold text-[12px]">
-                            {entry.item.thickness}
-                          </span>
-                          {getSurfaceFinish(entry.item.surfaceT) && (
-                            <span className="ml-1 text-[10px]">
-                              {getSurfaceFinish(entry.item.surfaceT)}
+                  <td className="border-r border-b border-gray-800 px-1 py-0.5 align-middle text-center font-light">
+                    {/* เติม h-full เพื่อให้กล่องกางเต็มความสูงของช่อง td */}
+                    <div className="w-full flex flex-col items-center">
+                      {(entry.item.cuttingMethod != "normal" ||
+                        entry.item.isServices) && (
+                        <div className="w-full text-center font-bold text-[10px] tracking-wide mb-0.5">
+                          {entry.item.cuttingMethod === "FB"
+                            ? "FINISHING PLATE"
+                            : entry.item.cuttingMethod === "RM"
+                              ? "Raw Material"
+                              : ""}{" "}
+                          {entry.item.isServices ? "(Services)" : ""}
+                        </div>
+                      )}
+                      <div className="w-full flex justify-between items-start text-[11px]">
+                        {/* --- บล็อกที่ 1: หนา (T) --- */}
+                        <div className="flex-1 flex flex-col items-center leading-tight">
+                          <div className="flex items-baseline justify-center">
+                            <span className="font-semibold text-[12px]">
+                              {entry.item.thickness}
                             </span>
+                            {getSurfaceFinish(entry.item.surfaceT) && (
+                              <span className="ml-1 text-[10px]">
+                                {getSurfaceFinish(entry.item.surfaceT)}
+                              </span>
+                            )}
+                          </div>
+                          {getTolerance(entry.item.toleranceT) && (
+                            <div className="text-[9px] text-gray-600 mt-[1px]">
+                              {getTolerance(entry.item.toleranceT)}
+                            </div>
                           )}
                         </div>
-                        {getTolerance(entry.item.toleranceT) && (
-                          <div className="text-[9px] text-gray-600 mt-[1px]">
-                            {getTolerance(entry.item.toleranceT)}
-                          </div>
-                        )}
-                      </div>
 
-                      {/* 💡 2. เปลี่ยน mt-[2px] เป็น self-center เพื่อดึง X ลงมากึ่งกลางแนวตั้งเสมอ */}
-                      <div className="w-[12px] self-center text-center font-medium text-[10px] text-gray-500">
-                        X
-                      </div>
+                        {/* 💡 2. เปลี่ยน mt-[2px] เป็น self-center เพื่อดึง X ลงมากึ่งกลางแนวตั้งเสมอ */}
+                        <div className="w-[12px] self-center text-center font-medium text-[10px] text-gray-500">
+                          {entry.item.wide ? "X" : ""}
+                        </div>
 
-                      {/* --- บล็อกที่ 2: กว้าง (W) --- */}
-                      <div className="flex-1 flex flex-col items-center leading-tight">
-                        <div className="flex items-baseline justify-center">
-                          <span className="font-semibold text-[12px]">
-                            {entry.item.wide}
-                          </span>
-                          {getSurfaceFinish(entry.item.surfaceW) && (
-                            <span className="ml-1 text-[10px]">
-                              {getSurfaceFinish(entry.item.surfaceW)}
+                        {/* --- บล็อกที่ 2: กว้าง (W) --- */}
+                        <div className="flex-1 flex flex-col items-center leading-tight">
+                          <div className="flex items-baseline justify-center">
+                            <span className="font-semibold text-[12px]">
+                              {entry.item.wide}
                             </span>
+                            {getSurfaceFinish(entry.item.surfaceW) && (
+                              <span className="ml-1 text-[10px]">
+                                {getSurfaceFinish(entry.item.surfaceW)}
+                              </span>
+                            )}
+                          </div>
+                          {getTolerance(entry.item.toleranceW) && (
+                            <div className="text-[9px] text-gray-600 mt-[1px]">
+                              {getTolerance(entry.item.toleranceW)}
+                            </div>
                           )}
                         </div>
-                        {getTolerance(entry.item.toleranceW) && (
-                          <div className="text-[9px] text-gray-600 mt-[1px]">
-                            {getTolerance(entry.item.toleranceW)}
-                          </div>
-                        )}
-                      </div>
 
-                      {/* 💡 2. เปลี่ยนเป็น self-center เช่นกัน */}
-                      <div className="w-[12px] self-center text-center font-medium text-[10px] text-gray-500">
-                        X
-                      </div>
+                        {/* 💡 2. เปลี่ยนเป็น self-center เช่นกัน */}
+                        <div className="w-[12px] self-center text-center font-medium text-[10px] text-gray-500">
+                          X
+                        </div>
 
-                      {/* --- บล็อกที่ 3: ยาว (L) --- */}
-                      <div className="flex-1 flex flex-col items-center leading-tight">
-                        <div className="flex items-baseline justify-center">
-                          <span className="font-semibold text-[12px]">
-                            {entry.item.length}
-                          </span>
-                          {getSurfaceFinish(entry.item.surfaceL) && (
-                            <span className="ml-1 text-[10px]">
-                              {getSurfaceFinish(entry.item.surfaceL)}
+                        {/* --- บล็อกที่ 3: ยาว (L) --- */}
+                        <div className="flex-1 flex flex-col items-center leading-tight">
+                          <div className="flex items-baseline justify-center">
+                            <span className="font-semibold text-[12px]">
+                              {entry.item.length}
                             </span>
+                            {getSurfaceFinish(entry.item.surfaceL) && (
+                              <span className="ml-1 text-[10px]">
+                                {getSurfaceFinish(entry.item.surfaceL)}
+                              </span>
+                            )}
+                          </div>
+                          {getTolerance(entry.item.toleranceL) && (
+                            <div className="text-[9px] text-gray-600 mt-[1px]">
+                              {getTolerance(entry.item.toleranceL)}
+                            </div>
                           )}
                         </div>
-                        {getTolerance(entry.item.toleranceL) && (
-                          <div className="text-[9px] text-gray-600 mt-[1px]">
-                            {getTolerance(entry.item.toleranceL)}
-                          </div>
-                        )}
                       </div>
                     </div>
                   </td>

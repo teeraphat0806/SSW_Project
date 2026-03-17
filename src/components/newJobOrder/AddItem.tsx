@@ -34,7 +34,6 @@ import {
   DndContext,
   closestCenter,
   PointerSensor,
-  KeyboardSensor,
   useSensor,
   useSensors,
   DragEndEvent,
@@ -158,11 +157,8 @@ export default function AddItem({
   };
 
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    }),
-  );
+      useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    );
 
   const ids = useMemo(() => steelItems.map((x) => x.id), [steelItems]);
 

@@ -103,7 +103,7 @@ type ApiReceipt = {
     id: number;
     name: string;
     address: string;
-    taxNumber: string;
+    taxNumber: string | null;
     tel: string | null;
     faxNumber: string | null;
   };

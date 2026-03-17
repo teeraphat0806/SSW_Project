@@ -49,7 +49,6 @@ import {
   DndContext,
   closestCenter,
   PointerSensor,
-  KeyboardSensor,
   useSensor,
   useSensors,
   DragEndEvent,
@@ -253,9 +252,6 @@ export default function DetailItem<T extends JobWithSteel>({
   // ✅ Setup dnd-kit sensors
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    }),
   );
 
   const steelIds = useMemo(
