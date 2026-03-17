@@ -13,6 +13,7 @@ import * as React from "react";
 import { useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { tr } from "date-fns/locale";
+import { Pencil, Printer } from "lucide-react";
 
 export default function QuotationDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -149,19 +150,20 @@ export default function QuotationDetailPage() {
       {/* Print Button */}
       <div className="mb-4 flex items-center justify-between p-4 print:hidden">
         <h1 className="text-lg font-semibold">ใบเสนอราคา (Quotation)</h1>
-        <div className="space-x-2">
-          {/* <button
+        <div className="flex items-center space-x-3">
+          <button
             onClick={() => router.push(`/up-date-quotation/${id}`)}
-            disabled={true}
-            className="rounded-lg border border-black px-6 py-2 text-sm font-medium text-black hover:bg-gray-100 dark:border-zinc-300 dark:text-zinc-100 dark:hover:bg-zinc-800 cursor-pointer"
+            className="group flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-6 py-2 text-sm font-medium text-white shadow-sm transition-all hover:bg-blue-700 hover:shadow active:scale-95 dark:bg-blue-500 dark:hover:bg-blue-600 cursor-pointer"
           >
+            <Pencil/>
             แก้ไข
-          </button> */}
+          </button>
 
           <button
             onClick={handlePrint}
-            className="rounded-lg border border-black px-6 py-2 text-sm font-medium text-black hover:bg-gray-100 dark:border-zinc-300 dark:text-zinc-100 dark:hover:bg-zinc-800 cursor-pointer"
+            className="group flex items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-6 py-2 text-sm font-medium text-gray-700 shadow-sm transition-all hover:bg-gray-50 hover:text-black hover:shadow active:scale-95 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700 dark:hover:text-white cursor-pointer"
           >
+            <Printer />
             พิมพ์
           </button>
         </div>

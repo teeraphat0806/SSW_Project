@@ -18,7 +18,7 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { SteelItemRow } from "./SteelItemRow";
-import { SteelItem, SteelType } from "@/app/create-new-quotation/page";
+import { SteelItem, SteelType } from "@/types/quotation.types";
 SteelItemRow;
 
 type AddItemProps = {

@@ -29,6 +29,7 @@ type Customer = {
   updatedAt: string;
   billCount: number;
   orderCount: number;
+  quotationCount: number;
   daysSinceLastBill: number | null;
 };
 
@@ -321,7 +322,7 @@ export default function CustomerDashboard() {
                 ) : (
                   data.map((customer, index) => {
                     const canDelete =
-                      customer.billCount === 0 && customer.orderCount === 0;
+                      customer.billCount === 0 && customer.orderCount === 0 && customer.quotationCount === 0;
 
                     return (
                       <tr

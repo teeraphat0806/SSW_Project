@@ -4,15 +4,7 @@ import { use, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+
 import { v4 as uuidv4 } from "uuid";
 import { Separator } from "@/components/ui/separator";
 import { ToastContainer, toast } from "react-toastify";
@@ -31,11 +23,6 @@ import {
   Save,
   User,
   UserPlus,
-  CreditCard,
-  Briefcase,
-  Truck,
-  Clock,
-  AlignLeft,
 } from "lucide-react";
 import SelectCustomer from "@/components/SelectCustomer";
 import type { CustomerFormData } from "@/components/create-new-quotation/CustomerForm";
@@ -43,18 +30,14 @@ import { cn } from "@/lib/utils";
 
 import { is } from "date-fns/locale";
 import { CuttingMethod, ShapeSteel } from "@/types";
+import { SteelType, HeadOrder, SteelItem } from "@/types/quotation.types";
 import { Item } from "@radix-ui/react-accordion";
 import { set } from "zod";
 
-const maxItem = 15;
+// Re-export types for backward compatibility
+export type { SteelType, HeadOrder, SteelItem };
 
-export type SteelType = {
-  id: string;
-  steelType: string; // ใช้แสดงใน Select
-  shape: ShapeSteel;
-  price: number;
-  density: number;
-};
+const maxItem = 15;
 
 type CustomerApiItem = {
   id: number;
@@ -71,44 +54,6 @@ type CustomerDetail = {
   address: string | null;
   tel: string | null;
   faxNumber: string | null;
-};
-
-export type HeadOrder = {
-  quotationNo: string;
-  credit: number | null;
-  salesName: string;
-  salesNameId: number;
-  description: string | null;
-  period: string | null;
-  deliveryDate: string;
-  createdAt: Date | null;
-};
-
-export type SteelItem = {
-  id: string;
-  SteelId: number;
-  steelType: string;
-  shape: ShapeSteel;
-  sequence: number;
-  wide: number | null;
-  length: number;
-  thickness: number;
-  amount: number;
-  detail?: string | null;
-  cuttingMethod: CuttingMethod;
-  weight?: number | null;
-  price: number;
-  discount?: number | null;
-  density: number;
-  surfaceT?: string | null;
-  toleranceT?: string | null;
-  surfaceW?: string | null;
-  toleranceW?: string | null;
-  surfaceL?: string | null;
-  toleranceL?: string | null;
-  isOD: boolean;
-  isServices: boolean;
-  isPerAmount: boolean;
 };
 
 export default function CreateNewQuotationPage() {
@@ -375,6 +320,7 @@ export default function CreateNewQuotationPage() {
       return "กรุณากรอกวันที่ส่งของ (Delivery Date)";
     if (!headOrder.quotationNo.trim()) return "กรุณากรอกเลขที่ใบเสนอราคา";
     if (!headOrder.period) return "กรุณากรอกระยะเวลาการยืนราคา";
+    
 
     if (!headOrder.salesName.trim() || !headOrder.salesNameId)
       return "กรุณาเลือกผู้ขาย";
@@ -436,6 +382,7 @@ export default function CreateNewQuotationPage() {
         tel: optionalString(formData.tel),
         fax: optionalString(formData.fax),
         credit: headOrder.credit ?? undefined,
+        period: headOrder.period ?? undefined,
         quotationNo: headOrder.quotationNo,
         salesName: headOrder.salesName,
         salesNameId: headOrder.salesNameId,
@@ -494,7 +441,7 @@ export default function CreateNewQuotationPage() {
         position: "bottom-right",
       });
 
-      router.push("/dashboard");
+      router.push("/quotation-dashboard");
     } catch (error) {
       console.error("Error create New Order", error);
       const message = error instanceof Error ? error : new Error(String(error));

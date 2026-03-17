@@ -14,7 +14,7 @@ import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { calculateWeightDetails } from "@/lib/calculateGrandTotal";
 import { ShapeSteel, CuttingMethod } from "@/types";
-import { SteelItem, SteelType } from "@/app/create-new-quotation/page";
+import { SteelItem, SteelType } from "@/types/quotation.types";
 
 type SteelItemRowProps = {
   item: SteelItem;
