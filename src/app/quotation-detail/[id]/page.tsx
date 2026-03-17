@@ -13,11 +13,13 @@ import * as React from "react";
 import { useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { tr } from "date-fns/locale";
-import { Pencil, Printer } from "lucide-react";
+import { Menu, NotebookText, Pencil, Printer } from "lucide-react";
+import { toast } from "react-toastify";
 
 export default function QuotationDetailPage() {
   const { id } = useParams<{ id: string }>();
   const [Data, setData] = React.useState<ApiQuotation | null>(null);
+  const [isCreatingBill, setIsCreatingBill] = React.useState(false);
   const router = useRouter();
 
   const handlePrint = () => {
@@ -28,6 +30,34 @@ export default function QuotationDetailPage() {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     });
+  };
+
+  const handleCreateBill = async () => {
+    if (!id || !Data || Data.idBill) return;
+    setIsCreatingBill(true);
+    try {
+      const res = await fetch(`/api/quotation-detail/${id}`, {
+        method: "PATCH",
+      });
+      const result = await res.json();
+      if (!res.ok) {
+        toast.error(result.error, {
+          position: "bottom-right",
+        });
+        return;
+      }
+      toast.success("สร้างบิลสำเร็จ!", {
+        position: "bottom-right",
+      });
+      fetchData(); // Refresh the data to reflect the new state
+    } catch (error) {
+      console.error(error);
+      toast.error("เกิดข้อผิดพลาดในการเชื่อมต่อกับเซิร์ฟเวอร์", {
+        position: "bottom-right",
+      });
+    } finally {
+      setIsCreatingBill(false);
+    }
   };
 
   const fetchData = React.useCallback(() => {
@@ -149,8 +179,34 @@ export default function QuotationDetailPage() {
     <div className="min-h-screen mt-3 md:mt-0 lg:mt-0 bg-muted/40 px-3 py-3 text-black print:p-0 print:m-0 print:bg-white print:absolute print:top-0 print:left-0 print:w-full print:z-50 dark:bg-zinc-900 dark:text-zinc-100">
       {/* Print Button */}
       <div className="mb-4 flex items-center justify-between p-4 print:hidden">
-        <h1 className="text-lg font-semibold">ใบเสนอราคา (Quotation)</h1>
+        <div>
+          <h1 className="text-lg font-semibold flex items-center gap-3">
+            ใบเสนอราคา (Quotation)
+            {Data.idBill ? (
+              <span className="inline-flex items-center rounded-md bg-green-50 px-2 py-1 text-sm font-medium text-green-700 ring-1 ring-inset ring-green-600/20">
+                ออกบิลแล้ว
+              </span>
+            ) : (
+              <span className="inline-flex items-center rounded-md bg-yellow-50 px-2 py-1 text-sm font-medium text-yellow-800 ring-1 ring-inset ring-yellow-600/20">
+                ยังไม่ได้ออกบิล
+              </span>
+            )}
+          </h1>
+        </div>
         <div className="flex items-center space-x-3">
+          {!Data.idBill && (
+            <button
+              onClick={handleCreateBill}
+              // disabled={isCreatingBill}
+              disabled={true}
+              title="อามปิดไว้ก่อนนะครับเดี๋ยวอามมาปลดให้ครับ"
+              className="group flex items-center justify-center gap-2 rounded-lg bg-green-600 px-6 py-2 text-sm font-medium text-white shadow-sm transition-all hover:bg-green-700 hover:shadow active:scale-95 disabled:opacity-50 dark:bg-green-500 dark:hover:bg-green-600 cursor-pointer"
+            >
+              <NotebookText />
+              {isCreatingBill ? "กำลังสร้าง..." : "สร้างบิล"}
+            </button>
+          )}
+
           <button
             onClick={() => router.push(`/up-date-quotation/${id}`)}
             className="group flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-6 py-2 text-sm font-medium text-white shadow-sm transition-all hover:bg-blue-700 hover:shadow active:scale-95 dark:bg-blue-500 dark:hover:bg-blue-600 cursor-pointer"

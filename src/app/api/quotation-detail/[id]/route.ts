@@ -3,6 +3,7 @@ import prisma from "@/lib/prisma";
 import { requireAuth } from "@/lib/permissions";
 import { CuttingMethod, ShapeSteel, status } from "@/types";
 import { ApiQuotation } from "../../up-date-quotation/[id]/route";
+import { generateCode } from "../../createNewOrder/route";
 
 export async function GET(
   req: NextRequest,
@@ -101,6 +102,106 @@ export async function GET(
     console.error("Database error:", error);
     const message =
       error instanceof Error ? error.message : "Failed to fetch Quotation";
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
+}
+
+export async function PATCH(
+  req: NextRequest,
+  context: { params: Promise<{ id: string }> },
+) {
+  const { id } = await context.params;
+  const poId = Number(id);
+
+  if (Number.isNaN(poId)) {
+    return NextResponse.json({ error: "Invalid id" }, { status: 400 });
+  }
+
+  const authResult = await requireAuth(["superadmin", "clerk", "supervisor"]);
+  if ("response" in authResult) return authResult.response;
+
+  try {
+    const orderPO = await prisma.orderPO.findUnique({
+      where: { id: poId },
+      include: {
+        Quotation: true,
+      },
+    });
+
+    if (!orderPO) {
+      return NextResponse.json(
+        { error: "ไม่พบข้อมูลใบเสนอราคา" },
+        { status: 404 },
+      );
+    }
+
+    if (orderPO.billId) {
+      return NextResponse.json(
+        { error: "ออเดอร์มีการสร้างบิลไปแล้ว" },
+        { status: 400 },
+      );
+    }
+
+    const saleNameId = orderPO.Quotation?.salesNameId;
+    if (!saleNameId) {
+      return NextResponse.json(
+        { error: "ไม่พบข้อมูล ID พนักงานขายในใบเสนอราคา" },
+        { status: 400 },
+      );
+    }
+
+    const saleName = await prisma.staff.findUnique({
+      where: { id: saleNameId },
+      include: { user: { select: { name: true } } },
+    });
+
+    if (!saleName) {
+      return NextResponse.json(
+        { error: "ไม่พบข้อมูลพนักงานขาย" },
+        { status: 404 },
+      );
+    }
+
+    const customerId = orderPO.customerId;
+    if (!customerId) {
+      return NextResponse.json(
+        { error: "ไม่พบข้อมูลลูกค้าในออเดอร์" },
+        { status: 400 },
+      );
+    }
+
+    const salesUserName = saleName.user?.name;
+    if (!salesUserName) {
+      return NextResponse.json(
+        { error: "ไม่พบชื่อผู้ใช้งานของพนักงานขาย" },
+        { status: 400 },
+      );
+    }
+
+    const newBill = await prisma.bill.create({
+      data: {
+        Customer: { connect: { id: customerId } },
+        codeCustomer: generateCode(),
+        deliveryDate: new Date(),
+        salesName: salesUserName,
+        Staff_Bill_salesNameToStaff: { connect: { id: saleName.id } },
+        Staff_Bill_deliveredByToStaff: { connect: { id: 10 } },
+        deliveredBy: "นายวิรุณ ม่วงศรี",
+        description: orderPO.Quotation?.description ?? null,
+        subtotal: orderPO.Quotation?.subtotal ?? 0,
+        discount: orderPO.Quotation?.discount ?? 0,
+        vat: orderPO.Quotation?.vat ?? 0,
+        grandTotal: orderPO.Quotation?.grandTotal ?? 0,
+        credit: orderPO.Quotation?.credit,
+        OrderPO: { connect: { id: orderPO.id } },
+      },
+    });
+
+    return NextResponse.json(newBill, { status: 201 });
+  } catch (error) {
+    console.error("Database error:", error);
+    const message =
+      error instanceof Error ? error.message : "Failed to create bill";
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
