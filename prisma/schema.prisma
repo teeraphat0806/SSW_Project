@@ -73,7 +73,7 @@ model Customer {
   name            String
   address         String
   tel             String?       @unique
-  taxNumber       String        @unique
+  taxNumber       String?       @unique
   faxNumber       String?       @unique
   email           String?       @unique
   createdAt       DateTime      @default(now())

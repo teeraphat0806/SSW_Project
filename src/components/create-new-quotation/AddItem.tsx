@@ -5,7 +5,6 @@ import {
   DndContext,
   closestCenter,
   PointerSensor,
-  KeyboardSensor,
   useSensor,
   useSensors,
   DragEndEvent,
@@ -87,9 +86,7 @@ export default function AddItem({
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    }),
+
   );
 
   const ids = useMemo(() => SteelItem.map((x) => x.id), [SteelItem]);
@@ -104,8 +101,6 @@ export default function AddItem({
       return arrayMove(prev, oldIndex, newIndex); // ✅ state เรียงใหม่จริง
     });
   }
-
-  
 
   const preventWheelChangeOnNumberInput = (
     e: React.WheelEvent<HTMLDivElement>,

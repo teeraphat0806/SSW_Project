@@ -244,7 +244,7 @@ export default function CreateNewQuotationPage() {
           const formattedData = data.map((t: any) => ({
             // ใช้ any ชั่วคราวเพื่อเช็ค
             id: t.id.toString(),
-            steelType: t.codeSteel, // 👈 เปลี่ยนจาก t.steelType เป็น t.codeSteel ให้ตรงกับ Log
+            steelType: t.codeSteel, // ค่าที่ส่งมาคือ codeSteel
             shape: t.shape,
             price: Number(t.price ?? 0),
             density: Number(t.density ?? 0.0000079),
