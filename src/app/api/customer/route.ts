@@ -142,7 +142,7 @@ export async function GET(req: NextRequest) {
           address: true,
           createdAt: true,
           updatedAt: true,
-          _count: { select: { Bill: true, OrderPO: true } }, // เอาไว้โชว์ในตาราง
+          _count: { select: { Bill: true, OrderPO: true, quotation: true } }, // เอาไว้โชว์ในตาราง
 
           Bill: {
             select: { id: true, createdAt: true },
@@ -172,6 +172,7 @@ export async function GET(req: NextRequest) {
             ...c,
             billCount: c._count.Bill,
             orderCount: c._count.OrderPO,
+            quotationCount: c._count.quotation,
             daysSinceLastBill,
           };
         }),

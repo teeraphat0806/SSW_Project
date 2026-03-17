@@ -4,21 +4,14 @@ import { use, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+
 import { v4 as uuidv4 } from "uuid";
 import { Separator } from "@/components/ui/separator";
 import { ToastContainer, toast } from "react-toastify";
 import CustomerForm from "@/components/create-new-quotation/CustomerForm";
 import CustomerInfoBox from "@/components/newJobOrder/CustomerInfoBox";
 import AddItem from "@/components/create-new-quotation/AddItem";
+import HeaderOrder from "@/components/create-new-quotation/HeaderOrder";
 import "../globals.css";
 import {
   ArrowLeft,
@@ -28,10 +21,8 @@ import {
   Layers,
   Package,
   Save,
-  UploadCloud,
   User,
   UserPlus,
-  X,
 } from "lucide-react";
 import SelectCustomer from "@/components/SelectCustomer";
 import type { CustomerFormData } from "@/components/create-new-quotation/CustomerForm";
@@ -39,18 +30,14 @@ import { cn } from "@/lib/utils";
 
 import { is } from "date-fns/locale";
 import { CuttingMethod, ShapeSteel } from "@/types";
+import { SteelType, HeadOrder, SteelItem } from "@/types/quotation.types";
 import { Item } from "@radix-ui/react-accordion";
 import { set } from "zod";
 
-const maxItem = 15;
+// Re-export types for backward compatibility
+export type { SteelType, HeadOrder, SteelItem };
 
-export type SteelType = {
-  id: string;
-  steelType: string; // ใช้แสดงใน Select
-  shape: ShapeSteel;
-  price: number;
-  density: number;
-};
+const maxItem = 15;
 
 type CustomerApiItem = {
   id: number;
@@ -67,44 +54,6 @@ type CustomerDetail = {
   address: string | null;
   tel: string | null;
   faxNumber: string | null;
-};
-
-type HeadOrder = {
-  quotationNo: string;
-  credit: number | null;
-  salesName: string;
-  salesNameId: number;
-  description: string | null;
-  period: string | null;
-  deliveryDate: string;
-  createdAt: Date | null;
-};
-
-export type SteelItem = {
-  id: string;
-  SteelId: number;
-  steelType: string;
-  shape: ShapeSteel;
-  sequence: number;
-  wide: number | null;
-  length: number;
-  thickness: number;
-  amount: number;
-  detail?: string | null;
-  cuttingMethod: CuttingMethod;
-  weight?: number | null;
-  price: number;
-  discount?: number | null;
-  density: number;
-  surfaceT?: string | null;
-  toleranceT?: string | null;
-  surfaceW?: string | null;
-  toleranceW?: string | null;
-  surfaceL?: string | null;
-  toleranceL?: string | null;
-  isOD: boolean;
-  isServices: boolean;
-  isPerAmount: boolean;
 };
 
 export default function CreateNewQuotationPage() {
@@ -218,27 +167,7 @@ export default function CreateNewQuotationPage() {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const toDateInputValue = (date: Date) => {
-    const y = date.getFullYear();
-    const m = String(date.getMonth() + 1).padStart(2, "0");
-    const d = String(date.getDate()).padStart(2, "0");
-    return `${y}-${m}-${d}`;
-  };
-
-  const toDisplayDateValue = (date: Date) => {
-    const d = String(date.getDate()).padStart(2, "0");
-    const m = String(date.getMonth() + 1).padStart(2, "0");
-    const yy = String(date.getFullYear()).slice(-2);
-    return `${d}/${m}/${yy}`;
-  };
-
-  const todayValue = toDateInputValue(new Date());
-
   // TODO: Replace with real data from API (id/name).
-  const salesOptions = [
-    { id: 1, name: "J.Sirikarn" },
-    { id: 5, name: "A.Prapaporn" },
-  ];
 
   const updateSteelItem = <key extends keyof SteelItem>(
     id: SteelItem["id"],
@@ -391,6 +320,7 @@ export default function CreateNewQuotationPage() {
       return "กรุณากรอกวันที่ส่งของ (Delivery Date)";
     if (!headOrder.quotationNo.trim()) return "กรุณากรอกเลขที่ใบเสนอราคา";
     if (!headOrder.period) return "กรุณากรอกระยะเวลาการยืนราคา";
+    
 
     if (!headOrder.salesName.trim() || !headOrder.salesNameId)
       return "กรุณาเลือกผู้ขาย";
@@ -452,6 +382,7 @@ export default function CreateNewQuotationPage() {
         tel: optionalString(formData.tel),
         fax: optionalString(formData.fax),
         credit: headOrder.credit ?? undefined,
+        period: headOrder.period ?? undefined,
         quotationNo: headOrder.quotationNo,
         salesName: headOrder.salesName,
         salesNameId: headOrder.salesNameId,
@@ -510,7 +441,7 @@ export default function CreateNewQuotationPage() {
         position: "bottom-right",
       });
 
-      router.push("/dashboard");
+      router.push("/quotation-dashboard");
     } catch (error) {
       console.error("Error create New Order", error);
       const message = error instanceof Error ? error : new Error(String(error));
@@ -625,187 +556,13 @@ export default function CreateNewQuotationPage() {
                 )}
               </div>
               {/* Header */}
-              <div>
-                <Card className="shadow-steel">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <ClipboardCheck className="h-6 w-6 text-primary" />
-                      ข้อมูลหัวบิล
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-                      <div>
-                        <Label htmlFor="headerCustomerName">ชื่อลูกค้า</Label>
-                        <Input
-                          id="headerCustomerName"
-                          value={formData.customerName ?? ""}
-                          onChange={(e) =>
-                            setFormData((prev) => ({
-                              ...prev,
-                              customerName: e.target.value,
-                            }))
-                          }
-                          placeholder="สมพงษ์ โลหะกิจ"
-                          className="mt-1"
-                        />
-                      </div>
+              <HeaderOrder
+                headOrder={headOrder}
+                setheadOrder={setheadOrder}
+                formData={formData}
+                setFormData={setFormData}
+              />
 
-                      <div>
-                        <Label htmlFor="quotationNo">เลขที่ใบเสนอราคา</Label>
-                        <Input
-                          id="quotationNo"
-                          value={headOrder.quotationNo}
-                          onChange={(e) =>
-                            setheadOrder((prev) => ({
-                              ...prev,
-                              quotationNo: e.target.value,
-                            }))
-                          }
-                          placeholder="2026/0001"
-                          className="mt-1"
-                        />
-                      </div>
-
-                      <div>
-                        <Label htmlFor="credit">Credit</Label>
-                        <Input
-                          id="credit"
-                          type="number"
-                          value={headOrder.credit ?? ""}
-                          onChange={(e) => {
-                            const raw = e.target.value.trim();
-                            setheadOrder((prev) => ({
-                              ...prev,
-                              credit: raw === "" ? null : Number(raw),
-                            }));
-                          }}
-                          placeholder="30"
-                          className="mt-1"
-                        />
-                      </div>
-
-                      <div>
-                        <Label htmlFor="salesName">ผู้ขาย</Label>
-                        <Select
-                          value={
-                            headOrder.salesNameId
-                              ? String(headOrder.salesNameId)
-                              : ""
-                          }
-                          onValueChange={(value) => {
-                            const selected = salesOptions.find(
-                              (s) => String(s.id) === value,
-                            );
-                            setheadOrder((prev) => ({
-                              ...prev,
-                              salesNameId: selected ? selected.id : 1,
-                              salesName: selected
-                                ? selected.name
-                                : "J.Sirikarn",
-                            }));
-                          }}
-                        >
-                          <SelectTrigger id="salesName" className="mt-1">
-                            <SelectValue placeholder="เลือก Sales" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {salesOptions.map((s) => (
-                              <SelectItem key={s.id} value={String(s.id)}>
-                                {s.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-                      <div>
-                        <Label htmlFor="deliveryDate">Delivery Date</Label>
-                        <Input
-                          id="deliveryDate"
-                          value={headOrder.deliveryDate}
-                          onChange={(e) =>
-                            setheadOrder((prev) => ({
-                              ...prev,
-                              deliveryDate: e.target.value,
-                            }))
-                          }
-                          placeholder="4-5 วัน"
-                          className="mt-1"
-                        />
-                      </div>
-
-                      <div>
-                        <Label htmlFor="period">วันยืนราคา</Label>
-                        <Input
-                          id="period"
-                          value={headOrder.period ?? ""}
-                          onChange={(e) =>
-                            setheadOrder((prev) => ({
-                              ...prev,
-                              period: e.target.value,
-                            }))
-                          }
-                          placeholder="4 วัน"
-                          className="mt-1"
-                        />
-                      </div>
-
-                      <div className="relative">
-                        <Label htmlFor="createdAt">วันที่สร้าง</Label>
-                        <Input
-                          id="createdAt"
-                          type="date"
-                          value={toDateInputValue(
-                            headOrder.createdAt ?? new Date(),
-                          )}
-                          max={todayValue}
-                          onChange={(e) => {
-                            const value = e.target.value;
-                            if (!value) return;
-                            setheadOrder((prev) => ({
-                              ...prev,
-                              createdAt: new Date(`${value}T00:00:00`),
-                            }));
-                          }}
-                          className="absolute bottom-0 left-0 z-10 mt-1 h-10 w-full cursor-pointer opacity-0"
-                        />
-                        <div className="pointer-events-none mt-1 h-10 w-full rounded-md border border-input bg-transparent px-3 text-sm">
-                          <div className="flex h-full items-center justify-between">
-                            <span className="text-foreground">
-                              {toDisplayDateValue(
-                                headOrder.createdAt ?? new Date(),
-                              )}
-                            </span>
-                            <Calendar className="h-4 w-4 text-muted-foreground" />
-                          </div>
-                        </div>
-                      </div>
-
-                      <div>
-                        <Label htmlFor="description">Description</Label>
-                        <Input
-                          id="description"
-                          value={headOrder.description ?? ""}
-                          onChange={(e) =>
-                            setheadOrder((prev) => ({
-                              ...prev,
-                              description:
-                                e.target.value.trim() === ""
-                                  ? null
-                                  : e.target.value,
-                            }))
-                          }
-                          placeholder="รายละเอียดเพิ่มเติม"
-                          className="mt-1"
-                        />
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
               {/* AddItem */}
               <div className="mb-4">
                 <AddItem
