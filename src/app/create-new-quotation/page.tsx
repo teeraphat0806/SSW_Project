@@ -320,7 +320,6 @@ export default function CreateNewQuotationPage() {
       return "กรุณากรอกวันที่ส่งของ (Delivery Date)";
     if (!headOrder.quotationNo.trim()) return "กรุณากรอกเลขที่ใบเสนอราคา";
     if (!headOrder.period) return "กรุณากรอกระยะเวลาการยืนราคา";
-    
 
     if (!headOrder.salesName.trim() || !headOrder.salesNameId)
       return "กรุณาเลือกผู้ขาย";
@@ -659,7 +658,7 @@ export default function CreateNewQuotationPage() {
                           <div className="flex items-center justify-center gap-2 text-white">
                             {" "}
                             <Save className="w-5 h-5" />{" "}
-                            <span>ยืนยันสร้างออเดอร์</span>{" "}
+                            <span>ยืนยันสร้างใบเสนอราคา</span>{" "}
                           </div>
                         )}{" "}
                       </Button>
