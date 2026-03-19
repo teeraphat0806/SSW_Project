@@ -375,6 +375,7 @@ export default function QuotationDetailPage() {
                         <div className="flex-1 flex flex-col items-center leading-tight">
                           <div className="flex items-baseline justify-center">
                             <span className="font-semibold text-[12px]">
+                              {entry.item.shape === "line" ? "Ø " : ""}
                               {entry.item.thickness}
                             </span>
                             {getSurfaceFinish(entry.item.surfaceT) && (
@@ -399,6 +400,7 @@ export default function QuotationDetailPage() {
                         <div className="flex-1 flex flex-col items-center leading-tight">
                           <div className="flex items-baseline justify-center">
                             <span className="font-semibold text-[12px]">
+                              {entry.item.isOD ? "OD " : ""}
                               {entry.item.wide}
                             </span>
                             {getSurfaceFinish(entry.item.surfaceW) && (
@@ -423,6 +425,7 @@ export default function QuotationDetailPage() {
                         <div className="flex-1 flex flex-col items-center leading-tight">
                           <div className="flex items-baseline justify-center">
                             <span className="font-semibold text-[12px]">
+                              {entry.item.isOD ? "ID " : ""}
                               {entry.item.length}
                             </span>
                             {getSurfaceFinish(entry.item.surfaceL) && (
