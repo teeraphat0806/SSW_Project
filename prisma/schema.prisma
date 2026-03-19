@@ -90,12 +90,8 @@ model Customer {
 model Quotation {
     id            Int       @id @default(autoincrement())
     quotationNo   String    @unique
-    customerId    Int?
+    customerId    Int
     customerName  String
-    companyName   String
-    address       String
-    tel           String?
-    fax           String?
     credit        Int       @default(30)
     salesName     String
     salesNameId   Int
@@ -112,7 +108,7 @@ model Quotation {
     
     OrderPO       OrderPO? @relation("Quotation_OrderPO")
     staff         Staff    @relation(fields: [salesNameId], references: [id])
-    customer      Customer? @relation(fields: [customerId],references: [id])
+    customer      Customer @relation(fields: [customerId],references: [id])
 
     @@index([customerId])
 }

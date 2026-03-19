@@ -126,12 +126,8 @@ export async function POST(req: NextRequest) {
       return tx.quotation.create({
         data: {
           quotationNo: data.quotationNo,
-          customer: CustomerId ? { connect: { id: CustomerId } } : undefined,
+          customer:  { connect: { id: CustomerId } } ,
           customerName: data.customerName,
-          companyName: data.companyName,
-          address: data.address,
-          tel: data.tel ?? null,
-          fax: data.fax ?? null,
           credit: data.credit ?? undefined,
           salesName: data.salesName,
           staff: { connect: { id: data.salesNameId } },
