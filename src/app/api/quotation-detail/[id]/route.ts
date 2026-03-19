@@ -26,6 +26,7 @@ export async function GET(
         bill: {
           select: { id: true },
         },
+        Customer: true,
         Quotation: true,
         Product: {
           orderBy: [{ sequence: "asc" }],
@@ -51,6 +52,7 @@ export async function GET(
 
     const Quotation = Order.Quotation;
     const Product = Order.Product;
+    const Customer = Order.Customer;
 
     const apiQuotation: ApiQuotation = {
       id: Quotation.id,
@@ -58,10 +60,10 @@ export async function GET(
       idBill: Order.bill?.id ?? null,
       customerId: Order.customerId ?? null,
       customerName: Quotation.customerName,
-      companyName: Quotation.companyName,
-      address: Quotation.address,
-      tel: Quotation.tel,
-      fax: Quotation.fax,
+      companyName: Customer?.name ?? "",
+      address: Customer?.address ?? "",
+      tel: Customer?.tel ?? null,
+      fax: Customer?.faxNumber ?? null,
       credit: Quotation.credit,
       quotationNo: Quotation.quotationNo,
       salesName: Quotation.salesName,

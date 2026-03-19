@@ -1,5 +1,6 @@
 import { sub } from "date-fns";
 import { number, string, z } from "zod";
+import { digitsOnly } from "../calculateGrandTotal";
 
 export const CreateNewQuotationSchema = z.object({
   quotationNo: z.string(),
@@ -7,8 +8,64 @@ export const CreateNewQuotationSchema = z.object({
   customerName: z.string(),
   companyName: z.string(),
   address: z.string(),
-  tel: z.string().optional(),
-  fax: z.string().optional(),
+  tel: z.preprocess(
+    (v) => {
+      if (v === undefined) return undefined;
+      if (v === null) return null;
+      const raw = String(v).trim();
+      return raw.length ? raw : null; // ✅ เก็บ raw มี "-" ได้
+    },
+    z
+      .string()
+      .refine((raw) => {
+        const s = digitsOnly(raw);
+        return s.length >= 9 && s.length <= 13;
+      }, "เบอร์โทรควรเป็นตัวเลข 9–13 หลัก")
+      .nullable()
+      .optional(),
+  ),
+
+  tax: z.preprocess(
+    (v) => {
+      if (v === undefined) return undefined;
+      if (v === null) return null;
+      const raw = String(v).trim();
+      return raw.length ? raw : null; // ถ้าเป็นสตริงว่าง "" ให้กลายเป็น null
+    },
+    z
+      .string()
+      .refine((raw) => {
+        const s = digitsOnly(raw);
+        return s.length === 13; // ถ้ากรอกมา ต้องมีตัวเลข 13 หลักพอดี
+      }, "เลขผู้เสียภาษีต้องเป็นตัวเลข 13 หลัก")
+      .nullable()
+      .optional(),
+  ),
+  fax: z.preprocess(
+    (v) => {
+      if (v === undefined) return undefined;
+      if (v === null) return null;
+      const raw = String(v).trim();
+      return raw.length ? raw : null;
+    },
+    z
+      .string()
+      .refine((raw) => {
+        const s = digitsOnly(raw);
+        return s.length >= 7 && s.length <= 13;
+      }, "แฟกซ์ควรเป็นตัวเลข 7–13 หลัก")
+      .nullable()
+      .optional(),
+  ),
+  email: z.preprocess(
+    (v) => {
+      if (v === undefined) return undefined;
+      if (v === null) return null;
+      const s = String(v).trim();
+      return s.length ? s : null;
+    },
+    z.union([z.string().email("รูปแบบอีเมลไม่ถูกต้อง"), z.null()]).optional(),
+  ),
   credit: z.coerce.number().int().nonnegative().optional(),
   salesName: z.string(),
   salesNameId: z.number().int().positive(),

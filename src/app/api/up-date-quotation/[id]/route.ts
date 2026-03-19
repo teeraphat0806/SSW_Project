@@ -58,6 +58,7 @@ type OrderWithRelation = Prisma.OrderPOGetPayload<{
   include: {
     Product: { include: { SteelType: true } };
     Quotation: true;
+    Customer: true;
   };
 }>;
 
@@ -71,10 +72,10 @@ function toApi(order: OrderWithRelation): ApiQuotation {
     idBill: order.billId ?? null,
     customerId: order.Quotation.customerId ?? null,
     customerName: order.Quotation.customerName,
-    companyName: order.Quotation.companyName,
-    address: order.Quotation.address,
-    tel: order.Quotation.tel ?? null,
-    fax: order.Quotation.fax ?? null,
+    companyName: order.Customer?.name ?? "",
+    address: order.Customer?.address ?? "",
+    tel: order.Customer?.tel ?? null,
+    fax: order.Customer?.faxNumber ?? null,
     credit: order.Quotation.credit,
     quotationNo: order.Quotation.quotationNo,
     salesName: order.Quotation.salesName,
@@ -139,6 +140,7 @@ export async function GET(
           include: { SteelType: true },
         },
         Quotation: true,
+        Customer: true,
       },
     });
 
@@ -194,17 +196,25 @@ export async function PATCH(
       if (!existing || !existing.quotationId || !existing.Quotation) {
         throw new Error("Quotation not found");
       }
+
+      if (parsed.data.customerId && existing.billId) {
+        const Customer = await tx.customer.findUnique({
+          where: { id: parsed.data.customerId },
+          select: { taxNumber: true },
+        });
+        if (!Customer || !Customer.taxNumber) {
+          throw new Error(
+            "มาสามารถเปลี่ยนลูกค้าได้เนื่องจากออเดอร์นี้มีบิลแล้ว และลูกค้านี้ไม่มีเลขประจำตัวผู้เสียภาษี",
+          );
+        }
+      }
       // ส่วนแก้ไขข้อมุลทั่วไป
       const editFields = [
         "customerId",
         "customerName",
-        "companyName",
         "period",
         "quotationNo",
         "description",
-        "address",
-        "tel",
-        "fax",
         "deliveryDate",
         "createdAt",
         "credit",
@@ -359,6 +369,7 @@ export async function PATCH(
             include: { SteelType: true },
           },
           Quotation: true,
+          Customer: true,
         },
       });
 

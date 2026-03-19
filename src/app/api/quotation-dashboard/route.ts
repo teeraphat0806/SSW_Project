@@ -51,7 +51,7 @@ function buildWhere({
 
     where.AND = tokens.map((token) => {
       const orConditions: any[] = [
-        { Customer: { name: { contains: token, mode: "insensitive" } } },
+        // { Customer: { name: { contains: token, mode: "insensitive" } } },
         {
           Quotation: {
             is: { customerName: { contains: token, mode: "insensitive" } },
@@ -73,6 +73,9 @@ function buildWhere({
       if (!Number.isNaN(numToken)) {
         orConditions.push({ codetoinvoice: numToken }); // หรือ { codetoinvoice: { equals: numToken } }
         orConditions.push({ Invoice: { is: { invoiceNo: numToken } } });
+        orConditions.push({
+          Customer: { name: { contains: token, mode: "insensitive" } },
+        });
       }
 
       return { OR: orConditions };
@@ -122,7 +125,11 @@ export async function GET(req: NextRequest) {
             select: {
               quotationNo: true,
               customerName: true,
-              companyName: true,
+            },
+          },
+          Customer: {
+            select: {
+              name: true,
             },
           },
           billId: true,
@@ -136,7 +143,7 @@ export async function GET(req: NextRequest) {
       quotationNo: row.Quotation?.quotationNo ?? null,
       invoiceNo: row.Invoice?.invoiceNo ?? null,
       customerName: row.Quotation?.customerName ?? null,
-      companyName: row.Quotation?.companyName ?? null,
+      companyName: row.Customer?.name ?? null,
       billStatus: row.billId ? "billed" : "unbilled",
       createdAt: row.createdAt.toISOString(),
     }));

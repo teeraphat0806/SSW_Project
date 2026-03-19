@@ -41,12 +41,12 @@ type ApiJobOrder = {
   deliveryDate: string | Date | null;
   createdAt: string | Date | null;
   customerId: string;
-  customerName: string;
-  customerEmail: string | null;
-  customerPhone: string | null;
-  customerAddress: string;
-  customerTaxId: string;
-  customerFax: string | null;
+  // customerName: string;
+  // customerEmail: string | null;
+  // customerPhone: string | null;
+  // customerAddress: string;
+  // customerTaxId: string;
+  // customerFax: string | null;
   credit: number;
   steel: {
     id: number;
@@ -77,12 +77,12 @@ type Joborder = {
   deliveryDate: string;
   createdAt: string;
   customerId: string;
-  customerName: string;
-  customerEmail: string | null;
-  customerPhone: string | null;
-  customerAddress: string;
-  customerTaxId: string;
-  customerFax: string | null;
+  // customerName: string;
+  // customerEmail: string | null;
+  // customerPhone: string | null;
+  // customerAddress: string;
+  // customerTaxId: string;
+  // customerFax: string | null;
   credit: number;
   steel: {
     id: number;
@@ -128,12 +128,12 @@ const toJoborder = (api: ApiJobOrder): Joborder => ({
   createdAt: toInputDate(api.createdAt),
   credit: api.credit ?? 30,
   customerId: api.customerId ?? "",
-  customerName: api.customerName ?? "",
-  customerEmail: api.customerEmail ?? null,
-  customerPhone: api.customerPhone ?? null,
-  customerAddress: api.customerAddress ?? "",
-  customerTaxId: api.customerTaxId ?? "",
-  customerFax: api.customerFax ?? null,
+  // customerName: api.customerName ?? "",
+  // customerEmail: api.customerEmail ?? null,
+  // customerPhone: api.customerPhone ?? null,
+  // customerAddress: api.customerAddress ?? "",
+  // customerTaxId: api.customerTaxId ?? "",
+  // customerFax: api.customerFax ?? null,
   steel: (api.steel ?? []).map((s) => ({
     id: s.id,
     steelType: s.steelType,
@@ -587,19 +587,19 @@ const UpdateOrderPage = ({ id }: { id: string }) => {
       )
     : 0;
 
-  const summaryByType = job.steel.reduce(
-    (acc, i) => {
-      const steelLabel = i.steelType || "-";
-      const shapeLabel = i.shape === "line" ? "เพลา" : "แผ่น";
-      const key = `${steelLabel} (${shapeLabel})`;
-      if (!acc[key]) acc[key] = { lines: 0, qty: 0, weight: 0 };
-      acc[key].lines += 1;
-      acc[key].qty += Number(i.amount) || 0;
-      acc[key].weight += (Number(i.weight) || 0) * (Number(i.amount) || 0);
-      return acc;
-    },
-    {} as Record<string, { lines: number; qty: number; weight: number }>,
-  );
+  // const summaryByType = job.steel.reduce(
+  //   (acc, i) => {
+  //     const steelLabel = i.steelType || "-";
+  //     const shapeLabel = i.shape === "line" ? "เพลา" : "แผ่น";
+  //     const key = `${steelLabel} (${shapeLabel})`;
+  //     if (!acc[key]) acc[key] = { lines: 0, qty: 0, weight: 0 };
+  //     acc[key].lines += 1;
+  //     acc[key].qty += Number(i.amount) || 0;
+  //     acc[key].weight += (Number(i.weight) || 0) * (Number(i.amount) || 0);
+  //     return acc;
+  //   },
+  //   {} as Record<string, { lines: number; qty: number; weight: number }>,
+  // );
 
   const fmtInt = (n: number) => Intl.NumberFormat().format(n);
   const fmtWeight = (n: number) =>
@@ -669,7 +669,10 @@ const UpdateOrderPage = ({ id }: { id: string }) => {
         />
 
         {/* --- Section 2: Customer Info --- */}
-        <DetailCustomer job={job} setJob={setJob} />
+        <DetailCustomer 
+          customerId={job.customerId} 
+          onCustomerChange={(id) => setJob((prev) => prev ? { ...prev, customerId: id } : prev)} 
+        />
 
         {/* --- Section 3: Order Lines --- */}
         <DetailItem

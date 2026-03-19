@@ -25,7 +25,6 @@ import {
   Clock,
   AlignLeft,
 } from "lucide-react";
-import { CustomerFormData } from "./CustomerForm";
 import { Dispatch } from "react";
 
 const salesOptions = [
@@ -52,15 +51,15 @@ const toDisplayDateValue = (date: Date) => {
 type headerProps = {
   headOrder: HeadOrder;
   setheadOrder: Dispatch<React.SetStateAction<HeadOrder>>;
-  formData: CustomerFormData;
-  setFormData: Dispatch<React.SetStateAction<CustomerFormData>>;
+  customerName: string;
+  onCustomerNameChange: (value: string) => void;
 };
 
 export default function HeaderOrder({
   headOrder,
   setheadOrder,
-  formData,
-  setFormData,
+  customerName,
+  onCustomerNameChange,
 }: headerProps) {
   return (
     <div>
@@ -80,13 +79,8 @@ export default function HeaderOrder({
                 <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   id="headerCustomerName"
-                  value={formData.customerName ?? ""}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      customerName: e.target.value,
-                    }))
-                  }
+                  value={customerName}
+                  onChange={(e) => onCustomerNameChange(e.target.value)}
                   placeholder="สมพงษ์ โลหะกิจ"
                   className="pl-9"
                 />
@@ -118,10 +112,12 @@ export default function HeaderOrder({
                 <CreditCard className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   id="credit"
-                  type="number"
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
                   value={headOrder.credit ?? ""}
                   onChange={(e) => {
-                    const raw = e.target.value.trim();
+                    const raw = e.target.value.replace(/\D/g, "");
                     setheadOrder((prev) => ({
                       ...prev,
                       credit: raw === "" ? null : Number(raw),

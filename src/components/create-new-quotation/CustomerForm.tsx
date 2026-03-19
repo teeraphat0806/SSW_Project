@@ -17,6 +17,8 @@ export type CustomerFormData = {
   address: string;
   tel: string | null;
   fax: string | null;
+  taxNumber: string | null;
+  email: string | null;
 };
 
 type CustomerFormProps = {
@@ -58,6 +60,23 @@ export default function CustomerForm({
           </div>
 
           <div>
+            <Label htmlFor="customerEmail">Email</Label>
+            <Input
+              id="customerEmail"
+              type="email"
+              value={formData.email ?? ""}
+              onChange={(e) =>
+                updateFormData(
+                  "email",
+                  e.target.value.trim() === "" ? null : e.target.value,
+                )
+              }
+              placeholder="sompong@gmail.com"
+              className="mt-1"
+            />
+          </div>
+
+          <div>
             <Label htmlFor="customerPhone">เบอร์โทร</Label>
             <Input
               id="customerPhone"
@@ -77,9 +96,24 @@ export default function CustomerForm({
           </div>
 
           <div>
-            <Label htmlFor="fax">Fax</Label>
+            <Label htmlFor="taxNumber">Tax</Label>
             <Input
-              id="fax"
+              id="taxNumber"
+              type="text"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              minLength={13}
+              maxLength={13}
+              value={formData.taxNumber ?? ""}
+              onChange={(e) => updateFormData("taxNumber", e.target.value)}
+              placeholder="1234567891234"
+              className="mt-1"
+            />
+          </div>
+          <div>
+            <Label htmlFor="faxNumber">Fax</Label>
+            <Input
+              id="faxNumber"
               type="text"
               minLength={7}
               maxLength={13}
@@ -97,11 +131,11 @@ export default function CustomerForm({
         </div>
 
         <div>
-          <Label htmlFor="Address">
+          <Label htmlFor="deliveryAddress">
             ที่อยู่<span className="text-red-500">*</span>
           </Label>
           <Textarea
-            id="Address"
+            id="deliveryAddress"
             value={formData.address}
             onChange={(e) => updateFormData("address", e.target.value)}
             placeholder="123 ถนนสุขุมวิท แขวงคลองเตยเหนือ เขตวัฒนา กรุงเทพฯ 10110"

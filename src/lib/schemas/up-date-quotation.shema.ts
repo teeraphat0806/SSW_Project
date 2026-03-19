@@ -33,10 +33,5 @@ export const UpDateQuotationSchema = z.object({
   idBill: z.number().int().positive().nullable().optional(),
   customerId: z.number().int().positive().nullable().optional(),
   customerName: z.string().optional(),
-  companyName: z.string().optional(),
-  address: z.string().optional(),
-  tel: z.string().optional(),
-  fax: z.string().optional(),
-
   steelItem: z.array(steelItemSchema).optional(),
 });
