@@ -126,7 +126,14 @@ export async function PATCH(
     const orderPO = await prisma.orderPO.findUnique({
       where: { id: poId },
       include: {
-        Quotation: true,
+        Quotation: {
+          include: {
+            staff: {
+              include: { user: { select: { name: true } } },
+            },
+          },
+        },
+        Customer: true,
       },
     });
 
@@ -144,6 +151,13 @@ export async function PATCH(
       );
     }
 
+    if (!orderPO.Customer || !orderPO.Customer.taxNumber) {
+      return NextResponse.json(
+        { error: "ไม่พบข้อมูลเลขประจำตัวผู้เสียภาษีของลูกค้า" },
+        { status: 400 },
+      );
+    }
+
     const saleNameId = orderPO.Quotation?.salesNameId;
     if (!saleNameId) {
       return NextResponse.json(
@@ -152,12 +166,11 @@ export async function PATCH(
       );
     }
 
-    const saleName = await prisma.staff.findUnique({
-      where: { id: saleNameId },
-      include: { user: { select: { name: true } } },
-    });
-
-    if (!saleName) {
+    if (
+      !orderPO.Quotation ||
+      !orderPO.Quotation.staff ||
+      !orderPO.Quotation.staff.user 
+    ) {
       return NextResponse.json(
         { error: "ไม่พบข้อมูลพนักงานขาย" },
         { status: 404 },
@@ -172,7 +185,7 @@ export async function PATCH(
       );
     }
 
-    const salesUserName = saleName.user?.name;
+    const salesUserName = orderPO.Quotation.staff.user.name;
     if (!salesUserName) {
       return NextResponse.json(
         { error: "ไม่พบชื่อผู้ใช้งานของพนักงานขาย" },
@@ -186,7 +199,7 @@ export async function PATCH(
         codeCustomer: generateCode(),
         deliveryDate: new Date(),
         salesName: salesUserName,
-        Staff_Bill_salesNameToStaff: { connect: { id: saleName.id } },
+        Staff_Bill_salesNameToStaff: { connect: { id: saleNameId } },
         Staff_Bill_deliveredByToStaff: { connect: { id: 10 } },
         deliveredBy: "นายวิรุณ ม่วงศรี",
         description: orderPO.Quotation?.description ?? null,

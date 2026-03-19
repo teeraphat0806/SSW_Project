@@ -15,12 +15,14 @@ import { useRouter } from "next/navigation";
 import { tr } from "date-fns/locale";
 import { Menu, NotebookText, Pencil, Printer } from "lucide-react";
 import { toast } from "react-toastify";
+import { useConfirm } from "@/components/providers/confirm-dialog-provider";
 
 export default function QuotationDetailPage() {
   const { id } = useParams<{ id: string }>();
   const [Data, setData] = React.useState<ApiQuotation | null>(null);
   const [isCreatingBill, setIsCreatingBill] = React.useState(false);
   const router = useRouter();
+  const confirm = useConfirm();
 
   const handlePrint = () => {
     window.print();
@@ -34,6 +36,12 @@ export default function QuotationDetailPage() {
 
   const handleCreateBill = async () => {
     if (!id || !Data || Data.idBill) return;
+    const userConfirmed = await confirm({
+      title: "ยืนยันการสร้างบิลใช่หรือไม่?",
+      confirmText: "ใช่, สร้างบิล",
+      cancelText: "ไม่, ยกเลิก",
+    });
+    if (!userConfirmed) return;
     setIsCreatingBill(true);
     try {
       const res = await fetch(`/api/quotation-detail/${id}`, {
@@ -197,9 +205,7 @@ export default function QuotationDetailPage() {
           {!Data.idBill && (
             <button
               onClick={handleCreateBill}
-              // disabled={isCreatingBill}
-              disabled={true}
-              title="อามปิดไว้ก่อนนะครับเดี๋ยวอามมาปลดให้ครับ"
+              disabled={isCreatingBill}
               className="group flex items-center justify-center gap-2 rounded-lg bg-green-600 px-6 py-2 text-sm font-medium text-white shadow-sm transition-all hover:bg-green-700 hover:shadow active:scale-95 disabled:opacity-50 dark:bg-green-500 dark:hover:bg-green-600 cursor-pointer"
             >
               <NotebookText />

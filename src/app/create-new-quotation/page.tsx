@@ -277,9 +277,11 @@ export default function CreateNewQuotationPage() {
   });
 
   const validateForm = () => {
+    if (showForm) {
+      if (!formData.companyName.trim()) return "กรุณากรอกชื่อบริษัท";
+      if (!formData.address.trim()) return "กรุณากรอกที่อยู่";
+    }
     if (!formData.customerName.trim()) return "กรุณากรอกชื่อลูกค้า";
-    if (!formData.companyName.trim()) return "กรุณากรอกชื่อบริษัท";
-    if (!formData.address.trim()) return "กรุณากรอกที่อยู่";
 
     if (!headOrder.deliveryDate.trim())
       return "กรุณากรอกวันที่ส่งของ (Delivery Date)";
