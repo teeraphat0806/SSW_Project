@@ -204,12 +204,12 @@ export async function PATCH(
         });
         if (!Customer || !Customer.taxNumber) {
           throw new Error(
-            "มาสามารถเปลี่ยนลูกค้าได้เนื่องจากออเดอร์นี้มีบิลแล้ว และลูกค้านี้ไม่มีเลขประจำตัวผู้เสียภาษี",
+            "ไม่สามารถเปลี่ยนลูกค้าได้เนื่องจากออเดอร์นี้มีบิลแล้ว และลูกค้านี้ไม่มีเลขประจำตัวผู้เสียภาษี",
           );
         }
       }
-      // ส่วนแก้ไขข้อมุลทั่วไป
-      const editFields = [
+      // ส่วนแก้ไขข้อมูลทั่วไป
+      const editFields = [  
         "customerId",
         "customerName",
         "period",
@@ -222,6 +222,7 @@ export async function PATCH(
 
       let isEditChanged = false;
       let EditUpdates: Record<string, any> = {};
+      let EditBillUpdates: Record<string, any> = {};
       //data.customerId เขียนแบบนี้ก็ได้ แต่ data["customerId"] แบบนี้ก็ได้เด้อ
       for (const field of editFields) {
         const newValue = parsed.data[field];
@@ -232,12 +233,34 @@ export async function PATCH(
           EditUpdates[field] = newValue;
         }
       }
-
       if (isEditChanged) {
         await tx.quotation.update({
           where: { id: existing.quotationId },
           data: { ...EditUpdates },
         });
+        //เปลี่ยน customerId ใน orderPO ด้วยถ้ามีการเปลี่ยนแปลง
+        if (EditUpdates.customerId !== undefined) {
+          await tx.orderPO.update({
+            where: { id: poId },
+            data: { customerId: EditUpdates.customerId },
+          });
+        }
+      }
+      if (existing.billId) {
+        if (parsed.data.credit !== undefined) {
+          EditBillUpdates.credit = parsed.data.credit;
+        }
+
+        if (parsed.data.createdAt !== undefined) {
+          EditBillUpdates.createdAt = parsed.data.createdAt;
+        }
+
+        if (Object.keys(EditBillUpdates).length > 0) {
+          await tx.bill.update({
+            where: { id: existing.billId },
+            data: { ...EditBillUpdates },
+          });
+        }
       }
 
       // ส่วนแก้ไขรายการเหล็ก
