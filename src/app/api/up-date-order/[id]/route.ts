@@ -331,13 +331,6 @@ export async function PATCH(
         },
       });
 
-      // if (credit !== undefined && !patch.steel) {
-      //   await tx.bill.update({
-      //     where: { id: existing.billId! },
-      //     data: { credit },
-      //   });
-      // }
-
       // update steel
       if (patch.steel) {
         const requestedSteels = Array.from(
