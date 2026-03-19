@@ -222,32 +222,61 @@ export async function PATCH(
     const updated = await prisma.$transaction(async (tx) => {
       const existing = await tx.orderPO.findUnique({
         where: { id: poId },
-        select: { id: true, billId: true },
+        select: { id: true, billId: true, quotationId: true },
       });
       if (!existing) throw new Error("Order not found");
 
       const credit = patch.credit;
       const createdAt = patch.createdAt;
-      if (credit !== undefined && existing.billId == null) {
+      if (existing.billId == null) {
         throw new Error("No bill associated with this order");
       }
-      if (createdAt !== undefined && existing.billId == null) {
-        throw new Error("No bill associated with this order");
+      // Record เอาไว้เก็บ key-value ข้อมูลหมด
+      const billUpdates: Record<string, any> = {};
+      const quotationUpdates: Record<string, any> = {};
+
+      // จับคู่ฟิลด์ที่ต้องการอัปเดต ถ้ามีส่งมา ให้หยอดใส่ทั้ง 2 กล่อง
+      if (patch.deliveryDate) {
+        billUpdates.deliveryDate = patch.deliveryDate;
+      }
+      if (patch.createdAt) {
+        billUpdates.createdAt = patch.createdAt;
+        quotationUpdates.createdAt = patch.createdAt; // ให้ Quotation เปลี่ยนตามด้วย
+      }
+      if (patch.credit !== undefined) {
+        billUpdates.credit = patch.credit;
+        quotationUpdates.credit = patch.credit; // ให้ Quotation เปลี่ยนตามด้วย
       }
 
-      // deliveryDate (ถ้ามีส่งมา)
-      if (patch.deliveryDate || patch.createdAt) {
-        if (existing.billId == null) {
-          throw new Error("No bill associated with this order");
-        }
+      // Object.keys() จะได้เป็น array ของชื่อฟิลด์ที่มีการอัปเดต แล้วค่อยเช็กทีเดียวตอนจะสั่ง update จริงๆ ว่ามีอะไรบ้าง ถ้ามีอย่างน้อย 1 ฟิลด์ถึงจะสั่ง update
+      if (Object.keys(billUpdates).length > 0) {
         await tx.bill.update({
           where: { id: existing.billId },
-          data: {
-            ...(patch.deliveryDate ? { deliveryDate: patch.deliveryDate } : {}),
-            ...(patch.createdAt ? { createdAt: patch.createdAt } : {}),
-          },
+          data: billUpdates,
         });
       }
+
+      // 🌟 4. สั่งอัปเดต Quotation (ถ้ามีข้อมูลให้แก้ และออเดอร์นี้ผูกกับ Quotation อยู่)
+      if (Object.keys(quotationUpdates).length > 0 && existing.quotationId) {
+        await tx.quotation.update({
+          where: { id: existing.quotationId },
+          data: quotationUpdates,
+        });
+      }
+
+      // // deliveryDate (ถ้ามีส่งมา)
+      // if (patch.deliveryDate || patch.createdAt) {
+      //   if (existing.billId == null) {
+      //     throw new Error("No bill associated with this order");
+      //   }
+      //   await tx.bill.update({
+      //     where: { id: existing.billId },
+      //     data: {
+      //       ...(patch.deliveryDate ? { deliveryDate: patch.deliveryDate } : {}),
+      //       ...(patch.createdAt ? { createdAt: patch.createdAt } : {}),
+      //     },
+      //   });
+      // }
 
       //ถ้ามี poNumber ส่งมา ให้ตรวจสอบความซ้ำซ้อนก่อน update
       if (patch.poNumber !== undefined) {
@@ -274,9 +303,14 @@ export async function PATCH(
 
         const customer = await tx.customer.findUnique({
           where: { id: cid },
-          select: { id: true },
+          select: { id: true, taxNumber: true },
         });
         if (!customer) throw new Error("Customer not found");
+        if (customer.taxNumber === null) {
+          throw new Error(
+            "ไม่สามารถเลือกลูกค้าที่ไม่มีเลขประจำตัวผู้เสียภาษีได้",
+          );
+        }
 
         nextCustomerId = cid;
       }
@@ -297,13 +331,12 @@ export async function PATCH(
         },
       });
 
-      // If we're only updating credit (no steel changes), update the bill here.
-      if (credit !== undefined && !patch.steel) {
-        await tx.bill.update({
-          where: { id: existing.billId! },
-          data: { credit },
-        });
-      }
+      // if (credit !== undefined && !patch.steel) {
+      //   await tx.bill.update({
+      //     where: { id: existing.billId! },
+      //     data: { credit },
+      //   });
+      // }
 
       // update steel
       if (patch.steel) {
@@ -440,12 +473,10 @@ export async function PATCH(
 
         if (!orderWithBill) throw new Error("Order not found");
 
-        let bill;
-
-        if (orderWithBill.billId) {
+        if (existing.billId) {
           // 🔁 มี Bill อยู่แล้ว → update
-          bill = await tx.bill.findUnique({
-            where: { id: orderWithBill.billId },
+          const bill = await tx.bill.findUnique({
+            where: { id: existing.billId },
             select: { id: true, vatRate: true },
           });
 
@@ -462,9 +493,15 @@ export async function PATCH(
               discount,
               vat,
               grandTotal,
-              ...(credit !== undefined ? { credit } : {}),
             },
           });
+
+          if (existing.quotationId) {
+            await tx.quotation.update({
+              where: { id: existing.quotationId },
+              data: { subtotal, discount, vat, grandTotal },
+            });
+          }
         } else {
           throw new Error("No bill associated with this order");
         }

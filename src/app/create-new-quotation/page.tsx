@@ -50,10 +50,12 @@ type CustomerApiResponse = {
 
 type CustomerDetail = {
   id: number;
-  name: string | null;
-  address: string | null;
+  name: string;
+  address: string;
   tel: string | null;
   faxNumber: string | null;
+  taxNumber: string | null;
+  email: string | null;
 };
 
 export default function CreateNewQuotationPage() {
@@ -71,6 +73,8 @@ export default function CreateNewQuotationPage() {
     address: "",
     tel: "",
     fax: "",
+    taxNumber: "",
+    email: "",
   });
   const [headOrder, setheadOrder] = useState<HeadOrder>({
     quotationNo: "",
@@ -120,45 +124,6 @@ export default function CreateNewQuotationPage() {
       isPerAmount: false,
     },
   ]);
-
-  useEffect(() => {
-    if (!selectedCustomerId) return;
-
-    const ac = new AbortController();
-
-    const fetchCustomerDetail = async () => {
-      try {
-        const res = await fetch(`/api/customer/${selectedCustomerId}`, {
-          signal: ac.signal,
-          cache: "no-store",
-        });
-        if (!res.ok) throw new Error("Failed to fetch customer detail");
-
-        const data: CustomerDetail = await res.json();
-
-        const telValue =
-          data.tel && data.tel.trim() !== "" ? data.tel.trim() : null;
-        const faxValue =
-          data.faxNumber && data.faxNumber.trim() !== ""
-            ? data.faxNumber.trim()
-            : null;
-
-        setFormData((prev) => ({
-          ...prev,
-          companyName: data.name ?? "",
-          address: data.address ?? "",
-          tel: telValue,
-          fax: faxValue,
-        }));
-      } catch (error) {
-        if ((error as { name?: string }).name === "AbortError") return;
-        console.error("Error fetching customer detail:", error);
-      }
-    };
-
-    fetchCustomerDetail();
-    return () => ac.abort();
-  }, [selectedCustomerId]);
 
   const updateFormData = <Key extends keyof CustomerFormData>(
     field: Key,
@@ -376,8 +341,8 @@ export default function CreateNewQuotationPage() {
       const payload = {
         customerId: selectedCustomerId ?? undefined,
         customerName: formData.customerName,
-        companyName: formData.companyName,
-        address: formData.address,
+        companyName: formData.companyName ?? "Test Company",
+        address: formData.address ?? "Test Address",
         tel: optionalString(formData.tel),
         fax: optionalString(formData.fax),
         credit: headOrder.credit ?? undefined,
@@ -464,7 +429,7 @@ export default function CreateNewQuotationPage() {
         <div className=" mb-4 border-b ">
           <Button
             variant="ghost"
-            onClick={() => router.push("/dashboard")}
+            onClick={() => router.back()}
             className="mb-4"
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
@@ -558,8 +523,10 @@ export default function CreateNewQuotationPage() {
               <HeaderOrder
                 headOrder={headOrder}
                 setheadOrder={setheadOrder}
-                formData={formData}
-                setFormData={setFormData}
+                customerName={formData.customerName}
+                onCustomerNameChange={(value) =>
+                  setFormData((prev) => ({ ...prev, customerName: value }))
+                }
               />
 
               {/* AddItem */}

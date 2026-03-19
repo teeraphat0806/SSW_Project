@@ -2,7 +2,7 @@ import { z } from "zod";
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { requireAuth } from "@/lib/permissions";
-import { calculateWeightDetails } from "@/lib/calculateGrandTotal";
+import { calculateWeightDetails, digitsOnly } from "@/lib/calculateGrandTotal";
 import { CreateNewQuotationSchema } from "@/lib/schemas/createNewQuotation.shema";
 
 type createNewQuotationInput = z.infer<typeof CreateNewQuotationSchema>;
@@ -38,6 +38,37 @@ export async function POST(req: NextRequest) {
     );
 
     const newQuotation = await prisma.$transaction(async (tx) => {
+      let CustomerId: number | undefined = data.customerId;
+      if (!CustomerId) {
+        if (!data.companyName || !data.address) {
+          throw new Error(
+            "Customer information is required when customerId is not provided.",
+          );
+        }
+        let telSearch = null;
+    if (data.tel) {
+      telSearch = digitsOnly(data.tel);
+    }
+    let faxNumberSearch = null;
+    if (data.fax) {
+      faxNumberSearch = digitsOnly(data.fax);
+    }
+        const newCustomer = await tx.customer.create({
+          data: {
+            name: data.companyName,
+            address: data.address,
+            tel: data.tel ?? null,
+            telSearch: telSearch,
+            faxNumber: data.fax ?? null,
+            faxNumberSearch: faxNumberSearch,
+            taxNumber: data.tax ?? null,
+            email: data.email ?? null,
+          },
+        });
+
+        CustomerId = newCustomer.id;
+      }
+
       const steelList = await tx.steelType.findMany({
         where: { id: { in: steelPairs } },
         select: {
@@ -88,21 +119,15 @@ export async function POST(req: NextRequest) {
           0,
         ),
       );
-
+      
       const vat = round2(((subtotal - discount) * 7) / 100);
       const grandTotal = round2(subtotal - discount + vat);
 
       return tx.quotation.create({
         data: {
           quotationNo: data.quotationNo,
-          customer: data.customerId
-            ? { connect: { id: data.customerId } }
-            : undefined,
+          customer:  { connect: { id: CustomerId } } ,
           customerName: data.customerName,
-          companyName: data.companyName,
-          address: data.address,
-          tel: data.tel ?? null,
-          fax: data.fax ?? null,
           credit: data.credit ?? undefined,
           salesName: data.salesName,
           staff: { connect: { id: data.salesNameId } },
@@ -118,8 +143,8 @@ export async function POST(req: NextRequest) {
 
           OrderPO: {
             create: {
-              Customer: data.customerId
-                ? { connect: { id: data.customerId } }
+              Customer: CustomerId
+                ? { connect: { id: CustomerId } }
                 : undefined,
               total: subtotal,
               Product: {
