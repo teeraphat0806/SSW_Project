@@ -48,15 +48,15 @@ type CustomerApiResponse = {
   data: CustomerApiItem[];
 };
 
-type CustomerDetail = {
-  id: number;
-  name: string;
-  address: string;
-  tel: string | null;
-  faxNumber: string | null;
-  taxNumber: string | null;
-  email: string | null;
-};
+// type CustomerDetail = {
+//   id: number;
+//   name: string;
+//   address: string;
+//   tel: string | null;
+//   faxNumber: string | null;
+//   taxNumber: string | null;
+//   email: string | null;
+// };
 
 export default function CreateNewQuotationPage() {
   const router = useRouter();
@@ -341,7 +341,7 @@ export default function CreateNewQuotationPage() {
       };
 
       const payload = {
-        customerId: selectedCustomerId ?? undefined,
+        customerId: showForm ? undefined : selectedCustomerId ?? undefined,
         customerName: formData.customerName,
         companyName: formData.companyName ?? "Test Company",
         address: formData.address ?? "Test Address",
@@ -356,7 +356,7 @@ export default function CreateNewQuotationPage() {
         deliveryDate: headOrder.deliveryDate,
         createdAt: headOrder.createdAt ?? new Date(),
         orderPO: {
-          customerId: selectedCustomerId ?? undefined,
+          customerId: showForm ? undefined : selectedCustomerId ?? undefined,
           products: SteelItem.map((item, index) => ({
             SteelId: item.SteelId,
             steelType: item.steelType,

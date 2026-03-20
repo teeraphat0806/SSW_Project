@@ -3,7 +3,7 @@ import prisma from "@/lib/prisma";
 import { requireAuth } from "@/lib/permissions";
 import { CuttingMethod, ShapeSteel, status } from "@/types";
 import { ApiQuotation } from "../../up-date-quotation/[id]/route";
-import { generateCode } from "../../createNewOrder/route";
+import { generateCode } from "@/lib/generateCode";
 
 export async function GET(
   req: NextRequest,

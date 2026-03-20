@@ -1,5 +1,5 @@
 "use client";
-import { use, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -28,11 +28,11 @@ import SelectCustomer from "@/components/SelectCustomer";
 import type { CustomerFormData } from "@/components/newJobOrder/CustomerForm";
 import { cn } from "@/lib/utils";
 import { CuttingMethod, ShapeSteel } from "@/types";
+import { SteelType, SteelItem } from "@/types/order.types";
 import {
   OcrResultModal,
   type OcrSummary,
 } from "@/components/newJobOrder/OcrResultModel";
-import { is } from "date-fns/locale";
 
 type CustomerApiItem = {
   id: number;
@@ -43,34 +43,6 @@ type CustomerApiResponse = {
   data: CustomerApiItem[];
 };
 
-type SteelItem = {
-  id: string;
-  steelType: string;
-  shape: ShapeSteel;
-  quantity: number;
-  width: number | null;
-  length: number;
-  thickness: number;
-  notes: string;
-  weight?: number | null;
-  price: number;
-  discount: number | null;
-  density: number;
-  cuttingMethod?: CuttingMethod;
-  isOD: boolean;
-  isServices: boolean;
-  isPerAmount: boolean;
-  job?: string | null;
-};
-
-type SteelType = {
-  id: string;
-  name: string; // ใช้แสดงใน Select
-  shape: ShapeSteel;
-  price: number;
-  density: number;
-};
-
 type OcrParseResponse = {
   source: { fileName: string; fileType: string; fileSize: number };
   customerMatch: {
@@ -79,33 +51,33 @@ type OcrParseResponse = {
     matchedBy: "taxNumber" | "tel" | "faxNumber" | "email" | null;
   };
   customerDraft: {
+    code: string | null;
     name: string;
     address: string;
     tel: string;
-    taxNumber: string;
-    faxNumber: string;
-    email: string;
+    taxNumber: string | null;
+    faxNumber: string | null;
+    email: string | null;
   };
   orderDraft: {
-    poNumber: string | null;
+    ponumber: string | null;
     poDate: string | null;
     deliveryDate: string | null;
+    yourRef: string | null;
   };
   items: Array<{
     raw: {
       codeSteel: string | null;
       description: string | null;
-      shape: ShapeSteel;
+      shape: ShapeSteel | null;
       width: number | null;
       length: number | null;
       thickness: number | null;
       quantity: number | null;
-      cuttingMethod: CuttingMethod;
+      cuttingMethod: CuttingMethod | null;
       job: string | null;
-      notes: string | null;
-      isOD: boolean | null;
-      isServices: boolean | null;
       confidence: number | null;
+      notes: string | null;
     };
     match: {
       matched: boolean;
@@ -152,17 +124,7 @@ const NewJobOrder = () => {
   const [ocrModalOpen, setOcrModalOpen] = useState(false);
   const [ocrData, setOcrData] = useState<OcrParseResponse | null>(null);
   const [ocrStage, setOcrStage] = useState<"loading" | "done">("loading");
-  const [ocrSummary, setOcrSummary] = useState<{
-    customerLine: string;
-    items: Array<{
-      codeSteel: string;
-      thickness: number | null;
-      width: number | null;
-      length: number | null;
-      quantity: number | null;
-      description: string | null;
-    }>;
-  } | null>(null);
+  const [ocrSummary, setOcrSummary] = useState<OcrSummary | null>(null);
   const ocrAbortRef = useRef<AbortController | null>(null);
   // เก็บ ID ลูกค้าที่เลือกจาก SelectCustomer
   const [selectedCustomerId, setSelectedCustomerId] = useState<number | null>(
@@ -180,37 +142,36 @@ const NewJobOrder = () => {
   });
 
   const [steelTypes, setSteelTypes] = useState<SteelType[]>([]);
-  const [steelItems, setSteelItems] = useState<SteelItem[]>([
+  const [SteelItem, setSteelItem] = useState<SteelItem[]>([
     {
       id: "",
+      SteelId: 0,
       steelType: "",
       shape: "square",
-      quantity: 0,
-      width: null,
+      sequence: 1,
+      wide: 0,
       length: 0,
       thickness: 0,
-      isOD: false,
-      isServices: false,
-      isPerAmount: false,
+      amount: 0,
+      detail: "",
+      cuttingMethod: "normal",
       weight: null,
       discount: null,
       density: 0.0000079,
       price: 0,
-      cuttingMethod: "normal",
-      notes: "",
+      isOD: false,
+      isServices: false,
+      isPerAmount: false,
     },
   ]);
 
   //จำนวนรวมของเหล็ก
-  const totalQuantity = steelItems.reduce(
-    (sum, item) => sum + item.quantity,
-    0,
-  );
+  const totalQuantity = SteelItem.reduce((sum, item) => sum + item.amount, 0);
   //จำนวนประเภทเหล็ก
   const totalTypes = new Set(
-    steelItems
-      .filter((item) => item.steelType)
-      .map((item) => `${item.steelType}::${item.shape}`),
+    SteelItem.filter((item) => item.steelType).map(
+      (item) => `${item.steelType}::${item.shape}`,
+    ),
   ).size;
 
   useEffect(() => {
@@ -241,7 +202,7 @@ const NewJobOrder = () => {
                 density: number;
               }) => ({
                 id: t.id.toString(),
-                name: t.codeSteel, // ใช้เป็น value/label ใน Select
+                steelType: t.codeSteel, // ใช้เป็น value/label ใน Select
                 shape: t.shape,
                 price: Number(t.price ?? 0),
                 density: Number(t.density ?? 0.0000079),
@@ -272,8 +233,6 @@ const NewJobOrder = () => {
 
         const json: CustomerApiResponse = await res.json();
 
-
-        
         if (!ignore) {
           setCustomers(
             json.data.map((c: CustomerApiItem) => ({
@@ -297,6 +256,34 @@ const NewJobOrder = () => {
       ignore = true;
     };
   }, [searchCustomer, searchItem]);
+
+  useEffect(() => {
+    const firstSteelType = steelTypes[0];
+    if (!firstSteelType) return;
+
+    setSteelItem((prev) => {
+      if (prev.length !== 1) return prev;
+
+      const first = prev[0]!;
+      if (first.SteelId > 0 && first.steelType) return prev;
+
+      const shape: ShapeSteel =
+        firstSteelType.shape === "line" ? "line" : "square";
+
+      return [
+        {
+          ...first,
+          id: first.id || uuidv4(),
+          SteelId: Number(firstSteelType.id ?? 0),
+          steelType: firstSteelType.steelType ?? "",
+          shape,
+          wide: shape === "line" ? null : (first.wide ?? 1),
+          price: Number(firstSteelType.price ?? 0),
+          density: Number(firstSteelType.density ?? 0.0000079),
+        },
+      ];
+    });
+  }, [steelTypes]);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files) {
@@ -369,33 +356,6 @@ const NewJobOrder = () => {
     setIsSubmitting(true);
 
     try {
-      if (showForm) {
-        const payloadNewcustomer = {
-          name: formData.customerName,
-          address: formData.deliveryAddress,
-          tel: formData.customerPhone || "",
-          taxNumber: formData.taxNumber,
-          faxNumber: formData.faxNumber || "",
-          email: formData.customerEmail || "",
-        };
-        const customerRes = await fetch(`api/customer`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payloadNewcustomer),
-        });
-
-        if (!customerRes.ok) {
-          throw new Error("เกิดข้อผิดพลาดในการบันทึกข้อมูลลูกค้า");
-        }
-        const customerData = await customerRes.json();
-        customerId = customerData.id;
-
-        console.log("เพิ่มลูกค้าสำเร็จ:", customerId);
-        toast.success("เพิ่มข้อมูลลูกค้าสำเร็จ", {
-          position: "bottom-right",
-        });
-      }
-
       const poKeys = await UploadFiles({
         files: UploadFile,
         poNumber: headOrder.poNumber || null,
@@ -403,23 +363,30 @@ const NewJobOrder = () => {
       });
 
       const payloadBill = {
-        customerId: Number(customerId),
+        customerId: showForm ? undefined : (customerId ?? undefined), // ถ้าแสดงฟอร์ม แปลว่าเพิ่งสร้างลูกค้าใหม่ ยังไม่มี ID
+        companyName: formData.customerName,
+        address: formData.deliveryAddress,
+        tel: formData.customerPhone || undefined,
+        tax: formData.taxNumber,
+        fax: formData.faxNumber || undefined,
+        email: formData.customerEmail || undefined,
         deliveryDate: new Date(headOrder.deliveryDate).toISOString(),
         orderPO: {
           poNumber: headOrder.poNumber ?? null,
           credit: headOrder.credit,
           urlPo: poKeys,
 
-          products: steelItems.map((item, index) => ({
-            sequence: index + 1,
+          products: SteelItem.map((item, index) => ({
+            SteelId: item.SteelId,
+            sequence: item.sequence ?? index + 1,
             steelType: item.steelType,
             shape: item.shape,
-            wide: item.width ?? null,
+            wide: item.wide ?? null,
             length: item.length,
             thickness: item.thickness,
-            amount: item.quantity,
+            amount: item.amount,
 
-            detail: item.notes || undefined, // optional ส่ง undefined ได้
+            detail: item.detail || undefined, // optional ส่ง undefined ได้
             job: item.job ?? null,
             cuttingMethod: item.cuttingMethod ?? "normal",
 
@@ -440,13 +407,42 @@ const NewJobOrder = () => {
         body: JSON.stringify(payloadBill),
       });
 
-      const rawText = await billRes.text(); // อ่านเป็น text ก่อน
-      // console.log("createNewOrder status:", billRes.status);
-      // console.log("createNewOrder raw response:", rawText);
+      const rawText = await billRes.text();
 
       console.log("Payload Bill:", payloadBill);
       if (!billRes.ok) {
-        throw new Error("เกิดข้อผิดพลาดในการสร้างออเดอร์ใหม่");
+        let parsed: any = null;
+        try {
+          parsed = rawText ? JSON.parse(rawText) : null;
+        } catch {
+          parsed = null;
+        }
+
+        if (billRes.status === 409 && parsed?.prismaCode === "P2002") {
+          const fieldLabel: Record<string, string> = {
+            taxNumber: "เลขผู้เสียภาษี",
+            email: "อีเมล",
+            tel: "เบอร์โทร",
+            telSearch: "เบอร์โทร",
+            faxNumber: "แฟกซ์",
+            faxNumberSearch: "แฟกซ์",
+            codeCustomer: "รหัสลูกค้า",
+          };
+
+          const fields: string[] = Array.isArray(parsed?.duplicateFields)
+            ? parsed.duplicateFields
+            : [];
+          const labels = fields.map((f) => fieldLabel[f] ?? f);
+          const detail = labels.length ? labels.join(", ") : "ข้อมูลในระบบ";
+
+          throw new Error(`ข้อมูลซ้ำ: ${detail}`);
+        }
+
+        const serverMessage = parsed?.error ?? rawText;
+        throw new Error(
+          "เกิดข้อผิดพลาดในการสร้างออเดอร์ใหม่" +
+            (serverMessage ? `: ${serverMessage}` : ""),
+        );
       }
       let billData: any = null;
       try {
@@ -464,7 +460,7 @@ const NewJobOrder = () => {
       router.push("/dashboard");
     } catch (error) {
       console.error("Error create New Order", error);
-      const message = error instanceof Error ? error : new Error(String(error));
+      const message = error instanceof Error ? error.message : String(error);
       toast.error(`สร้างออเดอร์ใหม่ไม่สำเร็จ: ${message}`, {
         position: "bottom-right",
       });
@@ -489,7 +485,7 @@ const NewJobOrder = () => {
     field: key,
     value: SteelItem[key],
   ) => {
-    setSteelItems((prev) =>
+    setSteelItem((prev) =>
       prev.map((item) => (item.id === id ? { ...item, [field]: value } : item)),
     );
   };
@@ -497,16 +493,26 @@ const NewJobOrder = () => {
   // Add steel items
   const addSteelItem = () => {
     const firstSteelType = steelTypes[0];
+    if (!firstSteelType) {
+      toast.error("ไม่พบประเภทเหล็กในระบบ", { position: "bottom-right" });
+      return;
+    }
     const firstShape: ShapeSteel = firstSteelType?.shape ?? "square";
+    const nextSequence =
+      SteelItem.length > 0
+        ? Math.max(...SteelItem.map((item) => item.sequence ?? 0)) + 1
+        : 1;
     const newItem: SteelItem = {
       id: uuidv4(),
-      steelType: firstSteelType?.name ?? "",
-      quantity: 0,
-      width: firstShape === "line" ? null : 1,
+      SteelId: Number(firstSteelType?.id ?? 0),
+      steelType: firstSteelType?.steelType ?? "",
+      amount: 0,
+      wide: firstShape === "line" ? null : 0,
       shape: firstShape,
+      sequence: nextSequence,
       length: 0,
       thickness: 0,
-      notes: "",
+      detail: "",
       weight: null,
       price: Number(firstSteelType?.price ?? 0),
       discount: null,
@@ -517,12 +523,12 @@ const NewJobOrder = () => {
       isServices: false,
       isPerAmount: false,
     };
-    setSteelItems((prev) => [...prev, newItem]);
+    setSteelItem((prev) => [...prev, newItem]);
   };
   // Remove steel item
   const removeSteelItem = (id: string) => {
-    if (steelItems.length > 1) {
-      setSteelItems((prev) => prev.filter((item) => item.id !== id));
+    if (SteelItem.length > 1) {
+      setSteelItem((prev) => prev.filter((item) => item.id !== id));
     }
   };
 
@@ -530,7 +536,7 @@ const NewJobOrder = () => {
     // 1) headOrder
     setheadOrder((prev) => ({
       ...prev,
-      poNumber: data.orderDraft?.poNumber ?? prev.poNumber,
+      poNumber: data.orderDraft?.ponumber ?? prev.poNumber,
       deliveryDate: data.orderDraft?.deliveryDate ?? prev.deliveryDate,
     }));
 
@@ -556,32 +562,42 @@ const NewJobOrder = () => {
 
     // 3) steelItems จาก steelTypeId ที่ match มาแล้ว
     const mapped: SteelItem[] = (data.items ?? []).map((x) => {
-      const shape = x.raw?.shape ?? "square";
-      const steelTypeName = x.match?.steelTypeId ? String(x.raw.codeSteel) : "";
-      const matchedType = steelTypes.find(
-        (s) => s.name === steelTypeName && s.shape === shape,
-      );
+      const shape: ShapeSteel = x.raw?.shape ?? "square";
+      const steelTypeId = x.match?.steelTypeId ?? null;
+      const steelTypeName = x.raw?.codeSteel ? String(x.raw.codeSteel) : "";
+
+      const matchedType =
+        steelTypeId != null
+          ? steelTypes.find((s) => Number(s.id) === steelTypeId)
+          : steelTypes.find(
+              (s) => s.steelType === steelTypeName && s.shape === shape,
+            );
+
       return {
         id: uuidv4(),
-        steelType: steelTypeName,
+        SteelId: steelTypeId ?? Number(matchedType?.id ?? 0),
+        steelType: matchedType?.steelType ?? steelTypeName,
         shape,
-        quantity: x.raw?.quantity ?? 0,
-        width: x.raw?.width ?? null,
+        sequence: 0,
+        wide: shape === "line" ? null : (x.raw?.width ?? null),
         length: x.raw?.length ?? 0,
         thickness: x.raw?.thickness ?? 0,
-        notes: x.raw?.notes ?? "",
+        amount: x.raw?.quantity ?? 0,
+        detail: x.raw?.notes ?? x.raw?.description ?? "",
+        cuttingMethod: x.raw?.cuttingMethod ?? "normal",
         weight: null,
         price: Number(matchedType?.price ?? 0),
         discount: null,
         density: Number(matchedType?.density ?? 0.0000079),
-        cuttingMethod: x.raw?.cuttingMethod ?? "normal",
+        isOD: false,
+        isServices: false,
+        isPerAmount: false,
         job: x.raw?.job ? String(x.raw.job) : null,
-        isOD: x.raw?.isOD ?? false,
-        isServices: x.raw?.isServices ?? false,
-        isPerAmount: x.raw?.isServices ?? false,
       };
     });
-    if (mapped.length) setSteelItems(mapped);
+    if (mapped.length) {
+      setSteelItem(mapped.map((it, index) => ({ ...it, sequence: index + 1 })));
+    }
     const customerLine = data.customerMatch?.matched
       ? `${data.customerDraft?.name}: #${data.customerMatch.customerId}`
       : `ไม่พบลูกค้าในระบบ: ${data.customerDraft?.name || "-"}`;
@@ -594,7 +610,7 @@ const NewJobOrder = () => {
         width: it.raw?.width ?? null,
         length: it.raw?.length ?? null,
         quantity: it.raw?.quantity ?? null,
-        description: it.raw?.description ?? null,
+        description: it.raw?.notes ?? it.raw?.description ?? null,
       })),
     });
 
@@ -671,6 +687,9 @@ const NewJobOrder = () => {
 
   // function to validate from data
   const validateForm = () => {
+    if (!showForm && !selectedCustomerId) {
+      return "กรุณาเลือกลูกค้า หรือเพิ่มลูกค้าใหม่";
+    }
     if (showForm) {
       // if (!formData.code.trim()) return "กรุณากรอกรหัสลูกค้า (Code)";
       if (!formData.customerName.trim()) return "กรุณากรอกชื่อลูกค้า";
@@ -681,23 +700,23 @@ const NewJobOrder = () => {
 
     if (!headOrder.deliveryDate) return "กรุณากรอกวันที่ต้องการสินค้า";
 
-    if (useJob == true && steelItems.some((item) => !item.job?.trim())) {
+    if (useJob == true && SteelItem.some((item) => !item.job?.trim())) {
       return "กรุณากรอกหมายเลข Job ในรายการเหล็กที่เลือก";
     }
-    if (steelItems.length === 0)
+    if (SteelItem.length === 0)
       return "กรุณาเพิ่มรายการเหล็กอย่างน้อย 1 รายการ";
-    for (const item of steelItems) {
+    for (const item of SteelItem) {
       if (!item.steelType) return "กรุณาเลือกประเภทเหล็ก";
-      if (item.quantity <= 0) return "จำนวนชิ้นต้องมากกว่า 0";
+      if (!item.SteelId || item.SteelId <= 0) return "กรุณาเลือกประเภทเหล็ก";
+      if (item.amount <= 0) return "จำนวนชิ้นต้องมากกว่า 0";
     }
-    if (steelItems.length > 15)
-      return "ไม่สามารถเพิ่มรายการเหล็กเกิน 15 รายการ";
+    if (SteelItem.length > 15) return "ไม่สามารถเพิ่มรายการเหล็กเกิน 15 รายการ";
     if (
-      steelItems.some(
+      SteelItem.some(
         (item) =>
           (item.isOD === false && (!item.length || item.length <= 0)) ||
           item.thickness <= 0 ||
-          (item.shape === "square" && (item.width === null || item.width <= 0)),
+          (item.shape === "square" && (item.wide === null || item.wide <= 0)),
       )
     )
       return "ขนาดของเหล็กต้องมากกว่า 0";
@@ -744,18 +763,18 @@ const NewJobOrder = () => {
                     กำลังเพิ่มข้อมูลลูกค้าใหม่...
                   </div>
                 ) : (
-                    <SelectCustomer
-                      open={open}
-                      setOpen={setOpen}
-                      selectedCustomerId={selectedCustomerId}
-                      setSelectedCustomer={(id) =>
-                        setSelectedCustomerId(id == null ? null : Number(id))
-                      }
-                      customers={customers}
-                      search={searchCustomer}
-                      setSearch={setSearchCustomer}
-                      loading={loading}
-                    />
+                  <SelectCustomer
+                    open={open}
+                    setOpen={setOpen}
+                    selectedCustomerId={selectedCustomerId}
+                    setSelectedCustomer={(id) =>
+                      setSelectedCustomerId(id == null ? null : Number(id))
+                    }
+                    customers={customers}
+                    search={searchCustomer}
+                    setSearch={setSearchCustomer}
+                    loading={loading}
+                  />
                 )}
               </div>
 
@@ -889,8 +908,8 @@ const NewJobOrder = () => {
                 {/* AddItem */}
                 <div className="mb-4">
                   <AddItem
-                    steelItems={steelItems}
-                    setSteelItems={setSteelItems}
+                    steelItems={SteelItem}
+                    setSteelItems={setSteelItem}
                     updateSteelItem={updateSteelItem}
                     addSteelItem={addSteelItem}
                     removeSteelItem={removeSteelItem}
@@ -1010,7 +1029,6 @@ const NewJobOrder = () => {
         summary={ocrSummary}
         onClose={handleCloseOcrModal}
       />
-
       <ToastContainer />
     </div>
   );

@@ -10,26 +10,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
   Package,
   Plus,
-  Trash2,
   Calendar,
   FileText,
   Hash,
-  Edit3,
   Layers,
   CalendarClock,
-  CheckIcon,
 } from "lucide-react";
 import { ShapeSteel, CuttingMethod } from "@/types";
-import { calculateWeightDetails } from "@/lib/calculateGrandTotal";
 import {
   DndContext,
   closestCenter,
@@ -47,34 +36,7 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { SteelItemRow } from "./SteelItemRow";
-// --- Types (คงเดิม) ---
-export type SteelItemType = {
-  id: string;
-  steelType: string;
-  shape: ShapeSteel;
-  quantity: number;
-  width: number | null;
-  length: number;
-  thickness: number;
-  cuttingMethod?: CuttingMethod;
-  job?: string | null;
-  notes: string;
-  weight?: number | null;
-  price: number;
-  discount: number | null;
-  density: number;
-  isOD: boolean;
-  isServices: boolean;
-  isPerAmount: boolean;
-};
-
-export type SteelTypeOption = {
-  id: string | number;
-  name: string;
-  shape: ShapeSteel;
-  price: number;
-  density: number;
-};
+import { SteelItem, SteelType } from "@/types/order.types";
 
 export type HeadOrderType = {
   poNumber: string | null;
@@ -83,15 +45,15 @@ export type HeadOrderType = {
 };
 
 type AddItemProps = {
-  steelItems: SteelItemType[];
-  updateSteelItem: <K extends keyof SteelItemType>(
-    id: SteelItemType["id"],
+  steelItems: SteelItem[];
+  updateSteelItem: <K extends keyof SteelItem>(
+    id: SteelItem["id"],
     field: K,
-    value: SteelItemType[K],
+    value: SteelItem[K],
   ) => void;
   addSteelItem: () => void;
-  removeSteelItem: (id: SteelItemType["id"]) => void;
-  steelTypes: SteelTypeOption[];
+  removeSteelItem: (id: SteelItem["id"]) => void;
+  steelTypes: SteelType[];
   headOrder: HeadOrderType;
   setheadOrder: React.Dispatch<React.SetStateAction<HeadOrderType>>;
   searchItem: string;
@@ -100,7 +62,7 @@ type AddItemProps = {
   pofilelength: number;
   useJob: boolean;
   setUseJob: React.Dispatch<React.SetStateAction<boolean>>;
-  setSteelItems: React.Dispatch<React.SetStateAction<SteelItemType[]>>;
+  setSteelItems: React.Dispatch<React.SetStateAction<SteelItem[]>>;
 };
 
 export default function AddItem({
@@ -137,7 +99,7 @@ export default function AddItem({
     addSteelItem();
   };
 
-  const copySteelItem = (id: SteelItemType["id"]) => {
+  const copySteelItem = (id: SteelItem["id"]) => {
     if (steelItems.length >= MAX_ITEMS) {
       alert(`เพิ่มได้สูงสุด ${MAX_ITEMS} รายการเท่านั้น`);
       return;
@@ -145,20 +107,20 @@ export default function AddItem({
     // หารายการที่จะคัดลอก
 
     const sourceItem = steelItems.find((item) => item.id === id);
-      if (!sourceItem) return;
+    if (!sourceItem) return;
 
-      // สร้างรายการใหม่แต่ทำให้idไม่ซ้ำ
-      const newItem: SteelItemType = {
-        ...sourceItem,
-        id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-      };
-      // เพิ่มรายการใหม่เข้าไปใน state
-      setSteelItems((prev) => [...prev, newItem]);
+    // สร้างรายการใหม่แต่ทำให้idไม่ซ้ำ
+    const newItem: SteelItem = {
+      ...sourceItem,
+      id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    };
+    // เพิ่มรายการใหม่เข้าไปใน state
+    setSteelItems((prev) => [...prev, newItem]);
   };
 
   const sensors = useSensors(
-      useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
-    );
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+  );
 
   const ids = useMemo(() => steelItems.map((x) => x.id), [steelItems]);
 
@@ -172,17 +134,6 @@ export default function AddItem({
       return arrayMove(prev, oldIndex, newIndex); // ✅ state เรียงใหม่จริง
     });
   }
-  // const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-  //   const selectedDate = e.target.value;
-  //   const currentDate = new Date();
-  //   const selectedDateTime = new Date(selectedDate);
-
-  //   if (selectedDateTime < currentDate && selectedDate !== "") {
-  //     alert("ไม่สามารถเลือกวันที่ผ่านมาแล้วได้ กรุณาเลือกวันที่ในอนาคต");
-  //     return;
-  //   }
-  //   setheadOrder({ ...headOrder, deliveryDate: selectedDate });
-  // };
 
   const preventWheelChangeOnNumberInput = (
     e: React.WheelEvent<HTMLDivElement>,

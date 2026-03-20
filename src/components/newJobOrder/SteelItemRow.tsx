@@ -14,47 +14,24 @@ import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { calculateWeightDetails } from "@/lib/calculateGrandTotal";
 import { ShapeSteel, CuttingMethod } from "@/types";
+import { SteelItem, SteelType } from "@/types/order.types";
 
-export type SteelItemType = {
-  id: string;
-  steelType: string;
-  shape: ShapeSteel;
-  quantity: number;
-  width: number | null;
-  length: number;
-  thickness: number;
-  cuttingMethod?: CuttingMethod;
-  job?: string | null;
-  notes: string;
-  weight?: number | null;
-  price: number;
-  discount: number | null;
-  density: number;
-  isOD: boolean;
-  isServices: boolean;
-  isPerAmount: boolean;
-};
 
-export type SteelTypeOption = {
-  id: string | number;
-  name: string;
-  shape: ShapeSteel;
-  price: number;
-  density: number;
-};
+
+
 
 type SteelItemRowProps = {
-  item: SteelItemType;
+  item: SteelItem;
   idx: number;
-  steelTypes: SteelTypeOption[];
+  steelTypes: SteelType[];
   useJob: boolean;
   searchItem: string;
   setsearchItem: (val: string) => void;
   loadingSteel: boolean;
-  updateSteelItem: <K extends keyof SteelItemType>(
+  updateSteelItem: <K extends keyof SteelItem>(
     id: string,
     field: K,
-    value: SteelItemType[K],
+    value: SteelItem[K],
   ) => void;
   onCopyItem: (id: string) => void;
   removeSteelItem: (id: string) => void;
@@ -96,7 +73,7 @@ export function SteelItemRow({
 
   const isLine = item.shape === "line";
   const selectedType = steelTypes.find(
-    (t) => t.name === item.steelType && t.shape === item.shape,
+    (t) => t.steelType === item.steelType && t.shape === item.shape,
   );
   const selectedValue = selectedType ? String(selectedType.id) : "";
 
@@ -108,8 +85,8 @@ export function SteelItemRow({
 
   const estKg = calculateWeightDetails({
     shape: item.shape,
-    amount: item.quantity,
-    width: item.width ?? undefined,
+    amount: item.amount,
+    width: item.wide ?? undefined,
     length: item.length,
     thickness: item.thickness,
     density: item.density,
@@ -149,7 +126,7 @@ export function SteelItemRow({
                     (t) => String(t.id) === value,
                   );
                   if (selected) {
-                    updateSteelItem(item.id, "steelType", selected.name);
+                    updateSteelItem(item.id, "steelType", selected.steelType);
                     updateSteelItem(item.id, "shape", selected.shape);
                     updateSteelItem(
                       item.id,
@@ -162,7 +139,7 @@ export function SteelItemRow({
                       Number(selected.density ?? item.density ?? 0),
                     );
                     if (selected.shape === "line") {
-                      updateSteelItem(item.id, "width", null);
+                      updateSteelItem(item.id, "wide", null);
                       updateSteelItem(item.id, "isOD", false);
                     }
                   }
@@ -192,7 +169,7 @@ export function SteelItemRow({
                     <div className="max-h-48 overflow-y-auto">
                       {steelTypes.map((type) => (
                         <SelectItem key={type.id} value={String(type.id)}>
-                          <span className="font-medium">{type.name}</span>
+                          <span className="font-medium">{type.steelType}</span>
                           <span className="ml-2 text-xs text-muted-foreground">
                             {type.shape === "square"
                               ? "(แผ่น)"
@@ -255,11 +232,11 @@ export function SteelItemRow({
                         step="0.01"
                         inputMode="decimal"
                         className={`h-10 border-zinc-200 bg-white pr-7 text-center hover:border-blue-400 focus-visible:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-900 ${noNumberSpinnerClass}`}
-                        value={item.width ?? 0}
+                        value={item.wide ?? 0}
                         onChange={(e) =>
                           updateSteelItem(
                             item.id,
-                            "width",
+                            "wide",
                             Math.max(0, Number(e.target.value || 0)),
                           )
                         }
@@ -309,11 +286,11 @@ export function SteelItemRow({
                 type="number"
                 min={0}
                 className={`h-10 w-full border-blue-200 bg-blue-50 text-center font-bold text-blue-700 shadow-sm focus-visible:ring-blue-500 dark:border-blue-900 dark:bg-blue-900/20 dark:text-blue-400 ${noNumberSpinnerClass}`}
-                value={item.quantity ?? 1}
+                value={item.amount ?? 1}
                 onChange={(e) =>
                   updateSteelItem(
                     item.id,
-                    "quantity",
+                    "amount",
                     Math.max(1, Number(e.target.value || 1)),
                   )
                 }
@@ -575,9 +552,9 @@ export function SteelItemRow({
                 หมายเหตุ
               </label>
               <Input
-                value={item.notes || ""}
+                value={item.detail || ""}
                 onChange={(e) =>
-                  updateSteelItem(item.id, "notes", e.target.value)
+                  updateSteelItem(item.id, "detail", e.target.value)
                 }
                 placeholder="รายละเอียดเพิ่มเติม..."
                 className="h-10 border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-900"
