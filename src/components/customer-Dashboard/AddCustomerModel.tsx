@@ -281,10 +281,9 @@ export default function AddCustomerModal({ open, onClose, onCreated }: Props) {
               error={fieldErrors.taxNumber}
               inputMode="numeric"
               icon={<FileText size={16} />}
-              required
             />
 
-            <InputField
+            <InputField 
               label="เลขแฟกซ์ (Fax ID)"
               value={form.faxNumber}
               onChange={setField("faxNumber")}
