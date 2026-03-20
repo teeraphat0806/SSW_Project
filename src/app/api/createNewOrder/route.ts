@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 import prisma from "@/lib/prisma";
 import { requireAuth } from "@/lib/permissions";
-import { calculateWeightDetails } from "@/lib/calculateGrandTotal";
+import { calculateWeightDetails, digitsOnly } from "@/lib/calculateGrandTotal";
 import { CreateNewOrderSchema } from "@/lib/schemas/createNewOrder.shema";
 import { ShapeSteel } from "@/types";
 
@@ -111,6 +111,37 @@ export async function POST(req: NextRequest) {
         where: { OR: steelPairs },
       });
 
+      let CustomerId: number | undefined = data.customerId;
+      if (!CustomerId) {
+        if (!data.companyName || !data.address || !data.tax) {
+          throw new Error(
+            "Customer information is required when customerId is not provided.",
+          );
+        }
+        let telSearch = null;
+        if (data.tel) {
+          telSearch = digitsOnly(data.tel);
+        }
+        let faxNumberSearch = null;
+        if (data.fax) {
+          faxNumberSearch = digitsOnly(data.fax);
+        }
+
+        const newCustomer = await tx.customer.create({
+          data: {
+            name: data.companyName,
+            address: data.address,
+            tel: data.tel ?? null,
+            telSearch: telSearch,
+            faxNumber: data.fax ?? null,
+            faxNumberSearch: faxNumberSearch,
+            taxNumber: data.tax ?? null,
+            email: data.email ?? null,
+          },
+        });
+        CustomerId = newCustomer.id;
+      }
+
       // สร้าง map ไว้ค้นหาเหล็กเร็ว ๆ
       const steelMap = new Map<string, (typeof steelList)[number]>();
 
@@ -187,7 +218,7 @@ export async function POST(req: NextRequest) {
       return tx.bill.create({
         data: {
           Customer: {
-            connect: { id: data.customerId },
+            connect: { id: CustomerId },
           },
           codeCustomer: generateCode(),
           deliveryDate: new Date(data.deliveryDate),
@@ -213,7 +244,7 @@ export async function POST(req: NextRequest) {
               poNumber: orderPO.poNumber ?? null,
               Customer: {
                 connect: {
-                  id: data.customerId,
+                  id: CustomerId,
                 },
               },
               urlPo: orderPO.urlPo ?? [],

@@ -6,7 +6,7 @@ export const CreateNewQuotationSchema = z.object({
   quotationNo: z.string(),
   customerId: z.number().int().positive().optional(),
   customerName: z.string(),
-  companyName: z.string(),
+  companyName: z.string().optional(),
   address: z.string(),
   tel: z.preprocess(
     (v) => {

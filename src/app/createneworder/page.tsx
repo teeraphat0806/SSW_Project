@@ -272,8 +272,6 @@ const NewJobOrder = () => {
 
         const json: CustomerApiResponse = await res.json();
 
-
-        
         if (!ignore) {
           setCustomers(
             json.data.map((c: CustomerApiItem) => ({
@@ -369,33 +367,6 @@ const NewJobOrder = () => {
     setIsSubmitting(true);
 
     try {
-      if (showForm) {
-        const payloadNewcustomer = {
-          name: formData.customerName,
-          address: formData.deliveryAddress,
-          tel: formData.customerPhone || "",
-          taxNumber: formData.taxNumber,
-          faxNumber: formData.faxNumber || "",
-          email: formData.customerEmail || "",
-        };
-        const customerRes = await fetch(`api/customer`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payloadNewcustomer),
-        });
-
-        if (!customerRes.ok) {
-          throw new Error("เกิดข้อผิดพลาดในการบันทึกข้อมูลลูกค้า");
-        }
-        const customerData = await customerRes.json();
-        customerId = customerData.id;
-
-        console.log("เพิ่มลูกค้าสำเร็จ:", customerId);
-        toast.success("เพิ่มข้อมูลลูกค้าสำเร็จ", {
-          position: "bottom-right",
-        });
-      }
-
       const poKeys = await UploadFiles({
         files: UploadFile,
         poNumber: headOrder.poNumber || null,
@@ -403,7 +374,13 @@ const NewJobOrder = () => {
       });
 
       const payloadBill = {
-        customerId: Number(customerId),
+        customerId: showForm ? undefined : (customerId ?? undefined), // ถ้าแสดงฟอร์ม แปลว่าเพิ่งสร้างลูกค้าใหม่ ยังไม่มี ID
+        companyName: formData.customerName,
+        address: formData.deliveryAddress,
+        tel: formData.customerPhone || undefined,
+        tax: formData.taxNumber,
+        fax: formData.faxNumber || undefined,
+        email: formData.customerEmail || undefined,
         deliveryDate: new Date(headOrder.deliveryDate).toISOString(),
         orderPO: {
           poNumber: headOrder.poNumber ?? null,
@@ -744,18 +721,18 @@ const NewJobOrder = () => {
                     กำลังเพิ่มข้อมูลลูกค้าใหม่...
                   </div>
                 ) : (
-                    <SelectCustomer
-                      open={open}
-                      setOpen={setOpen}
-                      selectedCustomerId={selectedCustomerId}
-                      setSelectedCustomer={(id) =>
-                        setSelectedCustomerId(id == null ? null : Number(id))
-                      }
-                      customers={customers}
-                      search={searchCustomer}
-                      setSearch={setSearchCustomer}
-                      loading={loading}
-                    />
+                  <SelectCustomer
+                    open={open}
+                    setOpen={setOpen}
+                    selectedCustomerId={selectedCustomerId}
+                    setSelectedCustomer={(id) =>
+                      setSelectedCustomerId(id == null ? null : Number(id))
+                    }
+                    customers={customers}
+                    search={searchCustomer}
+                    setSearch={setSearchCustomer}
+                    loading={loading}
+                  />
                 )}
               </div>
 

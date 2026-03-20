@@ -341,7 +341,7 @@ export default function CreateNewQuotationPage() {
       };
 
       const payload = {
-        customerId: selectedCustomerId ?? undefined,
+        customerId: showForm ? undefined : selectedCustomerId ?? undefined,
         customerName: formData.customerName,
         companyName: formData.companyName ?? "Test Company",
         address: formData.address ?? "Test Address",
@@ -356,7 +356,7 @@ export default function CreateNewQuotationPage() {
         deliveryDate: headOrder.deliveryDate,
         createdAt: headOrder.createdAt ?? new Date(),
         orderPO: {
-          customerId: selectedCustomerId ?? undefined,
+          customerId: showForm ? undefined : selectedCustomerId ?? undefined,
           products: SteelItem.map((item, index) => ({
             SteelId: item.SteelId,
             steelType: item.steelType,
