@@ -1,4 +1,3 @@
-import { is } from "date-fns/locale";
 import { z } from "zod";
 import { digitsOnly } from "../calculateGrandTotal";
 
@@ -25,13 +24,19 @@ export const CreateNewOrderSchema = z.object({
 
   tax: z.preprocess(
     (v) => {
+      if (v === undefined) return undefined;
+      if (v === null) return null;
       const raw = String(v).trim();
       return raw.length ? raw : null; // ถ้าเป็นสตริงว่าง "" ให้กลายเป็น null
     },
-    z.string().refine((raw) => {
-      const s = digitsOnly(raw);
-      return s.length === 13; // ถ้ากรอกมา ต้องมีตัวเลข 13 หลักพอดี
-    }, "เลขผู้เสียภาษีต้องเป็นตัวเลข 13 หลัก"),
+    z
+      .string()
+      .refine((raw) => {
+        const s = digitsOnly(raw);
+        return s.length === 13; // ถ้ากรอกมา ต้องมีตัวเลข 13 หลักพอดี
+      }, "เลขผู้เสียภาษีต้องเป็นตัวเลข 13 หลัก")
+      .nullable()
+      .optional(),
   ),
   fax: z.preprocess(
     (v) => {
@@ -73,6 +78,7 @@ export const CreateNewOrderSchema = z.object({
       .array(
         z.object({
           steelType: z.string(),
+          SteelId: z.number().int().positive(),
           shape: z.enum(["square", "line"]),
           sequence: z.number().int().positive(),
           wide: z.number().nullable(),
@@ -94,4 +100,30 @@ export const CreateNewOrderSchema = z.object({
       .min(1, "ต้องมีสินค้าอย่างน้อย 1 รายการ")
       .max(15, "สามารถเพิ่มสินค้าได้สูงสุด 15 รายการ"),
   }),
+}).superRefine((data, ctx) => {
+  if (data.customerId) return;
+
+  if (!data.companyName || !data.companyName.trim()) {
+    ctx.addIssue({
+      code: "custom",
+      path: ["companyName"],
+      message: "กรุณากรอกชื่อลูกค้า",
+    });
+  }
+
+  if (!data.address || !data.address.trim()) {
+    ctx.addIssue({
+      code: "custom",
+      path: ["address"],
+      message: "กรุณากรอกที่อยู่สำหรับจัดส่ง",
+    });
+  }
+
+  if (!data.tax) {
+    ctx.addIssue({
+      code: "custom",
+      path: ["tax"],
+      message: "กรุณากรอกเลขผู้เสียภาษี",
+    });
+  }
 });

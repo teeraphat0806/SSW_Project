@@ -48,15 +48,15 @@ type CustomerApiResponse = {
   data: CustomerApiItem[];
 };
 
-type CustomerDetail = {
-  id: number;
-  name: string;
-  address: string;
-  tel: string | null;
-  faxNumber: string | null;
-  taxNumber: string | null;
-  email: string | null;
-};
+// type CustomerDetail = {
+//   id: number;
+//   name: string;
+//   address: string;
+//   tel: string | null;
+//   faxNumber: string | null;
+//   taxNumber: string | null;
+//   email: string | null;
+// };
 
 export default function CreateNewQuotationPage() {
   const router = useRouter();
