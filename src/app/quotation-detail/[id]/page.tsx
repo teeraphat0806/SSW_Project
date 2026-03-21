@@ -314,10 +314,20 @@ export default function QuotationDetailPage() {
           </div>
 
           <div className="grid grid-cols-10">
-            <div className="col-span-7 px-2 py-1">
+            <div className="col-span-7 px-2 py-1 pr-2">
               <p>
-                <span className="font-semibold">Tel.</span>{" "}
-                {Data?.tel || ""}{" "}
+                {Data?.tel && (
+                  <span className="mr-4">
+                    <span className="font-semibold">Tel.</span>{" "}
+                    {Data?.tel || ""}
+                  </span>
+                )}
+                {Data?.fax && (
+                  <>
+                    <span className="font-semibold">Fax.</span>{" "}
+                    {Data?.fax || ""}
+                  </>
+                )}
               </p>
             </div>
             <div className="col-span-3 px-2 py-1 border-l border-gray-800">
