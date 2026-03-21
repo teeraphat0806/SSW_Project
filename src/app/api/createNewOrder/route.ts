@@ -188,7 +188,7 @@ export async function POST(req: NextRequest) {
           },
           codeCustomer: generateCode(),
           deliveryDate: new Date(data.deliveryDate),
-
+          createdAt: data.createdAt ? new Date(data.createdAt) : new Date(),
           salesName: auth.session.user?.name ?? "",
           Staff_Bill_salesNameToStaff: {
             connect: {

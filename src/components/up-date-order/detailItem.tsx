@@ -26,6 +26,20 @@ type Props = {
 
 const DEFAULT_DENSITY = 0.0000079;
 
+const toInputDate = (value: string | Date | null | undefined): string => {
+  if (!value) return "";
+  if (typeof value === "string") {
+    const m = value.match(/^(\d{4}-\d{2}-\d{2})/);
+    if (m?.[1]) return m[1];
+  }
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return "";
+  const y = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${y}-${mm}-${dd}`;
+};
+
 const makeTempId = () =>
   globalThis.crypto?.randomUUID?.() ??
   `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
@@ -138,8 +152,8 @@ export default function DetailItem({
   const headOrder: HeadOrderType = {
     poNumber: job.poNumber ?? null,
     credit: job.credit ?? 30,
-    deliveryDate: job.deliveryDate ?? "",
-    createdAt: job.createdAt ?? "",
+    deliveryDate: toInputDate(job.deliveryDate),
+    createdAt: toInputDate(job.createdAt),
   };
 
   const setheadOrder: React.Dispatch<React.SetStateAction<HeadOrderType>> = (
@@ -150,8 +164,8 @@ export default function DetailItem({
       const prevHead: HeadOrderType = {
         poNumber: prev.poNumber ?? null,
         credit: prev.credit ?? 30,
-        deliveryDate: prev.deliveryDate ?? "",
-        createdAt: prev.createdAt ?? "",
+        deliveryDate: toInputDate(prev.deliveryDate),
+        createdAt: toInputDate(prev.createdAt),
       };
       const resolved = typeof next === "function" ? next(prevHead) : next;
 

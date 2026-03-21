@@ -135,10 +135,12 @@ const NewJobOrder = () => {
     poNumber: string | null;
     credit: number;
     deliveryDate: string;
+    createdAt?: string;
   }>({
     poNumber: null,
     credit: 30,
     deliveryDate: new Date().toISOString().split("T")[0],
+    createdAt: new Date().toISOString().split("T")[0],
   });
 
   const [steelTypes, setSteelTypes] = useState<SteelType[]>([]);
@@ -371,6 +373,9 @@ const NewJobOrder = () => {
         fax: formData.faxNumber || undefined,
         email: formData.customerEmail || undefined,
         deliveryDate: new Date(headOrder.deliveryDate).toISOString(),
+        createdAt: headOrder.createdAt
+          ? new Date(headOrder.createdAt).toISOString()
+          : new Date().toISOString(),
         orderPO: {
           poNumber: headOrder.poNumber ?? null,
           credit: headOrder.credit,

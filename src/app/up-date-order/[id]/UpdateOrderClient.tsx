@@ -50,42 +50,6 @@ const toInputDate = (value: string | Date | null | undefined): string => {
   return `${y}-${mm}-${dd}`;
 };
 
-// const toJoborder = (api: ApiOrder): ApiOrder => ({
-//   id: api.id.toString(),
-//   poNumber: api.poNumber ?? "",
-//   deliveryDate: toInputDate(api.deliveryDate),
-//   createdAt: toInputDate(api.createdAt),
-//   credit: api.credit ?? 30,
-//   customerId: api.customerId ?? "",
-//   // customerName: api.customerName ?? "",
-//   // customerEmail: api.customerEmail ?? null,
-//   // customerPhone: api.customerPhone ?? null,
-//   // customerAddress: api.customerAddress ?? "",
-//   // customerTaxId: api.customerTaxId ?? "",
-//   // customerFax: api.customerFax ?? null,
-//   steel: (api.steel ?? []).map((s) => ({
-//     id: s.id,
-//     steelType: s.steelType,
-//     amount: s.amount,
-//     width: s.width ?? null,
-//     length: s.length ?? 0,
-//     thickness: s.thickness ?? 0,
-//     detail: s.detail ?? null,
-//     weight: s.weight ?? null,
-//     unitPrice: s.unitPrice,
-//     shape: s.shape,
-//     job: s.job ?? null,
-//     cuttingMethod: s.cuttingMethod ?? "normal",
-//     isOD: s.isOD ?? false,
-//     isServices: s.isServices ?? false,
-//     isPerAmount: s.isPerAmount ?? false,
-//     discount: s.discount ?? null,
-//     price: s.price ?? 1,
-//     density: s.density ?? 0.0000079,
-//   })),
-//   status: api.status,
-// });
-
 const ORDER_STATUSES = [
   "รอตัด",
   "กำลังตัด",
@@ -115,73 +79,6 @@ type SteelTypeApiItem = {
 };
 
 const DEFAULT_DENSITY = 0.0000079;
-const steelKey = (codeSteel: string, shape: ShapeSteel) =>
-  `${codeSteel}::${shape}`;
-
-function mergeOrderSteelIntoSteelTypes(
-  types: SteelType[],
-  job: ApiOrder | null,
-): SteelType[] {
-  if (!job?.steel?.length) return types;
-
-  const map = new Map(types.map((t) => [steelKey(t.steelType, t.shape), t]));
-
-  for (const s of job.steel) {
-    const code = (s.steelType ?? "").trim();
-    const shape = s.shape ?? "square";
-    if (!code) continue;
-    const key = steelKey(code, shape);
-    if (map.has(key)) continue;
-
-    map.set(key, {
-      id: `missing:${key}`,
-      steelType: code,
-      shape,
-      price: Number(s.price ?? 0),
-      density: Number(s.density ?? DEFAULT_DENSITY),
-    });
-  }
-
-  return Array.from(map.values());
-}
-
-// type SteelStockApiItem = {
-//   id: number;
-//   codeSteel: string;
-//   price: number;
-//   amount: number;
-//   shape: ShapeSteel;
-// };
-
-// function mergeOrderSteelIntoOptions(
-//   options: SteelType[],
-//   job: ApiOrder | null,
-// ): SteelType[] {
-//   if (!job?.steel?.length) return options;
-
-//   const map = new Map(options.map((o) => [steelKey(o.codeSteel, o.shape), o]));
-
-//   for (const s of job.steel) {
-//     const code = s.steelType?.trim();
-//     const shape = s.shape ?? "square";
-//     if (!code) continue;
-//     const key = steelKey(code, shape);
-
-//     // ถ้าไม่มีใน options ให้เติมเข้าไป (amount=0) เพื่อให้ Select แสดงได้
-//     if (!map.has(key)) {
-//       map.set(key, {
-//         value: key,
-//         codeSteel: code,
-//         label: code,
-//         amount: 0,
-//         price: 0,
-//         shape,
-//       });
-//     }
-//   }
-
-//   return Array.from(map.values());
-// }
 
 // ✅ map ไทย <-> อังกฤษ
 const toThaiStatus = (s: ApiOrder["status"]): OrderStatus => {
@@ -280,7 +177,7 @@ const UpdateOrderPage = ({ id }: { id: string }) => {
 
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
-  
+
   const [useJob, setUseJob] = useState(false);
 
   // sync ref ให้ fetchSteel มองเห็น job ล่าสุดเสมอ
@@ -313,6 +210,7 @@ const UpdateOrderPage = ({ id }: { id: string }) => {
 
       const data: SteelTypeApiItem[] = await res.json();
       if (cancelledRef?.()) return;
+      // mapped คือการ map ข้อมูลจาก API ให้เป็น SteelType
       const mapped: SteelType[] = data.map((t) => ({
         id: String(t.id),
         steelType: t.codeSteel,
@@ -321,8 +219,7 @@ const UpdateOrderPage = ({ id }: { id: string }) => {
         density: Number(t.density ?? DEFAULT_DENSITY),
       }));
 
-      const merged = mergeOrderSteelIntoSteelTypes(mapped, jobRef.current);
-      setSteelOptions(merged);
+      setSteelOptions(mapped);
     } finally {
       if (!cancelledRef?.()) setLoadingSteel(false);
     }
@@ -344,8 +241,6 @@ const UpdateOrderPage = ({ id }: { id: string }) => {
 
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || "Failed to fetch order");
-
-        // const mapped = toJoborder(data as ApiOrder);
 
         if (!cancelled) {
           setJob(data);

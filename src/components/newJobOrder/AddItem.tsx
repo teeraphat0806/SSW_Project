@@ -87,6 +87,16 @@ export default function AddItem({
       maximumFractionDigits: 2,
     }).format(n);
 
+  const toDisplayDateValue = (date: Date | string | null | undefined) => {
+    if (!date) return "";
+    const d = new Date(date);
+    if (Number.isNaN(d.getTime())) return "";
+    const day = String(d.getDate()).padStart(2, "0");
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const year = String(d.getFullYear()).slice(-2);
+    return `${day}/${month}/${year}`;
+  };
+
   const addSteelItemLimited = () => {
     if (steelItems.length >= MAX_ITEMS) {
       alert(`เพิ่มได้สูงสุด ${MAX_ITEMS} รายการเท่านั้น`);
@@ -144,8 +154,6 @@ export default function AddItem({
     }
   };
 
-  const showCreatedAt = typeof headOrder.createdAt === "string";
-
   return (
     <div
       className="w-full space-y-6 pb-10"
@@ -175,11 +183,7 @@ export default function AddItem({
 
         {/* Content */}
         <CardContent className="pt-6 pb-8">
-          <div
-            className={`grid grid-cols-1 ${
-              showCreatedAt ? "md:grid-cols-4" : "md:grid-cols-3"
-            } gap-6`}
-          >
+          <div className={`grid grid-cols-1 md:grid-cols-4 gap-6`}>
             {/* 1. PO Number */}
 
             {/* {pofilelength > 0 && ( */}
@@ -261,46 +265,51 @@ export default function AddItem({
                       deliveryDate: e.target.value,
                     });
                   }}
-                  className="pl-10 h-11 
-                bg-zinc-50/50 dark:bg-zinc-950/50 
-                border-zinc-200 dark:border-zinc-800 
-    
-    /* 1. กำหนดสีตัวอักษรให้ชัดเจน */
-    text-zinc-900 dark:text-zinc-100 
-    
-    focus:bg-white dark:focus:bg-zinc-950 
-    focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 
-    transition-all cursor-pointer
-
-    /* 2. บังคับ Color Scheme ให้ Browser รู้ว่าจะเรนเดอร์ไอคอนสีอะไร */
-    [color-scheme:light] dark:[color-scheme:dark]
-  "
+                  className="absolute inset-0 z-10 w-full h-11 cursor-pointer opacity-0 pl-10 bg-zinc-50/50 dark:bg-zinc-950/50 border-zinc-200 dark:border-zinc-800 focus:bg-white dark:focus:bg-zinc-950 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all [color-scheme:light] dark:[color-scheme:dark]"
                 />
+                <div className="pointer-events-none flex h-11 w-full items-center rounded-md border border-input bg-transparent pl-9 pr-3 text-sm">
+                  <div className="flex w-full items-center justify-between">
+                    <span className="text-zinc-900 dark:text-zinc-100">
+                      {headOrder.deliveryDate
+                        ? toDisplayDateValue(headOrder.deliveryDate)
+                        : "เลือกวันที่"}
+                    </span>
+                    <Calendar className="h-4 w-4 text-zinc-400" />
+                  </div>
+                </div>
               </div>
             </div>
 
-            {showCreatedAt && (
-              <div className="space-y-2 group">
-                <Label
-                  htmlFor="createdAt"
-                  className="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 group-focus-within:text-blue-600 dark:group-focus-within:text-blue-400 transition-colors"
-                >
-                  วันที่สร้างบิล
-                </Label>
-                <div className="relative transition-all duration-200 ease-in-out transform group-focus-within:-translate-y-0.5">
-                  <FileText className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400 group-focus-within:text-blue-500 transition-colors pointer-events-none" />
-                  <Input
-                    id="createdAt"
-                    type="date"
-                    value={headOrder.createdAt ?? ""}
-                    onChange={(e) =>
-                      setheadOrder({ ...headOrder, createdAt: e.target.value })
-                    }
-                    className="pl-10 h-11 bg-zinc-50/50 dark:bg-zinc-950/50 border-zinc-200 dark:border-zinc-800 focus:bg-white dark:focus:bg-zinc-950 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all [color-scheme:light] dark:[color-scheme:dark]"
-                  />
+            <div className="space-y-2 group">
+              <Label
+                htmlFor="createdAt"
+                className="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 group-focus-within:text-blue-600 dark:group-focus-within:text-blue-400 transition-colors"
+              >
+                วันที่สร้างบิล
+              </Label>
+              <div className="relative transition-all duration-200 ease-in-out transform group-focus-within:-translate-y-0.5">
+                <FileText className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400 group-focus-within:text-blue-500 transition-colors pointer-events-none" />
+                <Input
+                  id="createdAt"
+                  type="date"
+                  value={headOrder.createdAt ?? ""}
+                  onChange={(e) =>
+                    setheadOrder({ ...headOrder, createdAt: e.target.value })
+                  }
+                  className="absolute inset-0 z-10 w-full h-11 cursor-pointer opacity-0 pl-10 bg-zinc-50/50 dark:bg-zinc-950/50 border-zinc-200 dark:border-zinc-800 focus:bg-white dark:focus:bg-zinc-950 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all [color-scheme:light] dark:[color-scheme:dark]"
+                />
+                <div className="pointer-events-none flex h-11 w-full items-center rounded-md border border-input bg-transparent pl-9 pr-3 text-sm">
+                  <div className="flex w-full items-center justify-between">
+                    <span className="text-zinc-900 dark:text-zinc-100">
+                      {headOrder.createdAt
+                        ? toDisplayDateValue(headOrder.createdAt)
+                        : "เลือกวันที่"}
+                    </span>
+                    <Calendar className="h-4 w-4 text-zinc-400" />
+                  </div>
                 </div>
               </div>
-            )}
+            </div>
           </div>
         </CardContent>
       </Card>
