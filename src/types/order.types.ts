@@ -1,4 +1,4 @@
-import { CuttingMethod, ShapeSteel } from "./alltype";
+import { CuttingMethod, ShapeSteel, status } from "./alltype";
 
 export type SteelItem = {
   id: string;
@@ -10,7 +10,7 @@ export type SteelItem = {
   length: number;
   thickness: number;
   amount: number;
-  detail: string;
+  detail?: string | null;
   cuttingMethod: CuttingMethod;
   weight?: number | null;
   price: number;
@@ -28,4 +28,39 @@ export type SteelType = {
   shape: ShapeSteel;
   price: number;
   density: number;
+};
+export type HeadOrderType = {
+  poNumber: string | null;
+  credit: number;
+  deliveryDate: string;
+  createdAt?: string;
+};
+
+export type ApiJobOrder = {
+  id: number;
+  poNumber: string | null;
+  customerId: number;
+  customerName: string;
+  customerEmail: string | null;
+  customerPhone: string | null;
+  customerAddress: string;
+  customerTaxId: string | null;
+  customerFax: string | null;
+  deliveryDate: Date;
+  createdAt: Date;
+  credit: number;
+  steel: SteelItem[];
+  status: status;
+};
+
+export type ApiOrder = {
+  id: number;
+  poNumber: string | null;
+  customerId: string;
+  deliveryDate?: string | null;
+  createdAt?: string | null;
+
+  credit?: number;
+  steel: SteelItem[];
+  status: status;
 };

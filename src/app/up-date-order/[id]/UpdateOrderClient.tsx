@@ -21,6 +21,7 @@ import { LoadingScreen } from "@/components/Loading";
 import { toast } from "react-toastify";
 
 import { CuttingMethod, ShapeSteel, status } from "@/types";
+import { ApiJobOrder, ApiOrder, SteelType } from "@/types/order.types";
 
 const STATUS_ORDER: Record<status, number> = {
   pending: 0,
@@ -34,78 +35,6 @@ const STATUS_ORDER: Record<status, number> = {
 
 const isAtLeast = (s: status, atLeast: status) =>
   STATUS_ORDER[s] >= STATUS_ORDER[atLeast];
-
-type ApiJobOrder = {
-  id: number;
-  poNumber: string | null;
-  deliveryDate: string | Date | null;
-  createdAt: string | Date | null;
-  customerId: string;
-  // customerName: string;
-  // customerEmail: string | null;
-  // customerPhone: string | null;
-  // customerAddress: string;
-  // customerTaxId: string;
-  // customerFax: string | null;
-  credit: number;
-  steel: {
-    id: number;
-    steelType: string;
-    amount: number;
-    width?: number;
-    length: number;
-    thickness: number;
-    detail?: string | null;
-    weight?: number | null;
-    unitPrice: number;
-    shape: ShapeSteel;
-    job?: string | null;
-    cuttingMethod: CuttingMethod;
-    density: number;
-    isOD: boolean;
-    isServices: boolean;
-    isPerAmount: boolean;
-    discount: number | null;
-    price: number;
-  }[];
-  status: status;
-};
-
-type Joborder = {
-  id: string;
-  poNumber: string;
-  deliveryDate: string;
-  createdAt: string;
-  customerId: string;
-  // customerName: string;
-  // customerEmail: string | null;
-  // customerPhone: string | null;
-  // customerAddress: string;
-  // customerTaxId: string;
-  // customerFax: string | null;
-  credit: number;
-  steel: {
-    id: number;
-    steelType: string;
-    amount: number;
-    width?: number | null;
-    length: number;
-    thickness: number;
-    detail?: string | null;
-    weight?: number | null;
-    unitPrice: number;
-    shape: ShapeSteel;
-    density: number;
-    job?: string | null;
-    cuttingMethod: CuttingMethod;
-    isOD: boolean;
-    isServices: boolean;
-    isPerAmount: boolean;
-    discount: number | null;
-    price: number;
-  }[];
-  status: status;
-};
 
 const toInputDate = (value: string | Date | null | undefined): string => {
   if (!value) return "";
@@ -121,41 +50,41 @@ const toInputDate = (value: string | Date | null | undefined): string => {
   return `${y}-${mm}-${dd}`;
 };
 
-const toJoborder = (api: ApiJobOrder): Joborder => ({
-  id: api.id.toString(),
-  poNumber: api.poNumber ?? "",
-  deliveryDate: toInputDate(api.deliveryDate),
-  createdAt: toInputDate(api.createdAt),
-  credit: api.credit ?? 30,
-  customerId: api.customerId ?? "",
-  // customerName: api.customerName ?? "",
-  // customerEmail: api.customerEmail ?? null,
-  // customerPhone: api.customerPhone ?? null,
-  // customerAddress: api.customerAddress ?? "",
-  // customerTaxId: api.customerTaxId ?? "",
-  // customerFax: api.customerFax ?? null,
-  steel: (api.steel ?? []).map((s) => ({
-    id: s.id,
-    steelType: s.steelType,
-    amount: s.amount,
-    width: s.width ?? null,
-    length: s.length ?? 0,
-    thickness: s.thickness ?? 0,
-    detail: s.detail ?? null,
-    weight: s.weight ?? null,
-    unitPrice: s.unitPrice,
-    shape: s.shape,
-    job: s.job ?? null,
-    cuttingMethod: s.cuttingMethod ?? "normal",
-    isOD: s.isOD ?? false,
-    isServices: s.isServices ?? false,
-    isPerAmount: s.isPerAmount ?? false,
-    discount: s.discount ?? null,
-    price: s.price ?? 1,
-    density: s.density ?? 0.0000079,
-  })),
-  status: api.status,
-});
+// const toJoborder = (api: ApiOrder): ApiOrder => ({
+//   id: api.id.toString(),
+//   poNumber: api.poNumber ?? "",
+//   deliveryDate: toInputDate(api.deliveryDate),
+//   createdAt: toInputDate(api.createdAt),
+//   credit: api.credit ?? 30,
+//   customerId: api.customerId ?? "",
+//   // customerName: api.customerName ?? "",
+//   // customerEmail: api.customerEmail ?? null,
+//   // customerPhone: api.customerPhone ?? null,
+//   // customerAddress: api.customerAddress ?? "",
+//   // customerTaxId: api.customerTaxId ?? "",
+//   // customerFax: api.customerFax ?? null,
+//   steel: (api.steel ?? []).map((s) => ({
+//     id: s.id,
+//     steelType: s.steelType,
+//     amount: s.amount,
+//     width: s.width ?? null,
+//     length: s.length ?? 0,
+//     thickness: s.thickness ?? 0,
+//     detail: s.detail ?? null,
+//     weight: s.weight ?? null,
+//     unitPrice: s.unitPrice,
+//     shape: s.shape,
+//     job: s.job ?? null,
+//     cuttingMethod: s.cuttingMethod ?? "normal",
+//     isOD: s.isOD ?? false,
+//     isServices: s.isServices ?? false,
+//     isPerAmount: s.isPerAmount ?? false,
+//     discount: s.discount ?? null,
+//     price: s.price ?? 1,
+//     density: s.density ?? 0.0000079,
+//   })),
+//   status: api.status,
+// });
 
 const ORDER_STATUSES = [
   "รอตัด",
@@ -177,62 +106,85 @@ const STATUS_ICONS: Record<OrderStatus, React.ReactNode> = {
   เสร็จสิ้น: <PackageCheck className="h-5 w-5" />,
 };
 
-type SteelOption = {
-  value: string;
-  codeSteel: string;
-  label: string;
-  amount: number;
-  price: number;
-  shape: ShapeSteel;
-};
-
-type SteelStockApiItem = {
+type SteelTypeApiItem = {
   id: number;
   codeSteel: string;
-  price: number;
-  amount: number;
   shape: ShapeSteel;
+  price: number;
+  density?: number | null;
 };
 
+const DEFAULT_DENSITY = 0.0000079;
 const steelKey = (codeSteel: string, shape: ShapeSteel) =>
   `${codeSteel}::${shape}`;
-const normalizeSteelCode = (value?: string | null) =>
-  String(value ?? "")
-    .trim()
-    .replace(/::(square|line)$/i, "");
 
-function mergeOrderSteelIntoOptions(
-  options: SteelOption[],
-  job: Joborder | null,
-): SteelOption[] {
-  if (!job?.steel?.length) return options;
+function mergeOrderSteelIntoSteelTypes(
+  types: SteelType[],
+  job: ApiOrder | null,
+): SteelType[] {
+  if (!job?.steel?.length) return types;
 
-  const map = new Map(options.map((o) => [steelKey(o.codeSteel, o.shape), o]));
+  const map = new Map(types.map((t) => [steelKey(t.steelType, t.shape), t]));
 
   for (const s of job.steel) {
-    const code = s.steelType?.trim();
+    const code = (s.steelType ?? "").trim();
     const shape = s.shape ?? "square";
     if (!code) continue;
     const key = steelKey(code, shape);
+    if (map.has(key)) continue;
 
-    // ถ้าไม่มีใน options ให้เติมเข้าไป (amount=0) เพื่อให้ Select แสดงได้
-    if (!map.has(key)) {
-      map.set(key, {
-        value: key,
-        codeSteel: code,
-        label: code,
-        amount: 0,
-        price: 0,
-        shape,
-      });
-    }
+    map.set(key, {
+      id: `missing:${key}`,
+      steelType: code,
+      shape,
+      price: Number(s.price ?? 0),
+      density: Number(s.density ?? DEFAULT_DENSITY),
+    });
   }
 
   return Array.from(map.values());
 }
 
+// type SteelStockApiItem = {
+//   id: number;
+//   codeSteel: string;
+//   price: number;
+//   amount: number;
+//   shape: ShapeSteel;
+// };
+
+// function mergeOrderSteelIntoOptions(
+//   options: SteelType[],
+//   job: ApiOrder | null,
+// ): SteelType[] {
+//   if (!job?.steel?.length) return options;
+
+//   const map = new Map(options.map((o) => [steelKey(o.codeSteel, o.shape), o]));
+
+//   for (const s of job.steel) {
+//     const code = s.steelType?.trim();
+//     const shape = s.shape ?? "square";
+//     if (!code) continue;
+//     const key = steelKey(code, shape);
+
+//     // ถ้าไม่มีใน options ให้เติมเข้าไป (amount=0) เพื่อให้ Select แสดงได้
+//     if (!map.has(key)) {
+//       map.set(key, {
+//         value: key,
+//         codeSteel: code,
+//         label: code,
+//         amount: 0,
+//         price: 0,
+//         shape,
+//       });
+//     }
+//   }
+
+//   return Array.from(map.values());
+// }
+
 // ✅ map ไทย <-> อังกฤษ
-const toThaiStatus = (s: Joborder["status"]): OrderStatus => {
+const toThaiStatus = (s: ApiOrder["status"]): OrderStatus => {
   switch (s) {
     case "pending":
       return "รอตัด";
@@ -254,32 +206,32 @@ const toThaiStatus = (s: Joborder["status"]): OrderStatus => {
 type PatchPayload = {
   status?: status;
   customerId?: string;
-  credit: number;
+  credit?: number;
   poNumber?: string;
   deliveryDate?: string;
   createdAt?: string;
   steel?: {
-    codeSteel: string;
+    steelType: string;
+    SteelId: number;
     shape: ShapeSteel;
-    amount: number;
-    width?: number | null;
+    sequence: number;
+    wide?: number | null;
     length: number;
     thickness: number;
-    weight?: number | null;
+    amount: number;
     detail?: string | null;
-
+    cuttingMethod?: CuttingMethod;
+    job?: string | null;
+    weight?: number | null;
+    discount?: number | null;
+    price?: number;
     isOD: boolean;
     isServices: boolean;
     isPerAmount: boolean;
-
-    job?: string | null;
-    cuttingMethod?: CuttingMethod;
-    discount?: number | null;
-    price?: number;
   }[];
 };
 
-function buildPatchPayload(job: Joborder): PatchPayload {
+function buildPatchPayload(job: ApiOrder): PatchPayload {
   return {
     status: job.status,
     customerId: String(job.customerId),
@@ -288,10 +240,12 @@ function buildPatchPayload(job: Joborder): PatchPayload {
     deliveryDate: job.deliveryDate || undefined,
     createdAt: job.createdAt || undefined,
     steel: job.steel.map((l) => ({
-      codeSteel: normalizeSteelCode(l.steelType),
+      steelType: l.steelType,
+      SteelId: l.SteelId,
       shape: l.shape,
+      sequence: l.sequence,
       amount: Number(l.amount),
-      width: l.width ?? null,
+      wide: l.wide ?? null,
       length: Number(l.length),
       thickness: Number(l.thickness),
       weight: l.weight ?? null,
@@ -311,19 +265,22 @@ const ALL_KEY = "";
 const UpdateOrderPage = ({ id }: { id: string }) => {
   const router = useRouter();
 
-  const [job, setJob] = useState<Joborder | null>(null);
-  const jobRef = React.useRef<Joborder | null>(null);
+  // ใช้ ApiOrder ที่ตรงกับ API จริงเลย
+  const [job, setJob] = useState<ApiOrder | null>(null);
+  const jobRef = React.useRef<ApiOrder | null>(null);
 
-  const [steelOptions, setSteelOptions] = useState<SteelOption[]>([]);
+  // สำหรับเก็บ options ของ Select ประเภทเหล็ก
+  const [steelOptions, setSteelOptions] = useState<SteelType[]>([]);
   const [steelQuery, setSteelQuery] = useState("");
 
+  // สถานะการโหลดและบันทึก
   const [loading, setLoading] = useState(true);
   const [loadingSteel, setLoadingSteel] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
-
+  
   const [useJob, setUseJob] = useState(false);
 
   // sync ref ให้ fetchSteel มองเห็น job ล่าสุดเสมอ
@@ -354,21 +311,17 @@ const UpdateOrderPage = ({ id }: { id: string }) => {
       });
       if (!res.ok) throw new Error(`Fetch failed: ${res.status}`);
 
-      const data: SteelStockApiItem[] = await res.json();
+      const data: SteelTypeApiItem[] = await res.json();
       if (cancelledRef?.()) return;
-
-      const options: SteelOption[] = data.map((x) => ({
-        value: steelKey(x.codeSteel, x.shape),
-        codeSteel: x.codeSteel,
-        label: x.codeSteel,
-        price: x.price,
-        amount: x.amount ?? 0,
-        shape: x.shape,
+      const mapped: SteelType[] = data.map((t) => ({
+        id: String(t.id),
+        steelType: t.codeSteel,
+        shape: t.shape,
+        price: Number(t.price ?? 0),
+        density: Number(t.density ?? DEFAULT_DENSITY),
       }));
 
-      // ✅ merge ให้มีเหล็กที่ออเดอร์ใช้อยู่เสมอ
-      const merged = mergeOrderSteelIntoOptions(options, jobRef.current);
-
+      const merged = mergeOrderSteelIntoSteelTypes(mapped, jobRef.current);
       setSteelOptions(merged);
     } finally {
       if (!cancelledRef?.()) setLoadingSteel(false);
@@ -392,11 +345,11 @@ const UpdateOrderPage = ({ id }: { id: string }) => {
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || "Failed to fetch order");
 
-        const mapped = toJoborder(data as ApiJobOrder);
+        // const mapped = toJoborder(data as ApiOrder);
 
         if (!cancelled) {
-          setJob(mapped);
-          jobRef.current = mapped; // ✅ ให้ fetchSteel รอบแรก merge ได้ทันที
+          setJob(data);
+          jobRef.current = data; // ✅ ให้ fetchSteel รอบแรก merge ได้ทันที
         }
 
         await fetchSteel(ALL_KEY, () => cancelled);
@@ -416,15 +369,6 @@ const UpdateOrderPage = ({ id }: { id: string }) => {
     };
   }, [id]);
 
-  // const clearAllJobs = () => {
-  //   setJob((prev) => {
-  //     if (!prev) return prev;
-  //     return {
-  //       ...prev,
-  //       steel: (prev.steel ?? []).map((s) => ({ ...s, job: null })),
-  //     };
-  //   });
-  // };
   const validateForm = () => {
     if (!job) return "ไม่พบข้อมูลคำสั่งซื้อ";
     if (itemCount === 0) return "กรุณาเพิ่มรายการเหล็กอย่างน้อย 1 รายการ";
@@ -446,7 +390,7 @@ const UpdateOrderPage = ({ id }: { id: string }) => {
         (s) =>
           (s.isOD == false && !s.length) || // s.length <= 0 ||
           s.thickness <= 0 ||
-          (s.shape == "square" && (s.width == null || s.width <= 0)),
+          (s.shape == "square" && (s.wide == null || s.wide <= 0)),
       )
     )
       return "ขนาดของเหล็กต้องมากกว่า 0";
@@ -461,7 +405,7 @@ const UpdateOrderPage = ({ id }: { id: string }) => {
       return;
     }
 
-    // ✅ Guard เพื่อ TS + runtime
+    //  Guard เพื่อ TS + runtime
     if (!job) {
       toast.error("ขออภัย มีข้อผิดพลาด: ไม่พบข้อมูลคำสั่งซื้อ", {
         position: "bottom-right",
@@ -469,7 +413,7 @@ const UpdateOrderPage = ({ id }: { id: string }) => {
       return;
     }
 
-    const jobSnap = job; // ✅ จากนี้ไม่ต้อง job! แล้ว
+    const jobSnap = job; //  จากนี้ไม่ต้อง job! แล้ว
     const snapshot = jobSnap;
 
     setSaving(true);
@@ -485,7 +429,7 @@ const UpdateOrderPage = ({ id }: { id: string }) => {
 
       const payload = buildPatchPayload(jobForSend);
 
-      const badLine = payload.steel?.find((x) => !x.codeSteel?.trim());
+      const badLine = payload.steel?.find((x) => !x.SteelId);
       if (badLine) {
         toast.error(
           "ขออภัย มีข้อผิดพลาด: กรุณาเลือกประเภทเหล็กให้ครบทุกบรรทัด",
@@ -508,8 +452,8 @@ const UpdateOrderPage = ({ id }: { id: string }) => {
       toast.success("บันทึกคำสั่งซื้อเรียบร้อยแล้ว", {
         position: "bottom-right",
       });
-      const mapped = toJoborder(data as ApiJobOrder);
-      setJob(mapped);
+      // const mapped = toJoborder(data as ApiOrder);
+      setJob(data);
 
       if (!useJob) {
         setJob((prev) =>
@@ -587,20 +531,6 @@ const UpdateOrderPage = ({ id }: { id: string }) => {
       )
     : 0;
 
-  // const summaryByType = job.steel.reduce(
-  //   (acc, i) => {
-  //     const steelLabel = i.steelType || "-";
-  //     const shapeLabel = i.shape === "line" ? "เพลา" : "แผ่น";
-  //     const key = `${steelLabel} (${shapeLabel})`;
-  //     if (!acc[key]) acc[key] = { lines: 0, qty: 0, weight: 0 };
-  //     acc[key].lines += 1;
-  //     acc[key].qty += Number(i.amount) || 0;
-  //     acc[key].weight += (Number(i.weight) || 0) * (Number(i.amount) || 0);
-  //     return acc;
-  //   },
-  //   {} as Record<string, { lines: number; qty: number; weight: number }>,
-  // );
-
   const fmtInt = (n: number) => Intl.NumberFormat().format(n);
   const fmtWeight = (n: number) =>
     Intl.NumberFormat(undefined, {
@@ -669,9 +599,11 @@ const UpdateOrderPage = ({ id }: { id: string }) => {
         />
 
         {/* --- Section 2: Customer Info --- */}
-        <DetailCustomer 
-          customerId={job.customerId} 
-          onCustomerChange={(id) => setJob((prev) => prev ? { ...prev, customerId: id } : prev)} 
+        <DetailCustomer
+          customerId={job.customerId}
+          onCustomerChange={(id) =>
+            setJob((prev) => (prev ? { ...prev, customerId: id } : prev))
+          }
         />
 
         {/* --- Section 3: Order Lines --- */}
@@ -679,6 +611,9 @@ const UpdateOrderPage = ({ id }: { id: string }) => {
           job={job}
           setJob={setJob}
           steelOptions={steelOptions}
+          steelQuery={steelQuery}
+          setSteelQuery={setSteelQuery}
+          loadingSteel={loadingSteel}
           weightEnabled={weightEnabled}
           useJob={useJob}
           setUseJob={setUseJob}
