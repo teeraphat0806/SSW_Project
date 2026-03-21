@@ -5,40 +5,7 @@ import { NextRequest, NextResponse } from "next/server";
 import z from "zod";
 import { ShapeSteel, CuttingMethod, status } from "@/types";
 import { calculateWeightDetails } from "@/lib/calculateGrandTotal";
-
-type ApiJobOrder = {
-  id: number;
-  poNumber: string | null;
-  customerId: number;
-  customerName: string;
-  customerEmail: string | null;
-  customerPhone: string | null;
-  customerAddress: string;
-  customerTaxId: string | null;
-  customerFax: string | null;
-  deliveryDate: Date;
-  createdAt: Date;
-  credit: number;
-  steel: {
-    id: number;
-    steelType: string;
-    amount: number;
-    width?: number;
-    length: number;
-    thickness: number;
-    detail?: string | null;
-    weight?: number | null;
-    shape: ShapeSteel;
-    job: string | null;
-    cuttingMethod: CuttingMethod;
-    discount?: number | null;
-    price: number;
-    isOD: boolean;
-    isServices: boolean;
-    isPerAmount: boolean;
-  }[];
-  status: status;
-};
+import { ApiJobOrder } from "@/types/order.types";
 
 //ตัวช่วยแปลงข้อมูลจาก Prisma เป็น ApiJobOrder
 type OrderWithRelations = Prisma.OrderPOGetPayload<{
@@ -73,19 +40,25 @@ function toApiJobOrder(order: OrderWithRelations): ApiJobOrder {
     createdAt: bill.createdAt,
     credit: bill.credit ?? 30,
     steel: order.Product.map((p) => ({
-      id: p.id,
+      id: String(p.id),
+      SteelId: p.steelId,
       steelType: p.SteelType.codeSteel,
-      amount: p.amount,
-      width: p.wide ?? undefined,
+
+      shape: p.SteelType.shape as ShapeSteel,
+      sequence: p.sequence,
+      wide: p.wide ?? null,
       length: p.length ?? 0,
       thickness: p.thickness ?? 0,
+      amount: p.amount,
       detail: p.detail ?? null,
-      weight: p.actualWeight ?? null,
-      shape: p.SteelType.shape as ShapeSteel,
-      job: p.job ?? null,
       cuttingMethod: (p.cuttingMethod ?? "normal") as CuttingMethod,
-      discount: p.discount ?? null,
+
+      weight: p.actualWeight ?? null,
       price: p.unitPrice ?? 0,
+      discount: p.discount ?? null,
+      density: p.SteelType.density,
+      job: p.job ?? null,
+
       isOD: p.isOD,
       isServices: p.isServices,
       isPerAmount: p.isPerAmount,
@@ -154,25 +127,25 @@ const StatusSchema = z.enum([
 ]);
 
 const SteelLineSchema = z.object({
-  codeSteel: z.string().trim().min(1),
+  steelType: z.string(),
+  SteelId: z.number().int().positive(),
   shape: z.enum(["square", "line"]),
-  amount: z.number().int().min(1),
-  width: z.number().nonnegative().nullable().optional(),
-  length: z.number().nonnegative(),
-  thickness: z.number().nonnegative(),
-  weight: z.number().nonnegative().nullable().optional(),
+  sequence: z.number().int().positive(),
+  wide: z.number().nullable(),
+  length: z.number(),
+  thickness: z.number(),
+  amount: z.number().int().positive(),
   detail: z.string().nullable().optional(),
   cuttingMethod: z.enum(["normal", "FB", "RM", "CNC"]).optional(),
   job: z.string().trim().nullable().optional(),
+  weight: z.number().nonnegative().nullable().optional(),
   discount: z.number().nonnegative().nullable().optional(),
-  price: z.number().nonnegative(),
+  price: z.number().nonnegative().optional(),
+
   isOD: z.boolean().optional(),
   isServices: z.boolean().optional(),
   isPerAmount: z.boolean().optional(),
 });
-
-const steelKey = (codeSteel: string, shape: ShapeSteel) =>
-  `${codeSteel}::${shape}`;
 
 const PatchSchema = z.object({
   status: StatusSchema.optional(),
@@ -226,8 +199,6 @@ export async function PATCH(
       });
       if (!existing) throw new Error("Order not found");
 
-      const credit = patch.credit;
-      const createdAt = patch.createdAt;
       if (existing.billId == null) {
         throw new Error("No bill associated with this order");
       }
@@ -264,20 +235,6 @@ export async function PATCH(
         });
       }
 
-      // // deliveryDate (ถ้ามีส่งมา)
-      // if (patch.deliveryDate || patch.createdAt) {
-      //   if (existing.billId == null) {
-      //     throw new Error("No bill associated with this order");
-      //   }
-      //   await tx.bill.update({
-      //     where: { id: existing.billId },
-      //     data: {
-      //       ...(patch.deliveryDate ? { deliveryDate: patch.deliveryDate } : {}),
-      //       ...(patch.createdAt ? { createdAt: patch.createdAt } : {}),
-      //     },
-      //   });
-      // }
-
       //ถ้ามี poNumber ส่งมา ให้ตรวจสอบความซ้ำซ้อนก่อน update
       if (patch.poNumber !== undefined) {
         const nextPoNumber = patch.poNumber.trim();
@@ -297,22 +254,22 @@ export async function PATCH(
       // customerId (ถ้ามีส่งมา)
       let nextCustomerId: number | undefined = undefined;
       if (typeof patch.customerId === "string") {
-        const cid = Number(patch.customerId);
-        if (!Number.isInteger(cid) || cid <= 0)
+        const customerid = Number(patch.customerId);
+        if (!Number.isInteger(customerid) || customerid <= 0)
           throw new Error("Invalid customerId");
 
         const customer = await tx.customer.findUnique({
-          where: { id: cid },
+          where: { id: customerid },
           select: { id: true, taxNumber: true },
         });
         if (!customer) throw new Error("Customer not found");
-        if (customer.taxNumber === null) {
+        if (!customer.taxNumber) {
           throw new Error(
             "ไม่สามารถเลือกลูกค้าที่ไม่มีเลขประจำตัวผู้เสียภาษีได้",
           );
         }
 
-        nextCustomerId = cid;
+        nextCustomerId = customerid;
       }
 
       // update status + customerId
@@ -333,24 +290,9 @@ export async function PATCH(
 
       // update steel
       if (patch.steel) {
-        const requestedSteels = Array.from(
-          new Set(
-            patch.steel
-              .map((l) =>
-                steelKey(
-                  l.codeSteel.trim(),
-                  (l.shape ?? "square") as ShapeSteel,
-                ),
-              )
-              .filter(Boolean),
-          ),
-        ).map((k) => {
-          const [codeSteel, shape] = k.split("::");
-          return {
-            codeSteel: codeSteel ?? "",
-            shape: (shape ?? "square") as ShapeSteel,
-          };
-        });
+        const steelPairs = Array.from(
+          new Set(patch.steel.map((p) => p.SteelId)),
+        );
 
         if (patch.steel.length === 0) {
           throw new Error("ต้องมีรายการเหล็กอย่างน้อย 1 รายการ");
@@ -360,36 +302,21 @@ export async function PATCH(
         }
         const steelTypes = await tx.steelType.findMany({
           where: {
-            OR: requestedSteels.map(({ codeSteel, shape }) => ({
-              codeSteel,
-              shape,
-            })),
+            id: { in: steelPairs },
           },
           select: {
             id: true,
             codeSteel: true,
-            // price: true,
             density: true,
             shape: true,
           },
         });
 
-        const codeShapeToSteel = new Map<string, (typeof steelTypes)[0]>(
-          steelTypes.map((s) => [
-            steelKey(s.codeSteel, s.shape as unknown as ShapeSteel),
-            s,
-          ]),
-        );
-        const missing = requestedSteels.filter(
-          ({ codeSteel, shape }) =>
-            !codeShapeToSteel.has(steelKey(codeSteel, shape)),
-        );
+        const steelMap = new Map(steelTypes.map((s) => [s.id, s]));
+        const missing = steelPairs.filter((steelId) => !steelMap.has(steelId));
         if (missing.length)
-          throw new Error(
-            `SteelType not found: ${missing
-              .map(({ codeSteel, shape }) => `${codeSteel} (${shape})`)
-              .join(", ")}`,
-          );
+          throw new Error(`SteelType not found: ${missing.join(", ")}`);
+
         await tx.product.deleteMany({ where: { orderPOId: poId } });
 
         // สร้างใหม่รายการเหล็กทั้งหมด
@@ -397,20 +324,20 @@ export async function PATCH(
           // l คือ line item ที่ส่งมาใน patch
           data: patch.steel.map((l, index) => {
             //st คือ steelType จาก database
-            const code = l.codeSteel.trim();
-            const shape = (l.shape ?? "square") as ShapeSteel;
-            const st = codeShapeToSteel.get(steelKey(code, shape))!;
+            const steel = steelMap.get(l.SteelId)!;
+
+            const price = safeNum(l.price);
 
             const { total } = calculateWeightDetails({
-              shape: st.shape as ShapeSteel,
+              shape: steel.shape as ShapeSteel,
               amount: l.amount,
-              width: l.width ?? undefined,
+              width: l.wide ?? 0,
               length: l.length,
               thickness: l.thickness,
 
-              density: st.density,
+              density: steel.density,
               weight: l.weight ?? null,
-              price: l.price,
+              price,
               discount: null,
 
               isOD: l.isOD ?? false,
@@ -421,13 +348,13 @@ export async function PATCH(
             return {
               orderPOId: poId,
               sequence: index + 1,
-              steelId: st.id,
-              wide: l.width ?? null,
+              steelId: steel.id,
+              wide: l.wide ?? null,
               length: l.length ?? null,
               thickness: l.thickness ?? null,
               amount: l.amount,
               detail: l.detail ?? null,
-              unitPrice: l.price,
+              unitPrice: price,
               actualWeight: l.weight ?? null,
               job: l.job ?? null,
               cuttingMethod: l.cuttingMethod ?? "normal",
@@ -435,7 +362,7 @@ export async function PATCH(
               isOD: l.isOD ?? false,
               isServices: l.isServices ?? false,
               isPerAmount: l.isPerAmount ?? false,
-              total: l.isPerAmount ? l.price * l.amount : total,
+              total: l.isPerAmount ? price * l.amount : total,
             };
           }),
         });

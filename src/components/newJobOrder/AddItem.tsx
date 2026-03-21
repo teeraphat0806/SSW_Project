@@ -36,13 +36,7 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { SteelItemRow } from "./SteelItemRow";
-import { SteelItem, SteelType } from "@/types/order.types";
-
-export type HeadOrderType = {
-  poNumber: string | null;
-  credit: number;
-  deliveryDate: string;
-};
+import { SteelItem, SteelType, HeadOrderType } from "@/types/order.types";
 
 type AddItemProps = {
   steelItems: SteelItem[];
@@ -54,6 +48,7 @@ type AddItemProps = {
   addSteelItem: () => void;
   removeSteelItem: (id: SteelItem["id"]) => void;
   steelTypes: SteelType[];
+  weightEnabled?: boolean;
   headOrder: HeadOrderType;
   setheadOrder: React.Dispatch<React.SetStateAction<HeadOrderType>>;
   searchItem: string;
@@ -71,6 +66,7 @@ export default function AddItem({
   addSteelItem,
   removeSteelItem,
   steelTypes,
+  weightEnabled = true,
   headOrder,
   setheadOrder,
   searchItem,
@@ -148,6 +144,8 @@ export default function AddItem({
     }
   };
 
+  const showCreatedAt = typeof headOrder.createdAt === "string";
+
   return (
     <div
       className="w-full space-y-6 pb-10"
@@ -177,7 +175,11 @@ export default function AddItem({
 
         {/* Content */}
         <CardContent className="pt-6 pb-8">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div
+            className={`grid grid-cols-1 ${
+              showCreatedAt ? "md:grid-cols-4" : "md:grid-cols-3"
+            } gap-6`}
+          >
             {/* 1. PO Number */}
 
             {/* {pofilelength > 0 && ( */}
@@ -276,6 +278,29 @@ export default function AddItem({
                 />
               </div>
             </div>
+
+            {showCreatedAt && (
+              <div className="space-y-2 group">
+                <Label
+                  htmlFor="createdAt"
+                  className="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 group-focus-within:text-blue-600 dark:group-focus-within:text-blue-400 transition-colors"
+                >
+                  วันที่สร้างบิล
+                </Label>
+                <div className="relative transition-all duration-200 ease-in-out transform group-focus-within:-translate-y-0.5">
+                  <FileText className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400 group-focus-within:text-blue-500 transition-colors pointer-events-none" />
+                  <Input
+                    id="createdAt"
+                    type="date"
+                    value={headOrder.createdAt ?? ""}
+                    onChange={(e) =>
+                      setheadOrder({ ...headOrder, createdAt: e.target.value })
+                    }
+                    className="pl-10 h-11 bg-zinc-50/50 dark:bg-zinc-950/50 border-zinc-200 dark:border-zinc-800 focus:bg-white dark:focus:bg-zinc-950 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all [color-scheme:light] dark:[color-scheme:dark]"
+                  />
+                </div>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -352,6 +377,7 @@ export default function AddItem({
                   item={item}
                   idx={idx}
                   steelTypes={steelTypes}
+                  weightEnabled={weightEnabled}
                   useJob={useJob}
                   searchItem={searchItem}
                   setsearchItem={setsearchItem}
