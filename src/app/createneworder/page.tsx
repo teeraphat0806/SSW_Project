@@ -924,7 +924,6 @@ const NewJobOrder = () => {
                     searchItem={searchItem}
                     setsearchItem={setsearchItem}
                     loadingSteel={loadingSteel}
-                    pofilelength={UploadFile.length}
                     useJob={useJob}
                     setUseJob={setUseJob}
                   />
