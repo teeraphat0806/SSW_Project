@@ -14,14 +14,15 @@ import {
 } from "lucide-react";
 import { Button } from "../../../components/ui/button";
 import DetailCustomer from "@/components/up-date-order/detailCustomer";
-import DetailItem from "@/components/up-date-order/detailItem";
+import { HeaderSection } from "@/components/newJobOrder/HeaderSection";
+import { ItemsSection } from "@/components/newJobOrder/ItemsSection";
 import Summary from "@/components/up-date-order/summary";
 import Stepper from "@/components/up-date-order/stepper";
 import { LoadingScreen } from "@/components/Loading";
 import { toast } from "react-toastify";
 
 import { CuttingMethod, ShapeSteel, status } from "@/types";
-import { ApiJobOrder, ApiOrder, SteelType } from "@/types/order.types";
+import { ApiJobOrder, ApiOrder, SteelType, HeadOrderType, SteelItem } from "@/types/order.types";
 
 const STATUS_ORDER: Record<status, number> = {
   pending: 0,
@@ -433,6 +434,132 @@ const UpdateOrderPage = ({ id }: { id: string }) => {
       maximumFractionDigits: 2,
     }).format(n);
 
+  const makeTempId = () =>
+    globalThis.crypto?.randomUUID?.() ??
+    `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+
+  const setSteelItems: React.Dispatch<React.SetStateAction<SteelItem[]>> = (
+    next,
+  ) => {
+    setJob((prev) => {
+      if (!prev) return prev;
+      const nextSteel = typeof next === "function" ? next(prev.steel) : next;
+      const withSequence = nextSteel.map((it, idx) => ({
+        ...it,
+        sequence: idx + 1,
+      }));
+      return { ...prev, steel: withSequence };
+    });
+  };
+
+  const updateSteelItem = <K extends keyof SteelItem>(
+    id: SteelItem["id"],
+    field: K,
+    value: SteelItem[K],
+  ) => {
+    setJob((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        steel: prev.steel.map((it) =>
+          it.id === id ? { ...it, [field]: value } : it,
+        ),
+      };
+    });
+  };
+
+  const addSteelItem = () => {
+    const firstSteelType = steelOptions[0];
+    if (!firstSteelType) {
+      toast.error("ไม่พบประเภทเหล็กในระบบ", { position: "bottom-right" });
+      return;
+    }
+    const firstShape: ShapeSteel = firstSteelType.shape ?? "square";
+
+    setJob((prev) => {
+      if (!prev) return prev;
+      const nextSequence =
+        prev.steel.length > 0
+          ? Math.max(...prev.steel.map((item) => item.sequence ?? 0)) + 1
+          : 1;
+
+      const steelIdNum = Number.parseInt(String(firstSteelType.id), 10);
+
+      const newItem: SteelItem = {
+        id: makeTempId(),
+        SteelId: Number.isFinite(steelIdNum) ? steelIdNum : 0,
+        steelType: firstSteelType.steelType ?? "",
+        shape: firstShape,
+        sequence: nextSequence,
+        wide: firstShape === "line" ? null : 0,
+        length: 0,
+        thickness: 0,
+        amount: 1,
+        detail: "",
+        cuttingMethod: "normal",
+        weight: null,
+        price: Number(firstSteelType.price ?? 0),
+        discount: null,
+        density: Number(firstSteelType.density ?? DEFAULT_DENSITY),
+        isOD: false,
+        isServices: false,
+        isPerAmount: false,
+        job: null,
+      };
+
+      return {
+        ...prev,
+        steel: [...prev.steel, newItem].map((it, idx) => ({
+          ...it,
+          sequence: idx + 1,
+        })),
+      };
+    });
+  };
+
+  const removeSteelItem = (id: SteelItem["id"]) => {
+    setJob((prev) => {
+      if (!prev) return prev;
+      if (prev.steel.length <= 1) return prev;
+      const nextSteel = prev.steel.filter((it) => it.id !== id);
+      return {
+        ...prev,
+        steel: nextSteel.map((it, idx) => ({ ...it, sequence: idx + 1 })),
+      };
+    });
+  };
+
+  const headOrder: HeadOrderType = {
+    poNumber: job.poNumber ?? null,
+    credit: job.credit ?? 30,
+    deliveryDate: toInputDate(job.deliveryDate),
+    createdAt: toInputDate(job.createdAt),
+  };
+
+  const setheadOrder: React.Dispatch<React.SetStateAction<HeadOrderType>> = (
+    next,
+  ) => {
+    setJob((prev) => {
+      if (!prev) return prev;
+      const prevHead: HeadOrderType = {
+        poNumber: prev.poNumber ?? null,
+        credit: prev.credit ?? 30,
+        deliveryDate: toInputDate(prev.deliveryDate),
+        createdAt: toInputDate(prev.createdAt),
+      };
+      const resolved = typeof next === "function" ? next(prevHead) : next;
+
+      return {
+        ...prev,
+        poNumber: resolved.poNumber ?? null,
+        credit: resolved.credit,
+        deliveryDate: resolved.deliveryDate,
+        createdAt:
+          typeof resolved.createdAt === "string" ? resolved.createdAt : null,
+      };
+    });
+  };
+
   return (
     <div>
       {/*Header*/}
@@ -502,17 +629,27 @@ const UpdateOrderPage = ({ id }: { id: string }) => {
         />
 
         {/* --- Section 3: Order Lines --- */}
-        <DetailItem
-          job={job}
-          setJob={setJob}
-          steelOptions={steelOptions}
-          steelQuery={steelQuery}
-          setSteelQuery={setSteelQuery}
-          loadingSteel={loadingSteel}
-          weightEnabled={weightEnabled}
-          useJob={useJob}
-          setUseJob={setUseJob}
-        />
+        <div className="space-y-6">
+          <HeaderSection
+            headOrder={headOrder}
+            setheadOrder={setheadOrder}
+          />
+
+          <ItemsSection
+            steelItems={job.steel ?? []}
+            setSteelItems={setSteelItems}
+            updateSteelItem={updateSteelItem}
+            addSteelItem={addSteelItem}
+            removeSteelItem={removeSteelItem}
+            steelTypes={steelOptions}
+            weightEnabled={weightEnabled}
+            useJob={useJob}
+            setUseJob={setUseJob}
+            searchItem={steelQuery}
+            setsearchItem={setSteelQuery}
+            loadingSteel={loadingSteel}
+          />
+        </div>
 
         {/* ---------- สรุป (อ่านจาก job.steel) ---------- */}
         <Summary
