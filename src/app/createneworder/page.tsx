@@ -8,7 +8,8 @@ import { Separator } from "@/components/ui/separator";
 import { ToastContainer, toast } from "react-toastify";
 import CustomerForm from "@/components/newJobOrder/CustomerForm";
 import CustomerInfoBox from "@/components/newJobOrder/CustomerInfoBox";
-import AddItem from "@/components/newJobOrder/AddItem";
+import { HeaderSection } from "@/components/newJobOrder/HeaderSection";
+import { ItemsSection } from "@/components/newJobOrder/ItemsSection";
 import "../globals.css";
 import {
   ArrowLeft,
@@ -28,7 +29,7 @@ import SelectCustomer from "@/components/SelectCustomer";
 import type { CustomerFormData } from "@/components/newJobOrder/CustomerForm";
 import { cn } from "@/lib/utils";
 import { CuttingMethod, ShapeSteel } from "@/types";
-import { SteelType, SteelItem } from "@/types/order.types";
+import { SteelType, SteelItem ,HeadOrderType} from "@/types/order.types";
 import {
   OcrResultModal,
   type OcrSummary,
@@ -130,13 +131,7 @@ const NewJobOrder = () => {
   const [selectedCustomerId, setSelectedCustomerId] = useState<number | null>(
     null,
   );
-
-  const [headOrder, setheadOrder] = useState<{
-    poNumber: string | null;
-    credit: number;
-    deliveryDate: string;
-    createdAt?: string;
-  }>({
+  const [headOrder, setheadOrder] = useState<HeadOrderType>({
     poNumber: null,
     credit: 30,
     deliveryDate: new Date().toISOString().split("T")[0],
@@ -911,22 +906,24 @@ const NewJobOrder = () => {
                   )}
                 </div>
                 {/* AddItem */}
-                <div className="mb-4">
-                  <AddItem
+                <div className="mb-4 space-y-6">
+                  <HeaderSection
+                    headOrder={headOrder}
+                    setheadOrder={setheadOrder}
+                  />
+
+                  <ItemsSection
                     steelItems={SteelItem}
                     setSteelItems={setSteelItem}
                     updateSteelItem={updateSteelItem}
                     addSteelItem={addSteelItem}
                     removeSteelItem={removeSteelItem}
                     steelTypes={steelTypes}
-                    headOrder={headOrder}
-                    setheadOrder={setheadOrder}
+                    useJob={useJob}
+                    setUseJob={setUseJob}
                     searchItem={searchItem}
                     setsearchItem={setsearchItem}
                     loadingSteel={loadingSteel}
-                    pofilelength={UploadFile.length}
-                    useJob={useJob}
-                    setUseJob={setUseJob}
                   />
                 </div>
 

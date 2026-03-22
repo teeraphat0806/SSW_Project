@@ -194,7 +194,6 @@ export default function DetailItem({
         searchItem={steelQuery}
         setsearchItem={setSteelQuery}
         loadingSteel={loadingSteel}
-        pofilelength={0}
         useJob={useJob}
         setUseJob={setUseJob}
         setSteelItems={setSteelItems}
