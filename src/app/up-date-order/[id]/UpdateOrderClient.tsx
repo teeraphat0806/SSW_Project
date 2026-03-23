@@ -22,7 +22,13 @@ import { LoadingScreen } from "@/components/Loading";
 import { toast } from "react-toastify";
 
 import { CuttingMethod, ShapeSteel, status } from "@/types";
-import { ApiJobOrder, ApiOrder, SteelType, HeadOrderType, SteelItem } from "@/types/order.types";
+import {
+  ApiJobOrder,
+  ApiOrder,
+  SteelType,
+  HeadOrderType,
+  SteelItem,
+} from "@/types/order.types";
 
 const STATUS_ORDER: Record<status, number> = {
   pending: 0,
@@ -273,11 +279,11 @@ const UpdateOrderPage = ({ id }: { id: string }) => {
     if (hasMissingJob) return "กรุณากรอกหมายเลขงาน (Job No.) ให้ครบทุกบรรทัด";
 
     if (isAtLeast(job.status, "weighing")) {
-      const hasZeroWeight = job.steel.some(
-        (s) => s.isPerAmount === false && (!s.weight || s.weight <= 0),
-      );
-      if (hasZeroWeight)
-        return "กรุณากรอกน้ำหนักเหล็กกในรายการที่คิดราคาตามน้ำหนัก";
+      // const hasZeroWeight = job.steel.some(
+      //   (s) => s.isPerAmount === false && (!s.weight || s.weight <= 0),
+      // );
+      // if (hasZeroWeight)
+      //   return "กรุณากรอกน้ำหนักเหล็กกในรายการที่คิดราคาตามน้ำหนัก";
       const hasZeroPrice = job.steel.some((s) => !s.price || s.price <= 0);
       if (hasZeroPrice) return "กรุณากรอกราคาเหล็กก่อนบันทึกคำสั่งซื้อ";
     }
@@ -630,10 +636,7 @@ const UpdateOrderPage = ({ id }: { id: string }) => {
 
         {/* --- Section 3: Order Lines --- */}
         <div className="space-y-6">
-          <HeaderSection
-            headOrder={headOrder}
-            setheadOrder={setheadOrder}
-          />
+          <HeaderSection headOrder={headOrder} setheadOrder={setheadOrder} />
 
           <ItemsSection
             steelItems={job.steel ?? []}
