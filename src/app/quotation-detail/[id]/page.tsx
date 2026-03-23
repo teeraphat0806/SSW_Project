@@ -177,9 +177,7 @@ export default function QuotationDetailPage() {
     // In a real application, you'd have toleranceMin and toleranceMax.
 
     return (
-      <div className="text-[9px] text-center border-t border-dashed border-gray-300 leading-tight">
-        {tolerance}
-      </div>
+      <div className="text-[9px] text-center font-semibold">{tolerance}</div>
     );
   };
 
