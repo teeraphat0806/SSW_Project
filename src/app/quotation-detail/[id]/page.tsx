@@ -140,7 +140,7 @@ export default function QuotationDetailPage() {
     alignRight = false,
   ) => {
     return (
-      <div className="grid grid-cols-[90px_1fr] items-start gap-x-3 leading-tight">
+      <div className="w-full grid grid-cols-[90px_1fr] items-start gap-x-3 leading-tight">
         <div className={`font-semibold`}>
           <p className="whitespace-nowrap">{titleThai}:</p>
           {titleEng && (
@@ -303,7 +303,7 @@ export default function QuotationDetailPage() {
             <div className="col-span-7 px-2 py-1">
               {headOrder("ที่อยู่", "Address:", Data.address)}
             </div>
-            <div className="col-span-3 px-2 py-1 border-l border-b border-gray-800">
+            <div className="col-span-3 px-2 py-1 border-l border-b border-gray-800 flex items-center">
               {headOrder(
                 "เงือนไขการชำระ",
                 "Cr.Terms:",
