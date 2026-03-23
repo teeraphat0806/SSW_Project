@@ -267,22 +267,22 @@ const JobOrderDetailPage = ({ id }: { id: string }) => {
   const handleStatusUpdate = async (newStatus: JobOrder["status"]) => {
     if (!jobOrder) return;
 
-    if (newStatus === "ready") {
-      const hasInvalidWeight = jobOrder.steel.some(
-        (s) => s.isPerAmount === false && (!s.weight || s.weight <= 0),
-      );
-      if (hasInvalidWeight) {
-        toast.error(
-          "ยังไปขั้นตอนถัดไปไม่ได้: ต้องกรอกน้ำหนักเหล็กก่อน แล้วจึงเปลี่ยนเป็น READY ได้",
-          {
-            position: "bottom-right",
-          },
-        );
-        console.log("Cannot change to READY: Weight missing");
+    // if (newStatus === "ready") {
+    //   const hasInvalidWeight = jobOrder.steel.some(
+    //     (s) => s.isPerAmount === false && (!s.weight || s.weight <= 0),
+    //   );
+    //   if (hasInvalidWeight) {
+    //     toast.error(
+    //       "ยังไปขั้นตอนถัดไปไม่ได้: ต้องกรอกน้ำหนักเหล็กก่อน แล้วจึงเปลี่ยนเป็น READY ได้",
+    //       {
+    //         position: "bottom-right",
+    //       },
+    //     );
+    //     console.log("Cannot change to READY: Weight missing");
 
-        return;
-      }
-    }
+    //     return;
+    //   }
+    // }
 
     setIsUpdating(true);
     try {

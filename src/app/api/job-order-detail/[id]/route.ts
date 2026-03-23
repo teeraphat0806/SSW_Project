@@ -274,21 +274,21 @@ export async function PATCH(
         );
       }
 
-      const hasMissingWeight = po.Product.some(
-        (p) =>
-          p.isPerAmount === false &&
-          (p.actualWeight === null || p.actualWeight <= 0),
-      );
+      // const hasMissingWeight = po.Product.some(
+      //   (p) =>
+      //     p.isPerAmount === false &&
+      //     (p.actualWeight === null || p.actualWeight <= 0),
+      // );
 
-      if (hasMissingWeight) {
-        return NextResponse.json(
-          {
-            error:
-              "ไม่สามารถเปลี่ยนเป็น READY ได้กรุณากรอกน้ำหนักเหล็กในรายการที่คิดราคาตามน้ำหนัก",
-          },
-          { status: 400 },
-        );
-      }
+      // if (hasMissingWeight) {
+      //   return NextResponse.json(
+      //     {
+      //       error:
+      //         "ไม่สามารถเปลี่ยนเป็น READY ได้กรุณากรอกน้ำหนักเหล็กในรายการที่คิดราคาตามน้ำหนัก",
+      //     },
+      //     { status: 400 },
+      //   );
+      // }
     }
 
     // ✅ ตรวจสอบ transition rules
