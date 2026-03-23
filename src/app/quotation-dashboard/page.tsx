@@ -187,8 +187,8 @@ export default function QuotationDashboardPage() {
                 onChange={(e) => setBillFilter(e.target.value)}
               >
                 <option value="">ทั้งหมด</option>
-                <option value="unbilled">ยังไม่ออกบิล</option>
-                <option value="billed">ออกบิลแล้ว</option>
+                <option value="unbilled">ยังไม่ออกออเดอร์</option>
+                <option value="billed">ออกออเดอร์แล้ว</option>
               </select>
             </div>
           </div>
@@ -361,8 +361,8 @@ export default function QuotationDashboardPage() {
                         }`}
                       >
                         {row.billStatus === "billed"
-                          ? "ออกบิลแล้ว"
-                          : "ยังไม่ออกบิล"}
+                          ? "ออกออเดอร์แล้ว"
+                          : "ยังไม่ออกออเดอร์"}
                       </span>
                     </td>
 
