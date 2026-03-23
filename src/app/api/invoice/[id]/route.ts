@@ -54,7 +54,7 @@ export async function POST(
               throw createApiError(404, "ไม่พบ Order PO นี้");
             }
 
-            if (!orderPO.Customer.taxNumber) {
+            if (!orderPO.Customer?.taxNumber) {
               throw createApiError(
                 400,
                 "ลูกค้าต้องมีหมายเลขประจำตัวผู้เสียภาษีเพื่อสร้างใบแจ้งหนี้",
