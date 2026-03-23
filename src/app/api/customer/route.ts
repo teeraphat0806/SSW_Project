@@ -142,7 +142,7 @@ export async function GET(req: NextRequest) {
           address: true,
           createdAt: true,
           updatedAt: true,
-          _count: { select: { Bill: true, OrderPO: true } }, // เอาไว้โชว์ในตาราง
+          _count: { select: { Bill: true, OrderPO: true, quotation: true } }, // เอาไว้โชว์ในตาราง
 
           Bill: {
             select: { id: true, createdAt: true },
@@ -172,6 +172,7 @@ export async function GET(req: NextRequest) {
             ...c,
             billCount: c._count.Bill,
             orderCount: c._count.OrderPO,
+            quotationCount: c._count.quotation,
             daysSinceLastBill,
           };
         }),
@@ -236,16 +237,16 @@ export async function POST(req: NextRequest) {
       email: parsed.data.email,
     };
 
-    const uniqueChecks: Prisma.CustomerWhereInput[] = [
-      { taxNumber: data.taxNumber },
-    ];
+  // ตรวจสอบว่ามีข้อมูลซ้ำหรือไม่
+    const uniqueChecks: Prisma.CustomerWhereInput[] = [];
+    if (data.taxNumber) uniqueChecks.push({ taxNumber: data.taxNumber });
     if (data.email) uniqueChecks.push({ email: data.email });
     if (data.tel) uniqueChecks.push({ tel: data.tel });
     if (data.telSearch) uniqueChecks.push({ telSearch: data.telSearch });
     if (data.faxNumber) uniqueChecks.push({ faxNumber: data.faxNumber });
     if (data.faxNumberSearch)
       uniqueChecks.push({ faxNumberSearch: data.faxNumberSearch });
-
+    //ดึงข้อมูลที่ซ้ำ
     const existed = await prisma.customer.findMany({
       where: { OR: uniqueChecks },
       select: {
@@ -257,7 +258,7 @@ export async function POST(req: NextRequest) {
         email: true,
       },
     });
-
+    // ตรวจสอบว่ามีข้อมูลซ้ำหรือไม่
     const duplicatedFields: string[] = [];
     if (existed.some((c) => c.taxNumber === data.taxNumber)) {
       duplicatedFields.push("taxNumber");

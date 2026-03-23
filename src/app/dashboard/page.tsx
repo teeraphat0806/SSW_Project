@@ -248,7 +248,7 @@ export default function Dashboard() {
             ภาพรวมคำสั่งซื้อและการจัดการสถานะ
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           {/* <Link href="/statement" title="ดูเสร็จรับเงิน/ใบวางบิล">
             <button
               type="button"
@@ -258,6 +258,19 @@ export default function Dashboard() {
               <Printer size={18} />
             </button>
           </Link> */}
+
+          <div className="flex items-center rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-1 shadow-sm">
+            <Link href="/dashboard">
+              <button className="px-3 py-1.5 text-sm rounded-lg bg-blue-600 text-white shadow-sm transition-all duration-300">
+                หน้าหลักออเดอร์
+              </button>
+            </Link>
+            <Link href="/quotation-dashboard">
+              <button className="px-3 py-1.5 text-sm rounded-lg text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors">
+                หน้าหลักใบเสนอราคา
+              </button>
+            </Link>
+          </div>
 
           <Link href="/createneworder">
             <button className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl font-medium shadow-lg shadow-blue-500/20 transition-all hover:scale-105 active:scale-95">
