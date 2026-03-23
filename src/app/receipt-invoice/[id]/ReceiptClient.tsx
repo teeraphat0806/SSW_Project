@@ -75,10 +75,22 @@ export default function ReceiptClient({ id }: { id: string }) {
       .catch(console.error);
   }, [id]);
 
-  const handlecreateInvocie = () => {
+  const handlecreateInvocie = async () => {
     if (!data?.poId) return;
-    fetch(`/api/invoice/${data.poId}`, {
+    const response = await fetch(`/api/invoice/${data.poId}`, {
       method: "POST",
+    });
+
+    if (!response.ok) {
+      const errorText = await response.json();
+      toast.error(`สร้าง Invoice ไม่สำเร็จ ${errorText.error}`, {
+        position: "bottom-right",
+      });
+      return;
+    }
+
+    toast.success("สร้าง Invoice สำเร็จ", {
+      position: "bottom-right",
     });
     window.location.reload();
   };
