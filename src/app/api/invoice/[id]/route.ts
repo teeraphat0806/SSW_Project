@@ -47,11 +47,18 @@ export async function POST(
           async (tx) => {
             const orderPO = await tx.orderPO.findUnique({
               where: { id: poId },
-              select: { codetoinvoice: true },
+              include: { Customer: { select: { taxNumber: true } } },
             });
 
             if (!orderPO) {
               throw createApiError(404, "ไม่พบ Order PO นี้");
+            }
+
+            if (!orderPO.Customer?.taxNumber) {
+              throw createApiError(
+                400,
+                "ลูกค้าต้องมีหมายเลขประจำตัวผู้เสียภาษีเพื่อสร้างใบแจ้งหนี้",
+              );
             }
 
             const existingInvoice = await tx.invoice.findUnique({
