@@ -28,7 +28,6 @@ type ItemsSectionProps = {
   addSteelItem: () => void;
   removeSteelItem: (id: SteelItem["id"]) => void;
   steelTypes: SteelType[];
-  weightEnabled?: boolean;
   useJob: boolean;
   setUseJob: React.Dispatch<React.SetStateAction<boolean>>;
   searchItem: string;
@@ -43,7 +42,6 @@ export function ItemsSection({
   addSteelItem,
   removeSteelItem,
   steelTypes,
-  weightEnabled = true,
   useJob,
   setUseJob,
   searchItem,
@@ -158,7 +156,6 @@ export function ItemsSection({
                 item={item}
                 idx={idx}
                 steelTypes={steelTypes}
-                weightEnabled={weightEnabled}
                 useJob={useJob}
                 searchItem={searchItem}
                 setsearchItem={setsearchItem}

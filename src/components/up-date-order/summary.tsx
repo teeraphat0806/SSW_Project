@@ -23,7 +23,6 @@ type SummaryByType = Record<
 
 type Props<T extends JobWithSteel> = {
   job: T;
-  weightEnabled: boolean;
 
   // optional helpers: ถ้ามีในไฟล์แม่อยู่แล้ว ส่งเข้ามาได้
   fmtInt?: (n: number) => string;
@@ -38,7 +37,6 @@ const defaultFmtWeight = (n: number) =>
 
 export default function Summary<T extends JobWithSteel>({
   job,
-  weightEnabled,
   fmtInt = defaultFmtInt,
   fmtWeight = defaultFmtWeight,
   className,
@@ -67,7 +65,7 @@ export default function Summary<T extends JobWithSteel>({
         const wPerPiece = Number(it.weight ?? 0);
         const wSum = qty * wPerPiece;
 
-        if (weightEnabled) totalWeight += wSum;
+        totalWeight += wSum;
 
         if (!summaryByType[key]) {
           summaryByType[key] = { qty: 0, weight: 0 };
@@ -83,7 +81,7 @@ export default function Summary<T extends JobWithSteel>({
         totalWeight,
         summaryByType,
       };
-    }, [job.steel, weightEnabled]);
+    }, [job.steel]);
 
   return (
     <section className={`grid gap-6 lg:grid-cols-3 ${className ?? ""}`}>
@@ -132,15 +130,11 @@ export default function Summary<T extends JobWithSteel>({
             น้ำหนักรวม
           </div>
           <div className="mt-2 flex items-end justify-between">
-            {weightEnabled ? (
+           
               <span className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">
                 {fmtWeight(totalWeight)}
               </span>
-            ) : (
-              <span className="text-lg font-medium italic text-zinc-400 dark:text-zinc-600">
-                --
-              </span>
-            )}
+           
             <span className="mb-1 text-sm text-zinc-400 dark:text-zinc-500">
               Kg.
             </span>
@@ -178,11 +172,11 @@ export default function Summary<T extends JobWithSteel>({
                 <span className="font-semibold text-zinc-900 dark:text-zinc-100">
                   {fmtInt(v.qty)} ชิ้น
                 </span>
-                {weightEnabled && (
+                
                   <span className="ml-2 text-sm text-zinc-400 dark:text-zinc-500">
                     ({fmtWeight(v.weight)} kg)
                   </span>
-                )}
+              
               </div>
             </div>
           ))}
