@@ -425,7 +425,7 @@ export function SteelItemRow({
                   )
                 }
               >
-                <SelectTrigger className="h-10 w-full min-w-[160px] border-zinc-200 bg-white text-sm focus:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100">
+                <SelectTrigger className="h-10 w-full min-w-40 border-zinc-200 bg-white text-sm focus:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100">
                   <SelectValue placeholder="เลือกวิธีตัด" />
                 </SelectTrigger>
                 <SelectContent>
@@ -608,7 +608,7 @@ export function SteelItemRow({
             </div>
 
             {/* Notes */}
-            <div className="flex-1 min-w-[150px]">
+            <div className="flex-1 min-w-37.5">
               <label className="mb-1.5 block text-xs font-medium text-zinc-500 dark:text-zinc-400">
                 หมายเหตุ
               </label>

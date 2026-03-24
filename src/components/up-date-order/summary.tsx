@@ -114,7 +114,7 @@ export default function Summary<T extends JobWithSteel>({
         </div>
 
         {/* Card 3: จำนวนชิ้นรวม (Gradient Highlight) */}
-        <div className="flex flex-col justify-between rounded-xl bg-gradient-to-br from-blue-600 to-indigo-700 p-4 text-white shadow-md shadow-blue-200 dark:from-blue-700 dark:to-indigo-800 dark:shadow-none">
+        <div className="flex flex-col justify-between rounded-xl bg-linear-to-br from-blue-600 to-indigo-700 p-4 text-white shadow-md shadow-blue-200 dark:from-blue-700 dark:to-indigo-800 dark:shadow-none">
           <div className="text-sm font-medium uppercase text-blue-100">
             จำนวนชิ้นรวม
           </div>
@@ -130,11 +130,10 @@ export default function Summary<T extends JobWithSteel>({
             น้ำหนักรวม
           </div>
           <div className="mt-2 flex items-end justify-between">
-           
-              <span className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">
-                {fmtWeight(totalWeight)}
-              </span>
-           
+            <span className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">
+              {fmtWeight(totalWeight)}
+            </span>
+
             <span className="mb-1 text-sm text-zinc-400 dark:text-zinc-500">
               Kg.
             </span>
@@ -172,11 +171,10 @@ export default function Summary<T extends JobWithSteel>({
                 <span className="font-semibold text-zinc-900 dark:text-zinc-100">
                   {fmtInt(v.qty)} ชิ้น
                 </span>
-                
-                  <span className="ml-2 text-sm text-zinc-400 dark:text-zinc-500">
-                    ({fmtWeight(v.weight)} kg)
-                  </span>
-              
+
+                <span className="ml-2 text-sm text-zinc-400 dark:text-zinc-500">
+                  ({fmtWeight(v.weight)} kg)
+                </span>
               </div>
             </div>
           ))}
