@@ -16,10 +16,6 @@ import { calculateWeightDetails } from "@/lib/calculateGrandTotal";
 import { ShapeSteel, CuttingMethod } from "@/types";
 import { SteelItem, SteelType } from "@/types/order.types";
 
-
-
-
-
 type SteelItemRowProps = {
   item: SteelItem;
   idx: number;
@@ -95,8 +91,8 @@ export function SteelItemRow({
     price: item.price,
     discount: item.discount ?? null,
     isOD: item.isOD,
-    isServices: item.isServices,
-    isPerAmount: item.isPerAmount,
+    isServices: false,
+    isPerAmount: false,
     weight: null,
   }).weight;
 
