@@ -223,7 +223,7 @@ export const InvoiceExcelSample: React.FC<Inv71LikeInvoiceProps> = ({
 
               if (item.isOD) {
                 const steelPrefix = item.isServices === true ? "" : "เหล็ก ";
-                steelDisplay = `${steelPrefix}${item.steelType} ${item.thickness} t OD ${item.width} ID ${item.length} ${
+                steelDisplay = `${steelPrefix}${item.steelType} ${item.thickness} t OD ${item.width} ID ${item.length === 0 || !item.length ? item.length : ""} ${
                   item.unit || "mm."
                 }`;
               } else {
