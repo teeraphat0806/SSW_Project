@@ -306,7 +306,7 @@ export function SteelItemRow({
                   step="0.01"
                   inputMode="decimal"
                   className={`h-10 border-zinc-200 bg-white pr-8 text-right font-mono text-sm hover:border-blue-400 focus-visible:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 ${noNumberSpinnerClass}`}
-                  disabled={!weightEnabled}
+                  // disabled={!weightEnabled}
                   value={item.weight ?? 0}
                   onChange={(e) =>
                     updateSteelItem(
