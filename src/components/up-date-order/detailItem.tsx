@@ -18,7 +18,6 @@ type Props = {
   steelQuery: string;
   setSteelQuery: React.Dispatch<React.SetStateAction<string>>;
   loadingSteel: boolean;
-  weightEnabled: boolean;
   className?: string;
   useJob: boolean;
   setUseJob: React.Dispatch<React.SetStateAction<boolean>>;
@@ -51,7 +50,6 @@ export default function DetailItem({
   steelQuery,
   setSteelQuery,
   loadingSteel,
-  weightEnabled,
   className,
   useJob,
   setUseJob,
@@ -188,7 +186,6 @@ export default function DetailItem({
         addSteelItem={addSteelItem}
         removeSteelItem={removeSteelItem}
         steelTypes={steelOptions}
-        weightEnabled={weightEnabled}
         headOrder={headOrder}
         setheadOrder={setheadOrder}
         searchItem={steelQuery}

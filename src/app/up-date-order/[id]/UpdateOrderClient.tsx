@@ -538,9 +538,7 @@ const UpdateOrderPage = ({ id }: { id: string }) => {
   }
 
   const status: OrderStatus = toThaiStatus(job.status);
-  //weightEnabled คือสถานะที่เปิดให้กรอกน้ำหนักได้
-  const weightEnabled =
-    ORDER_STATUSES.indexOf(status) >= ORDER_STATUSES.indexOf("ชั่งน้ำหนัก");
+
 
   const currentStep = ORDER_STATUSES.indexOf(status);
   const progressPct = (currentStep / (ORDER_STATUSES.length - 1)) * 100;
@@ -555,12 +553,7 @@ const UpdateOrderPage = ({ id }: { id: string }) => {
     0,
   );
 
-  const totalWeight = weightEnabled
-    ? job.steel.reduce(
-        (sum, i) => sum + (Number(i.weight) || 0) * (Number(i.amount) || 0),
-        0,
-      )
-    : 0;
+ 
 
   const fmtInt = (n: number) => Intl.NumberFormat().format(n);
   const fmtWeight = (n: number) =>
@@ -892,7 +885,6 @@ const UpdateOrderPage = ({ id }: { id: string }) => {
             addSteelItem={addSteelItem}
             removeSteelItem={removeSteelItem}
             steelTypes={steelOptions}
-            weightEnabled={weightEnabled}
             useJob={useJob}
             setUseJob={setUseJob}
             searchItem={steelQuery}
@@ -904,7 +896,6 @@ const UpdateOrderPage = ({ id }: { id: string }) => {
         {/* ---------- สรุป (อ่านจาก job.steel) ---------- */}
         <Summary
           job={job}
-          weightEnabled={weightEnabled}
           fmtInt={fmtInt}
           fmtWeight={fmtWeight}
         />

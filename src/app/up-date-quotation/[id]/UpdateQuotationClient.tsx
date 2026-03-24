@@ -466,7 +466,7 @@ export default function UpdateQuotationClient({ id }: { id: string }) {
         />
 
         {/* Summary (same as up-date-order) */}
-        <Summary job={summaryJob} weightEnabled={false} />
+        <Summary job={summaryJob} />
       </main>
     </div>
   );
