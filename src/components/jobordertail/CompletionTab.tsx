@@ -122,12 +122,6 @@ export function CompletionTab({
               </span>
             </div>
           </div>
-
-          <div className="pt-6">
-            <Button variant="outline" className="gap-2" disabled>
-              <Lock className="h-4 w-4" /> ปิดงานแล้ว (แก้ไขไม่ได้)
-            </Button>
-          </div>
         </div>
       </div>
     );

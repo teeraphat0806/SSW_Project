@@ -140,7 +140,7 @@ export default function QuotationDetailPage() {
     alignRight = false,
   ) => {
     return (
-      <div className="grid grid-cols-[90px_1fr] items-start gap-x-3 leading-tight">
+      <div className="w-full grid grid-cols-[90px_1fr] items-start gap-x-3 leading-tight">
         <div className={`font-semibold`}>
           <p className="whitespace-nowrap">{titleThai}:</p>
           {titleEng && (
@@ -177,9 +177,7 @@ export default function QuotationDetailPage() {
     // In a real application, you'd have toleranceMin and toleranceMax.
 
     return (
-      <div className="text-[9px] text-center border-t border-dashed border-gray-300 leading-tight">
-        {tolerance}
-      </div>
+      <div className="text-[9px] text-center font-semibold">{tolerance}</div>
     );
   };
 
@@ -303,7 +301,7 @@ export default function QuotationDetailPage() {
             <div className="col-span-7 px-2 py-1">
               {headOrder("ที่อยู่", "Address:", Data.address)}
             </div>
-            <div className="col-span-3 px-2 py-1 border-l border-b border-gray-800">
+            <div className="col-span-3 px-2 py-1 border-l border-b border-gray-800 flex items-center">
               {headOrder(
                 "เงือนไขการชำระ",
                 "Cr.Terms:",

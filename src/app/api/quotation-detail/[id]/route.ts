@@ -151,13 +151,6 @@ export async function PATCH(
       );
     }
 
-    if (!orderPO.Customer || !orderPO.Customer.taxNumber) {
-      return NextResponse.json(
-        { error: "ไม่พบข้อมูลเลขประจำตัวผู้เสียภาษีของลูกค้า" },
-        { status: 400 },
-      );
-    }
-
     const saleNameId = orderPO.Quotation?.salesNameId;
     if (!saleNameId) {
       return NextResponse.json(

@@ -202,91 +202,94 @@ export async function PATCH(
       if (existing.billId == null) {
         throw new Error("No bill associated with this order");
       }
+
       // Record เอาไว้เก็บ key-value ข้อมูลหมด
+      const orderUpdates: Record<string, any> = {};
       const billUpdates: Record<string, any> = {};
       const quotationUpdates: Record<string, any> = {};
 
-      // จับคู่ฟิลด์ที่ต้องการอัปเดต ถ้ามีส่งมา ให้หยอดใส่ทั้ง 2 กล่อง
+      // ตรวจวันที่ส่ง
       if (patch.deliveryDate) {
         billUpdates.deliveryDate = patch.deliveryDate;
       }
+
+      //วันที่ส้ราง
       if (patch.createdAt) {
         billUpdates.createdAt = patch.createdAt;
         quotationUpdates.createdAt = patch.createdAt; // ให้ Quotation เปลี่ยนตามด้วย
       }
+
+      //เครดิต
       if (patch.credit !== undefined) {
         billUpdates.credit = patch.credit;
         quotationUpdates.credit = patch.credit; // ให้ Quotation เปลี่ยนตามด้วย
       }
 
-      // Object.keys() จะได้เป็น array ของชื่อฟิลด์ที่มีการอัปเดต แล้วค่อยเช็กทีเดียวตอนจะสั่ง update จริงๆ ว่ามีอะไรบ้าง ถ้ามีอย่างน้อย 1 ฟิลด์ถึงจะสั่ง update
-      if (Object.keys(billUpdates).length > 0) {
-        await tx.bill.update({
-          where: { id: existing.billId },
-          data: billUpdates,
-        });
-      }
-
-      // 🌟 4. สั่งอัปเดต Quotation (ถ้ามีข้อมูลให้แก้ และออเดอร์นี้ผูกกับ Quotation อยู่)
-      if (Object.keys(quotationUpdates).length > 0 && existing.quotationId) {
-        await tx.quotation.update({
-          where: { id: existing.quotationId },
-          data: quotationUpdates,
-        });
-      }
-
-      //ถ้ามี poNumber ส่งมา ให้ตรวจสอบความซ้ำซ้อนก่อน update
+      //poNumber
       if (patch.poNumber !== undefined) {
         const nextPoNumber = patch.poNumber.trim();
-        if (nextPoNumber === "") {
-          await tx.orderPO.update({
-            where: { id: poId },
-            data: { poNumber: null },
-          });
-        } else {
-          await tx.orderPO.update({
-            where: { id: poId },
-            data: { poNumber: nextPoNumber },
-          });
-        }
+        orderUpdates.poNumber = nextPoNumber === "" ? null : nextPoNumber;
       }
-
-      // customerId (ถ้ามีส่งมา)
-      let nextCustomerId: number | undefined = undefined;
-      if (typeof patch.customerId === "string") {
+      //status
+      if (patch.status) {
+        orderUpdates.status = patch.status;
+        orderUpdates.completedAt =
+          patch.status === "completed" ? new Date() : null;
+      }
+      //customerId
+      if (
+        typeof patch.customerId === "string" ||
+        typeof patch.customerId === "number"
+      ) {
         const customerid = Number(patch.customerId);
-        if (!Number.isInteger(customerid) || customerid <= 0)
+        if (!Number.isInteger(customerid) || customerid <= 0) {
           throw new Error("Invalid customerId");
+        }
 
         const customer = await tx.customer.findUnique({
           where: { id: customerid },
-          select: { id: true, taxNumber: true },
+          select: { id: true },
         });
         if (!customer) throw new Error("Customer not found");
-        if (!customer.taxNumber) {
-          throw new Error(
-            "ไม่สามารถเลือกลูกค้าที่ไม่มีเลขประจำตัวผู้เสียภาษีได้",
-          );
-        }
 
-        nextCustomerId = customerid;
+        orderUpdates.customerId = customerid;
+        billUpdates.customerId = customerid;
+        quotationUpdates.customerId = customerid;
       }
 
-      // update status + customerId
-      await tx.orderPO.update({
-        where: { id: poId },
-        data: {
-          ...(patch.status ? { status: patch.status } : {}),
-          ...(patch.status
-            ? patch.status === "completed"
-              ? { completedAt: new Date() }
-              : { completedAt: null }
-            : {}),
-          ...(nextCustomerId !== undefined
-            ? { customerId: nextCustomerId }
-            : {}),
-        },
-      });
+      const updateAll = [];
+
+      // Object.keys() จะได้เป็น array ของชื่อฟิลด์ที่มีการอัปเดต แล้วค่อยเช็กทีเดียวตอนจะสั่ง update จริงๆ ว่ามีอะไรบ้าง ถ้ามีอย่างน้อย 1 ฟิลด์ถึงจะสั่ง update
+      if (Object.keys(billUpdates).length > 0) {
+        updateAll.push(
+          await tx.bill.update({
+            where: { id: existing.billId },
+            data: billUpdates,
+          }),
+        );
+      }
+
+      //  สั่งอัปเดต Quotation (ถ้ามีข้อมูลให้แก้ และออเดอร์นี้ผูกกับ Quotation อยู่)
+      if (Object.keys(quotationUpdates).length > 0 && existing.quotationId) {
+        updateAll.push(
+          await tx.quotation.update({
+            where: { id: existing.quotationId },
+            data: quotationUpdates,
+          }),
+        );
+      }
+      // สั่งอัปเดต OrderPO ถ้ามีข้อมูลให้แก้
+      if (Object.keys(orderUpdates).length > 0) {
+        updateAll.push(
+          await tx.orderPO.update({
+            where: { id: poId },
+            data: orderUpdates,
+          }),
+        );
+      }
+      if (updateAll.length > 0) {
+        await Promise.all(updateAll);
+      }
 
       // update steel
       if (patch.steel) {
