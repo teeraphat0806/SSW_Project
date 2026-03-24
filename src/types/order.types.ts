@@ -49,6 +49,7 @@ export type ApiJobOrder = {
   deliveryDate: Date;
   createdAt: Date;
   credit: number;
+  urlPo?: string[];
   steel: SteelItem[];
   status: status;
 };
@@ -61,6 +62,7 @@ export type ApiOrder = {
   createdAt?: string | null;
 
   credit?: number;
+  urlPo?: string[];
   steel: SteelItem[];
   status: status;
 };
