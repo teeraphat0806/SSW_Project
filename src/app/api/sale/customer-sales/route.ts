@@ -152,7 +152,8 @@ export async function GET(req: NextRequest) {
       },
       OrderPO: {
         is: {
-          status: "completed",
+          status: { not: "canceled" },
+          Invoice: { isNot: null },
         },
       },
     };
@@ -211,20 +212,24 @@ export async function GET(req: NextRequest) {
       include: {
         Customer: true,
         OrderPO: {
-          select: { codetoinvoice: true },
-          include: {
-            Product: true,
+          select: {
+            codetoinvoice: true,
+            Invoice: {
+              select: {
+                invoiceNo: true,
+              },
+            },
+            Product: {
+              select: {
+                amount: true,
+              },
+            },
           },
         },
       },
       orderBy: orderByClause,
       skip,
       take: limit,
-    });
-
-    const invoiceNumber = await prisma.invoice.findUnique({
-      where: { codetoinvoice: bills[0]?.OrderPO?.codetoinvoice },
-      select: { invoiceNo: true },
     });
 
     // Calculate totals for meta
@@ -241,7 +246,11 @@ export async function GET(req: NextRequest) {
     // Format data
     const formattedData = bills.map((bill) => {
       const date = bill.createdAt;
-      const quantity = customerBillCount.get(bill.customerId) || 1; // Number of bills for this customer
+      const quantity =
+        bill.OrderPO?.Product.reduce(
+          (sum, product) => sum + (product.amount || 0),
+          0,
+        ) || 0;
 
       return {
         id: bill.id,
@@ -254,6 +263,7 @@ export async function GET(req: NextRequest) {
         customer: bill.Customer
           ? {
               id: bill.Customer.id,
+              code: bill.codeCustomer,
               name: bill.Customer.name,
             }
           : null,
@@ -262,7 +272,8 @@ export async function GET(req: NextRequest) {
         vat: bill.vat || 0,
         quantity,
         billId: bill.id,
-        invoiceNo: invoiceNumber?.invoiceNo || null,
+        codetoinvoice: bill.OrderPO?.codetoinvoice || null,
+        invoiceNo: bill.OrderPO?.Invoice?.invoiceNo?.toString() || null,
         formatted: {
           date: date.toLocaleDateString("th-TH", {
             day: "2-digit",
