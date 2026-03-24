@@ -232,9 +232,11 @@ export async function PATCH(
         const nextPoNumber = patch.poNumber.trim();
         orderUpdates.poNumber = nextPoNumber === "" ? null : nextPoNumber;
       }
-
+      // KeyFile
       if (patch.urlPo) {
-        orderUpdates.urlPo = patch.urlPo.map((k) => String(k).replace(/^\/+/, ""));
+        orderUpdates.urlPo = patch.urlPo.map((k) =>
+          String(k).replace(/^\/+/, ""),
+        );
       }
       //status
       if (patch.status) {

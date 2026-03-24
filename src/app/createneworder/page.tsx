@@ -29,7 +29,7 @@ import SelectCustomer from "@/components/SelectCustomer";
 import type { CustomerFormData } from "@/components/newJobOrder/CustomerForm";
 import { cn } from "@/lib/utils";
 import { CuttingMethod, ShapeSteel } from "@/types";
-import { SteelType, SteelItem ,HeadOrderType} from "@/types/order.types";
+import { SteelType, SteelItem, HeadOrderType } from "@/types/order.types";
 import {
   OcrResultModal,
   type OcrSummary,
@@ -754,7 +754,7 @@ const NewJobOrder = () => {
             {/* Action Row: Customer + Buttons (LEFT ALIGNED) */}
             <div className="flex flex-col sm:flex-row sm:items-center gap-2">
               {/* Customer Selection / Form Status */}
-              <div className="min-w-[220px]">
+              <div className="min-w-55">
                 {showForm ? (
                   <div className="flex items-center gap-2 text-sm text-muted-foreground animate-in fade-in">
                     <span className="bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 p-1.5 rounded-md">
@@ -838,7 +838,7 @@ const NewJobOrder = () => {
                       href={fileUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex-shrink-0"
+                      className="shrink-0"
                     >
                       {isImage ? (
                         <div className="w-10 h-10 rounded-lg overflow-hidden border border-slate-100 dark:border-zinc-800">
@@ -995,7 +995,7 @@ const NewJobOrder = () => {
                         <Button
                           type="submit"
                           disabled={isSubmitting || totalTypes === 0}
-                          className="w-full h-12 text-base font-semibold shadow-md shadow-blue-500/20 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 transition-all duration-300 active:scale-[0.98]"
+                          className="w-full h-12 text-base font-semibold shadow-md shadow-blue-500/20 bg-linear-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 transition-all duration-300 active:scale-[0.98]"
                         >
                           {" "}
                           {isSubmitting ? (
