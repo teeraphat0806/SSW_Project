@@ -106,7 +106,12 @@ export async function GET(req: NextRequest) {
       prisma.bill.aggregate({
         where: {
           createdAt: { gte: startOfMonth, lt: endOfMonthExclusive },
-          OrderPO: { is: { status: "completed" } },
+          OrderPO: {
+            is: {
+              status: { not: "canceled" },
+              Invoice: { isNot: null },
+            },
+          },
         },
         _sum: {
           grandTotal: true,
@@ -217,7 +222,12 @@ export async function GET(req: NextRequest) {
       by: ["customerId"],
       where: {
         createdAt: { gte: startOfMonth, lt: endOfMonthExclusive },
-        OrderPO: { is: { status: "completed" } },
+        OrderPO: {
+            is: {
+              status: { not: "canceled" },
+              Invoice: { isNot: null },
+            },
+          },
       },
       _count: { id: true },
       _sum: { grandTotal: true },

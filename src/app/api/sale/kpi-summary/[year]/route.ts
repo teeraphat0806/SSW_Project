@@ -70,7 +70,8 @@ export async function GET(
           },
           OrderPO: {
             is: {
-              status: "completed",
+              status: { not: "canceled" },
+              Invoice: { isNot: null },
             },
           },
         },
@@ -180,7 +181,8 @@ export async function GET(
         },
         OrderPO: {
           is: {
-            status: "completed",
+            status: { not: "canceled" },
+            Invoice: { isNot: null },
           },
         },
       },

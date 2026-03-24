@@ -107,7 +107,8 @@ export async function GET(req: NextRequest) {
           },
           OrderPO: {
             is: {
-              status: "completed",
+              status: { not: "canceled" },
+              Invoice: { isNot: null },
             },
           },
         },
