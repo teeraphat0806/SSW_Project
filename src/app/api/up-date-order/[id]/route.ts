@@ -39,6 +39,7 @@ function toApiJobOrder(order: OrderWithRelations): ApiJobOrder {
     deliveryDate: bill.deliveryDate,
     createdAt: bill.createdAt,
     credit: bill.credit ?? 30,
+    urlPo: order.urlPo ?? [],
     steel: order.Product.map((p) => ({
       id: String(p.id),
       SteelId: p.steelId,
@@ -154,6 +155,7 @@ const PatchSchema = z.object({
   poNumber: z.string().trim().optional(),
   deliveryDate: z.coerce.date().optional(),
   createdAt: z.coerce.date().optional(),
+  urlPo: z.array(z.string()).optional(),
   steel: z.array(SteelLineSchema).optional(),
 });
 
@@ -229,6 +231,10 @@ export async function PATCH(
       if (patch.poNumber !== undefined) {
         const nextPoNumber = patch.poNumber.trim();
         orderUpdates.poNumber = nextPoNumber === "" ? null : nextPoNumber;
+      }
+
+      if (patch.urlPo) {
+        orderUpdates.urlPo = patch.urlPo.map((k) => String(k).replace(/^\/+/, ""));
       }
       //status
       if (patch.status) {

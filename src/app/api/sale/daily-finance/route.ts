@@ -113,6 +113,12 @@ export async function GET(req: NextRequest) {
             gte: startOfDay,
             lt: endOfDay,
           },
+          OrderPO: {
+            is: {
+              status: { not: "canceled" },
+              Invoice: { isNot: null },
+            },
+          },
         },
         _sum: {
           grandTotal: true,

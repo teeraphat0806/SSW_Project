@@ -59,7 +59,7 @@ export function calculateWeightDetails(steel: SteelItem): WeightDetails {
     };
   }
 
-  if (amount <= 0 || length <= 0 || thickness <= 0)
+  if (amount <= 0 || thickness <= 0)
     return {
       weight: 0,
       total: 0,
@@ -87,10 +87,13 @@ export function calculateWeightDetails(steel: SteelItem): WeightDetails {
       };
     }
     weightPerPieceKg = (thickness * width * width * density * 3.14) / 4;
+    console.log("OD Square weight per piece kg", weightPerPieceKg);
   } else if (steel.shape === "square") {
     weightPerPieceKg = thickness * width * length * density;
+    console.log("Square weight per piece kg", weightPerPieceKg);
   } else {
     weightPerPieceKg = (thickness * thickness * length * density * 3.14) / 4;
+    console.log("Round weight per piece kg", weightPerPieceKg);
   }
 
   return {

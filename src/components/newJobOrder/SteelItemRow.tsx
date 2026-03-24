@@ -16,10 +16,6 @@ import { calculateWeightDetails } from "@/lib/calculateGrandTotal";
 import { ShapeSteel, CuttingMethod } from "@/types";
 import { SteelItem, SteelType } from "@/types/order.types";
 
-
-
-
-
 type SteelItemRowProps = {
   item: SteelItem;
   idx: number;
@@ -74,10 +70,7 @@ export function SteelItemRow({
   };
 
   const isLine = item.shape === "line";
-  const selectedType = steelTypes.find(
-    (t) => t.steelType === item.steelType && t.shape === item.shape,
-  );
-  const selectedValue = selectedType ? String(selectedType.id) : "";
+  const selectedValue = item.SteelId ? String(item.SteelId) : "";
 
   const fmtKg = (n: number) =>
     Intl.NumberFormat(undefined, {
@@ -95,8 +88,8 @@ export function SteelItemRow({
     price: item.price,
     discount: item.discount ?? null,
     isOD: item.isOD,
-    isServices: item.isServices,
-    isPerAmount: item.isPerAmount,
+    isServices: false,
+    isPerAmount: false,
     weight: null,
   }).weight;
 
@@ -128,6 +121,7 @@ export function SteelItemRow({
                     (t) => String(t.id) === value,
                   );
                   if (selected) {
+                    updateSteelItem(item.id, "SteelId", Number(selected.id));
                     updateSteelItem(item.id, "steelType", selected.steelType);
                     updateSteelItem(item.id, "shape", selected.shape);
                     updateSteelItem(
@@ -143,6 +137,8 @@ export function SteelItemRow({
                     if (selected.shape === "line") {
                       updateSteelItem(item.id, "wide", null);
                       updateSteelItem(item.id, "isOD", false);
+                    } else if (item.wide == null) {
+                      updateSteelItem(item.id, "wide", 0);
                     }
                   }
                 }}
@@ -310,7 +306,7 @@ export function SteelItemRow({
                   step="0.01"
                   inputMode="decimal"
                   className={`h-10 border-zinc-200 bg-white pr-8 text-right font-mono text-sm hover:border-blue-400 focus-visible:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 ${noNumberSpinnerClass}`}
-                  disabled={!weightEnabled}
+                  // disabled={!weightEnabled}
                   value={item.weight ?? 0}
                   onChange={(e) =>
                     updateSteelItem(

@@ -92,7 +92,10 @@ export async function GET(req: NextRequest) {
           lt: endOfMonth,
         },
         OrderPO: {
-          status: "completed",
+          is: {
+            status: { not: "canceled" },
+            Invoice: { isNot: null },
+          },
         },
       },
       include: {
@@ -106,6 +109,7 @@ export async function GET(req: NextRequest) {
       {
         id: number;
         name: string;
+        code: string;
         totalSales: number;
         orderCount: number;
       }
@@ -123,6 +127,7 @@ export async function GET(req: NextRequest) {
           customerMap.set(customerId, {
             id: bill.Customer.id,
             name: bill.Customer.name,
+            code: bill.codeCustomer,
             totalSales: bill.grandTotal || 0,
             orderCount: 1,
           });

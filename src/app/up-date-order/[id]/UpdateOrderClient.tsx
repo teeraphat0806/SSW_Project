@@ -5,6 +5,10 @@ import { useRouter } from "next/navigation";
 import {
   Boxes,
   ArrowLeft,
+  UploadCloud,
+  FileText,
+  X,
+  Trash2,
   CircleDashed,
   Scissors,
   Scale,
@@ -29,6 +33,7 @@ import {
   HeadOrderType,
   SteelItem,
 } from "@/types/order.types";
+import { useConfirm } from "@/components/providers/confirm-dialog-provider";
 
 const STATUS_ORDER: Record<status, number> = {
   pending: 0,
@@ -187,6 +192,12 @@ const UpdateOrderPage = ({ id }: { id: string }) => {
 
   const [useJob, setUseJob] = useState(false);
 
+  const [poFiles, setPoFiles] = useState<File[]>([]);
+  const [uploadingPoFiles, setUploadingPoFiles] = useState(false);
+  const [deletingPoKey, setDeletingPoKey] = useState<string | null>(null);
+
+  const confirm = useConfirm();
+
   // sync ref ให้ fetchSteel มองเห็น job ล่าสุดเสมอ
   useEffect(() => {
     jobRef.current = job;
@@ -199,6 +210,124 @@ const UpdateOrderPage = ({ id }: { id: string }) => {
 
   const hasMissingJob =
     useJob && (job?.steel ?? []).some((s) => !s.job?.trim());
+
+  const handlePoFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (!event.target.files) return;
+    const fileList = Array.from(event.target.files);
+    setPoFiles((prev) => [...prev, ...fileList]);
+    event.target.value = "";
+  };
+
+  const removeQueuedPoFile = (index: number) => {
+    setPoFiles((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const uploadAndAttachPoFiles = async () => {
+    if (!job) return;
+    if (poFiles.length === 0) return;
+
+    setUploadingPoFiles(true);
+    try {
+      const form = new FormData();
+      form.append("poNumber", job.poNumber ?? "");
+      form.append("customerId", String(job.customerId ?? ""));
+      poFiles.forEach((f) => form.append("files", f));
+
+      const uploadRes = await fetch("/api/upload/po/uploadPo", {
+        method: "POST",
+        body: form,
+      });
+      const uploadData: { error?: string; keys?: string[] } = await uploadRes
+        .json()
+        .catch(() => ({}));
+      if (!uploadRes.ok) {
+        throw new Error(
+          uploadData?.error || "เกิดข้อผิดพลาดในการอัปโหลดไฟล์ PO",
+        );
+      }
+
+      const newKeys = Array.isArray(uploadData.keys) ? uploadData.keys : [];
+      const nextKeys = Array.from(
+        new Set([...(job.urlPo ?? []), ...newKeys].map((k) => String(k))),
+      );
+
+	      const patchRes = await fetch(`/api/up-date-order/${job.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        cache: "no-store",
+        body: JSON.stringify({ urlPo: nextKeys }),
+      });
+      const patched = await patchRes.json().catch(() => null);
+      if (!patchRes.ok) {
+        throw new Error(patched?.error || "เกิดข้อผิดพลาดในการอัปเดต PO");
+      }
+
+	      setJob(patched);
+      setPoFiles([]);
+      toast.success("อัปโหลดไฟล์ PO สำเร็จ", { position: "bottom-right" });
+    } catch (e) {
+      toast.error(
+        `เกิดข้อผิดพลาด: ${
+          e instanceof Error ? e.message : "เกิดข้อผิดพลาดในการอัปโหลดไฟล์ PO"
+        }`,
+        { position: "bottom-right" },
+      );
+    } finally {
+      setUploadingPoFiles(false);
+    }
+  };
+
+  const detachAndDeletePoKey = async (key: string) => {
+    if (!job) return;
+    const ok = await confirm({
+      title: "ยืนยันการลบไฟล์ PO",
+      description:
+        "คุณแน่ใจหรือไม่ว่าต้องการลบไฟล์ PO นี้? การกระทำนี้ไม่สามารถย้อนกลับได้",
+      variant: "destructive",
+      confirmText: "ลบไฟล์ PO",
+      cancelText: "ยกเลิก",
+    });
+    if (!ok) return;
+
+    setDeletingPoKey(key);
+    try {
+      const deleteRes = await fetch(`/api/upload/po/deletePo/${job.id}`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ key }),
+      });
+      const deleteData: { error?: string } = await deleteRes
+        .json()
+        .catch(() => ({}));
+      if (!deleteRes.ok) {
+        throw new Error(deleteData?.error || "เกิดข้อผิดพลาดในการลบไฟล์ PO");
+      }
+
+      const nextKeys = (job.urlPo ?? []).filter((k) => k !== key);
+	      const patchRes = await fetch(`/api/up-date-order/${job.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        cache: "no-store",
+        body: JSON.stringify({ urlPo: nextKeys }),
+      });
+      const patched = await patchRes.json().catch(() => null);
+      if (!patchRes.ok) {
+        throw new Error(patched?.error || "เกิดข้อผิดพลาดในการอัปเดต PO");
+      }
+
+	      setJob(patched);
+      toast.success("ลบไฟล์ PO สำเร็จ", { position: "bottom-right" });
+    } catch (e) {
+      toast.error(
+        `เกิดข้อผิดพลาด: ${
+          e instanceof Error ? e.message : "เกิดข้อผิดพลาดในการลบไฟล์ PO"
+        }`,
+        { position: "bottom-right" },
+      );
+    } finally {
+      setDeletingPoKey(null);
+    }
+  };
 
   const fetchSteel = async (name: string, cancelledRef?: () => boolean) => {
     setLoadingSteel(true);
@@ -542,6 +671,8 @@ const UpdateOrderPage = ({ id }: { id: string }) => {
     createdAt: toInputDate(job.createdAt),
   };
 
+  const poKeys = job.urlPo ?? [];
+
   const setheadOrder: React.Dispatch<React.SetStateAction<HeadOrderType>> = (
     next,
   ) => {
@@ -564,6 +695,12 @@ const UpdateOrderPage = ({ id }: { id: string }) => {
           typeof resolved.createdAt === "string" ? resolved.createdAt : null,
       };
     });
+  };
+
+  const displayPoFileName = (key: string) => {
+    const lastSeg = key.split("/").pop() || key;
+    const idx = lastSeg.lastIndexOf("_");
+    return idx >= 0 ? lastSeg.slice(idx + 1) : lastSeg;
   };
 
   return (
@@ -633,6 +770,116 @@ const UpdateOrderPage = ({ id }: { id: string }) => {
             setJob((prev) => (prev ? { ...prev, customerId: id } : prev))
           }
         />
+
+        <section className="space-y-3 rounded-xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900/50">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-2">
+              <FileText className="h-5 w-5 text-blue-600 dark:text-blue-500" />
+              <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
+                ไฟล์ PO
+              </h2>
+              <span className="ml-1 inline-flex items-center rounded-full bg-zinc-100 px-2.5 py-0.5 text-xs font-medium text-zinc-900 dark:bg-zinc-800 dark:text-zinc-200">
+                {poKeys.length} ไฟล์
+              </span>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              <label className="cursor-pointer group flex items-center gap-2 rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-zinc-700 shadow-sm transition-all hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:bg-zinc-800/40">
+                <UploadCloud className="h-4 w-4 text-zinc-400 transition-colors group-hover:text-blue-500" />
+                <span>แนบไฟล์</span>
+                <input
+                  type="file"
+                  multiple
+                  className="hidden"
+                  onChange={handlePoFileChange}
+                  disabled={uploadingPoFiles || saving}
+                />
+              </label>
+              <Button
+                type="button"
+                onClick={uploadAndAttachPoFiles}
+                disabled={uploadingPoFiles || saving || poFiles.length === 0}
+                className="h-10"
+              >
+                {uploadingPoFiles ? "กำลังอัปโหลด..." : "เพิ่มไฟล์"}
+              </Button>
+            </div>
+          </div>
+
+          {poFiles.length > 0 && (
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+              {poFiles.map((file, index) => (
+                <div
+                  key={`${file.name}-${index}`}
+                  className="group relative flex items-center gap-3 rounded-xl border border-zinc-200 bg-white p-2 shadow-sm transition-all hover:shadow-md dark:border-zinc-800 dark:bg-zinc-900"
+                >
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-zinc-100 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400">
+                    <FileText className="h-5 w-5" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p
+                      className="truncate text-xs font-medium text-zinc-700 dark:text-zinc-200"
+                      title={file.name}
+                    >
+                      {file.name}
+                    </p>
+                    <p className="mt-0.5 text-[10px] uppercase text-zinc-400 dark:text-zinc-500">
+                      {file.name.split(".").pop() || "FILE"}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => removeQueuedPoFile(index)}
+                    className="absolute -right-2 -top-2 rounded-full border border-zinc-200 bg-white p-1 text-zinc-400 opacity-0 shadow-sm transition-all hover:scale-110 hover:text-red-500 group-hover:opacity-100 dark:border-zinc-700 dark:bg-zinc-800"
+                    aria-label="ลบไฟล์"
+                    disabled={uploadingPoFiles || saving}
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {poKeys.length === 0 ? (
+            <p className="text-sm text-zinc-500 dark:text-zinc-400">
+              ยังไม่มีไฟล์ PO ในออเดอร์นี้
+            </p>
+          ) : (
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+              {poKeys.map((key) => {
+                const fileName = displayPoFileName(key);
+                return (
+                  <div
+                    key={key}
+                    className="flex items-center justify-between gap-3 rounded-xl border border-zinc-200 bg-white p-3 shadow-sm dark:border-zinc-800 dark:bg-zinc-900"
+                  >
+                    <a
+                      href={`/api/upload/po/openPo/${key}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="min-w-0 flex-1 truncate text-sm font-medium text-blue-600 hover:underline dark:text-blue-400"
+                      title={key}
+                    >
+                      {fileName}
+                    </a>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      className="h-9 w-9"
+                      onClick={() => detachAndDeletePoKey(key)}
+                      disabled={saving || deletingPoKey === key}
+                      title="ลบไฟล์"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </section>
 
         {/* --- Section 3: Order Lines --- */}
         <div className="space-y-6">

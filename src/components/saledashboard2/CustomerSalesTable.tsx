@@ -32,6 +32,7 @@ interface CustomerSale {
   vat: number;
   quantity: number;
   billId: number | null;
+  codetoinvoice: number | null;
   invoiceNo: string | null;
   formatted: {
     date: string;
@@ -164,7 +165,6 @@ export function CustomerSalesTable({ year, month }: CustomerSalesTableProps) {
     });
   };
 
- 
   // Helper for opening print tab(s)
   const handlePrint = async () => {
     window.open(`/saledashboard2/${year}/${month}/report/`, "_blank");
@@ -177,17 +177,11 @@ export function CustomerSalesTable({ year, month }: CustomerSalesTableProps) {
         <h2 className="text-2xl font-bold text-zinc-900 dark:text-white">
           ตารางรายได้ (ยอดขายตามลูกค้า)
         </h2>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => handlePrint()}
-        >
+        <Button variant="outline" size="sm" onClick={() => handlePrint()}>
           <Printer className="h-4 w-4 mr-2" />
           พิมพ์รายงาน
         </Button>
       </div>
-
-      
 
       {/* Filters */}
       <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-sm border border-zinc-200 dark:border-zinc-800 p-6">
@@ -210,7 +204,7 @@ export function CustomerSalesTable({ year, month }: CustomerSalesTableProps) {
                 <SelectItem value="all">ทั้งหมด</SelectItem>
                 {customers.map((customer) => (
                   <SelectItem key={customer.id} value={customer.id.toString()}>
-                    {customer.code} - {customer.name}
+                    {customer.name}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -307,7 +301,7 @@ export function CustomerSalesTable({ year, month }: CustomerSalesTableProps) {
                   onClick={() => handleSortChange("quantity")}
                 >
                   <div className="flex items-center justify-end gap-2">
-                    จำนวนบิล
+                    จำนวนชิ้นที่ขาย
                     <ArrowUpDown className="h-3 w-3" />
                   </div>
                 </th>
@@ -349,7 +343,7 @@ export function CustomerSalesTable({ year, month }: CustomerSalesTableProps) {
                             {sale.customer?.name || "ไม่ระบุ"}
                           </div>
                           <div className="text-xs text-zinc-500 dark:text-zinc-400">
-                            {sale.customer?.code || "-"}
+                            {sale.codetoinvoice ?? "-"}
                           </div>
                         </div>
                       </div>
