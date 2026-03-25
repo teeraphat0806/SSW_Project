@@ -172,9 +172,6 @@ export default function QuotationDetailPage() {
     );
   const getTolerance = (tolerance?: string | null) => {
     if (!tolerance) return "";
-    // This assumes tolerance field maps to +/- value. In image, it's specific +0.1/-0.1.
-    // I will hardcode the tolerance for now, as I don't have the explicit fields for +/-.
-    // In a real application, you'd have toleranceMin and toleranceMax.
 
     return (
       <div className="text-[9px] text-center font-semibold">{tolerance}</div>
@@ -285,7 +282,7 @@ export default function QuotationDetailPage() {
 
           <div className="grid grid-cols-10 border-b border-gray-800">
             <div className="col-span-7 px-2 py-1">
-              {headOrder("ชื่อผู้ติดต่อ", "Attn.", Data.customerName)}
+              {headOrder("ชื่อผู้ติดต่อ", "Attn.", Data.customerName ?? "")}
             </div>
             <div className="col-span-3 px-2 py-1 border-l border-gray-800">
               {headOrder(
@@ -563,7 +560,7 @@ export default function QuotationDetailPage() {
               <span className="font-semibold">
                 * กำหนดส่งสินค้าหลังได้รับใบสั่งซื้อ:
               </span>{" "}
-              {Data.deliveryDate}
+              {Data.deliveryDate ?? ""}
             </p>
             <p>
               <span className="font-semibold">* กำหนดยืนราคา:</span>{" "}

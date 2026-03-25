@@ -239,56 +239,66 @@ export async function POST(req: NextRequest) {
 
   // ตรวจสอบว่ามีข้อมูลซ้ำหรือไม่
     const uniqueChecks: Prisma.CustomerWhereInput[] = [];
-    if (data.taxNumber) uniqueChecks.push({ taxNumber: data.taxNumber });
-    if (data.email) uniqueChecks.push({ email: data.email });
-    if (data.tel) uniqueChecks.push({ tel: data.tel });
-    if (data.telSearch) uniqueChecks.push({ telSearch: data.telSearch });
-    if (data.faxNumber) uniqueChecks.push({ faxNumber: data.faxNumber });
-    if (data.faxNumberSearch)
-      uniqueChecks.push({ faxNumberSearch: data.faxNumberSearch });
+    if (data.name) uniqueChecks.push({ name: data.name });
+    // if (data.taxNumber) uniqueChecks.push({ taxNumber: data.taxNumber });
+    // if (data.email) uniqueChecks.push({ email: data.email });
+    // if (data.tel) uniqueChecks.push({ tel: data.tel });
+    // if (data.telSearch) uniqueChecks.push({ telSearch: data.telSearch });
+    // if (data.faxNumber) uniqueChecks.push({ faxNumber: data.faxNumber });
+    // if (data.faxNumberSearch)
+    //   uniqueChecks.push({ faxNumberSearch: data.faxNumberSearch });
     //ดึงข้อมูลที่ซ้ำ
     const existed = await prisma.customer.findMany({
       where: { OR: uniqueChecks },
       select: {
-        taxNumber: true,
-        tel: true,
-        telSearch: true,
-        faxNumber: true,
-        faxNumberSearch: true,
-        email: true,
+        name: true,
+        // taxNumber: true,
+        // tel: true,
+        // telSearch: true,
+        // faxNumber: true,
+        // faxNumberSearch: true,
+        // email: true,
       },
     });
+
+    
     // ตรวจสอบว่ามีข้อมูลซ้ำหรือไม่
     const duplicatedFields: string[] = [];
-    if (existed.some((c) => c.taxNumber === data.taxNumber)) {
-      duplicatedFields.push("taxNumber");
+
+    if (existed.some((c) => c.name === data.name)) {
+      duplicatedFields.push("name");
     }
-    if (
-      data.tel &&
-      existed.some((c) => c.tel === data.tel || c.telSearch === data.telSearch)
-    ) {
-      duplicatedFields.push("tel");
-    }
-    if (
-      data.faxNumber &&
-      existed.some(
-        (c) =>
-          c.faxNumber === data.faxNumber ||
-          c.faxNumberSearch === data.faxNumberSearch,
-      )
-    ) {
-      duplicatedFields.push("faxNumber");
-    }
-    if (data.email && existed.some((c) => c.email === data.email)) {
-      duplicatedFields.push("email");
-    }
+    // if (existed.some((c) => c.taxNumber === data.taxNumber)) {
+    //   duplicatedFields.push("taxNumber");
+    // }
+    // if (
+    //   data.tel &&
+    //   existed.some((c) => c.tel === data.tel || c.telSearch === data.telSearch)
+    // ) {
+    //   duplicatedFields.push("tel");
+    // }
+    // if (
+    //   data.faxNumber &&
+    //   existed.some(
+    //     (c) =>
+    //       c.faxNumber === data.faxNumber ||
+    //       c.faxNumberSearch === data.faxNumberSearch,
+    //   )
+    // ) {
+    //   duplicatedFields.push("faxNumber");
+    // }
+    // if (data.email && existed.some((c) => c.email === data.email)) {
+    //   duplicatedFields.push("email");
+    // }
+
 
     if (duplicatedFields.length > 0) {
       const fieldLabelMap: Record<string, string> = {
-        taxNumber: "เลขผู้เสียภาษี",
-        tel: "เบอร์โทร",
-        faxNumber: "แฟกซ์",
-        email: "อีเมล",
+        name: "ชื่อลูกค้า",
+        // taxNumber: "เลขผู้เสียภาษี",
+        // tel: "เบอร์โทร",
+        // faxNumber: "แฟกซ์",
+        // email: "อีเมล",
       };
       const firstField = duplicatedFields[0];
       return NextResponse.json(
@@ -302,6 +312,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // ถ้าไม่มีข้อมูลซ้ำ ให้สร้างลูกค้าใหม่
     const result = await prisma.customer.create({
       data: data,
     });
