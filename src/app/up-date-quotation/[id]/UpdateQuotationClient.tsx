@@ -87,7 +87,7 @@ export default function UpdateQuotationClient({ id }: { id: string }) {
           salesNameId: data.salesId,
           description: data.description ?? null,
           period: data.period ?? null,
-          deliveryDate: data.deliveryDate,
+          deliveryDate: data.deliveryDate ?? null,
           createdAt: data.createdAt ? new Date(data.createdAt) : new Date(),
         });
 
@@ -233,10 +233,8 @@ export default function UpdateQuotationClient({ id }: { id: string }) {
   // Validation
   // ─────────────────────────────────────────────────────────────────
   const validateForm = () => {
-    if (!customerName.trim()) return "กรุณากรอกชื่อลูกค้า";
-    if (!headOrder.deliveryDate.trim()) return "กรุณากรอก Delivery Date";
     if (!headOrder.quotationNo.trim()) return "กรุณากรอกเลขที่ใบเสนอราคา";
-    if (!headOrder.period) return "กรุณากรอกวันยืนราคา";
+
     if (!headOrder.salesName.trim() || !headOrder.salesNameId)
       return "กรุณาเลือกผู้ขาย";
     if (steelItems.length <= 0)
@@ -271,9 +269,9 @@ export default function UpdateQuotationClient({ id }: { id: string }) {
     }
     setIsSubmitting(true);
 
-    const opt = (v: string | null | undefined) => {
+    const optNull = (v: string | null | undefined) => {
       const s = (v ?? "").trim();
-      return s === "" ? undefined : s;
+      return s === "" ? null : s;
     };
     const optNum = (v: number | null | undefined) =>
       v == null ? undefined : Number.isFinite(v) ? v : undefined;
@@ -281,14 +279,14 @@ export default function UpdateQuotationClient({ id }: { id: string }) {
     try {
       const payload = {
         customerId: customerId ? Number(customerId) : null,
-        customerName: opt(customerName),
+        customerName: optNull(customerName),
 
         credit: optNum(headOrder.credit),
         quotationNo: headOrder.quotationNo,
         salesName: headOrder.salesName,
-        description: opt(headOrder.description ?? undefined),
-        period: headOrder.period,
-        deliveryDate: headOrder.deliveryDate,
+        description: optNull(headOrder.description ?? undefined),
+        period: optNull(headOrder.period ?? undefined),
+        deliveryDate: optNull(headOrder.deliveryDate ?? undefined),
         createdAt: headOrder.createdAt ?? new Date(),
         steelItem: steelItems.map((item, idx) => ({
           SteelId: item.SteelId,
@@ -297,17 +295,17 @@ export default function UpdateQuotationClient({ id }: { id: string }) {
           length: item.length,
           thickness: item.thickness,
           amount: item.amount,
-          detail: opt(item.detail ?? undefined),
+          detail: optNull(item.detail ?? undefined),
           cuttingMethod: item.cuttingMethod ?? "normal",
           weight: item.weight ?? null,
           price: item.price ?? 0,
           discount: item.discount ?? null,
-          surfaceT: opt(item.surfaceT ?? undefined),
-          toleranceT: opt(item.toleranceT ?? undefined),
-          surfaceW: opt(item.surfaceW ?? undefined),
-          toleranceW: opt(item.toleranceW ?? undefined),
-          surfaceL: opt(item.surfaceL ?? undefined),
-          toleranceL: opt(item.toleranceL ?? undefined),
+          surfaceT: optNull(item.surfaceT ?? undefined),
+          toleranceT: optNull(item.toleranceT ?? undefined),
+          surfaceW: optNull(item.surfaceW ?? undefined),
+          toleranceW: optNull(item.toleranceW ?? undefined),
+          surfaceL: optNull(item.surfaceL ?? undefined),
+          toleranceL: optNull(item.toleranceL ?? undefined),
           isOD: item.isOD ?? false,
           isServices: item.isServices ?? false,
           isPerAmount: item.isPerAmount ?? false,

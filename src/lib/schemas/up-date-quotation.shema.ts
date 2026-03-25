@@ -25,13 +25,13 @@ const steelItemSchema = z.object({
 
 export const UpDateQuotationSchema = z.object({
   credit: z.coerce.number().int().nonnegative().optional(),
-  period: z.string().optional(),
+  period: z.string().nullable().optional(),
   quotationNo: z.string().optional(),
-  description: z.string().optional(),
-  deliveryDate: z.string().optional(),
+  description: z.string().nullable().optional(),
+  deliveryDate: z.string().nullable().optional(),
   createdAt: z.coerce.date().optional(),
   idBill: z.number().int().positive().nullable().optional(),
   customerId: z.number().int().positive().nullable().optional(),
-  customerName: z.string().optional(),
+  customerName: z.string().nullable().optional(),
   steelItem: z.array(steelItemSchema).optional(),
 });
