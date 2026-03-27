@@ -1,28 +1,14 @@
-// src/lib/auth.ts
+import "server-only";
+import type { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
-import prisma from "./prisma";
 import bcrypt from "bcrypt";
-import { PrismaAdapter } from "@next-auth/prisma-adapter";
+import prisma from "./prisma";
 
-import type { Session, User } from "next-auth";
-import type { JWT } from "next-auth/jwt";
+if (process.env.NODE_ENV === "production" && !process.env.NEXTAUTH_SECRET) {
+  throw new Error("NEXTAUTH_SECRET is required in production.");
+}
 
-type AppUser = {
-  id: string | number;
-  role?: string | null;
-};
-
-type AppToken = {
-  id?: string | number;
-  role?: string | null;
-};
-
-type AppSessionUser = {
-  id?: string | number;
-  role?: string | null;
-};
-
-export const authOptions = {
+export const authOptions: NextAuthOptions = {
   providers: [
     CredentialsProvider({
       name: "Credentials",
@@ -31,22 +17,20 @@ export const authOptions = {
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        if (!credentials) return null;
+        if (!credentials?.email || !credentials?.password) return null;
 
         const user = await prisma.user.findUnique({
-          where: { email: credentials.email },
+          where: { email: String(credentials.email) },
         });
 
         if (!user) return null;
 
         const isValid = await bcrypt.compare(
-          credentials.password,
+          String(credentials.password),
           user.password,
         );
 
-        if (!isValid) {
-          throw new Error("Invalid email or password");
-        }
+        if (!isValid) return null;
 
         return {
           id: user.id.toString(),
@@ -57,36 +41,21 @@ export const authOptions = {
       },
     }),
   ],
+
   secret: process.env.NEXTAUTH_SECRET,
-  // ลบบรรทัดนี้ออก หรือ comment ไว้
-  // adapter: PrismaAdapter(prisma),
 
   session: {
-    strategy: "jwt" as const,
+    strategy: "jwt",
     maxAge: 30 * 24 * 60 * 60,
   },
 
   callbacks: {
-    // ใส่ type ให้ param เองกัน implicit any
-    async jwt({
-      token,
-      user,
-      trigger,
-      session,
-    }: {
-      token: JWT;
-      user?: User | AppUser | null;
-      trigger?: string;
-      session?: any;
-    }) {
-      // First login - store all user data in token
+    async jwt({ token, user, trigger }) {
       if (user) {
-        const u = user as AppUser;
-        (token as any).id = u.id;
-        (token as any).role = u.role;
+        token.id = user.id;
+        token.role = user.role ?? null;
 
-        // Fetch full user data including image and staff
-        const userId = typeof u.id === "string" ? parseInt(u.id) : u.id;
+        const userId = Number.parseInt(String(user.id), 10);
         const fullUser = await prisma.user.findUnique({
           where: { id: userId },
           select: {
@@ -99,12 +68,7 @@ export const authOptions = {
               select: {
                 id: true,
                 code: true,
-                jobPosition: {
-                  select: {
-                    id: true,
-                    name: true,
-                  },
-                },
+                jobPosition: { select: { id: true, name: true } },
               },
             },
           },
@@ -114,15 +78,14 @@ export const authOptions = {
           token.name = fullUser.name;
           token.email = fullUser.email;
           token.picture = fullUser.image;
-          (token as any).role = fullUser.role;
-          (token as any).staff = fullUser.staff;
+          token.role = fullUser.role;
+          token.staff = fullUser.staff;
         }
       }
 
-      // Update token when session is updated (e.g., after profile image upload)
       if (trigger === "update") {
-        const userId = token.sub ? parseInt(token.sub) : null;
-        if (userId) {
+        const userId = token.sub ? Number.parseInt(token.sub, 10) : null;
+        if (userId && Number.isFinite(userId)) {
           const freshUser = await prisma.user.findUnique({
             where: { id: userId },
             select: {
@@ -135,22 +98,18 @@ export const authOptions = {
                 select: {
                   id: true,
                   code: true,
-                  jobPosition: {
-                    select: {
-                      id: true,
-                      name: true,
-                    },
-                  },
+                  jobPosition: { select: { id: true, name: true } },
                 },
               },
             },
           });
+
           if (freshUser) {
             token.name = freshUser.name;
             token.email = freshUser.email;
             token.picture = freshUser.image;
-            (token as any).role = freshUser.role;
-            (token as any).staff = freshUser.staff;
+            token.role = freshUser.role;
+            token.staff = freshUser.staff;
           }
         }
       }
@@ -158,28 +117,16 @@ export const authOptions = {
       return token;
     },
 
-    async session({
-      session,
-      token,
-    }: {
-      session: Session;
-      token: JWT & AppToken;
-    }) {
-      const baseUser = (session.user || {}) as AppSessionUser;
-
-      // Use data from token (which is stored in cookie and persists across refreshes)
-      return {
-        ...session,
-        user: {
-          ...baseUser,
-          id: token.id,
-          role: token.role,
-          name: token.name,
-          email: token.email,
-          image: token.picture, // image is stored in token.picture
-          staff: (token as any).staff,
-        },
-      };
+    async session({ session, token }) {
+      if (session.user) {
+        session.user.id = token.id ?? token.sub;
+        session.user.role = token.role ?? null;
+        session.user.name = token.name ?? session.user.name;
+        session.user.email = token.email ?? session.user.email;
+        session.user.image = token.picture ?? session.user.image;
+        session.user.staff = token.staff ?? null;
+      }
+      return session;
     },
   },
 
