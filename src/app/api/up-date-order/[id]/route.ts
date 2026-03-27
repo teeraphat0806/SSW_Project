@@ -292,7 +292,7 @@ export async function PATCH(
       if (Object.keys(quotationUpdates).length > 0 && existingQuotation) {
         updateAll.push(
           await tx.quotation.update({
-            where: { id: existing.quotationId },
+            where: { id: existingQuotation.id },
             data: quotationUpdates,
           }),
         );
