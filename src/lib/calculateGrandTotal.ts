@@ -50,7 +50,7 @@ export function calculateWeightDetails(steel: SteelItem): WeightDetails {
   const price = safeNum(steel.price);
   const discount = safeNum(steel.discount);
 
-  if (steel.isServices || steel.isPerAmount) {
+  if (steel.isPerAmount) {
     return {
       weight,
       total: round2(amount * price),

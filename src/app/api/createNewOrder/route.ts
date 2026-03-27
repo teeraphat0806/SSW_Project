@@ -33,23 +33,19 @@ function round2(num: number) {
   return Math.round(num * 100) / 100;
 }
 
-/* =========================================================
-   MAIN ROUTE
-========================================================= */
-
 export async function POST(req: NextRequest) {
-  // 1️⃣ ตรวจสอบสิทธิ์ผู้ใช้
+  //ตรวจสอบสิทธิ์ผู้ใช้
   const auth = await requireAuth(["superadmin", "supervisor", "clerk"]);
-
   if ("response" in auth) return auth.response;
 
   try {
-    // 2️⃣ รับข้อมูลจาก request
+    // รับข้อมูลจาก request
     const body = await req.json();
 
-    // 3️⃣ ตรวจสอบข้อมูลด้วย Zod
+    // ตรวจสอบข้อมูลด้วย Zod
     const parsed = CreateNewOrderSchema.safeParse(body);
 
+    // ถ้าข้อมูลไม่ถูกต้อง ให้ส่ง error กลับไปพร้อมรายละเอียด
     if (!parsed.success) {
       const errors = parsed.error.issues.map((e) => ({
         path: e.path.join("."),
@@ -68,14 +64,8 @@ export async function POST(req: NextRequest) {
     const steelPairs = Array.from(
       new Set(orderPO.products.map((p) => p.SteelId)),
     );
-
-    // 5️⃣ เริ่ม transaction
+    //เริ่ม transaction
     const newBill = await prisma.$transaction(async (tx) => {
-      // ดึงเหล็กจาก database
-      const steelList = await tx.steelType.findMany({
-        where: { id: { in: steelPairs } },
-      });
-
       let CustomerId: number | undefined = data.customerId;
       if (!CustomerId) {
         if (!data.companyName || !data.address || !data.tax) {
@@ -124,13 +114,17 @@ export async function POST(req: NextRequest) {
         }
       }
 
-      // สร้าง map ไว้ค้นหาเหล็กเร็ว ๆ
+      // ดึงเหล็กจาก database
+      const steelList = await tx.steelType.findMany({
+        where: { id: { in: steelPairs } },
+      });
+      // สร้าง map ไว้ค้นหาเหล็ก
       const steelMap = new Map(steelList.map((steel) => [steel.id, steel]));
-      // 7️⃣ คำนวณข้อมูลสินค้าแต่ละรายการ
+      // คำนวณข้อมูลสินค้าแต่ละรายการ
       const calculatedProducts = orderPO.products.map((product, index) => {
         const steel = steelMap.get(product.SteelId);
 
-        // ปกติจะไม่เข้าเงื่อนไขนี้ เพราะเช็ก missing ไปก่อนหน้าแล้ว
+        // ถ้าไม่พบเหล็กที่อ้างอิง ให้โยน error ออกมา
         if (!steel) {
           throw new Error(
             `SteelType not found: ${product.steelType} (${product.shape})`,
@@ -164,23 +158,20 @@ export async function POST(req: NextRequest) {
         };
       });
 
-      // 8️⃣ คำนวณยอดรวมทั้งหมด
+      //คำนวณยอดรวมทั้งหมด
       const subtotal = round2(
         calculatedProducts.reduce((sum, item) => sum + item.total, 0),
       );
-
       const discount = round2(
         calculatedProducts.reduce(
           (sum, item) => sum + Number(item.product.discount ?? 0),
           0,
         ),
       );
-
       const vat = round2((subtotal - discount) * (7 / 100));
-
       const grandTotal = round2(subtotal - discount + vat);
 
-      // 9️⃣ สร้าง Bill และ OrderPO พร้อม Product
+      // สร้าง Bill และ OrderPO พร้อม Product
       return tx.bill.create({
         data: {
           Customer: {
