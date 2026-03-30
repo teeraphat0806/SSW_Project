@@ -71,6 +71,7 @@ model JobPosition {
 model Customer {
   id              Int           @id @default(autoincrement())
   name            String        @unique
+  credit          Int           @default(30)
   address         String
   tel             String?       
   taxNumber       String?       
