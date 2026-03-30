@@ -204,6 +204,22 @@ export async function PATCH(
       if (existing.billId == null) {
         throw new Error("No bill associated with this order");
       }
+      //ตรวจสอบว่ามี Bill ที่เชื่อมโยงกับ Order นี้อยู่จริงไหม
+      const existingBill = await tx.bill.findUnique({
+        where: { id: existing.billId },
+        select: { id: true, vatRate: true },
+      });
+      if (!existingBill) throw new Error("Bill not found");
+
+      //ตรวจสอบว่ามี Quotation ที่เชื่อมโยงกับ Order นี้อยู่จริงไหม (ถ้ามี)
+      let existingQuotation: { id: number } | null = null;
+      if (existing.quotationId) {
+        existingQuotation = await tx.quotation.findUnique({
+          where: { id: existing.quotationId },
+          select: { id: true },
+        });
+        if (!existingQuotation) throw new Error("Quotation not found");
+      }
 
       // Record เอาไว้เก็บ key-value ข้อมูลหมด
       const orderUpdates: Record<string, any> = {};
@@ -214,19 +230,16 @@ export async function PATCH(
       if (patch.deliveryDate) {
         billUpdates.deliveryDate = patch.deliveryDate;
       }
-
       //วันที่ส้ราง
       if (patch.createdAt) {
         billUpdates.createdAt = patch.createdAt;
         quotationUpdates.createdAt = patch.createdAt; // ให้ Quotation เปลี่ยนตามด้วย
       }
-
       //เครดิต
       if (patch.credit !== undefined) {
         billUpdates.credit = patch.credit;
         quotationUpdates.credit = patch.credit; // ให้ Quotation เปลี่ยนตามด้วย
       }
-
       //poNumber
       if (patch.poNumber !== undefined) {
         const nextPoNumber = patch.poNumber.trim();
@@ -264,13 +277,11 @@ export async function PATCH(
         billUpdates.customerId = customerid;
         quotationUpdates.customerId = customerid;
       }
-
       const updateAll = [];
-
       // Object.keys() จะได้เป็น array ของชื่อฟิลด์ที่มีการอัปเดต แล้วค่อยเช็กทีเดียวตอนจะสั่ง update จริงๆ ว่ามีอะไรบ้าง ถ้ามีอย่างน้อย 1 ฟิลด์ถึงจะสั่ง update
       if (Object.keys(billUpdates).length > 0) {
         updateAll.push(
-          await tx.bill.update({
+          tx.bill.update({
             where: { id: existing.billId },
             data: billUpdates,
           }),
@@ -278,10 +289,10 @@ export async function PATCH(
       }
 
       //  สั่งอัปเดต Quotation (ถ้ามีข้อมูลให้แก้ และออเดอร์นี้ผูกกับ Quotation อยู่)
-      if (Object.keys(quotationUpdates).length > 0 && existing.quotationId) {
+      if (Object.keys(quotationUpdates).length > 0 && existingQuotation) {
         updateAll.push(
           await tx.quotation.update({
-            where: { id: existing.quotationId },
+            where: { id: existingQuotation.id },
             data: quotationUpdates,
           }),
         );
@@ -296,6 +307,7 @@ export async function PATCH(
         );
       }
       if (updateAll.length > 0) {
+        //นำคำสั่ง update ทั้งหมดที่เตรียมไว้ไปรันพร้อมกัน
         await Promise.all(updateAll);
       }
 
@@ -305,12 +317,10 @@ export async function PATCH(
           new Set(patch.steel.map((p) => p.SteelId)),
         );
 
-        if (patch.steel.length === 0) {
+        if (patch.steel.length === 0)
           throw new Error("ต้องมีรายการเหล็กอย่างน้อย 1 รายการ");
-        }
-        if (patch.steel.length > 15) {
+        if (patch.steel.length > 15)
           throw new Error("เพิ่มสินค้าได้ไม่เกิน 15 รายการ");
-        }
         const steelTypes = await tx.steelType.findMany({
           where: {
             id: { in: steelPairs },
@@ -330,15 +340,16 @@ export async function PATCH(
 
         await tx.product.deleteMany({ where: { orderPOId: poId } });
 
+        let subtotal = 0;
+        let totalDiscount = 0;
+
         // สร้างใหม่รายการเหล็กทั้งหมด
         await tx.product.createMany({
           // l คือ line item ที่ส่งมาใน patch
           data: patch.steel.map((l, index) => {
             //st คือ steelType จาก database
             const steel = steelMap.get(l.SteelId)!;
-
             const price = safeNum(l.price);
-
             const { total } = calculateWeightDetails({
               shape: steel.shape as ShapeSteel,
               amount: l.amount,
@@ -355,6 +366,8 @@ export async function PATCH(
               isServices: l.isServices ?? false,
               isPerAmount: l.isPerAmount ?? false,
             });
+            subtotal += total;
+            totalDiscount += l.discount ?? 0;
 
             return {
               orderPOId: poId,
@@ -373,68 +386,47 @@ export async function PATCH(
               isOD: l.isOD ?? false,
               isServices: l.isServices ?? false,
               isPerAmount: l.isPerAmount ?? false,
-              total: l.isPerAmount ? price * l.amount : total,
+              total,
             };
           }),
         });
-        // หาค่ารวมจำนวนเงินกับส่วนลดรวม
-        const sum = await tx.product.aggregate({
-          where: { orderPOId: poId },
 
-          _sum: { total: true, discount: true },
-        });
+        if (existingBill) {
+          //  มี Bill อยู่แล้ว → update
+          const vatRate = existingBill.vatRate ?? 7;
+          const vat = round2((subtotal - totalDiscount) * (vatRate / 100));
+          const grandTotal = round2(subtotal - totalDiscount + vat);
 
-        // update total ใน orderPO
-        await tx.orderPO.update({
-          where: { id: poId },
-          data: { total: sum._sum.total ?? 0 },
-        });
-
-        const subtotal = sum._sum.total ?? 0;
-        const discount = sum._sum.discount ?? 0;
-
-        // update บิลที่เชื่อมโยงกับ orderPO นี้
-        const orderWithBill = await tx.orderPO.findUnique({
-          where: { id: poId },
-          select: {
-            billId: true,
-            customerId: true,
-          },
-        });
-
-        if (!orderWithBill) throw new Error("Order not found");
-
-        if (existing.billId) {
-          // 🔁 มี Bill อยู่แล้ว → update
-          const bill = await tx.bill.findUnique({
-            where: { id: existing.billId },
-            select: { id: true, vatRate: true },
-          });
-
-          if (!bill) throw new Error("Bill not found");
-
-          const vatRate = bill.vatRate ?? 7;
-          const vat = round2((subtotal - discount) * (vatRate / 100));
-          const grandTotal = round2(subtotal - discount + vat);
-
-          await tx.bill.update({
-            where: { id: bill.id },
-            data: {
-              subtotal,
-              discount,
-              vat,
-              grandTotal,
-            },
-          });
-
-          if (existing.quotationId) {
-            await tx.quotation.update({
-              where: { id: existing.quotationId },
-              data: { subtotal, discount, vat, grandTotal },
-            });
+          const updatePromises: Promise<any>[] = [
+            tx.orderPO.update({
+              where: { id: poId },
+              data: { total: subtotal },
+            }),
+            tx.bill.update({
+              where: { id: existingBill.id },
+              data: {
+                subtotal,
+                discount: totalDiscount,
+                vat,
+                grandTotal,
+              },
+            }),
+          ];
+          if (existingQuotation) {
+            updatePromises.push(
+              tx.quotation.update({
+                where: { id: existingQuotation!.id },
+                data: {
+                  subtotal,
+                  discount: totalDiscount,
+                  vat,
+                  grandTotal,
+                },
+              }),
+            );
           }
-        } else {
-          throw new Error("No bill associated with this order");
+
+          await Promise.all(updatePromises);
         }
       }
 
