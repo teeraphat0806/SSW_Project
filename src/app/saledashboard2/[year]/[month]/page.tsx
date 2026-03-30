@@ -32,6 +32,8 @@ interface MonthSummaryData {
   income: {
     total: number;
     formatted: string;
+    nonInvoicedTotal: number;
+    nonInvoicedTotalFormatted: string;
     billCount: number;
     avgPerBill: number;
   };
@@ -44,6 +46,8 @@ interface MonthSummaryData {
   net: {
     total: number;
     formatted: string;
+    totalWithAndWithoutInvoice: number;
+    totalWithAndWithoutInvoiceFormatted: string;
     percentage: number;
     profitMargin: number;
   };

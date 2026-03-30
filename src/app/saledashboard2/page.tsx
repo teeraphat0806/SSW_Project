@@ -13,6 +13,8 @@ interface KPISummaryData {
   salesAmount: {
     total: number;
     formatted: string;
+    totalWithAndWithoutInvoice: number;
+    totalWithAndWithoutInvoiceFormatted: string;
   };
   salesQuantity: {
     total: number;
@@ -21,14 +23,22 @@ interface KPISummaryData {
   income: {
     total: number;
     formatted: string;
+    totalWithAndWithoutInvoice: number;
+    totalWithAndWithoutInvoiceFormatted: string;
+    totalWithAndWithoutInvoiceAfterTax: number;
+    totalWithAndWithoutInvoiceAfterTaxFormatted: string;
   };
   expense: {
     total: number;
     formatted: string;
+    totalTax: number;
+    totalTaxFormatted: string;
   };
   netProfit: {
     total: number;
     formatted: string;
+    totalWithAndWithoutInvoice: number;
+    totalWithAndWithoutInvoiceFormatted: string;
     percentage: number;
   };
   topCustomer?: {
