@@ -79,7 +79,7 @@ export default function HeaderOrder({
                 <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   id="headerCustomerName"
-                  value={customerName}
+                  value={customerName ?? ""}
                   onChange={(e) => onCustomerNameChange(e.target.value)}
                   placeholder="สมพงษ์ โลหะกิจ"
                   className="pl-9"
@@ -171,7 +171,7 @@ export default function HeaderOrder({
                 <Truck className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   id="deliveryDate"
-                  value={headOrder.deliveryDate}
+                  value={headOrder.deliveryDate ?? ""}
                   onChange={(e) =>
                     setheadOrder((prev) => ({
                       ...prev,

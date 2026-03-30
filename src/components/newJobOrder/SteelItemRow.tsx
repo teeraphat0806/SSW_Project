@@ -20,7 +20,6 @@ type SteelItemRowProps = {
   item: SteelItem;
   idx: number;
   steelTypes: SteelType[];
-  weightEnabled?: boolean;
   useJob: boolean;
   searchItem: string;
   setsearchItem: (val: string) => void;
@@ -38,11 +37,16 @@ type SteelItemRowProps = {
 const noNumberSpinnerClass =
   "[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none";
 
+const preventWheelNumberChange: React.WheelEventHandler<HTMLInputElement> = (
+  e,
+) => {
+  e.currentTarget.blur();
+};
+
 export function SteelItemRow({
   item,
   idx,
   steelTypes,
-  weightEnabled = true,
   useJob,
   searchItem,
   setsearchItem,
@@ -70,10 +74,7 @@ export function SteelItemRow({
   };
 
   const isLine = item.shape === "line";
-  const selectedType = steelTypes.find(
-    (t) => t.steelType === item.steelType && t.shape === item.shape,
-  );
-  const selectedValue = selectedType ? String(selectedType.id) : "";
+  const selectedValue = item.SteelId ? String(item.SteelId) : "";
 
   const fmtKg = (n: number) =>
     Intl.NumberFormat(undefined, {
@@ -124,6 +125,7 @@ export function SteelItemRow({
                     (t) => String(t.id) === value,
                   );
                   if (selected) {
+                    updateSteelItem(item.id, "SteelId", Number(selected.id));
                     updateSteelItem(item.id, "steelType", selected.steelType);
                     updateSteelItem(item.id, "shape", selected.shape);
                     updateSteelItem(
@@ -139,6 +141,8 @@ export function SteelItemRow({
                     if (selected.shape === "line") {
                       updateSteelItem(item.id, "wide", null);
                       updateSteelItem(item.id, "isOD", false);
+                    } else if (item.wide == null) {
+                      updateSteelItem(item.id, "wide", 0);
                     }
                   }
                 }}
@@ -203,6 +207,7 @@ export function SteelItemRow({
                       inputMode="decimal"
                       className={`h-10 border-zinc-200 bg-white pr-7 text-center hover:border-blue-400 focus-visible:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-900 ${noNumberSpinnerClass}`}
                       value={item.thickness ?? 0}
+                      onWheel={preventWheelNumberChange}
                       onChange={(e) =>
                         updateSteelItem(
                           item.id,
@@ -231,6 +236,7 @@ export function SteelItemRow({
                         inputMode="decimal"
                         className={`h-10 border-zinc-200 bg-white pr-7 text-center hover:border-blue-400 focus-visible:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-900 ${noNumberSpinnerClass}`}
                         value={item.wide ?? 0}
+                        onWheel={preventWheelNumberChange}
                         onChange={(e) =>
                           updateSteelItem(
                             item.id,
@@ -259,6 +265,7 @@ export function SteelItemRow({
                       inputMode="decimal"
                       className={`h-10 border-zinc-200 bg-white pr-7 text-center hover:border-blue-400 focus-visible:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-900 ${noNumberSpinnerClass}`}
                       value={item.length ?? 0}
+                      onWheel={preventWheelNumberChange}
                       onChange={(e) =>
                         updateSteelItem(
                           item.id,
@@ -285,6 +292,7 @@ export function SteelItemRow({
                 min={0}
                 className={`h-10 w-full border-blue-200 bg-blue-50 text-center font-bold text-blue-700 shadow-sm focus-visible:ring-blue-500 dark:border-blue-900 dark:bg-blue-900/20 dark:text-blue-400 ${noNumberSpinnerClass}`}
                 value={item.amount ?? 1}
+                onWheel={preventWheelNumberChange}
                 onChange={(e) =>
                   updateSteelItem(
                     item.id,
@@ -306,8 +314,8 @@ export function SteelItemRow({
                   step="0.01"
                   inputMode="decimal"
                   className={`h-10 border-zinc-200 bg-white pr-8 text-right font-mono text-sm hover:border-blue-400 focus-visible:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 ${noNumberSpinnerClass}`}
-                  disabled={!weightEnabled}
                   value={item.weight ?? 0}
+                  onWheel={preventWheelNumberChange}
                   onChange={(e) =>
                     updateSteelItem(
                       item.id,
@@ -342,7 +350,7 @@ export function SteelItemRow({
                   )
                 }
               >
-                <SelectTrigger className="h-10 w-full min-w-[160px] border-zinc-200 bg-white text-sm focus:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100">
+                <SelectTrigger className="h-10 w-full min-w-40 border-zinc-200 bg-white text-sm focus:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100">
                   <SelectValue placeholder="เลือกวิธีตัด" />
                 </SelectTrigger>
                 <SelectContent>
@@ -479,6 +487,7 @@ export function SteelItemRow({
                   type="number"
                   min={0}
                   value={item.price ?? 0}
+                  onWheel={preventWheelNumberChange}
                   onChange={(e) =>
                     updateSteelItem(
                       item.id,
@@ -505,6 +514,7 @@ export function SteelItemRow({
                   type="number"
                   min={0}
                   value={item.discount ?? ""}
+                  onWheel={preventWheelNumberChange}
                   onChange={(e) =>
                     updateSteelItem(
                       item.id,
@@ -546,7 +556,7 @@ export function SteelItemRow({
             )}
 
             {/* Notes */}
-            <div className="flex-1 min-w-[150px]">
+            <div className="flex-1 min-w-37.5">
               <label className="mb-1.5 block text-xs font-medium text-zinc-500 dark:text-zinc-400">
                 หมายเหตุ
               </label>

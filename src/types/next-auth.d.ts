@@ -8,7 +8,7 @@ declare module "next-auth" {
 
   interface Session extends DefaultSession {
     user: DefaultSession["user"] & {
-      id?: string | number;
+      id?: string;
       role?: string | null;
       staff?: {
         id: number;
@@ -24,8 +24,16 @@ declare module "next-auth" {
 
 declare module "next-auth/jwt" {
   interface JWT {
-    id?: string | number;
+    id?: string;
     role?: string | null;
+    staff?: {
+      id: number;
+      code: string;
+      jobPosition?: {
+        id: number;
+        name: string;
+      } | null;
+    } | null;
   }
 }
 

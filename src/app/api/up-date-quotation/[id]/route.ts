@@ -13,7 +13,7 @@ export type ApiQuotation = {
   idPO: number;
   idBill?: number | null;
   customerId: number | null;
-  customerName: string;
+  customerName?: string | null;
   companyName: string;
   address: string;
   tel: string | null;
@@ -24,7 +24,7 @@ export type ApiQuotation = {
   salesId: number;
   description: string | null;
   period: string | null;
-  deliveryDate: string;
+  deliveryDate?: string | null;
   createdAt: Date;
   updateAt: Date;
   steelItem: {
@@ -71,7 +71,7 @@ function toApi(order: OrderWithRelation): ApiQuotation {
     idPO: order.id,
     idBill: order.billId ?? null,
     customerId: order.Quotation.customerId ?? null,
-    customerName: order.Quotation.customerName,
+    customerName: order.Quotation.customerName ?? null,
     companyName: order.Customer?.name ?? "",
     address: order.Customer?.address ?? "",
     tel: order.Customer?.tel ?? null,
@@ -82,7 +82,7 @@ function toApi(order: OrderWithRelation): ApiQuotation {
     salesId: order.Quotation.salesNameId,
     description: order.Quotation.description ?? null,
     period: order.Quotation.period ?? null,
-    deliveryDate: order.Quotation.deliveryDate,
+    deliveryDate: order.Quotation.deliveryDate ?? null,
     createdAt: order.Quotation.createdAt,
     updateAt: order.Quotation.updatedAt,
     steelItem: order.Product.map((product) => ({
@@ -202,14 +202,12 @@ export async function PATCH(
           where: { id: parsed.data.customerId },
           select: { taxNumber: true },
         });
-        if (!Customer || !Customer.taxNumber) {
-          throw new Error(
-            "ไม่สามารถเปลี่ยนลูกค้าได้เนื่องจากออเดอร์นี้มีบิลแล้ว และลูกค้านี้ไม่มีเลขประจำตัวผู้เสียภาษี",
-          );
+        if (!Customer) {
+          throw new Error("ไม่พบข้อมูลลูกค้าในระบบ");
         }
       }
       // ส่วนแก้ไขข้อมูลทั่วไป
-      const editFields = [  
+      const editFields = [
         "customerId",
         "customerName",
         "period",

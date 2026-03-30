@@ -5,7 +5,7 @@ import { digitsOnly } from "../calculateGrandTotal";
 export const CreateNewQuotationSchema = z.object({
   quotationNo: z.string(),
   customerId: z.number().int().positive().optional(),
-  customerName: z.string(),
+  customerName: z.string().nullable().optional(),
   companyName: z.string().optional(),
   address: z.string(),
   tel: z.preprocess(
@@ -74,8 +74,8 @@ export const CreateNewQuotationSchema = z.object({
   //   vat: z.number().nonnegative().optional(),
   //   subTotal: z.number().nonnegative().optional(),
   //   grandTotal: z.number().nonnegative().optional(),
-  period: z.string(),
-  deliveryDate: z.string(),
+  period: z.string().nullable().optional(),
+  deliveryDate: z.string().nullable().optional(),
   createdAt: z.coerce.date().optional(),
 
   orderPO: z.object({

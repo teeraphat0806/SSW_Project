@@ -281,13 +281,7 @@ export default function CreateNewQuotationPage() {
       if (!formData.companyName.trim()) return "กรุณากรอกชื่อบริษัท";
       if (!formData.address.trim()) return "กรุณากรอกที่อยู่";
     }
-    if (!formData.customerName.trim()) return "กรุณากรอกชื่อลูกค้า";
-
-    if (!headOrder.deliveryDate.trim())
-      return "กรุณากรอกวันที่ส่งของ (Delivery Date)";
     if (!headOrder.quotationNo.trim()) return "กรุณากรอกเลขที่ใบเสนอราคา";
-    if (!headOrder.period) return "กรุณากรอกระยะเวลาการยืนราคา";
-
     if (!headOrder.salesName.trim() || !headOrder.salesNameId)
       return "กรุณาเลือกผู้ขาย";
 

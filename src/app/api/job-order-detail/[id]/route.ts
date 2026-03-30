@@ -121,7 +121,7 @@ export async function GET(
       );
     }
 
-    // 🔴 ถ้าไม่มี Customer หรือ Bill ถือว่าข้อมูล order เสีย / ไม่สมบูรณ์
+    //  ถ้าไม่มี Customer หรือ Bill ถือว่าข้อมูล order เสีย / ไม่สมบูรณ์
     if (!jobOrder.Customer || !jobOrder.bill) {
       return NextResponse.json(
         { error: "Order is missing Customer or Bill relation" },
@@ -133,7 +133,7 @@ export async function GET(
     const allStaff: ApiStaffMember[] = links.map((x) => ({
       id: x.staff.id,
       name: x.staff.user?.name ?? x.staff.code,
-      role: x.role, // ✅ role ในงาน (SUPERVISOR/CUTTER)
+      role: x.role, 
     }));
 
     const supervisors = allStaff.filter((s) => s.role === "supervisor");

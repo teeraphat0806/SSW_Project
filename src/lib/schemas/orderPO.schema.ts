@@ -8,5 +8,6 @@ export const OrderPOSchema = z.object({
   status: z.enum(['pending', 'cutting', 'weighing', 'ready', 'shipped', 'completed']).optional(),
   total: z.number(),
   vat: z.number(),
+  urlPo: z.array(z.string()).optional(),
   completedAt: z.coerce.date().optional(),
 })

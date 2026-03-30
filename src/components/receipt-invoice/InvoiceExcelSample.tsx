@@ -144,7 +144,7 @@ export const InvoiceExcelSample: React.FC<Inv71LikeInvoiceProps> = ({
             <div className="mt-1">เลขประจำตัวผู้เสียภาษี {taxId}</div>
           </div>
 
-          <div className="min-w-[170px] text-sm space-y-3 mr-20 text-center">
+          <div className="min-w-42.5 text-sm space-y-3 mr-20 text-center">
             <div>
               <span>
                 HS{invoice ? invoice.toString().padStart(8, "0") : ""}
@@ -176,13 +176,13 @@ export const InvoiceExcelSample: React.FC<Inv71LikeInvoiceProps> = ({
         {/* หัวคอลัมน์แบบ Excel (ไม่มีกรอบ) */}
         <table className="w-full text-sm">
           <colgroup>
-            <col className="w-[35px]" />
-            <col className="w-[300px]" />
-            <col className="w-[100px]" />
-            <col className="w-[60px]" />
-            <col className="w-[80px]" />
-            <col className="w-[80px]" />
-            <col className="w-[100px]" />
+            <col className="w-8.75" />
+            <col className="w-75" />
+            <col className="w-25" />
+            <col className="w-15" />
+            <col className="w-20" />
+            <col className="w-20" />
+            <col className="w-25" />
           </colgroup>
 
           <thead>
@@ -223,7 +223,7 @@ export const InvoiceExcelSample: React.FC<Inv71LikeInvoiceProps> = ({
 
               if (item.isOD) {
                 const steelPrefix = item.isServices === true ? "" : "เหล็ก ";
-                steelDisplay = `${steelPrefix}${item.steelType} ${item.thickness} t OD ${item.width} ID ${item.length === 0 || !item.length ? item.length : ""} ${
+                steelDisplay = `${steelPrefix}${item.steelType} ${item.thickness} t OD ${item.width} ${item.length === 0 || !item.length ? "" : "ID " + item.length} ${
                   item.unit || "mm."
                 }`;
               } else {
@@ -276,14 +276,14 @@ export const InvoiceExcelSample: React.FC<Inv71LikeInvoiceProps> = ({
               return (
                 <tr key={idx} className="align-top">
                   <td className="pt-0.5 pr-1 pl-0">{idx + 1}</td>
-                  <td className="pt-0.5 pr-1">{steelDisplay}</td>
+                  <td className="pt-0.5 pr-1 whitespace-nowrap">{steelDisplay}</td>
                   <td className="pt-0.5 pr-1 text-right pl-1">{jobDisplay}</td>
                   <td className="pt-0.5 pr-6 text-right pl-1">{item.amount}</td>
                   <td className="pt-0.5 pr-1 text-right">{weightDisplay}</td>
                   <td className="pt-0.5 pr-1 text-right pl-5">
                     {showPriceAndTotal ? formatNumber(item.price) : ""}
                   </td>
-                  <td className="pt-0.5 pr-30 text-left"></td>
+                  <td className="pt-0.5 pr-30 text-left whitespace-nowrap"></td>
                   <td className="pt-0.5 pr-0 pl-4 text-right">
                     {showPriceAndTotal ? formatNumber(item.total) : ""}
                   </td>
@@ -296,22 +296,22 @@ export const InvoiceExcelSample: React.FC<Inv71LikeInvoiceProps> = ({
         {/* ===== โซนรวมยอด (ติดล่างเสมอ) ===== */}
         {/* เอา mb-45 ออก แล้วคุมระยะจากขอบล่างด้วย pb-[8mm] ที่ container แทน */}
         <div className="mt-auto">
-          <div className="space-y-[2px] mr-0">
+          <div className="space-y-0.5 mr-0">
             <div className="flex justify-between">
               <span className="flex-1" />
-              <span className="w-[160px] text-right">
+              <span className="w-40 text-right">
                 {!shouldShowTotals ? "" : formatNumber(subtotal)}
               </span>
             </div>
 
             <div className="flex justify-between">
               <span className="flex-1" />
-              <span className="w-[160px] text-right">&nbsp;</span>
+              <span className="w-40 text-right">&nbsp;</span>
             </div>
 
             <div className="flex justify-between">
               <span className="flex-1" />
-              <span className="w-[160px] text-right">
+              <span className="w-40 text-right">
                 {!shouldShowTotals ? "" : formatNumber(subtotal)}
               </span>
             </div>
@@ -319,7 +319,7 @@ export const InvoiceExcelSample: React.FC<Inv71LikeInvoiceProps> = ({
             {discount != null && discount > 0 && (
               <div className="flex justify-between">
                 <span className="flex-1" />
-                <span className="w-[160px] text-right">
+                <span className="w-40 text-right">
                   {formatNumber(discount)}
                 </span>
               </div>
@@ -327,7 +327,7 @@ export const InvoiceExcelSample: React.FC<Inv71LikeInvoiceProps> = ({
 
             <div className="flex justify-between">
               <span className="flex-1" />
-              <span className="w-[150px] text-right">
+              <span className="w-37.5 text-right">
                 {!shouldShowTotals ? "" : formatNumber(vat)}
               </span>
             </div>
@@ -337,7 +337,7 @@ export const InvoiceExcelSample: React.FC<Inv71LikeInvoiceProps> = ({
             <div className="flex-1 ml-7">
               {!shouldShowTotals ? "" : totalTextThai}
             </div>
-            <div className="w-[160px] text-right font-semibold">
+            <div className="w-40 text-right font-semibold">
               {!shouldShowTotals ? "" : formatNumber(total)}
             </div>
           </div>

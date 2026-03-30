@@ -13,7 +13,6 @@ type AddItemProps = {
   addSteelItem: () => void;
   removeSteelItem: (id: SteelItem["id"]) => void;
   steelTypes: SteelType[];
-  weightEnabled?: boolean;
   headOrder: HeadOrderType;
   setheadOrder: React.Dispatch<React.SetStateAction<HeadOrderType>>;
   searchItem: string;
@@ -30,7 +29,6 @@ export default function AddItem({
   addSteelItem,
   removeSteelItem,
   steelTypes,
-  weightEnabled = true,
   headOrder,
   setheadOrder,
   searchItem,
@@ -70,7 +68,6 @@ export default function AddItem({
         addSteelItem={addSteelItem}
         removeSteelItem={removeSteelItem}
         steelTypes={steelTypes}
-        weightEnabled={weightEnabled}
         useJob={useJob}
         setUseJob={setUseJob}
         searchItem={searchItem}

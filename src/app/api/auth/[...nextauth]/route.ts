@@ -1,10 +1,9 @@
-import NextAuth from "next-auth/next";
+import NextAuth from "next-auth";
 import { authOptions } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 
-// ✅ ย้าย as any เข้าไปข้างในวงเล็บ
-// เพื่อบังคับให้ TypeScript ยอมรับ authOptions นี้ แม้ Type จะไม่ตรงเป๊ะๆ
-const handler = NextAuth(authOptions as any);
+const handler = NextAuth(authOptions);
 
 export { handler as GET, handler as POST };

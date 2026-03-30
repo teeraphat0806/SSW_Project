@@ -15,7 +15,7 @@ export type HeadOrder = {
   salesNameId: number;
   description: string | null;
   period: string | null;
-  deliveryDate: string;
+  deliveryDate?: string | null;
   createdAt: Date | null;
 };
 

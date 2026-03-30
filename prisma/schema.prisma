@@ -70,16 +70,17 @@ model JobPosition {
 
 model Customer {
   id              Int           @id @default(autoincrement())
-  name            String
+  name            String        @unique
+  credit          Int           @default(30)
   address         String
-  tel             String?       @unique
-  taxNumber       String?       @unique
-  faxNumber       String?       @unique
-  email           String?       @unique
+  tel             String?       
+  taxNumber       String?       
+  faxNumber       String?       
+  email           String?       
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
-  faxNumberSearch String?       @unique
-  telSearch       String?       @unique
+  faxNumberSearch String?       
+  telSearch       String?       
   Acquittances    Acquittance[]
   Bill            Bill[]
   OrderPO         OrderPO[]
@@ -91,7 +92,7 @@ model Quotation {
     id            Int       @id @default(autoincrement())
     quotationNo   String    @unique
     customerId    Int
-    customerName  String
+    customerName  String?
     credit        Int       @default(30)
     salesName     String
     salesNameId   Int
@@ -102,7 +103,7 @@ model Quotation {
     grandTotal    Float?
     discount      Float?
     period        String?
-    deliveryDate  String
+    deliveryDate  String?
     createdAt     DateTime  @default(now())
     updatedAt     DateTime  @updatedAt
     
