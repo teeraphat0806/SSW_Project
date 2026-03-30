@@ -15,6 +15,8 @@ interface MonthSummaryData {
   income: {
     total: number;
     formatted: string;
+    nonInvoicedTotal: number;
+    nonInvoicedTotalFormatted: string;
     billCount: number;
     avgPerBill: number;
   };
@@ -27,6 +29,8 @@ interface MonthSummaryData {
   net: {
     total: number;
     formatted: string;
+    totalWithAndWithoutInvoice: number;
+    totalWithAndWithoutInvoiceFormatted: string;
     percentage: number;
     profitMargin: number;
   };
@@ -57,7 +61,7 @@ export function MonthSummaryCards({ data }: MonthSummaryCardsProps) {
         format="currency"
         variant="gradient-green"
         icon={DollarSign}
-        subtitle={`จากบิลทั้งหมด ${data.income.billCount.toLocaleString()} รายการ | เฉลี่ย ฿${data.income.avgPerBill.toLocaleString()} ต่อบิล`}
+        subtitle={`จากบิลทั้งหมด ${data.income.billCount.toLocaleString()} รายการ | (มี/ไม่มี Invoice) ฿${data.income.nonInvoicedTotal.toLocaleString()}`}
       />
 
       {/* Total Expense Card */}
@@ -78,7 +82,7 @@ export function MonthSummaryCards({ data }: MonthSummaryCardsProps) {
         variant={data.net.total >= 0 ? "gradient-blue" : "danger"}
         icon={data.net.total >= 0 ? TrendingUp : TrendingDown}
         colorCode={data.net.total >= 0 ? "profit" : "loss"}
-        subtitle={`${data.net.total >= 0 ? "กำไร" : "ขาดทุน"} ${Math.abs(data.net.percentage)}% | อัตรากำไร ${data.net.profitMargin.toFixed(1)}%`}
+        subtitle={`${data.net.total >= 0 ? "กำไร" : "ขาดทุน"} ${Math.abs(data.net.percentage)}% | (มี/ไม่มี Invoice) ฿${data.net.totalWithAndWithoutInvoice.toLocaleString()}`}
       />
 
       {/* Bill Count Card */}
