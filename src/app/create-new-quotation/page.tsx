@@ -42,6 +42,7 @@ const maxItem = 15;
 type CustomerApiItem = {
   id: number;
   name: string;
+  credit: number;
 };
 
 type CustomerApiResponse = {
@@ -91,7 +92,7 @@ export default function CreateNewQuotationPage() {
   const [selectedCustomerId, setSelectedCustomerId] = useState<number | null>(
     null,
   );
-  const [customers, setCustomers] = useState<{ id: number; name: string }[]>(
+  const [customers, setCustomers] = useState<{ id: number; name: string; credit: number }[]>(
     [],
   );
   const [searchCustomer, setSearchCustomer] = useState("");
@@ -244,6 +245,7 @@ export default function CreateNewQuotationPage() {
             json.data.map((c: CustomerApiItem) => ({
               id: c.id,
               name: c.name,
+              credit: c.credit ?? 30,
             })),
           );
         }
@@ -261,6 +263,15 @@ export default function CreateNewQuotationPage() {
       ignore = true;
     };
   }, [searchCustomer, searchItem]);
+
+  useEffect(() => {
+    if (showForm) return;
+    if (selectedCustomerId == null) return;
+    const selected = customers.find((c) => c.id === selectedCustomerId);
+    if (!selected) return;
+
+    setheadOrder((prev) => ({ ...prev, credit: selected.credit }));
+  }, [selectedCustomerId]);
 
   // เช้คว่ามีรายการที่ตัดแบบ F/B แต่ไม่ได้กรอกค่า surfaceT หรือ toleranceT หรือไม่
   const hasInvalidFBItem = SteelItem.some((item) => {

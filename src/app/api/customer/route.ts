@@ -117,6 +117,7 @@ export async function GET(req: NextRequest) {
         select: {
           id: true,
           name: true,
+          credit: true,
           tel: true,
           telSearch: true,
           taxNumber: true,
@@ -135,6 +136,7 @@ export async function GET(req: NextRequest) {
         select: {
           id: true,
           name: true,
+          credit: true,
           tel: true,
           email: true,
           taxNumber: true,
@@ -226,9 +228,10 @@ export async function POST(req: NextRequest) {
     if (parsed.data.faxNumber) {
       faxNumberSearch = digitsOnly(parsed.data.faxNumber);
     }
-    const data = {
+    const data: Prisma.CustomerCreateInput = {
       name: parsed.data.name,
       address: parsed.data.address,
+      ...(parsed.data.credit !== undefined ? { credit: parsed.data.credit } : {credit: 0}),
       tel: parsed.data.tel,
       telSearch: telSearch,
       taxNumber: parsed.data.taxNumber,
@@ -240,24 +243,12 @@ export async function POST(req: NextRequest) {
   // ตรวจสอบว่ามีข้อมูลซ้ำหรือไม่
     const uniqueChecks: Prisma.CustomerWhereInput[] = [];
     if (data.name) uniqueChecks.push({ name: data.name });
-    // if (data.taxNumber) uniqueChecks.push({ taxNumber: data.taxNumber });
-    // if (data.email) uniqueChecks.push({ email: data.email });
-    // if (data.tel) uniqueChecks.push({ tel: data.tel });
-    // if (data.telSearch) uniqueChecks.push({ telSearch: data.telSearch });
-    // if (data.faxNumber) uniqueChecks.push({ faxNumber: data.faxNumber });
-    // if (data.faxNumberSearch)
-    //   uniqueChecks.push({ faxNumberSearch: data.faxNumberSearch });
     //ดึงข้อมูลที่ซ้ำ
     const existed = await prisma.customer.findMany({
       where: { OR: uniqueChecks },
       select: {
         name: true,
-        // taxNumber: true,
-        // tel: true,
-        // telSearch: true,
-        // faxNumber: true,
-        // faxNumberSearch: true,
-        // email: true,
+        
       },
     });
 
@@ -311,7 +302,7 @@ export async function POST(req: NextRequest) {
         { status: 409 },
       );
     }
-
+    console.log("Creating customer with data:", data);
     // ถ้าไม่มีข้อมูลซ้ำ ให้สร้างลูกค้าใหม่
     const result = await prisma.customer.create({
       data: data,

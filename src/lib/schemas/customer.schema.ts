@@ -5,6 +5,7 @@ export const CustomerSchema = z.object({
   id: z.number().optional(),
   name: z.string().trim().min(1),
   address: z.string().trim().min(1),
+  credit: z.number().min(0).optional(),
   tel: z.preprocess(
     (v) => {
       if (v === undefined) return undefined;

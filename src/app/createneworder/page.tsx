@@ -38,6 +38,7 @@ import {
 type CustomerApiItem = {
   id: number;
   name: string;
+  credit: number;
 };
 
 type CustomerApiResponse = {
@@ -110,9 +111,9 @@ const NewJobOrder = () => {
   const [open, setOpen] = useState(false); //เปิดหรือปิด SelectCustomer
   const [useJob, setUseJob] = useState(false);
   // ลูกค้า
-  const [customers, setCustomers] = useState<{ id: number; name: string }[]>(
-    [],
-  );
+  const [customers, setCustomers] = useState<
+    { id: number; name: string; credit: number }[]
+  >([]);
   const [searchCustomer, setSearchCustomer] = useState(""); // เก็บค่าที่ค้นหาลูกค้า
 
   // สินค้า
@@ -235,6 +236,7 @@ const NewJobOrder = () => {
             json.data.map((c: CustomerApiItem) => ({
               id: c.id,
               name: c.name,
+              credit: c.credit ?? 30,
             })),
           );
         }
@@ -253,6 +255,14 @@ const NewJobOrder = () => {
       ignore = true;
     };
   }, [searchCustomer, searchItem]);
+
+  useEffect(() => {
+    if (selectedCustomerId == null) return;
+    const selected = customers.find((c) => c.id === selectedCustomerId);
+    if (!selected) return;
+
+    setheadOrder((prev) => ({ ...prev, credit: selected.credit }));
+  }, [selectedCustomerId]);
 
   useEffect(() => {
     const firstSteelType = steelTypes[0];
