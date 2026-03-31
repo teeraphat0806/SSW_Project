@@ -16,12 +16,10 @@ export async function GET(req: NextRequest) {
     return authResult.response;
   }
 
-  const { session } = authResult;
-  console.log(session);
-
   try {
     // Get query parameters
     const searchParams = req.nextUrl.searchParams;
+    console.log("searchParams:", Object.fromEntries(searchParams.entries()));
     const year = searchParams.get("year");
     const month = searchParams.get("month");
     const customerId = searchParams.get("customerId") || "";
@@ -233,6 +231,44 @@ export async function GET(req: NextRequest) {
       },
     });
 
+    const invoice = await prisma.invoice.findMany({
+      where: {
+        createdAt: {
+          gte: startOfPeriod,
+          lte: endOfPeriod,
+        },
+      },
+      select: {
+        id: true,
+        createdAt: true,
+        codetoinvoice: true,
+        invoiceNo: true,
+      },
+      orderBy: {
+        invoiceNo: "asc",
+      },
+    });
+
+
+    const orderPO = await prisma.orderPO.findMany({
+      where: {codetoinvoice: {in: invoice.map((i) => i.codetoinvoice)}},
+      include: {
+        bill: {
+          select: {
+            grandTotal: true,
+          }
+        },
+         Customer: {
+          select: {
+            id: true,
+            name: true,
+            address: true,
+          }
+         }
+      }
+    })
+
+   
     // Get unique codetoinvoice values and fetch all invoices
     const codetoinvoices = bills
       .map((b) => b.OrderPO?.codetoinvoice)
@@ -260,27 +296,41 @@ export async function GET(req: NextRequest) {
       });
     }
 
+    const poMap = new Map(orderPO.map((po) => [po.codetoinvoice, po]));
+
+
     // Format the data
-    const formattedBills = bills.map((bill) => {
-      const code = bill.OrderPO?.codetoinvoice;
+    const formattedBills = invoice.map((invoice) => {
+      const po  =  poMap.get(invoice.codetoinvoice);
       return {
-        id: bill.id,
-        createdAt: bill.createdAt?.toISOString() || null,
-        invoiceNo: invoiceMap.get(code ?? 0) || null,
-        customerName: bill.Customer?.name || "ไม่ระบุ",
-        customerAddress: bill.Customer?.address || "",
-        grandTotal: bill.grandTotal || 0,
+        id: invoice.id,
+        createdAt: invoice.createdAt?.toISOString() || null,
+        invoiceNo: invoice.invoiceNo || null,
+        customerName: po?.Customer?.name || "ไม่ระบุ",
+        customerAddress: po?.Customer?.address || "",
+        grandTotal: po?.bill?.grandTotal || 0,
         formatted: {
-          createdAt: bill.createdAt
-            ? bill.createdAt.toLocaleDateString("th-TH", {
+          createdAt: invoice.createdAt
+            ? invoice.createdAt.toLocaleDateString("th-TH", {
                 year: "numeric",
                 month: "long",
                 day: "numeric",
               })
             : "-",
-          grandTotal: `฿${(bill.grandTotal || 0).toLocaleString("en-US")}`,
+          grandTotal: `฿${(po?.bill?.grandTotal || 0).toLocaleString("en-US")}`,
         },
       };
+    });
+
+    console.log("Formatted Bills:", formattedBills);
+
+    // Sort by invoiceNo ASC; null/undefined invoiceNo goes last
+    formattedBills.sort((a, b) => {
+      if (a.invoiceNo == null && b.invoiceNo == null) return 0;
+      if (a.invoiceNo == null) return 1;
+      if (b.invoiceNo == null) return -1;
+      if (a.invoiceNo !== b.invoiceNo) return a.invoiceNo - b.invoiceNo;
+      return String(a.id).localeCompare(String(b.id));
     });
 
     // Calculate summary
