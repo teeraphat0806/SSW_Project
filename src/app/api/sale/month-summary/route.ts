@@ -98,6 +98,7 @@ export async function GET(req: NextRequest) {
 
     const [
       incomeStats,
+      nonInvoicedIncomeStats,
       expenseStats,
       allStaff,
       employmentsFromDB,
@@ -119,6 +120,23 @@ export async function GET(req: NextRequest) {
           vat: true,
         },
         _count: { id: true },
+      }),
+      prisma.bill.aggregate({
+        where: {
+          createdAt: { gte: startOfMonth, lt: endOfMonthExclusive },
+          OR: [
+            {
+              OrderPO: {
+                is: {
+                  status: { not: "canceled" },
+                },
+              },
+            },
+          ],
+        },
+        _sum: {
+          grandTotal: true,
+        },
       }),
       prisma.expense.aggregate({
         where: {
@@ -198,6 +216,8 @@ export async function GET(req: NextRequest) {
     const totalIncome = incomeStats._sum.grandTotal || 0;
     const totalSubtotal = incomeStats._sum.subtotal || 0;
     const totalTax = incomeStats._sum.vat || 0;
+    const nonInvoicedIncome = nonInvoicedIncomeStats._sum.grandTotal || 0;
+
     const billCount = incomeStats._count.id || 0;
     const avgPerBill =
       billCount > 0 ? parseFloat((totalIncome / billCount).toFixed(2)) : 0;
@@ -212,6 +232,7 @@ export async function GET(req: NextRequest) {
         : 0;
 
     const netTotal = totalIncome - totalExpense;
+    const netTotalWithAndWithoutInvoice = nonInvoicedIncome - totalExpense;
     const netPercentage =
       totalIncome > 0
         ? parseFloat(((netTotal / totalIncome) * 100).toFixed(1))
@@ -223,11 +244,11 @@ export async function GET(req: NextRequest) {
       where: {
         createdAt: { gte: startOfMonth, lt: endOfMonthExclusive },
         OrderPO: {
-            is: {
-              status: { not: "canceled" },
-              Invoice: { isNot: null },
-            },
+          is: {
+            status: { not: "canceled" },
+            Invoice: { isNot: null },
           },
+        },
       },
       _count: { id: true },
       _sum: { grandTotal: true },
@@ -288,6 +309,8 @@ export async function GET(req: NextRequest) {
             subtotalFormatted: `฿${totalSubtotal.toLocaleString("en-US")}`,
             totalTax: totalTax,
             totalTaxFormatted: `฿${totalTax.toLocaleString("en-US")}`,
+            nonInvoicedTotal: nonInvoicedIncome,
+            nonInvoicedTotalFormatted: `฿${nonInvoicedIncome.toLocaleString("en-US")}`,
             billCount,
             avgPerBill,
           },
@@ -304,6 +327,8 @@ export async function GET(req: NextRequest) {
           net: {
             total: netTotal,
             formatted: `฿${netTotal.toLocaleString("en-US")}`,
+            totalWithAndWithoutInvoice: netTotalWithAndWithoutInvoice,
+            totalWithAndWithoutInvoiceFormatted: `฿${netTotalWithAndWithoutInvoice.toLocaleString("en-US")}`,
             percentage: netPercentage,
             profitMargin,
           },
