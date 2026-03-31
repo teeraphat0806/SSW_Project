@@ -41,6 +41,7 @@ export async function POST(req: NextRequest) {
   try {
     // รับข้อมูลจาก request
     const body = await req.json();
+    console.log("Received data:", body);
 
     // ตรวจสอบข้อมูลด้วย Zod
     const parsed = CreateNewOrderSchema.safeParse(body);
@@ -120,8 +121,34 @@ export async function POST(req: NextRequest) {
       });
       // สร้าง map ไว้ค้นหาเหล็ก
       const steelMap = new Map(steelList.map((steel) => [steel.id, steel]));
+
+      // ถ้า sequence ซ้ำกัน จะชน @@unique([orderPOId, sequence]) ของตาราง Product
+      const duplicateSequences = new Set<number>();
+      {
+        const seen = new Set<number>();
+        for (const p of orderPO.products) {
+          if (seen.has(p.sequence)) duplicateSequences.add(p.sequence);
+          else seen.add(p.sequence);
+        }
+      }
+      const shouldNormalizeSequence = duplicateSequences.size > 0;
+
+      const productsWithOriginalIndex = orderPO.products.map((product, i) => ({
+        product,
+        originalIndex: i,
+      }));
+
+      const productsForCalc = shouldNormalizeSequence
+        ? productsWithOriginalIndex
+            .slice()
+            .sort(
+              (a, b) =>
+                a.product.sequence - b.product.sequence ||
+                a.originalIndex - b.originalIndex,
+            )
+        : productsWithOriginalIndex;
       // คำนวณข้อมูลสินค้าแต่ละรายการ
-      const calculatedProducts = orderPO.products.map((product, index) => {
+      const calculatedProducts = productsForCalc.map(({ product }, index) => {
         const steel = steelMap.get(product.SteelId);
 
         // ถ้าไม่พบเหล็กที่อ้างอิง ให้โยน error ออกมา
@@ -214,7 +241,9 @@ export async function POST(req: NextRequest) {
                       id: item.steel.id,
                     },
                   },
-                  sequence: item.product.sequence ?? item.index + 1,
+                  sequence: shouldNormalizeSequence
+                    ? item.index + 1
+                    : item.product.sequence ?? item.index + 1,
 
                   wide: item.product.wide ?? null,
                   length: item.product.length,
