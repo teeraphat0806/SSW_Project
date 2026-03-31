@@ -38,6 +38,7 @@ export async function GET(
     const [
       billStats,
       revenueStats,
+      totalWithAndWithoutInvoiceStats,
       expenseStats,
       allStaff,
       employmentsFromDB,
@@ -70,12 +71,36 @@ export async function GET(
           },
           OrderPO: {
             is: {
-              status: "completed",
+              status: { not: "canceled" },
+              Invoice: { isNot: null },
             },
           },
         },
         _sum: {
           grandTotal: true,
+          vat: true,
+        },
+      }),
+      prisma.bill.aggregate({
+        where: {
+          createdAt: {
+            gte: startOfYear,
+            lt: endOfYearExclusive,
+          },
+          OR: [
+            { OrderPO: { is: null } },
+            {
+              OrderPO: {
+                is: {
+                  status: { not: "canceled" },
+                },
+              },
+            },
+          ],
+        },
+        _sum: {
+          grandTotal: true,
+          vat: true,
         },
       }),
       prisma.expense.aggregate({
@@ -180,7 +205,8 @@ export async function GET(
         },
         OrderPO: {
           is: {
-            status: "completed",
+            status: { not: "canceled" },
+            Invoice: { isNot: null },
           },
         },
       },
@@ -227,14 +253,22 @@ export async function GET(
 
     const totalSales = billStats._sum.grandTotal || 0;
     const orderCount = billStats._count.id || 0;
-    const totalRevenue = revenueStats._sum.grandTotal || 0;
+    const totalRevenueGross = revenueStats._sum.grandTotal || 0;
+    const totalRevenueTax = revenueStats._sum.vat || 0;
+    const totalRevenue = totalRevenueGross - totalRevenueTax;
+    const totalWithAndWithoutInvoiceGross =
+      totalWithAndWithoutInvoiceStats._sum.grandTotal || 0;
+    const totalWithAndWithoutInvoiceTax =
+      totalWithAndWithoutInvoiceStats._sum.vat || 0;
+    const totalWithAndWithoutInvoiceNet =
+      totalWithAndWithoutInvoiceGross - totalWithAndWithoutInvoiceTax;
     const totalExpenseAmount = expenseStats._sum.amount || 0;
     const totalExpense = totalExpenseAmount + totalSalaryAmount;
-    const profit = totalRevenue - totalExpense;
+    const profit = totalSales - totalExpense;
+    const profitWithAndWithoutInvoice =
+      totalWithAndWithoutInvoiceGross - totalExpense;
     const profitPercentage =
-      totalRevenue > 0
-        ? parseFloat(((profit / totalRevenue) * 100).toFixed(1))
-        : 0;
+      totalSales > 0 ? parseFloat(((profit / totalSales) * 100).toFixed(1)) : 0;
 
     return NextResponse.json(
       {
@@ -243,6 +277,8 @@ export async function GET(
           salesAmount: {
             total: totalSales,
             formatted: `฿${totalSales.toLocaleString("en-US")}`,
+            totalWithAndWithoutInvoice: totalWithAndWithoutInvoiceGross,
+            totalWithAndWithoutInvoiceFormatted: `฿${totalWithAndWithoutInvoiceGross.toLocaleString("en-US")}`,
           },
           salesQuantity: {
             total: orderCount,
@@ -251,14 +287,22 @@ export async function GET(
           income: {
             total: totalRevenue,
             formatted: `฿${totalRevenue.toLocaleString("en-US")}`,
+            totalWithAndWithoutInvoice: totalWithAndWithoutInvoiceGross,
+            totalWithAndWithoutInvoiceFormatted: `฿${totalWithAndWithoutInvoiceGross.toLocaleString("en-US")}`,
+            totalWithAndWithoutInvoiceAfterTax: totalWithAndWithoutInvoiceNet,
+            totalWithAndWithoutInvoiceAfterTaxFormatted: `฿${totalWithAndWithoutInvoiceNet.toLocaleString("en-US")}`,
           },
           expense: {
             total: totalExpense,
             formatted: `฿${totalExpense.toLocaleString("en-US")}`,
+            totalTax: totalWithAndWithoutInvoiceTax,
+            totalTaxFormatted: `฿${totalWithAndWithoutInvoiceTax.toLocaleString("en-US")}`,
           },
           netProfit: {
             total: profit,
             formatted: `฿${profit.toLocaleString("en-US")}`,
+            totalWithAndWithoutInvoice: profitWithAndWithoutInvoice,
+            totalWithAndWithoutInvoiceFormatted: `฿${profitWithAndWithoutInvoice.toLocaleString("en-US")}`,
             percentage: profitPercentage,
           },
           salary: {

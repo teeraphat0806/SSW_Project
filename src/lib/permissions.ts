@@ -38,12 +38,10 @@ function normalizeRole(rawRole: string | null | undefined): Role {
 }
 
 export async function requireAuth(
-  allowedRoles?: Role[]
+  allowedRoles?: Role[],
 ): Promise<RequireAuthResult> {
   // 👇 บอก TS ชัด ๆ ว่าเป็น Session | null
-  const session = (await getServerSession(
-    authOptions as any
-  )) as Session | null;
+  const session = (await getServerSession(authOptions)) as Session | null;
 
   if (!session || !session.user) {
     console.log("No session or user found");
@@ -51,7 +49,7 @@ export async function requireAuth(
       ok: false,
       response: NextResponse.json(
         { error: "Unauthenticated" },
-        { status: 401 }
+        { status: 401 },
       ),
     };
   }
@@ -66,7 +64,7 @@ export async function requireAuth(
         ok: false,
         response: NextResponse.json(
           { error: "Permission Denied!!" },
-          { status: 403 }
+          { status: 403 },
         ),
       };
     }
@@ -74,7 +72,7 @@ export async function requireAuth(
 
   return {
     ok: true,
-    session, // 👈 ตอนนี้ type = Session แน่นอน (เรา cast ด้านบนแล้ว + check ไม่ null)
+    session,
     role,
   };
 }

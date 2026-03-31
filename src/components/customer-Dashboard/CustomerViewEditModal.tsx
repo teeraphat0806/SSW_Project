@@ -14,6 +14,7 @@ import {
   Calendar,
   Hash,
   Building2,
+  CreditCard,
 } from "lucide-react";
 import { toast } from "react-toastify";
 import z from "zod";
@@ -25,6 +26,7 @@ type Customer = {
   code: string;
   name: string;
   address: string;
+  credit: number;
   tel: string | null;
   email: string | null;
   taxNumber: string;
@@ -52,8 +54,6 @@ type FieldRowProps = {
   required?: boolean;
   type?: string;
 };
-
-
 
 const FieldRow = ({
   label,
@@ -128,6 +128,7 @@ export default function CustomerViewEditModal({
     email: "",
     taxNumber: "",
     faxNumber: "",
+    credit: 0,
   });
 
   const isReady = open && typeof customerId === "number";
@@ -141,7 +142,8 @@ export default function CustomerViewEditModal({
       form.tel !== (customer.tel ?? "") ||
       form.email !== (customer.email ?? "") ||
       form.taxNumber !== (customer.taxNumber ?? "") ||
-      form.faxNumber !== (customer.faxNumber ?? "")
+      form.faxNumber !== (customer.faxNumber ?? "") ||
+      form.credit !== (customer.credit ?? 0)
     );
   }, [customer, form]);
 
@@ -167,6 +169,7 @@ export default function CustomerViewEditModal({
         email: body.email ?? "",
         taxNumber: body.taxNumber ?? "",
         faxNumber: body.faxNumber ?? "",
+        credit: body.credit ?? 0,
       });
       setMode("view");
     } catch (e: any) {
@@ -344,6 +347,19 @@ export default function CustomerViewEditModal({
                     onChange={(v) => setForm((p) => ({ ...p, faxNumber: v }))}
                     icon={<Phone size={14} />}
                   />
+                  <FieldRow
+                    label="เครดิต"
+                    value={
+                      mode === "view"
+                        ? customer.credit.toString()
+                        : form.credit.toString()
+                    }
+                    isEditing={mode === "edit"}
+                    onChange={(v) =>
+                      setForm((p) => ({ ...p, credit: parseFloat(v) || 0 }))
+                    }
+                    icon={<CreditCard size={14} />}
+                  />
                 </div>
               </div>
 
@@ -442,6 +458,7 @@ export default function CustomerViewEditModal({
                       email: customer!.email ?? "",
                       taxNumber: customer!.taxNumber,
                       faxNumber: customer!.faxNumber ?? "",
+                      credit: customer!.credit ?? 0,
                     });
                   }}
                   disabled={saving}

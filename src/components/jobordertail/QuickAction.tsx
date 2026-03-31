@@ -54,6 +54,12 @@ type StatementData = {
   customerId: number;
 };
 
+const displayPoFileName = (key: string) => {
+  const lastSeg = key.split("/").pop() || key;
+  const idx = lastSeg.lastIndexOf("_");
+  return idx >= 0 ? lastSeg.slice(idx + 1) : lastSeg;
+};
+
 const openPoUrl = (objectKey: string) =>
   "/api/upload/po/openPo/" +
   objectKey.split("/").map(encodeURIComponent).join("/");
@@ -429,7 +435,7 @@ export function QuickAction({
                     >
                       <File className="h-3.5 w-3.5 text-blue-500" />
                       <span className="truncate text-sm">
-                        {idx + 1}. {fileNameFromKey(k)}
+                        {idx + 1}. {displayPoFileName(k)}
                       </span>
                     </DropdownMenuItem>
                   ))}

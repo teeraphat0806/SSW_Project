@@ -5,9 +5,7 @@ export const CustomerSchema = z.object({
   id: z.number().optional(),
   name: z.string().trim().min(1),
   address: z.string().trim().min(1),
-  // Optional fields:
-  // - allow empty string -> null (clear)
-  // - validate only when present
+  credit: z.number().min(0).optional(),
   tel: z.preprocess(
     (v) => {
       if (v === undefined) return undefined;
@@ -25,9 +23,22 @@ export const CustomerSchema = z.object({
       .optional(),
   ),
 
-  taxNumber: z
-    .preprocess((v) => digitsOnly(String(v ?? "")), z.string())
-    .refine((v) => v.length === 13, "เลขผู้เสียภาษีต้องเป็นตัวเลข 13 หลัก"),
+  taxNumber: z.preprocess(
+    (v) => {
+      if (v === undefined) return undefined;
+      if (v === null) return null;
+      const raw = String(v).trim();
+      return raw.length ? raw : null;
+    },
+    z
+      .string()
+      .refine((raw) => {
+        const s = digitsOnly(raw);
+        return s.length === 13;
+      }, "เลขผู้เสียภาษีต้องเป็นตัวเลข 13 หลัก")
+      .nullable()
+      .optional(),
+  ),
   faxNumber: z.preprocess(
     (v) => {
       if (v === undefined) return undefined;

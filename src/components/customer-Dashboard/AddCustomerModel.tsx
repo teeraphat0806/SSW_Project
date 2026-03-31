@@ -10,14 +10,16 @@ import {
   User,
   MapPin,
   Mail,
+  CreditCard,
 } from "lucide-react";
 import { toast } from "react-toastify";
 import { CustomerSchema } from "@/lib/schemas/customer.schema";
 
-// --- Types & Schema (คงเดิม) ---
+// --- Types & Schema ---
 type CustomerPayload = {
   name: string;
   address: string;
+  credit?: number;
   tel: string;
   email: string;
   taxNumber: string;
@@ -33,6 +35,7 @@ type Props = {
 const initialForm: CustomerPayload = {
   name: "",
   address: "",
+  credit: 30,
   tel: "",
   email: "",
   taxNumber: "",
@@ -49,6 +52,12 @@ type CustomerApiError = {
   };
 };
 
+  const preventWheelNumberChange: React.WheelEventHandler<HTMLInputElement> = (
+    e,
+  ) => {
+    e.currentTarget.blur();
+  };
+
 // --- Component ---
 export default function AddCustomerModal({ open, onClose, onCreated }: Props) {
   const [form, setForm] = React.useState<CustomerPayload>(initialForm);
@@ -56,6 +65,8 @@ export default function AddCustomerModal({ open, onClose, onCreated }: Props) {
   const [submitting, setSubmitting] = React.useState(false);
   const [errorTop, setErrorTop] = React.useState<string | null>(null);
   const [isVisible, setIsVisible] = React.useState(false); // For animation
+
+
 
   // Animation logic
   React.useEffect(() => {
@@ -87,7 +98,15 @@ export default function AddCustomerModal({ open, onClose, onCreated }: Props) {
     (key: keyof CustomerPayload) =>
     (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
       const value = e.target.value;
-      setForm((p) => ({ ...p, [key]: value }));
+      if (key === "credit") {
+        const n = Number(value);
+        setForm((p) => ({
+          ...p,
+          credit: value.trim() === "" || Number.isNaN(n) ? undefined : n,
+        }));
+      } else {
+        setForm((p) => ({ ...p, [key]: value }));
+      }
       setFieldErrors((prev) => {
         if (!prev[key]) return prev;
         const next = { ...prev };
@@ -139,10 +158,12 @@ export default function AddCustomerModal({ open, onClose, onCreated }: Props) {
           email: "email",
           name: "name",
           address: "address",
+          credit: "credit",
         };
         const fieldLabelMap: Record<keyof CustomerPayload, string> = {
           name: "ชื่อลูกค้า",
           address: "ที่อยู่",
+          credit: "เครดิต",
           tel: "เบอร์โทร",
           email: "อีเมล",
           taxNumber: "เลขผู้เสียภาษี",
@@ -281,16 +302,25 @@ export default function AddCustomerModal({ open, onClose, onCreated }: Props) {
               error={fieldErrors.taxNumber}
               inputMode="numeric"
               icon={<FileText size={16} />}
-              required
             />
 
-            <InputField
+            <InputField 
               label="เลขแฟกซ์ (Fax ID)"
               value={form.faxNumber}
               onChange={setField("faxNumber")}
               placeholder="7-13 หลัก"
               error={fieldErrors.faxNumber}
               icon={<FileText size={16} />}
+            />
+
+            <InputField
+              label="เครดิต (วัน)"
+              type="number"
+              value={form.credit ?? ""}
+              onChange={setField("credit")}
+              placeholder="จำนวนวัน"
+              error={fieldErrors.credit}
+              icon={<CreditCard size={16} />}
             />
 
             {/* Section 2: การติดต่อ */}
@@ -390,7 +420,7 @@ export default function AddCustomerModal({ open, onClose, onCreated }: Props) {
 // --- Sub-component: Input Field เพื่อความสะอาดของโค้ด ---
 type InputFieldProps = {
   label: string;
-  value: string;
+  value: React.InputHTMLAttributes<HTMLInputElement>["value"];
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   error?: string;
   icon?: React.ReactNode;
@@ -430,6 +460,7 @@ function InputField({
           inputMode={inputMode}
           value={value}
           onChange={onChange}
+          onWheel={type === "number" ? preventWheelNumberChange : undefined}
           className={`
             w-full rounded-lg border h-10 bg-white text-sm outline-none transition-all placeholder:text-zinc-400
             dark:bg-zinc-950 dark:text-zinc-200

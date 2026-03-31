@@ -8,7 +8,6 @@ import {
   ChevronDown,
   ChevronLeft,
   ChevronRight,
-  Search,
   CheckSquare,
   X,
 } from "lucide-react";
@@ -23,6 +22,7 @@ import {
 import { Button } from "../ui/button";
 import SelectCustomer from "../SelectCustomer";
 import { Input } from "../ui/input";
+import SearchDebounce from "@/components/SearchDebounce";
 import {
   Table,
   TableHeader,
@@ -288,13 +288,9 @@ export default function CreateAcquittanceDialog({
           <div className="flex items-center justify-between gap-3">
             <span className="font-semibold">Invoice ที่เลือกแล้ว</span>
             <div className="ml-auto relative w-full max-w-xs">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400 dark:text-zinc-400" />
-              <Input
-                type="text"
-                value={selectedInvoiceSearch}
-                onChange={(e) => setSelectedInvoiceSearch(e.target.value)}
+              <SearchDebounce
                 placeholder="ค้นหาเลขที่ใบวางบิล,วันที่ออก,เลขที่บิล,ยอดรวม"
-                className="h-9 w-full rounded-lg border-gray-300 dark:border-zinc-600 bg-white dark:bg-zinc-900/70 pl-9 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-zinc-400 focus-visible:ring-1 focus-visible:ring-blue-500"
+                onSearchChange={setSelectedInvoiceSearch}
               />
             </div>
             <Button
@@ -440,13 +436,9 @@ export default function CreateAcquittanceDialog({
           <div className="flex items-center justify-between gap-3">
             <span className="font-semibold">Invoice ที่เลือกได้</span>
             <div className="ml-auto relative w-full max-w-xs">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400 dark:text-zinc-400" />
-              <Input
-                type="text"
-                value={availableInvoiceSearch}
-                onChange={(e) => setAvailableInvoiceSearch(e.target.value)}
+              <SearchDebounce
                 placeholder="ค้นหาเลขที่ใบวางบิล,วันที่ออก,เลขที่บิล,ยอดรวม"
-                className="h-9 w-full rounded-lg border-gray-300 dark:border-zinc-600 bg-white dark:bg-zinc-900/70 pl-9 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-zinc-400 focus-visible:ring-1 focus-visible:ring-blue-500"
+                onSearchChange={setAvailableInvoiceSearch}
               />
             </div>
             <Button

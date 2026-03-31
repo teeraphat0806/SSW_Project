@@ -54,6 +54,7 @@ type ApiJobOrder = {
   updatedAt: Date;
   status: status;
   createdAt: Date;
+  completedAt?: Date | null;
   deliveryDate: Date;
 };
 
@@ -120,7 +121,7 @@ export async function GET(
       );
     }
 
-    // 🔴 ถ้าไม่มี Customer หรือ Bill ถือว่าข้อมูล order เสีย / ไม่สมบูรณ์
+    //  ถ้าไม่มี Customer หรือ Bill ถือว่าข้อมูล order เสีย / ไม่สมบูรณ์
     if (!jobOrder.Customer || !jobOrder.bill) {
       return NextResponse.json(
         { error: "Order is missing Customer or Bill relation" },
@@ -132,7 +133,7 @@ export async function GET(
     const allStaff: ApiStaffMember[] = links.map((x) => ({
       id: x.staff.id,
       name: x.staff.user?.name ?? x.staff.code,
-      role: x.role, // ✅ role ในงาน (SUPERVISOR/CUTTER)
+      role: x.role, 
     }));
 
     const supervisors = allStaff.filter((s) => s.role === "supervisor");
@@ -187,11 +188,11 @@ export async function GET(
         isPerAmount: p.isPerAmount,
       })),
       status: jobOrder.status,
-      // createdAt จาก OrderPO เอง (ตาม schema)
+
       createdAt: jobOrder.createdAt,
       updatedAt: jobOrder.updatedAt,
-      // deliveryDate ต้องมาจาก Bill (บังคับมีค่าใน schema)
       deliveryDate: bill.deliveryDate,
+      completedAt: jobOrder.completedAt,
     };
 
     return NextResponse.json(apiJobOrder, { status: 200 });
@@ -274,21 +275,6 @@ export async function PATCH(
         );
       }
 
-      const hasMissingWeight = po.Product.some(
-        (p) =>
-          p.isPerAmount === false &&
-          (p.actualWeight === null || p.actualWeight <= 0),
-      );
-
-      if (hasMissingWeight) {
-        return NextResponse.json(
-          {
-            error:
-              "ไม่สามารถเปลี่ยนเป็น READY ได้กรุณากรอกน้ำหนักเหล็กในรายการที่คิดราคาตามน้ำหนัก",
-          },
-          { status: 400 },
-        );
-      }
     }
 
     // ✅ ตรวจสอบ transition rules
@@ -327,7 +313,9 @@ export async function PATCH(
 
     const result = await prisma.orderPO.update({
       where: { id: poId },
-      data: { status: body.status },
+      data: { status: body.status ,
+        ...(body.status === "completed" ? { completedAt: new Date() } : {})
+      },
     });
 
     if (body.status === "shipped" && result.billId !== null) {

@@ -41,7 +41,7 @@ model Staff {
   employments                  StaffEmployment[]
   StaffIncome                  StaffIncome[]
   StaffSalary                  StaffSalary[]
-
+  quotation                    Quotation[]
   @@index([positionId])
 }
 
@@ -70,20 +70,48 @@ model JobPosition {
 
 model Customer {
   id              Int           @id @default(autoincrement())
-  name            String
+  name            String        @unique
+  credit          Int           @default(30)
   address         String
-  tel             String?       @unique
-  taxNumber       String        @unique
-  faxNumber       String?       @unique
-  email           String?       @unique
+  tel             String?       
+  taxNumber       String?       
+  faxNumber       String?       
+  email           String?       
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
-  faxNumberSearch String?       @unique
-  telSearch       String?       @unique
+  faxNumberSearch String?       
+  telSearch       String?       
   Acquittances    Acquittance[]
   Bill            Bill[]
   OrderPO         OrderPO[]
   Statements      Statement[]
+  quotation       Quotation[]
+}
+
+model Quotation {
+    id            Int       @id @default(autoincrement())
+    quotationNo   String    @unique
+    customerId    Int
+    customerName  String?
+    credit        Int       @default(30)
+    salesName     String
+    salesNameId   Int
+    description   String?
+    vatRate       Float     @default(7.0)
+    vat           Float?
+    subtotal      Float?
+    grandTotal    Float?
+    discount      Float?
+    period        String?
+    deliveryDate  String?
+    createdAt     DateTime  @default(now())
+    updatedAt     DateTime  @updatedAt
+    
+    OrderPO       OrderPO? @relation("Quotation_OrderPO")
+    staff         Staff    @relation(fields: [salesNameId], references: [id])
+    customer      Customer @relation(fields: [customerId],references: [id])
+
+    @@index([customerId])
 }
 
 model Bill {
@@ -120,6 +148,7 @@ model OrderPO {
   poNumber      String?
   customerId    Int?
   billId        Int?           @unique
+  quotationId   Int?           @unique
   status        JobStatus      @default(pending)
   total         Float
   completedAt   DateTime?
@@ -127,6 +156,7 @@ model OrderPO {
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
   codetoinvoice Int            @unique @default(autoincrement())
+  Quotation     Quotation?     @relation("Quotation_OrderPO",fields:[quotationId],references:[id])
   Invoice       Invoice?       @relation("OrderPO_Invoice")
   bill          Bill?          @relation(fields: [billId], references: [id])
   Customer      Customer?      @relation(fields: [customerId], references: [id])
@@ -223,6 +253,12 @@ model Product {
   thickness     Float
   amount        Int
   detail        String?
+  surfaceT       String?
+  toleranceT     String?
+  surfaceW       String?
+  toleranceW     String?
+  surfaceL       String?
+  toleranceL     String?
   actualWeight  Float?
   total         Float?
   cuttingMethod CuttingMethod @default(normal)
@@ -237,7 +273,7 @@ model Product {
   SteelType     SteelType     @relation(fields: [steelId], references: [id])
 
   @@index([orderPOId])
-  @@index([orderPOId, sequence])
+  @@unique([orderPOId, sequence])
   @@index([steelId])
 }
 

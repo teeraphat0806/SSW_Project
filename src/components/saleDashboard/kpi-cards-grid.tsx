@@ -14,6 +14,8 @@ interface KPISummaryData {
   salesAmount: {
     total: number;
     formatted: string;
+    totalWithAndWithoutInvoice: number;
+    totalWithAndWithoutInvoiceFormatted: string;
   };
   salesQuantity: {
     total: number;
@@ -22,14 +24,22 @@ interface KPISummaryData {
   income: {
     total: number;
     formatted: string;
+    totalWithAndWithoutInvoice: number;
+    totalWithAndWithoutInvoiceFormatted: string;
+    totalWithAndWithoutInvoiceAfterTax: number;
+    totalWithAndWithoutInvoiceAfterTaxFormatted: string;
   };
   expense: {
     total: number;
     formatted: string;
+    totalTax: number;
+    totalTaxFormatted: string;
   };
   netProfit: {
     total: number;
     formatted: string;
+    totalWithAndWithoutInvoice: number;
+    totalWithAndWithoutInvoiceFormatted: string;
     percentage: number;
   };
   topCustomer?: {
@@ -58,7 +68,7 @@ export function KPICardsGrid({ data }: KPICardsGridProps) {
         format="currency"
         variant="gradient-blue"
         icon={DollarSign}
-        subtitle="ยอดขายทั้งหมด"
+        subtitle={`ยอดขายทั้งหมด | (มี/ไม่มี Invoice) ฿${data.salesAmount.totalWithAndWithoutInvoice.toLocaleString()}`}
       />
 
       <KPIStatCard
@@ -67,7 +77,7 @@ export function KPICardsGrid({ data }: KPICardsGridProps) {
         format="currency"
         variant="gradient-green"
         icon={TrendingUp}
-        subtitle={`${data.netProfit.percentage}% จากรายได้`}
+        subtitle={`${data.netProfit.percentage}% จากรายได้ | (มี/ไม่มี Invoice) ฿${data.netProfit.totalWithAndWithoutInvoice.toLocaleString()}`}
       />
 
       <KPIStatCard
@@ -85,7 +95,7 @@ export function KPICardsGrid({ data }: KPICardsGridProps) {
         format="currency"
         variant="success"
         icon={CreditCard}
-        subtitle="รายได้จากบิล"
+        subtitle={`รายได้จากบิล (หักภาษีแล้ว) | (มี/ไม่มี Invoice) ฿${data.income.totalWithAndWithoutInvoiceAfterTax.toLocaleString()}`}
       />
 
       <KPIStatCard
@@ -94,7 +104,7 @@ export function KPICardsGrid({ data }: KPICardsGridProps) {
         format="currency"
         variant="danger"
         icon={Package}
-        subtitle="รายจ่ายทั้งหมด"
+        subtitle={`รายจ่ายทั้งหมด | ยอดภาษี ${data.expense.totalTax.toLocaleString()}`}
       />
 
       {data.topCustomer && (

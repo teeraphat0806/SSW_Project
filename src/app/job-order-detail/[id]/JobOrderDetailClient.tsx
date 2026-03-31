@@ -200,7 +200,12 @@ const InfoStat = ({
     </div>
     <div className="space-y-1">
       <p className="text-xs font-medium text-muted-foreground">{label}</p>
-      <p className="text-xs font-semibold text-foreground">{value}</p>
+      <p
+        className="text-xs font-semibold text-foreground whitespace-nowrap overflow-hidden text-ellipsis"
+        title={value}
+      >
+        {value}
+      </p>
     </div>
   </div>
 );
@@ -262,22 +267,22 @@ const JobOrderDetailPage = ({ id }: { id: string }) => {
   const handleStatusUpdate = async (newStatus: JobOrder["status"]) => {
     if (!jobOrder) return;
 
-    if (newStatus === "ready") {
-      const hasInvalidWeight = jobOrder.steel.some(
-        (s) => s.isPerAmount === false && (!s.weight || s.weight <= 0),
-      );
-      if (hasInvalidWeight) {
-        toast.error(
-          "ยังไปขั้นตอนถัดไปไม่ได้: ต้องกรอกน้ำหนักเหล็กก่อน แล้วจึงเปลี่ยนเป็น READY ได้",
-          {
-            position: "bottom-right",
-          },
-        );
-        console.log("Cannot change to READY: Weight missing");
+    // if (newStatus === "ready") {
+    //   const hasInvalidWeight = jobOrder.steel.some(
+    //     (s) => s.isPerAmount === false && (!s.weight || s.weight <= 0),
+    //   );
+    //   if (hasInvalidWeight) {
+    //     toast.error(
+    //       "ยังไปขั้นตอนถัดไปไม่ได้: ต้องกรอกน้ำหนักเหล็กก่อน แล้วจึงเปลี่ยนเป็น READY ได้",
+    //       {
+    //         position: "bottom-right",
+    //       },
+    //     );
+    //     console.log("Cannot change to READY: Weight missing");
 
-        return;
-      }
-    }
+    //     return;
+    //   }
+    // }
 
     setIsUpdating(true);
     try {

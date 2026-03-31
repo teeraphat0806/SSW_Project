@@ -39,16 +39,6 @@ type staffApi = {
 export async function GET(req: NextRequest) {
   const url = new URL(req.url);
 
-  // const parsedQ = QuerySchema.safeParse({
-  //   role: url.searchParams.get("role"),
-  // });
-  // if (!parsedQ.success) {
-  //   return NextResponse.json(
-  //     { error: parsedQ.error.flatten() },
-  //     { status: 400 },
-  //   );
-  // }
-
   const parsedQ = QuerySchema.safeParse({
     role: url.searchParams.get("role"),
   });

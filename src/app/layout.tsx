@@ -5,6 +5,7 @@ import { Theme } from "@radix-ui/themes";
 import { getServerSession } from "next-auth/next";
 import SessionProvider from "../components/SessionProvider";
 import { ThemeProvider } from "@/components/saleDashboard/theme-provider";
+import { authOptions } from "@/lib/auth";
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -28,7 +29,7 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const session = await getServerSession();
+  const session = await getServerSession(authOptions);
   return (
     <html lang="en" suppressHydrationWarning>
       <body
