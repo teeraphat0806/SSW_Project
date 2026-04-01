@@ -206,16 +206,13 @@ export async function POST(req: NextRequest) {
   if ("response" in authResult) {
     return authResult.response;
   }
-  const { session } = authResult;
-  console.log(session);
-
-  const body = await req.json(); // ✅ อ่าน JSON แค่ครั้งเดียว
-  const parsed = CustomerSchema.safeParse(body); // ✅ ตรวจสอบ schema
+  const body = await req.json();
+  const parsed = CustomerSchema.safeParse(body);
 
   if (!parsed.success) {
     console.error("Validation error:", parsed.error);
     return NextResponse.json(
-      { error: "Invalid data format", details: parsed.error.flatten() },
+      { error: "Invalid data format", details: parsed.error.issues },
       { status: 400 },
     );
   }
@@ -231,7 +228,7 @@ export async function POST(req: NextRequest) {
     const data: Prisma.CustomerCreateInput = {
       name: parsed.data.name,
       address: parsed.data.address,
-      ...(parsed.data.credit !== undefined ? { credit: parsed.data.credit } : {credit: 0}),
+      credit: parsed.data.credit ?? 0,
       tel: parsed.data.tel,
       telSearch: telSearch,
       taxNumber: parsed.data.taxNumber,
@@ -240,7 +237,7 @@ export async function POST(req: NextRequest) {
       email: parsed.data.email,
     };
 
-  // ตรวจสอบว่ามีข้อมูลซ้ำหรือไม่
+    // ตรวจสอบว่ามีข้อมูลซ้ำหรือไม่
     const uniqueChecks: Prisma.CustomerWhereInput[] = [];
     if (data.name) uniqueChecks.push({ name: data.name });
     //ดึงข้อมูลที่ซ้ำ
@@ -248,41 +245,15 @@ export async function POST(req: NextRequest) {
       where: { OR: uniqueChecks },
       select: {
         name: true,
-        
       },
     });
 
-    
     // ตรวจสอบว่ามีข้อมูลซ้ำหรือไม่
     const duplicatedFields: string[] = [];
 
     if (existed.some((c) => c.name === data.name)) {
       duplicatedFields.push("name");
     }
-    // if (existed.some((c) => c.taxNumber === data.taxNumber)) {
-    //   duplicatedFields.push("taxNumber");
-    // }
-    // if (
-    //   data.tel &&
-    //   existed.some((c) => c.tel === data.tel || c.telSearch === data.telSearch)
-    // ) {
-    //   duplicatedFields.push("tel");
-    // }
-    // if (
-    //   data.faxNumber &&
-    //   existed.some(
-    //     (c) =>
-    //       c.faxNumber === data.faxNumber ||
-    //       c.faxNumberSearch === data.faxNumberSearch,
-    //   )
-    // ) {
-    //   duplicatedFields.push("faxNumber");
-    // }
-    // if (data.email && existed.some((c) => c.email === data.email)) {
-    //   duplicatedFields.push("email");
-    // }
-
-
     if (duplicatedFields.length > 0) {
       const fieldLabelMap: Record<string, string> = {
         name: "ชื่อลูกค้า",
@@ -302,7 +273,6 @@ export async function POST(req: NextRequest) {
         { status: 409 },
       );
     }
-    console.log("Creating customer with data:", data);
     // ถ้าไม่มีข้อมูลซ้ำ ให้สร้างลูกค้าใหม่
     const result = await prisma.customer.create({
       data: data,

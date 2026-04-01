@@ -28,7 +28,6 @@ type RequireAuthFailure = {
 };
 
 export type RequireAuthResult = RequireAuthSuccess | RequireAuthFailure;
-
 // helper แยก logic แปลง role ให้เป็น Role เสมอ
 function normalizeRole(rawRole: string | null | undefined): Role {
   if (rawRole && ROLES.includes(rawRole as Role)) {
@@ -40,7 +39,7 @@ function normalizeRole(rawRole: string | null | undefined): Role {
 export async function requireAuth(
   allowedRoles?: Role[],
 ): Promise<RequireAuthResult> {
-  // 👇 บอก TS ชัด ๆ ว่าเป็น Session | null
+    //รับ session
   const session = (await getServerSession(authOptions)) as Session | null;
 
   if (!session || !session.user) {
@@ -69,7 +68,6 @@ export async function requireAuth(
       };
     }
   }
-
   return {
     ok: true,
     session,

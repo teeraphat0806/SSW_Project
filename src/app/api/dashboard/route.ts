@@ -25,7 +25,7 @@ function getBangkokDateParts(date = new Date()) {
     day: "2-digit",
   }).formatToParts(date);
 
-  const y = parts.find((p) => p.type === "year")?.value ?? "1970";
+  const y = parts.find((p) => p.type === "year")?.value ?? "2026";
   const m = parts.find((p) => p.type === "month")?.value ?? "01";
   const d = parts.find((p) => p.type === "day")?.value ?? "01";
   return { y, m, d };
@@ -84,44 +84,38 @@ function buildWhere({
   // 1) status
   if (status) where.status = status as any;
 
-  // 1.1) invoice status
+  // 2) invoice status
   if (invoice === "invoiced") {
     where.Invoice = { isNot: null };
   } else if (invoice === "pending") {
     where.Invoice = { is: null };
   }
 
-  // 2) date range (createdAt)
+  // 3) date range (createdAt) gte >= และ lte <=
   if (from || to) {
     where.createdAt = {};
     if (from) where.createdAt.gte = new Date(`${from}T00:00:00.000+07:00`);
     if (to) where.createdAt.lte = new Date(`${to}T23:59:59.999+07:00`);
   }
 
-  // 3) multi-keyword search
+  // 4) ค้นหาหลายๆ field
   if (search) {
     const tokens = toTokens(search);
-
+    //เก็บค่าที่ return มาใส่ใน where.AND เป็น array ของเงื่อนไขที่ต้องเป็นจริงทั้งหมด
     where.AND = tokens.map((token) => {
       const orConditions: any[] = [
         { poNumber: { contains: token, mode: "insensitive" } },
         { Customer: { name: { contains: token, mode: "insensitive" } } },
       ];
-
       const numToken = Number(token);
       if (!Number.isNaN(numToken)) {
-        orConditions.push({ codetoinvoice: numToken }); // หรือ { codetoinvoice: { equals: numToken } }
+        orConditions.push({ codetoinvoice: numToken });
         orConditions.push({ Invoice: { is: { invoiceNo: numToken } } });
       }
-
       return { OR: orConditions };
     });
   }
-
-  // ต้องมี billId ถึงจะแสดงในหน้าหลัก (กันเคส null และข้อมูลหลุดเป็น 0)
-  // ใช้ gt: 0 เพื่อให้ Prisma ตัด null ออกอัตโนมัติด้วย
   where.billId = { gt: 0 };
-
   return where;
 }
 
