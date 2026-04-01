@@ -388,7 +388,7 @@ const NewJobOrder = () => {
 
           products: SteelItem.map((item, index) => ({
             SteelId: item.SteelId,
-            sequence: item.sequence ?? index + 1,
+            sequence: index + 1,
             steelType: item.steelType,
             shape: item.shape,
             wide: item.wide ?? null,
