@@ -241,7 +241,7 @@ export async function GET(
       },
       steel,
     };
-    console.log("Apirecirpt: " + apiReceipt);
+   
     return NextResponse.json(apiReceipt);
   } catch (error) {
     return NextResponse.json(

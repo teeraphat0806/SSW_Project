@@ -262,7 +262,7 @@ export default function ReceiptClient({ id }: { id: string }) {
         fax={data.customer.faxNumber}
         taxId={data.customer.taxNumber}
         invoice={data.invoice}
-        date={new Date().toLocaleDateString("th-TH")}
+        date={new Date(data.dateCreateInvoice).toLocaleDateString("th-TH")}
         credit={data.credit}
         selesName={data.selesName}
         poNumber={data.poNumber ?? undefined}
