@@ -36,71 +36,27 @@ export async function GET(
     const endOfYear = new Date(endOfYearExclusive.getTime() - 1);
 
     const [
-      billStats,
-      revenueStats,
-      totalWithAndWithoutInvoiceStats,
+      invoices,
       expenseStats,
       allStaff,
       employmentsFromDB,
       salariesFromDB,
     ] = await Promise.all([
-      prisma.bill.aggregate({
+      prisma.invoice.findMany({
         where: {
           createdAt: {
             gte: startOfYear,
-            lt: endOfYearExclusive,
-          },
-          OrderPO: {
-            is: {
-              status: "completed",
-            },
+            lte: endOfYear,
           },
         },
-        _sum: {
-          grandTotal: true,
-        },
-        _count: {
+        select: {
           id: true,
+          createdAt: true,
+          codetoinvoice: true,
+          invoiceNo: true,
         },
-      }),
-      prisma.bill.aggregate({
-        where: {
-          createdAt: {
-            gte: startOfYear,
-            lt: endOfYearExclusive,
-          },
-          OrderPO: {
-            is: {
-              status: { not: "canceled" },
-              Invoice: { isNot: null },
-            },
-          },
-        },
-        _sum: {
-          grandTotal: true,
-          vat: true,
-        },
-      }),
-      prisma.bill.aggregate({
-        where: {
-          createdAt: {
-            gte: startOfYear,
-            lt: endOfYearExclusive,
-          },
-          OR: [
-            { OrderPO: { is: null } },
-            {
-              OrderPO: {
-                is: {
-                  status: { not: "canceled" },
-                },
-              },
-            },
-          ],
-        },
-        _sum: {
-          grandTotal: true,
-          vat: true,
+        orderBy: {
+          invoiceNo: "asc",
         },
       }),
       prisma.expense.aggregate({
@@ -147,6 +103,51 @@ export async function GET(
         orderBy: [{ staffId: "asc" }, { effectiveDate: "desc" }],
       }),
     ]);
+
+    const orderPOs = await prisma.orderPO.findMany({
+      where: {
+        codetoinvoice: {
+          in: invoices.map((i) => i.codetoinvoice),
+        },
+      },
+      include: {
+        bill: {
+          select: {
+            grandTotal: true,
+          },
+        },
+        Customer: {
+          select: {
+            id: true,
+            name: true,
+            address: true,
+          },
+        },
+      },
+    });
+
+    const poMap = new Map(orderPOs.map((po) => [po.codetoinvoice, po]));
+
+    const formattedBills = invoices.map((invoice) => {
+      const po = poMap.get(invoice.codetoinvoice);
+      return {
+        id: invoice.id,
+        createdAt: invoice.createdAt?.toISOString() || null,
+        invoiceNo: invoice.invoiceNo || null,
+        customerName: po?.Customer?.name || "ไม่ระบุ",
+        customerAddress: po?.Customer?.address || "",
+        grandTotal: po?.bill?.grandTotal || 0,
+      };
+    });
+
+    const totalBills = formattedBills.length;
+    const totalAmount = formattedBills.reduce(
+      (sum, bill) => sum + bill.grandTotal,
+      0,
+    );
+    const taxRate = 0.07;
+    const taxAmount = totalAmount * taxRate;
+    const netAmount = totalAmount + taxAmount;
 
     const currentDate = new Date();
     const isCurrentYear = yearNumber === currentDate.getFullYear();
@@ -251,17 +252,14 @@ export async function GET(
       }
     }
 
-    const totalSales = billStats._sum.grandTotal || 0;
-    const orderCount = billStats._count.id || 0;
-    const totalRevenueGross = revenueStats._sum.grandTotal || 0;
-    const totalRevenueTax = revenueStats._sum.vat || 0;
-    const totalRevenue = totalRevenueGross - totalRevenueTax;
-    const totalWithAndWithoutInvoiceGross =
-      totalWithAndWithoutInvoiceStats._sum.grandTotal || 0;
-    const totalWithAndWithoutInvoiceTax =
-      totalWithAndWithoutInvoiceStats._sum.vat || 0;
-    const totalWithAndWithoutInvoiceNet =
-      totalWithAndWithoutInvoiceGross - totalWithAndWithoutInvoiceTax;
+    const totalSales = totalAmount;
+    const orderCount = totalBills;
+    const totalRevenueGross = totalAmount;
+    const totalRevenueTax = taxAmount;
+    const totalRevenue = totalAmount + taxAmount;
+    const totalWithAndWithoutInvoiceGross = totalAmount;
+    const totalWithAndWithoutInvoiceTax = taxAmount;
+    const totalWithAndWithoutInvoiceNet = totalAmount + taxAmount;
     const totalExpenseAmount = expenseStats._sum.amount || 0;
     const totalExpense = totalExpenseAmount + totalSalaryAmount;
     const profit = totalSales - totalExpense;

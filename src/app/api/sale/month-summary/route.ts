@@ -239,6 +239,82 @@ export async function GET(req: NextRequest) {
         : 0;
     const profitMargin = netPercentage;
 
+    // Billing summary logic aligned with reportOrder
+    const invoices = await prisma.invoice.findMany({
+      where: {
+        createdAt: {
+          gte: startOfMonth,
+          lte: endOfMonth,
+        },
+      },
+      select: {
+        id: true,
+        createdAt: true,
+        codetoinvoice: true,
+        invoiceNo: true,
+      },
+      orderBy: {
+        invoiceNo: "asc",
+      },
+    });
+
+    const orderPOs = await prisma.orderPO.findMany({
+      where: {
+        codetoinvoice: {
+          in: invoices.map((i) => i.codetoinvoice),
+        },
+      },
+      include: {
+        bill: {
+          select: {
+            grandTotal: true,
+          },
+        },
+        Customer: {
+          select: {
+            id: true,
+            name: true,
+            address: true,
+          },
+        },
+      },
+    });
+
+    const poMap = new Map(orderPOs.map((po) => [po.codetoinvoice, po]));
+
+    const formattedBills = invoices.map((invoice) => {
+      const po = poMap.get(invoice.codetoinvoice);
+      return {
+        id: invoice.id,
+        createdAt: invoice.createdAt?.toISOString() || null,
+        invoiceNo: invoice.invoiceNo || null,
+        customerName: po?.Customer?.name || "ไม่ระบุ",
+        customerAddress: po?.Customer?.address || "",
+        grandTotal: po?.bill?.grandTotal || 0,
+        formatted: {
+          createdAt: invoice.createdAt
+            ? invoice.createdAt.toLocaleDateString("th-TH", {
+                year: "numeric",
+                month: "long",
+                day: "numeric",
+              })
+            : "-",
+          grandTotal: `฿${(po?.bill?.grandTotal || 0).toLocaleString("en-US")}`,
+        },
+      };
+    });
+
+    const totalBills = formattedBills.length;
+    const totalAmount = formattedBills.reduce(
+      (sum, bill) => sum + bill.grandTotal,
+      0,
+    );
+    const taxRate = 0.07;
+    const taxAmount = totalAmount * taxRate;
+    const netAmount = totalAmount + taxAmount;
+    const avgBillingPerBill =
+      totalBills > 0 ? parseFloat((totalAmount / totalBills).toFixed(2)) : 0;
+
     const customerPurchases = await prisma.bill.groupBy({
       by: ["customerId"],
       where: {
@@ -303,16 +379,16 @@ export async function GET(req: NextRequest) {
           monthName: monthNames[monthNumber - 1],
           year: yearNumber,
           income: {
-            total: totalIncome,
-            formatted: `฿${totalIncome.toLocaleString("en-US")}`,
-            subtotal: totalSubtotal,
-            subtotalFormatted: `฿${totalSubtotal.toLocaleString("en-US")}`,
-            totalTax: totalTax,
-            totalTaxFormatted: `฿${totalTax.toLocaleString("en-US")}`,
-            nonInvoicedTotal: nonInvoicedIncome,
-            nonInvoicedTotalFormatted: `฿${nonInvoicedIncome.toLocaleString("en-US")}`,
-            billCount,
-            avgPerBill,
+            total: totalAmount,
+            formatted: `฿${totalAmount.toLocaleString("en-US")}`,
+            subtotal: totalAmount,
+            subtotalFormatted: `฿${totalAmount.toLocaleString("en-US")}`,
+            totalTax: taxAmount,
+            totalTaxFormatted: `฿${taxAmount.toLocaleString("en-US")}`,
+            nonInvoicedTotal: netAmount,
+            nonInvoicedTotalFormatted: `฿${netAmount.toLocaleString("en-US")}`,
+            billCount: totalBills,
+            avgPerBill: avgBillingPerBill,
           },
           expense: {
             total: totalExpense,

@@ -116,27 +116,22 @@ export async function GET(
       const endOfMonthExclusive = new Date(yearNumber, month, 1);
       const endOfMonth = new Date(endOfMonthExclusive.getTime() - 1);
 
-      const [salesStats, expenseStats] = await Promise.all([
-        prisma.bill.aggregate({
+      const [invoices, expenseStats] = await Promise.all([
+        prisma.invoice.findMany({
           where: {
             createdAt: {
               gte: startOfMonth,
-              lt: endOfMonthExclusive,
-            },
-            OrderPO: {
-              is: {
-                status: { not: "canceled" },
-                Invoice: { isNot: null },
-              },
+              lte: endOfMonth,
             },
           },
-          _sum: {
-            grandTotal: true,
-            subtotal: true,
-            vat: true,
-          },
-          _count: {
+          select: {
             id: true,
+            createdAt: true,
+            codetoinvoice: true,
+            invoiceNo: true,
+          },
+          orderBy: {
+            invoiceNo: "asc",
           },
         }),
         prisma.expense.aggregate({
@@ -151,6 +146,51 @@ export async function GET(
           },
         }),
       ]);
+
+      const orderPOs = await prisma.orderPO.findMany({
+        where: {
+          codetoinvoice: {
+            in: invoices.map((i) => i.codetoinvoice),
+          },
+        },
+        include: {
+          bill: {
+            select: {
+              grandTotal: true,
+            },
+          },
+          Customer: {
+            select: {
+              id: true,
+              name: true,
+              address: true,
+            },
+          },
+        },
+      });
+
+      const poMap = new Map(orderPOs.map((po) => [po.codetoinvoice, po]));
+
+      const formattedBills = invoices.map((invoice) => {
+        const po = poMap.get(invoice.codetoinvoice);
+        return {
+          id: invoice.id,
+          createdAt: invoice.createdAt?.toISOString() || null,
+          invoiceNo: invoice.invoiceNo || null,
+          customerName: po?.Customer?.name || "ไม่ระบุ",
+          customerAddress: po?.Customer?.address || "",
+          grandTotal: po?.bill?.grandTotal || 0,
+        };
+      });
+
+      const totalBills = formattedBills.length;
+      const totalAmount = formattedBills.reduce(
+        (sum, bill) => sum + bill.grandTotal,
+        0,
+      );
+      const taxRate = 0.07;
+      const taxAmount = totalAmount * taxRate;
+      const netAmount = totalAmount + taxAmount;
 
       let totalSalaries = 0;
       for (const staff of allStaff) {
@@ -168,11 +208,11 @@ export async function GET(
         }
       }
 
-      const salesAmt = salesStats._sum.grandTotal || 0;
-      const subtotal = salesStats._sum.subtotal || 0;
-      const vat = salesStats._sum.vat || 0;
-      const salesQty = salesStats._count.id || 0;
-      const income = salesAmt;
+      const salesAmt = totalAmount;
+      const subtotal = totalAmount;
+      const vat = taxAmount;
+      const salesQty = totalBills;
+      const income = totalAmount;
       const expenseAmount = expenseStats._sum.amount || 0;
       const expense = expenseAmount + totalSalaries;
       const net = income - expense;
@@ -187,6 +227,7 @@ export async function GET(
         income,
         expense,
         net,
+        netAmount,
         formatted: {
           salesAmt: `฿${salesAmt.toLocaleString("en-US")}`,
           subtotal: `฿${subtotal.toLocaleString("en-US")}`,
@@ -195,6 +236,7 @@ export async function GET(
           income: `฿${income.toLocaleString("en-US")}`,
           expense: `฿${expense.toLocaleString("en-US")}`,
           net: `฿${net.toLocaleString("en-US")}`,
+          netAmount: `฿${netAmount.toLocaleString("en-US")}`,
         },
       });
     }
