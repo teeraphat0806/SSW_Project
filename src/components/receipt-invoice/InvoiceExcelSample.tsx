@@ -275,7 +275,7 @@ export const InvoiceExcelSample: React.FC<Inv71LikeInvoiceProps> = ({
 
               return (
                 <tr key={idx} className="align-top">
-                  <td className="pt-0.5 pl-0 pr-6 text-right">{idx + 1}</td>
+                  <td className="pt-0.5 pl-0 ">{idx + 1}</td>
                   <td className="pt-0.5 pr-1 whitespace-nowrap">
                     {steelDisplay}
                   </td>
