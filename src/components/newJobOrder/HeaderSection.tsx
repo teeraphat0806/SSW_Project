@@ -16,10 +16,7 @@ type HeaderSectionProps = {
   setheadOrder: React.Dispatch<React.SetStateAction<HeadOrderType>>;
 };
 
-export function HeaderSection({
-  headOrder,
-  setheadOrder,
-}: HeaderSectionProps) {
+export function HeaderSection({ headOrder, setheadOrder }: HeaderSectionProps) {
   const noNumberSpinnerClass =
     "[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none";
 
@@ -106,6 +103,37 @@ export function HeaderSection({
 
           <div className="space-y-2 group">
             <Label
+              htmlFor="createdAt"
+              className="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 group-focus-within:text-blue-600 dark:group-focus-within:text-blue-400 transition-colors"
+            >
+              วันที่สร้างบิล
+            </Label>
+            <div className="relative transition-all duration-200 ease-in-out transform group-focus-within:-translate-y-0.5">
+              <FileText className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400 group-focus-within:text-blue-500 transition-colors pointer-events-none" />
+              <Input
+                id="createdAt"
+                type="date"
+                value={headOrder.createdAt ?? ""}
+                onChange={(e) =>
+                  setheadOrder({ ...headOrder, createdAt: e.target.value })
+                }
+                className="absolute inset-0 z-10 w-full h-11 cursor-pointer opacity-0 pl-10 bg-zinc-50/50 dark:bg-zinc-950/50 border-zinc-200 dark:border-zinc-800 focus:bg-white dark:focus:bg-zinc-950 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all [color-scheme:light] dark:[color-scheme:dark]"
+              />
+              <div className="pointer-events-none flex h-11 w-full items-center rounded-md border border-input bg-transparent pl-9 pr-3 text-sm">
+                <div className="flex w-full items-center justify-between">
+                  <span className="text-zinc-900 dark:text-zinc-100">
+                    {headOrder.createdAt
+                      ? toDisplayDateValue(headOrder.createdAt)
+                      : "เลือกวันที่"}
+                  </span>
+                  <Calendar className="h-4 w-4 text-zinc-400" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-2 group">
+            <Label
               htmlFor="deliveryDate"
               className="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 group-focus-within:text-blue-600 dark:group-focus-within:text-blue-400 transition-colors"
             >
@@ -130,37 +158,6 @@ export function HeaderSection({
                   <span className="text-zinc-900 dark:text-zinc-100">
                     {headOrder.deliveryDate
                       ? toDisplayDateValue(headOrder.deliveryDate)
-                      : "เลือกวันที่"}
-                  </span>
-                  <Calendar className="h-4 w-4 text-zinc-400" />
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="space-y-2 group">
-            <Label
-              htmlFor="createdAt"
-              className="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 group-focus-within:text-blue-600 dark:group-focus-within:text-blue-400 transition-colors"
-            >
-              วันที่สร้างบิล
-            </Label>
-            <div className="relative transition-all duration-200 ease-in-out transform group-focus-within:-translate-y-0.5">
-              <FileText className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400 group-focus-within:text-blue-500 transition-colors pointer-events-none" />
-              <Input
-                id="createdAt"
-                type="date"
-                value={headOrder.createdAt ?? ""}
-                onChange={(e) =>
-                  setheadOrder({ ...headOrder, createdAt: e.target.value })
-                }
-                className="absolute inset-0 z-10 w-full h-11 cursor-pointer opacity-0 pl-10 bg-zinc-50/50 dark:bg-zinc-950/50 border-zinc-200 dark:border-zinc-800 focus:bg-white dark:focus:bg-zinc-950 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all [color-scheme:light] dark:[color-scheme:dark]"
-              />
-              <div className="pointer-events-none flex h-11 w-full items-center rounded-md border border-input bg-transparent pl-9 pr-3 text-sm">
-                <div className="flex w-full items-center justify-between">
-                  <span className="text-zinc-900 dark:text-zinc-100">
-                    {headOrder.createdAt
-                      ? toDisplayDateValue(headOrder.createdAt)
                       : "เลือกวันที่"}
                   </span>
                   <Calendar className="h-4 w-4 text-zinc-400" />
