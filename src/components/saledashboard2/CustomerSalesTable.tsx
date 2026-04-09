@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import {
   Select,
   SelectContent,
@@ -70,12 +71,14 @@ interface CustomerSalesTableProps {
 }
 
 export function CustomerSalesTable({ year, month }: CustomerSalesTableProps) {
+  const searchParams = useSearchParams();
   const [data, setData] = useState<CustomerSale[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
+  const [totalAmount, setTotalAmount] = useState(0);
   const [limit] = useState(10);
   const [selectedCustomerId, setSelectedCustomerId] = useState<string>("all");
   const [sortBy, setSortBy] = useState<string>("date");
@@ -107,6 +110,9 @@ export function CustomerSalesTable({ year, month }: CustomerSalesTableProps) {
     const fetchData = async () => {
       try {
         setLoading(true);
+        const dateFrom = searchParams.get("dateFrom") || "";
+        const dateTo = searchParams.get("dateTo") || "";
+
         const params = new URLSearchParams({
           year,
           month,
@@ -118,6 +124,14 @@ export function CustomerSalesTable({ year, month }: CustomerSalesTableProps) {
 
         if (selectedCustomerId && selectedCustomerId !== "all") {
           params.append("customerId", selectedCustomerId);
+        }
+
+        if (dateFrom) {
+          params.append("dateFrom", dateFrom);
+        }
+
+        if (dateTo) {
+          params.append("dateTo", dateTo);
         }
 
         const response = await fetch(`/api/sale/customer-sales?${params}`);
@@ -132,6 +146,7 @@ export function CustomerSalesTable({ year, month }: CustomerSalesTableProps) {
           setData(result.data);
           setTotalPages(result.pagination.totalPages);
           setTotal(result.pagination.total);
+          setTotalAmount(result.meta.totalAmount || 0);
         }
       } catch (error) {
         console.error("Error fetching data:", error);
@@ -141,7 +156,16 @@ export function CustomerSalesTable({ year, month }: CustomerSalesTableProps) {
     };
 
     fetchData();
-  }, [year, month, page, limit, selectedCustomerId, sortBy, sortOrder]);
+  }, [
+    year,
+    month,
+    page,
+    limit,
+    selectedCustomerId,
+    sortBy,
+    sortOrder,
+    searchParams,
+  ]);
 
   const handleSortChange = (newSortBy: string) => {
     if (sortBy === newSortBy) {
@@ -383,7 +407,8 @@ export function CustomerSalesTable({ year, month }: CustomerSalesTableProps) {
         {/* Pagination - inside table */}
         <div className="flex items-center justify-between px-6 py-4 border-t border-zinc-200 dark:border-zinc-700 bg-zinc-50/50 dark:bg-zinc-900/50">
           <div className="text-sm text-zinc-600 dark:text-zinc-400">
-            หน้า {page} จาก {totalPages} ({total.toLocaleString()} รายการ)
+            หน้า {page} จาก {totalPages} ({total.toLocaleString()} รายการ) |
+            ยอดรวม {formatCurrency(totalAmount)}
           </div>
           <div className="flex gap-2">
             <Button
