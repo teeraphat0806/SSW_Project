@@ -82,17 +82,9 @@ export async function GET(request: NextRequest) {
         take: limit,
         include: {
           category: {
-            include: {
-              Staff: {
-                include: {
-                  user: {
-                    select: {
-                      name: true,
-                      email: true,
-                    },
-                  },
-                },
-              },
+            select: {
+              id: true,
+              name: true,
             },
           },
         },

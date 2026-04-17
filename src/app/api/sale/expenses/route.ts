@@ -306,15 +306,7 @@ export async function GET(req: NextRequest) {
       prisma.expense.findMany({
         where: whereClause,
         include: {
-          category: {
-            include: {
-              Staff: {
-                include: {
-                  user: { select: { name: true } },
-                },
-              },
-            },
-          },
+          category: true,
         },
       }),
       prisma.expense.groupBy({
@@ -422,12 +414,7 @@ export async function GET(req: NextRequest) {
         receiptUrl: expense.receiptUrl,
         staff: isSalary
           ? { id: 0, name: expense.staffName || "ไม่ระบุชื่อพนักงาน" }
-          : expense.category?.Staff
-            ? {
-                id: expense.category.Staff.id,
-                name: expense.category.Staff.user?.name || "Unknown",
-              }
-            : null,
+          : null,
         formatted: {
           date: expense.expenseDate.toLocaleDateString("th-TH", {
             day: "2-digit",

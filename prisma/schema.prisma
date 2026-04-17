@@ -34,7 +34,6 @@ model Staff {
   TerminationDate              DateTime?
   Bill_Bill_deliveredByToStaff Bill[]            @relation("Bill_deliveredByToStaff")
   Bill_Bill_salesNameToStaff   Bill[]            @relation("Bill_salesNameToStaff")
-  ExpenseCategory              ExpenseCategory[]
   orderLinks                   OrderPOStaff[]
   jobPosition                  JobPosition?      @relation(fields: [positionId], references: [id])
   user                         User?             @relation("UserStaff", fields: [userId], references: [id])
@@ -42,6 +41,7 @@ model Staff {
   StaffIncome                  StaffIncome[]
   StaffSalary                  StaffSalary[]
   quotation                    Quotation[]
+
   @@index([positionId])
 }
 
@@ -73,14 +73,14 @@ model Customer {
   name            String        @unique
   credit          Int           @default(30)
   address         String
-  tel             String?       
-  taxNumber       String?       
-  faxNumber       String?       
-  email           String?       
+  tel             String?
+  taxNumber       String?
+  faxNumber       String?
+  email           String?
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
-  faxNumberSearch String?       
-  telSearch       String?       
+  faxNumberSearch String?
+  telSearch       String?
   Acquittances    Acquittance[]
   Bill            Bill[]
   OrderPO         OrderPO[]
@@ -89,29 +89,29 @@ model Customer {
 }
 
 model Quotation {
-    id            Int       @id @default(autoincrement())
-    quotationNo   String    @unique
-    customerId    Int
-    customerName  String?
-    credit        Int       @default(30)
-    salesName     String
-    salesNameId   Int
-    description   String?
-    vatRate       Float     @default(7.0)
-    vat           Float?
-    subtotal      Float?
-    grandTotal    Float?
-    discount      Float?
-    period        String?
-    deliveryDate  String?
-    createdAt     DateTime  @default(now())
-    updatedAt     DateTime  @updatedAt
-    
-    OrderPO       OrderPO? @relation("Quotation_OrderPO")
-    staff         Staff    @relation(fields: [salesNameId], references: [id])
-    customer      Customer @relation(fields: [customerId],references: [id])
+  id           Int      @id @default(autoincrement())
+  quotationNo  String   @unique
+  customerId   Int
+  customerName String?
+  credit       Int      @default(30)
+  salesName    String
+  salesNameId  Int
+  description  String?
+  vatRate      Float    @default(7.0)
+  vat          Float?
+  subtotal     Float?
+  grandTotal   Float?
+  discount     Float?
+  period       String?
+  deliveryDate String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
-    @@index([customerId])
+  OrderPO  OrderPO? @relation("Quotation_OrderPO")
+  staff    Staff    @relation(fields: [salesNameId], references: [id])
+  customer Customer @relation(fields: [customerId], references: [id])
+
+  @@index([customerId])
 }
 
 model Bill {
@@ -156,7 +156,7 @@ model OrderPO {
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
   codetoinvoice Int            @unique @default(autoincrement())
-  Quotation     Quotation?     @relation("Quotation_OrderPO",fields:[quotationId],references:[id])
+  Quotation     Quotation?     @relation("Quotation_OrderPO", fields: [quotationId], references: [id])
   Invoice       Invoice?       @relation("OrderPO_Invoice")
   bill          Bill?          @relation(fields: [billId], references: [id])
   Customer      Customer?      @relation(fields: [customerId], references: [id])
@@ -253,12 +253,12 @@ model Product {
   thickness     Float
   amount        Int
   detail        String?
-  surfaceT       String?
-  toleranceT     String?
-  surfaceW       String?
-  toleranceW     String?
-  surfaceL       String?
-  toleranceL     String?
+  surfaceT      String?
+  toleranceT    String?
+  surfaceW      String?
+  toleranceW    String?
+  surfaceL      String?
+  toleranceL    String?
   actualWeight  Float?
   total         Float?
   cuttingMethod CuttingMethod @default(normal)
@@ -272,8 +272,8 @@ model Product {
   OrderPO       OrderPO       @relation(fields: [orderPOId], references: [id], onDelete: Cascade)
   SteelType     SteelType     @relation(fields: [steelId], references: [id])
 
-  @@index([orderPOId])
   @@unique([orderPOId, sequence])
+  @@index([orderPOId])
   @@index([steelId])
 }
 
@@ -356,16 +356,14 @@ model Expense {
   receiptUrl  String?
   createdAt   DateTime        @default(now())
   updatedAt   DateTime        @updatedAt
-  category    ExpenseCategory @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  category    ExpenseCategory @relation(fields: [categoryId], references: [id])
 }
 
 model ExpenseCategory {
   id          Int       @id @default(autoincrement())
   name        String    @unique
   description String
-  staffId     Int
   expenses    Expense[]
-  Staff       Staff     @relation(fields: [staffId], references: [id])
 }
 
 enum Role {

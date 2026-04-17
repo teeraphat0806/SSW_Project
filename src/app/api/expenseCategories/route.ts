@@ -1,7 +1,6 @@
 import { requireAuth } from "@/lib/permissions";
 import prisma from "@/lib/prisma";
-import { NextRequest, NextResponse } from "next/server";
-import { ExpenseCategorySchema } from "@/lib/schemas/expenseCategory.schema";
+import { NextResponse } from "next/server";
 
 export async function GET() {
   try {
@@ -41,12 +40,12 @@ export async function POST(request: Request) {
     return authRequest.response;
   }
   try {
-    const { name, description, staffId } = await request.json();
+    const { name, description } = await request.json();
 
     // Validate required fields
-    if (!name || !description || !staffId) {
+    if (!name || !description) {
       return NextResponse.json(
-        { error: "Name, description, and staffId are required" },
+        { error: "Name and description are required" },
         { status: 400 },
       );
     }
@@ -67,7 +66,6 @@ export async function POST(request: Request) {
       data: {
         name,
         description,
-        staffId: parseInt(staffId),
       },
     });
 

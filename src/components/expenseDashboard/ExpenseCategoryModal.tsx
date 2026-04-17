@@ -4,7 +4,6 @@ import { X, Plus, Trash2, AlertCircle, Loader2, FileText } from "lucide-react";
 import { useExpenseContext, ExpenseCategory } from "@/contexts/ExpenseContext";
 import { useConfirm } from "@/components/providers/confirm-dialog-provider";
 import { toast } from "react-toastify";
-import { useSession } from "next-auth/react";
 
 type ExpenseCategoryModalProps = {
   open: boolean;
@@ -19,7 +18,6 @@ const ExpenseCategoryModal = ({
 }: ExpenseCategoryModalProps) => {
   const { categories, refreshExpenses } = useExpenseContext();
   const confirm = useConfirm();
-  const { data: session } = useSession();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [localCategories, setLocalCategories] = useState<
     (ExpenseCategory & { _count?: { expenses: number } })[]
@@ -55,7 +53,6 @@ const ExpenseCategoryModal = ({
 
     try {
       console.log("📝 Form submitted:", newCategory);
-      console.log("👤 Session data:", session);
 
       if (!newCategory.name || !newCategory.description) {
         console.log("❌ Validation failed: missing name or description");
@@ -64,28 +61,9 @@ const ExpenseCategoryModal = ({
         return;
       }
 
-      // Get staffId from session
-      const staffId = (session?.user as any)?.staff?.id;
-      console.log("🆔 StaffId extracted:", staffId);
-
-      if (!staffId) {
-        console.log("❌ No staffId found in session");
-        console.log("Full session data:", JSON.stringify(session, null, 2));
-        toast.error(
-          "ไม่พบข้อมูลพนักงานในระบบ\nกรุณา logout แล้ว login ใหม่อีกครั้ง\nหากปัญหายังคงอยู่ กรุณาติดต่อผู้ดูแลระบบ",
-          {
-            position: "bottom-right",
-            autoClose: 7000,
-          },
-        );
-        setIsSubmitting(false);
-        return;
-      }
-
       const requestBody = {
         name: newCategory.name,
         description: newCategory.description,
-        staffId: staffId,
       };
       console.log("📤 Sending POST request:", requestBody);
 
