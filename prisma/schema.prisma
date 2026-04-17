@@ -199,14 +199,13 @@ model OrderPOStaff {
 
 model Statement {
   id          Int                @id @default(autoincrement())
-  statementNo Int                @default(autoincrement())
+  statementNo Int?               @unique
   customerId  Int
   createdAt   DateTime           @default(now())
   updatedAt   DateTime           @updatedAt
   Customer    Customer           @relation(fields: [customerId], references: [id])
   items       StatementInvoice[]
 
-  @@index([statementNo])
   @@index([customerId, createdAt])
 }
 

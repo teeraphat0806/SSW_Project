@@ -50,7 +50,7 @@ type PreSelectInvoiceData = {
 
 type StatementData = {
   id: number;
-  statementNo: number;
+  statementNo: number | null;
   customerId: number;
 };
 

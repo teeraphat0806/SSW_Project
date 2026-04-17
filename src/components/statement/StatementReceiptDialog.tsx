@@ -108,7 +108,7 @@ interface CustomerData {
 
 interface StatementReceiptDialogProps {
   customerId: number;
-  statementNo: number;
+  statementNo: number | null;
   openInitially?: boolean;
   onOpenChange?: (open: boolean) => void;
 }
@@ -144,7 +144,8 @@ export default function StatementReceiptDialog({
   const thaiShortDate = `${String(currentDate.getDate()).padStart(2, "0")}/${String(currentDate.getMonth() + 1).padStart(2, "0")}/${(currentDate.getFullYear() + 543).toString().slice(-2)}`;
 
   // เลขที่เอกสาร
-  const documentNo = `${statementNo.toString()}`;
+  const documentNo =
+    statementNo !== null ? `${statementNo.toString()}` : "ยังไม่กำหนดเลข";
 
   useEffect(() => {
     if (!open) return;
@@ -233,12 +234,13 @@ export default function StatementReceiptDialog({
               size="sm"
               onClick={handlePrint}
               className="bg-blue-600 hover:bg-blue-700 text-white"
+              disabled={statementNo === null}
             >
               <Printer className="h-4 w-4 mr-2" />
               พิมพ์งาน
             </Button>
           </div>
-
+          <span className="font-semibold">เลขที่</span> {documentNo}
           {loading ? (
             <div className="min-h-screen flex items-center justify-center bg-white dark:bg-zinc-950">
               <Loader2 className="h-12 w-12 animate-spin text-zinc-400" />
@@ -409,7 +411,6 @@ export default function StatementReceiptDialog({
               )}
             </>
           )}
-
           {/* Print Styles */}
           <style jsx global>{`
             @media print {
