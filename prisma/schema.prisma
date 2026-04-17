@@ -222,14 +222,13 @@ model StatementInvoice {
 
 model Acquittance {
   id            Int                  @id @default(autoincrement())
-  acquittanceNo Int                  @default(autoincrement())
+  acquittanceNo Int?                 @unique
   customerId    Int
   createdAt     DateTime             @default(now())
   updatedAt     DateTime             @updatedAt
   Customer      Customer             @relation(fields: [customerId], references: [id])
   items         AcquittanceInvoice[]
 
-  @@index([acquittanceNo])
   @@index([customerId, createdAt])
 }
 

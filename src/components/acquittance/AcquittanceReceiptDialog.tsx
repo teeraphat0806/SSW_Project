@@ -1,11 +1,10 @@
 "use client";
 
-import { useEffect, useState, useRef, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Printer, ArrowLeft, Loader2 } from "lucide-react";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 
-// ฟังก์ชันแปลงตัวเลขเป็นตัวอักษรบาท/สตางค์ (ไทย)
 function numberToThaiBahtText(num: number): string {
   const thaiNum = [
     "ศูนย์",
@@ -76,10 +75,8 @@ function numberToThaiBahtText(num: number): string {
         const millionText =
           millionPartCount > 0 ? "ล้าน".repeat(millionPartCount) : "";
         result = partText + millionText + result;
-      } else {
-        if (millionPartCount > 0 && result !== "") {
-          result = "ล้าน" + result;
-        }
+      } else if (millionPartCount > 0 && result !== "") {
+        result = "ล้าน" + result;
       }
 
       millionPartCount++;
@@ -115,7 +112,7 @@ interface InvoiceData {
 
 interface AcquittanceData {
   id: number;
-  acquittanceNo: number;
+  acquittanceNo: number | null;
   customerId: number;
   createdAt: string;
   Customer: {
@@ -150,28 +147,45 @@ interface AcquittanceTotals {
 
 interface AcquittanceReceiptDialogProps {
   customerId?: number;
-  acquittanceNo: number;
+  acquittanceNo: number | null;
   acquittanceId?: number;
+  nextAcquittanceNo?: number | null;
+  openInitially?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
 export default function AcquittanceReceiptDialog({
   customerId,
   acquittanceNo,
   acquittanceId,
+  nextAcquittanceNo = null,
+  openInitially = false,
+  onOpenChange,
 }: AcquittanceReceiptDialogProps) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(openInitially);
   const [acquittance, setAcquittance] = useState<AcquittanceData | null>(null);
   const [totals, setTotals] = useState<AcquittanceTotals | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [currentAcquittanceNo, setCurrentAcquittanceNo] = useState<
+    number | null
+  >(acquittanceNo);
+  const [assigning, setAssigning] = useState(false);
 
-  const handlePrint = () => {
-    window.print();
+  const handleOpenChange = (newOpen: boolean) => {
+    setOpen(newOpen);
+    onOpenChange?.(newOpen);
   };
 
-  const handleClose = () => {
-    setOpen(false);
-  };
+  useEffect(() => {
+    if (openInitially !== undefined) {
+      setOpen(openInitially);
+    }
+  }, [openInitially]);
+
+  useEffect(() => {
+    setCurrentAcquittanceNo(acquittanceNo);
+  }, [acquittanceNo]);
 
   useEffect(() => {
     if (!open || !acquittanceId) return;
@@ -180,7 +194,6 @@ export default function AcquittanceReceiptDialog({
       setLoading(true);
       setError(null);
       try {
-        // Fetch acquittance with invoices
         const res = await fetch(`/api/acquittance/${acquittanceId}`, {
           cache: "no-store",
         });
@@ -203,7 +216,6 @@ export default function AcquittanceReceiptDialog({
     fetchData();
   }, [open, acquittanceId]);
 
-  // Convert invoices for display
   const invoices: InvoiceData[] = acquittance?.items
     ? acquittance.items.map((item) => ({
         id: item.invoice.id,
@@ -220,8 +232,6 @@ export default function AcquittanceReceiptDialog({
 
   const customerName = acquittance?.Customer?.name || "-";
   const totalAmount = totals?.totalAmount ?? 0;
-
-  // วันที่ปัจจุบัน (พ.ศ.)
   const currentDate = new Date();
   const statementDate = currentDate.toLocaleDateString("th-TH", {
     day: "2-digit",
@@ -229,11 +239,55 @@ export default function AcquittanceReceiptDialog({
     year: "numeric",
   });
 
-  // เลขที่เอกสาร
-  const documentNo = `${acquittanceNo.toString()}`;
+  const documentNo =
+    currentAcquittanceNo !== null
+      ? `${currentAcquittanceNo.toString()}`
+      : "ยังไม่กำหนดเลข";
+
+  const canAssignAcquittanceNo =
+    currentAcquittanceNo === null &&
+    acquittanceId !== null &&
+    acquittanceId !== undefined;
+
+  const handleAssignAcquittanceNumber = async () => {
+    if (!canAssignAcquittanceNo || assigning) return;
+
+    setAssigning(true);
+    try {
+      const res = await fetch("/api/acquittance/assign-number", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ acquittanceId }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || "Failed to assign acquittance number");
+      }
+
+      const result = await res.json();
+      const assignedNo = result?.acquittance?.acquittanceNo;
+      if (typeof assignedNo === "number") {
+        setCurrentAcquittanceNo(assignedNo);
+      }
+    } catch (error) {
+      console.error("Failed to assign acquittance number", error);
+      alert("กำหนดเลขไม่สำเร็จ");
+    } finally {
+      setAssigning(false);
+    }
+  };
+
+  const handlePrint = () => {
+    window.print();
+  };
+
+  const handleClose = () => {
+    handleOpenChange(false);
+  };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         <Button
           size="icon"
@@ -246,16 +300,31 @@ export default function AcquittanceReceiptDialog({
       </DialogTrigger>
       <DialogContent className="max-w-full max-h-full w-screen h-screen overflow-y-auto bg-white dark:bg-zinc-950 text-gray-900 dark:text-white p-0 border-0 rounded-none">
         <div className="bg-white dark:bg-zinc-950 print:bg-white">
-          {/* Print Controls */}
-          <div className="print:hidden fixed top-20 md:top-4 right-4 z-30 flex gap-2">
+          <div className="print:hidden fixed top-20 md:top-4 right-4 z-30 flex items-center gap-2">
             <Button variant="outline" size="sm" onClick={handleClose}>
               <ArrowLeft className="h-4 w-4 mr-2" />
               ย้อนกลับ
             </Button>
+            {currentAcquittanceNo === null ? (
+              <span className="hidden sm:inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-sm font-medium text-blue-700 dark:border-blue-900/60 dark:bg-blue-900/20 dark:text-blue-300">
+                เลขถัดไปที่ระบบจะกำหนด: HS{nextAcquittanceNo ?? "-"}
+              </span>
+            ) : null}
+            {currentAcquittanceNo === null && canAssignAcquittanceNo ? (
+              <Button
+                size="sm"
+                onClick={handleAssignAcquittanceNumber}
+                disabled={assigning}
+                className="bg-blue-600 hover:bg-blue-700 text-white"
+              >
+                {assigning ? "กำลังกำหนด..." : "กำหนดเลข"}
+              </Button>
+            ) : null}
             <Button
               size="sm"
               onClick={handlePrint}
               className="bg-blue-600 hover:bg-blue-700 text-white"
+              disabled={currentAcquittanceNo === null}
             >
               <Printer className="h-4 w-4 mr-2" />
               พิมพ์งาน
@@ -280,7 +349,6 @@ export default function AcquittanceReceiptDialog({
                     key={pageIndex}
                     className="a4-page mx-auto bg-white dark:bg-zinc-950 print:bg-white"
                   >
-                    {/* Header */}
                     <header className="text-center leading-tight">
                       <div className="text-[15px] font-semibold">
                         บริษัท เอส.เอส.ดับบลิว. สตีล เซ็นเตอร์ จำกัด
@@ -288,7 +356,6 @@ export default function AcquittanceReceiptDialog({
                       <div className="text-[15px] font-semibold">
                         S.S.W. STEEL CENTER CO., LTD.
                       </div>
-
                       <div className="mt-1 text-[12px] opacity-80">
                         888/1-2 หมู่ 9 ตำบลบางปลา อำเภอบางพลี จังหวัดสมุทรปราการ
                         10540
@@ -300,13 +367,11 @@ export default function AcquittanceReceiptDialog({
                         TEL. (02)181-6700-3, (02)181-6705-8 &nbsp; FAX.
                         (02)181-6704, (02)181-6709
                       </div>
-
                       <div className="mt-3 text-[18px] font-semibold">
                         ใบวางบิล
                       </div>
                     </header>
 
-                    {/* Customer + Date/No */}
                     <div className="mt-4 grid grid-cols-2 gap-4 text-[14px]">
                       <div className="space-y-1"></div>
                       <div className="space-y-1 justify-self-end w-full max-w-[200px]">
@@ -324,6 +389,7 @@ export default function AcquittanceReceiptDialog({
                         </div>
                       </div>
                     </div>
+
                     <div className="mt-4 text-[14px]">
                       <div className="space-y-1">
                         <div>
@@ -339,7 +405,6 @@ export default function AcquittanceReceiptDialog({
                       </div>
                     </div>
 
-                    {/* Table */}
                     <div className="mt-4 flex flex-col gap-2 justify-center items-center">
                       <p className="text-[16px] font-bold">ใบกำกับภาษี</p>
                       <table className="w-full border-collapse text-[15px]">
@@ -351,7 +416,6 @@ export default function AcquittanceReceiptDialog({
                             <th className="th th-right">จำนวนเงิน</th>
                           </tr>
                         </thead>
-
                         <tbody>
                           {pageRows.length === 0 ? (
                             <tr>
@@ -394,12 +458,11 @@ export default function AcquittanceReceiptDialog({
                       </table>
                     </div>
 
-                    {/* Footer (last page only) */}
                     {isLastPage && (
                       <footer className="mt-4">
                         <div className="flex items-start justify-between gap-3">
-                          <div className=""></div>
-                          <div className=""></div>
+                          <div />
+                          <div />
                           <div className="text-right">
                             <div className="flex">
                               <div className="mt-2">รวมทั้งสิ้น</div>
@@ -413,10 +476,9 @@ export default function AcquittanceReceiptDialog({
                               ({numberToThaiBahtText(totalAmount)})
                             </div>
                           </div>
-                          <div className=""></div>
+                          <div />
                         </div>
 
-                        {/* Signatures */}
                         <div className="mt-8 grid grid-cols-2 gap-10 text-[14px]">
                           <div className="signature">
                             <div className="label">ผู้รับวางบิล</div>
@@ -447,7 +509,6 @@ export default function AcquittanceReceiptDialog({
                           </div>
                         </div>
 
-                        {/* วันนัดชำระเงิน */}
                         <div className="mt-4 grid grid-cols-2 gap-10 text-[14px]">
                           <div className="signature">
                             <div className="label">วันที่นัดชำระเงิน</div>
@@ -455,7 +516,6 @@ export default function AcquittanceReceiptDialog({
                               ....................................................................
                             </div>
                           </div>
-
                           <div />
                         </div>
                       </footer>
@@ -521,10 +581,7 @@ export default function AcquittanceReceiptDialog({
               margin-bottom: 6px;
               font-weight: 600;
             }
-            .signature .line {
-              border-bottom: 1.5px solid currentColor;
-              height: 16px;
-            }
+
             .signature .dots {
               height: 16px;
               letter-spacing: 1px;
@@ -541,7 +598,7 @@ export default function AcquittanceReceiptDialog({
                 background: #fff;
                 color: #000;
               }
-              .print\\:hidden {
+              .print\:hidden {
                 display: none !important;
               }
               .a4-page {
