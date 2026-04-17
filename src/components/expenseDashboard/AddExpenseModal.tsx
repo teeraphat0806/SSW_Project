@@ -1,9 +1,10 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import { X, DollarSign, FileText, Calendar, Plus, Upload } from "lucide-react";
-import { useExpenseContext, ExpenseCategory } from "@/contexts/ExpenseContext";
+import { useExpenseContext } from "@/contexts/ExpenseContext";
 import { toast } from "react-toastify";
 import ExpenseCategoryModal from "./ExpenseCategoryModal";
+import { useSession } from "next-auth/react";
 
 type AddExpenseModalProps = {
   open: boolean;
@@ -12,6 +13,7 @@ type AddExpenseModalProps = {
 
 const AddExpenseModal = ({ open, onClose }: AddExpenseModalProps) => {
   const { categories, refreshExpenses } = useExpenseContext();
+  const { data: session } = useSession();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [receiptFile, setReceiptFile] = useState<File | null>(null);
@@ -136,6 +138,16 @@ const AddExpenseModal = ({ open, onClose }: AddExpenseModalProps) => {
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="p-6 space-y-5">
+            <div className="rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800 dark:border-blue-900/60 dark:bg-blue-950/30 dark:text-blue-200">
+              <div className="font-medium">ผู้บันทึก</div>
+              <div>
+                {session?.user?.name || "ไม่ระบุ"}
+                {session?.user?.staff?.code
+                  ? ` (${session.user.staff.code})`
+                  : ""}
+              </div>
+            </div>
+
             {/* รายละเอียด */}
             <div>
               <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-zinc-300">

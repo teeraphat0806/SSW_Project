@@ -35,6 +35,7 @@ model Staff {
   Bill_Bill_deliveredByToStaff Bill[]            @relation("Bill_deliveredByToStaff")
   Bill_Bill_salesNameToStaff   Bill[]            @relation("Bill_salesNameToStaff")
   orderLinks                   OrderPOStaff[]
+  expenses                     Expense[]
   jobPosition                  JobPosition?      @relation(fields: [positionId], references: [id])
   user                         User?             @relation("UserStaff", fields: [userId], references: [id])
   employments                  StaffEmployment[]
@@ -356,7 +357,11 @@ model Expense {
   receiptUrl  String?
   createdAt   DateTime        @default(now())
   updatedAt   DateTime        @updatedAt
+  staffId     Int?
+  staff       Staff?          @relation(fields: [staffId], references: [id], onDelete: SetNull)
   category    ExpenseCategory @relation(fields: [categoryId], references: [id])
+
+  @@index([staffId])
 }
 
 model ExpenseCategory {

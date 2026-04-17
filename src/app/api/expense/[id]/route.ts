@@ -18,11 +18,38 @@ export async function GET(
   try {
     const expense = await prisma.expense.findUnique({
       where: { id: expenseId },
+      include: {
+        category: true,
+        staff: {
+          select: {
+            id: true,
+            user: {
+              select: {
+                name: true,
+              },
+            },
+          },
+        },
+      },
     });
     if (!expense) {
       return NextResponse.json({ error: "Expense not found" }, { status: 404 });
     }
-    return NextResponse.json({ expense }, { status: 200 });
+    const expenseRecord = expense as any;
+    return NextResponse.json(
+      {
+        expense: {
+          ...expenseRecord,
+          staff: expenseRecord.staff
+            ? {
+                id: expenseRecord.staff.id,
+                name: expenseRecord.staff.user?.name || "ไม่ระบุชื่อพนักงาน",
+              }
+            : null,
+        },
+      },
+      { status: 200 },
+    );
   } catch (error) {
     console.error("Error fetching expense:", error);
     return NextResponse.json(
@@ -58,16 +85,46 @@ export async function PATCH(
     );
   }
 
-  console.log("✅ Validation passed. Updating with data:", parsed.data);
+  const { staffId: _ignoredStaffId, ...updateData } = parsed.data;
+
+  console.log("✅ Validation passed. Updating with data:", updateData);
 
   try {
     const updatedExpense = await prisma.expense.update({
       where: { id: Number(expenseId) },
-      data: parsed.data,
+      data: updateData,
+      include: {
+        category: true,
+        staff: {
+          select: {
+            id: true,
+            user: {
+              select: {
+                name: true,
+              },
+            },
+          },
+        },
+      },
     });
 
     console.log("✅ Expense updated successfully:", updatedExpense);
-    return NextResponse.json({ expense: updatedExpense }, { status: 200 });
+    const updatedExpenseRecord = updatedExpense as any;
+    return NextResponse.json(
+      {
+        expense: {
+          ...updatedExpenseRecord,
+          staff: updatedExpenseRecord.staff
+            ? {
+                id: updatedExpenseRecord.staff.id,
+                name:
+                  updatedExpenseRecord.staff.user?.name || "ไม่ระบุชื่อพนักงาน",
+              }
+            : null,
+        },
+      },
+      { status: 200 },
+    );
   } catch (error) {
     console.error("Error updating expense:", error);
     return NextResponse.json(
