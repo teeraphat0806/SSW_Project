@@ -70,6 +70,11 @@ export default function ReceiptTemporary({
 }) {
   const [data, setData] = React.useState<ApiReceipt | null>(null);
 
+  const totalAmount = React.useMemo(
+    () => data?.steel.reduce((sum, item) => sum + (item.amount || 0), 0) ?? 0,
+    [data],
+  );
+
   const handlePrint = () => {
     window.print();
   };
@@ -232,6 +237,15 @@ export default function ReceiptTemporary({
             </tr>
           </tbody>
         </table>
+
+        <div className="flex justify-end  px-3 py-2 text-[11px]">
+          <div className="flex items-center gap-2">
+            <span className="font-semibold">จำนวนทั้งหมด</span>
+            <span className="min-w-16 text-right font-semibold">
+              {totalAmount.toLocaleString("th-TH")}
+            </span>
+          </div>
+        </div>
 
         {/* Signature Section */}
         <div className="mt-6 grid grid-cols-2 gap-8 text-[11px]">
