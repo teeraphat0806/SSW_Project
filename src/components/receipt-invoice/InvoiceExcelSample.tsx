@@ -275,8 +275,10 @@ export const InvoiceExcelSample: React.FC<Inv71LikeInvoiceProps> = ({
 
               return (
                 <tr key={idx} className="align-top">
-                  <td className="pt-0.5 pr-1 pl-0">{idx + 1}</td>
-                  <td className="pt-0.5 pr-1 whitespace-nowrap">{steelDisplay}</td>
+                  <td className="pt-0.5 pl-0 ">{idx + 1}</td>
+                  <td className="pt-0.5 pr-1 whitespace-nowrap">
+                    {steelDisplay}
+                  </td>
                   <td className="pt-0.5 pr-1 text-right pl-1">{jobDisplay}</td>
                   <td className="pt-0.5 pr-6 text-right pl-1">{item.amount}</td>
                   <td className="pt-0.5 pr-1 text-right">{weightDisplay}</td>
