@@ -58,9 +58,6 @@ export default function StatementPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
-  const [assigningStatementId, setAssigningStatementId] = useState<
-    number | null
-  >(null);
 
   const fetchStatements = useCallback(
     async (
@@ -249,29 +246,6 @@ export default function StatementPage() {
     }
   };
 
-  const handleAssignStatementNumber = async (statementId: number) => {
-    setAssigningStatementId(statementId);
-    try {
-      const res = await fetch("/api/statement/assign-number", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ statementId }),
-      });
-
-      if (!res.ok) {
-        const error = await res.json().catch(() => ({}));
-        throw new Error(error.error || "Failed to assign statement number");
-      }
-
-      await fetchStatements(page, searchTerm, dateFrom, dateTo);
-    } catch (error) {
-      console.error("Failed to assign statement number", error);
-      throw error;
-    } finally {
-      setAssigningStatementId(null);
-    }
-  };
-
   return (
     <div className="min-h-screen bg-zinc-50/50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 p-4 md:p-8 transition-colors duration-300 font-sans">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
@@ -282,9 +256,6 @@ export default function StatementPage() {
           <p className="text-zinc-500 dark:text-zinc-400 mt-1">
             รายการใบเสร็จรับเงินทั้งหมดที่ออกให้ลูกค้า
           </p>
-          <div className="mt-3 inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-sm font-medium text-blue-700 dark:border-blue-900/60 dark:bg-blue-900/20 dark:text-blue-300">
-            เลขถัดไปที่ระบบจะกำหนด: HS{nextStatementNo ?? "-"}
-          </div>
         </div>
         <CreateStatementDialog
           customers={customers}
@@ -299,8 +270,7 @@ export default function StatementPage() {
         totalPages={totalPages}
         onPageChange={setPage}
         onEdit={handleEditStatement}
-        onAssignNumber={handleAssignStatementNumber}
-        assigningStatementId={assigningStatementId}
+        nextStatementNo={nextStatementNo}
         searchTerm={searchTerm}
         onSearchChange={(value) => {
           console.log("Search changed to:", value);

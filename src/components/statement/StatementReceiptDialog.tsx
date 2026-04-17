@@ -107,15 +107,19 @@ interface CustomerData {
 }
 
 interface StatementReceiptDialogProps {
+  statementId?: number | null;
   customerId: number;
   statementNo: number | null;
+  nextStatementNo?: number | null;
   openInitially?: boolean;
   onOpenChange?: (open: boolean) => void;
 }
 
 export default function StatementReceiptDialog({
+  statementId,
   customerId,
   statementNo,
+  nextStatementNo = null,
   openInitially = false,
   onOpenChange,
 }: StatementReceiptDialogProps) {
@@ -124,6 +128,10 @@ export default function StatementReceiptDialog({
   const [customer, setCustomer] = useState<CustomerData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [currentStatementNo, setCurrentStatementNo] = useState<number | null>(
+    statementNo,
+  );
+  const [assigning, setAssigning] = useState(false);
 
   // Handle open state changes
   const handleOpenChange = (newOpen: boolean) => {
@@ -139,13 +147,53 @@ export default function StatementReceiptDialog({
       setOpen(openInitially);
     }
   }, [openInitially]);
+
+  useEffect(() => {
+    setCurrentStatementNo(statementNo);
+  }, [statementNo]);
   // วันที่ปัจจุบัน (พ.ศ. แบบย่อ)
   const currentDate = new Date();
   const thaiShortDate = `${String(currentDate.getDate()).padStart(2, "0")}/${String(currentDate.getMonth() + 1).padStart(2, "0")}/${(currentDate.getFullYear() + 543).toString().slice(-2)}`;
 
   // เลขที่เอกสาร
   const documentNo =
-    statementNo !== null ? `${statementNo.toString()}` : "ยังไม่กำหนดเลข";
+    currentStatementNo !== null
+      ? `${currentStatementNo.toString()}`
+      : "ยังไม่กำหนดเลข";
+
+  const canAssignStatementNo =
+    currentStatementNo === null &&
+    statementId !== null &&
+    statementId !== undefined;
+
+  const handleAssignStatementNumber = async () => {
+    if (!canAssignStatementNo || assigning) return;
+
+    setAssigning(true);
+    try {
+      const res = await fetch("/api/statement/assign-number", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ statementId }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || "Failed to assign statement number");
+      }
+
+      const result = await res.json();
+      const assignedNo = result?.statement?.statementNo;
+      if (typeof assignedNo === "number") {
+        setCurrentStatementNo(assignedNo);
+      }
+    } catch (error) {
+      console.error("Failed to assign statement number", error);
+      alert("กำหนดเลขไม่สำเร็จ");
+    } finally {
+      setAssigning(false);
+    }
+  };
 
   useEffect(() => {
     if (!open) return;
@@ -225,22 +273,36 @@ export default function StatementReceiptDialog({
       <DialogContent className="max-w-full max-h-full w-screen h-screen overflow-y-auto bg-white dark:bg-zinc-950 text-gray-900 dark:text-white p-0 border-0 rounded-none">
         <div className="bg-white dark:bg-zinc-950 print:bg-white">
           {/* Print Controls - Hidden when printing */}
-          <div className="print:hidden fixed top-20 md:top-4 right-4 z-30 flex gap-2">
+          <div className="print:hidden fixed top-20 md:top-4 right-4 z-30 flex items-center gap-2">
             <Button variant="outline" size="sm" onClick={handleClose}>
               <ArrowLeft className="h-4 w-4 mr-2" />
               ย้อนกลับ
             </Button>
+            {!currentStatementNo && canAssignStatementNo ? (
+              <span className="hidden sm:inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-sm font-medium text-blue-700 dark:border-blue-900/60 dark:bg-blue-900/20 dark:text-blue-300">
+                เลขถัดไปที่ระบบจะกำหนด: HS{nextStatementNo ?? "-"}
+              </span>
+            ) : null}
+            {!currentStatementNo && canAssignStatementNo ? (
+              <Button
+                size="sm"
+                onClick={handleAssignStatementNumber}
+                disabled={assigning}
+                className="bg-blue-600 hover:bg-blue-700 text-white"
+              >
+                {assigning ? "กำลังกำหนด..." : "กำหนดเลข"}
+              </Button>
+            ) : null}
             <Button
               size="sm"
               onClick={handlePrint}
               className="bg-blue-600 hover:bg-blue-700 text-white"
-              disabled={statementNo === null}
+              disabled={currentStatementNo === null}
             >
               <Printer className="h-4 w-4 mr-2" />
               พิมพ์งาน
             </Button>
           </div>
-          <span className="font-semibold">เลขที่</span> {documentNo}
           {loading ? (
             <div className="min-h-screen flex items-center justify-center bg-white dark:bg-zinc-950">
               <Loader2 className="h-12 w-12 animate-spin text-zinc-400" />

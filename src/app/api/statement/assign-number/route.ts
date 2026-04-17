@@ -24,6 +24,10 @@ export async function POST(req: NextRequest) {
     }
 
     const result = await prisma.$transaction(async (tx) => {
+      await tx.$executeRaw(Prisma.sql`
+        SELECT pg_advisory_xact_lock(742019)
+      `);
+
       const statement = await tx.statement.findUnique({
         where: { id: statementId },
         select: { id: true, statementNo: true, customerId: true },
@@ -40,7 +44,9 @@ export async function POST(req: NextRequest) {
       }
 
       const nextNoRows = await tx.$queryRaw<{ nextNo: number }[]>(Prisma.sql`
-        SELECT nextval(pg_get_serial_sequence('\"Statement\"', 'statementNo'))::int AS \"nextNo\"
+        SELECT COALESCE(MAX("statementNo"), 0)::int + 1 AS "nextNo"
+        FROM "Statement"
+        WHERE "statementNo" IS NOT NULL
       `);
 
       const nextNo = nextNoRows[0]?.nextNo;

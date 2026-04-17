@@ -40,8 +40,7 @@ export interface StatementTableProps {
     statementId: number,
     payload: { invoiceIds: number[]; statementDate?: string },
   ) => Promise<void> | void;
-  onAssignNumber?: (statementId: number) => Promise<void> | void;
-  assigningStatementId?: number | null;
+  nextStatementNo?: number | null;
   searchTerm?: string;
   onSearchChange?: (value: string) => void;
   dateFrom?: string;
@@ -58,8 +57,7 @@ export default function StatementTable({
   totalPages,
   onPageChange,
   onEdit,
-  onAssignNumber,
-  assigningStatementId = null,
+  nextStatementNo = null,
   searchTerm = "",
   onSearchChange,
   dateFrom = "",
@@ -149,19 +147,18 @@ export default function StatementTable({
                 <TableHead>วันที่สร้าง</TableHead>
                 <TableHead>แก้ไข</TableHead>
                 <TableHead>พิมพ์</TableHead>
-                <TableHead>กำหนดเลข</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center py-8">
+                  <TableCell colSpan={7} className="text-center py-8">
                     กำลังโหลด...
                   </TableCell>
                 </TableRow>
               ) : data.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center py-8">
+                  <TableCell colSpan={7} className="text-center py-8">
                     ไม่พบข้อมูล
                   </TableCell>
                 </TableRow>
@@ -175,9 +172,9 @@ export default function StatementTable({
                             ? "ยังไม่กำหนดเลข"
                             : `HS${item.statementNo.toString()}`}
                         </span>
-                        {item.statementNo === null && onAssignNumber ? (
+                        {item.statementNo === null ? (
                           <span className="text-xs text-blue-600 dark:text-blue-400">
-                            รอกดปุ่มกำหนดเลข
+                            รอกดกำหนดเลข
                           </span>
                         ) : null}
                       </div>
@@ -206,38 +203,12 @@ export default function StatementTable({
                       />
                     </TableCell>
                     <TableCell>
-                      {item.statementNo !== null ? (
-                        <StatementReceiptDialog
-                          customerId={item.customerId}
-                          statementNo={item.statementNo}
-                        />
-                      ) : (
-                        <button
-                          type="button"
-                          disabled
-                          className="inline-flex items-center justify-center rounded-lg border border-zinc-200 bg-zinc-100 px-3 py-2 text-sm font-medium text-zinc-400 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-500"
-                        >
-                          ยังไม่มีเลข
-                        </button>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {item.statementNo === null && onAssignNumber ? (
-                        <button
-                          type="button"
-                          onClick={() => onAssignNumber(item.id)}
-                          disabled={assigningStatementId === item.id}
-                          className="inline-flex items-center justify-center rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
-                        >
-                          {assigningStatementId === item.id
-                            ? "กำลังกำหนด..."
-                            : "กำหนดเลขปัจจุบัน"}
-                        </button>
-                      ) : (
-                        <span className="text-sm text-zinc-400 dark:text-zinc-500">
-                          -
-                        </span>
-                      )}
+                      <StatementReceiptDialog
+                        statementId={item.id}
+                        customerId={item.customerId}
+                        statementNo={item.statementNo}
+                        nextStatementNo={nextStatementNo}
+                      />
                     </TableCell>
                   </TableRow>
                 ))

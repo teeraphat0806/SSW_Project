@@ -566,6 +566,7 @@ export function QuickAction({
       {/* View Statement Dialog - if statement already exists */}
       {viewStatementDialogOpen && statementData && (
         <StatementReceiptDialog
+          statementId={statementData.id}
           customerId={statementData.customerId}
           statementNo={statementData.statementNo}
           openInitially={true}
