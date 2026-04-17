@@ -311,16 +311,14 @@ export default function StatementPrintPage() {
             style={{ pageBreakAfter: isLastPage ? "auto" : "always" }}
           >
             <div className="page-content">
-              <div className="mb-6 mt-7">
+              <div className="mb-6 mt-21">
                 <div className="flex justify-between items-start mb-2">
                   <div className="text-left" />
                   <div className="text-right text-base text-black dark:text-white print:text-black">
                     <p>
                       Page {pageIndex + 1}/{pages.length}
                     </p>
-                    <p className="mb-10"></p>
                   </div>
-                  
                 </div>
 
                 <div className="mb-4">
