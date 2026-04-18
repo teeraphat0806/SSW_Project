@@ -12,18 +12,6 @@ export type ExpenseCategory = {
   id: number;
   name: string;
   description: string;
-  Staff?: {
-    id: number;
-    code: string;
-    jobPosition?: {
-      id: number;
-      name: string;
-    } | null;
-    user: {
-      name: string | null;
-      email: string;
-    } | null;
-  };
 };
 
 export type ExpenseItem = {
@@ -32,8 +20,13 @@ export type ExpenseItem = {
   amount: number;
   expenseDate: string;
   categoryId: number;
+  staffId?: number | null;
   receiptUrl?: string | null;
   category: ExpenseCategory;
+  staff?: {
+    id: number;
+    name: string;
+  } | null;
   createdAt: string;
   updatedAt: string;
 };

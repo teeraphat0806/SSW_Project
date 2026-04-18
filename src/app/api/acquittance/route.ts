@@ -74,6 +74,10 @@ export async function GET(req: NextRequest) {
 
     let acquittanceItems;
     let total;
+    const maxAcquittanceNo = await prisma.acquittance.aggregate({
+      _max: { acquittanceNo: true },
+    });
+    const nextAcquittanceNo = (maxAcquittanceNo._max.acquittanceNo ?? 0) + 1;
 
     if (usePagination) {
       total = await prisma.acquittance.count({ where });
@@ -96,6 +100,7 @@ export async function GET(req: NextRequest) {
       total,
       page: usePagination ? page : undefined,
       limit: usePagination ? limit : undefined,
+      nextAcquittanceNo,
     });
   } catch (error) {
     console.error(error);

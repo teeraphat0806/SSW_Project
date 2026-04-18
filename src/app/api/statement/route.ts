@@ -77,6 +77,10 @@ export async function GET(req: NextRequest) {
 
     let statementItems;
     let total;
+    const maxStatementNo = await prisma.statement.aggregate({
+      _max: { statementNo: true },
+    });
+    const nextStatementNo = (maxStatementNo._max.statementNo ?? 0) + 1;
     if (usePagination) {
       total = await prisma.statement.count({ where });
       statementItems = await prisma.statement.findMany({
@@ -98,6 +102,7 @@ export async function GET(req: NextRequest) {
       total,
       page: usePagination ? page : undefined,
       limit: usePagination ? limit : undefined,
+      nextStatementNo,
     });
   } catch (error) {
     console.error(error);

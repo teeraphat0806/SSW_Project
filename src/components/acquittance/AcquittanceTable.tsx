@@ -14,7 +14,7 @@ import {
 
 export interface Acquittance {
   id: number;
-  acquittanceNo: number;
+  acquittanceNo: number | null;
   customerId: number;
   customerName: string;
   createdAt: string;
@@ -40,6 +40,7 @@ export interface AcquittanceTableProps {
     acquittanceId: number,
     payload: { invoiceIds: number[]; acquittanceDate?: string },
   ) => Promise<void> | void;
+  nextAcquittanceNo?: number | null;
   searchTerm?: string;
   onSearchChange?: (value: string) => void;
   dateFrom?: string;
@@ -56,6 +57,7 @@ export default function AcquittanceTable({
   totalPages,
   onPageChange,
   onEdit,
+  nextAcquittanceNo = null,
   searchTerm = "",
   onSearchChange,
   dateFrom = "",
@@ -163,7 +165,11 @@ export default function AcquittanceTable({
               ) : (
                 data.map((item) => (
                   <TableRow key={item.id}>
-                    <TableCell>HS{item.acquittanceNo.toString()}</TableCell>
+                    <TableCell>
+                      {item.acquittanceNo === null
+                        ? "ยังไม่กำหนดเลข"
+                        : `HS${item.acquittanceNo.toString()}`}
+                    </TableCell>
                     <TableCell>{item.customerName}</TableCell>
                     <TableCell>{item.invoiceCount}</TableCell>
                     <TableCell>
@@ -189,9 +195,10 @@ export default function AcquittanceTable({
                     </TableCell>
                     <TableCell>
                       <AcquittanceReceiptDialog
+                        acquittanceId={item.id}
                         customerId={item.customerId}
                         acquittanceNo={item.acquittanceNo}
-                        acquittanceId={item.id}
+                        nextAcquittanceNo={nextAcquittanceNo}
                       />
                     </TableCell>
                   </TableRow>

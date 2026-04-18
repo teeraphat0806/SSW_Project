@@ -5,7 +5,7 @@ import type { Statement } from "../../components/statement/StatementTable";
 import CreateStatementDialog from "../../components/statement/CreateStatementDialog";
 type StatementListItem = {
   id: number;
-  statementNo: number;
+  statementNo: number | null;
   customerId: number;
   createdAt: string;
   updatedAt: string;
@@ -14,7 +14,7 @@ type StatementListItem = {
 type StatementDetailApiResponse = {
   statement: {
     id: number;
-    statementNo: number;
+    statementNo: number | null;
     customerId: number;
     createdAt: string;
     updatedAt: string;
@@ -54,6 +54,7 @@ export default function StatementPage() {
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [nextStatementNo, setNextStatementNo] = useState<number | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
@@ -87,6 +88,7 @@ export default function StatementPage() {
         const listJson: {
           statementItems?: StatementListItem[];
           total?: number;
+          nextStatementNo?: number;
         } = await listRes.json();
 
         const statementItems = Array.isArray(listJson.statementItems)
@@ -165,11 +167,17 @@ export default function StatementPage() {
 
         const total = typeof listJson.total === "number" ? listJson.total : 0;
         setTotalPages(Math.max(1, Math.ceil(total / PAGE_SIZE)));
+        setNextStatementNo(
+          typeof listJson.nextStatementNo === "number"
+            ? listJson.nextStatementNo
+            : null,
+        );
       } catch (error) {
         console.error("Failed to fetch statements", error);
         setStatements([]);
         setCustomers([]);
         setTotalPages(1);
+        setNextStatementNo(null);
       } finally {
         setLoading(false);
       }
@@ -262,6 +270,7 @@ export default function StatementPage() {
         totalPages={totalPages}
         onPageChange={setPage}
         onEdit={handleEditStatement}
+        nextStatementNo={nextStatementNo}
         searchTerm={searchTerm}
         onSearchChange={(value) => {
           console.log("Search changed to:", value);

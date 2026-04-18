@@ -1,9 +1,10 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import { X, DollarSign, FileText, Calendar, Plus, Upload } from "lucide-react";
-import { useExpenseContext, ExpenseCategory } from "@/contexts/ExpenseContext";
+import { useExpenseContext } from "@/contexts/ExpenseContext";
 import { toast } from "react-toastify";
 import ExpenseCategoryModal from "./ExpenseCategoryModal";
+import { useSession } from "next-auth/react";
 
 type AddExpenseModalProps = {
   open: boolean;
@@ -12,6 +13,7 @@ type AddExpenseModalProps = {
 
 const AddExpenseModal = ({ open, onClose }: AddExpenseModalProps) => {
   const { categories, refreshExpenses } = useExpenseContext();
+  const { data: session } = useSession();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [receiptFile, setReceiptFile] = useState<File | null>(null);

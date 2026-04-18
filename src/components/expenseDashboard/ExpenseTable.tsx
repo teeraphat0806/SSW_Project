@@ -104,7 +104,7 @@ const ExpenseTable = () => {
   return (
     <div className="max-w-7xl mx-auto bg-white dark:bg-zinc-900/50 rounded-xl shadow-lg overflow-hidden border border-gray-100 dark:border-zinc-800">
       <div className="overflow-x-auto">
-        <table className="w-full text-left border-collapse min-w-[900px]">
+        <table className="w-full text-left border-collapse min-w-225">
           <thead>
             <tr className="bg-gray-100 dark:bg-zinc-900 border-b border-gray-200 dark:border-zinc-800 text-gray-600 dark:text-zinc-300">
               <th className="p-4 font-semibold text-sm uppercase tracking-wider text-center">
@@ -198,10 +198,10 @@ const ExpenseTable = () => {
                     <td className="p-4">
                       <div className="flex flex-col">
                         <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                          {item.category?.Staff?.user?.name || "ไม่ระบุ"}
+                          {item.staff?.name || "ไม่ระบุ"}
                         </span>
                         <span className="text-xs text-gray-500 dark:text-gray-400">
-                          {item.category?.Staff?.jobPosition?.name || "-"}
+                          -
                         </span>
                       </div>
                     </td>

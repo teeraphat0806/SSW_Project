@@ -14,7 +14,7 @@ import {
 
 export interface Statement {
   id: number;
-  statementNo: number;
+  statementNo: number | null;
   customerId: number;
   customerName: string;
   createdAt: string;
@@ -40,6 +40,7 @@ export interface StatementTableProps {
     statementId: number,
     payload: { invoiceIds: number[]; statementDate?: string },
   ) => Promise<void> | void;
+  nextStatementNo?: number | null;
   searchTerm?: string;
   onSearchChange?: (value: string) => void;
   dateFrom?: string;
@@ -56,6 +57,7 @@ export default function StatementTable({
   totalPages,
   onPageChange,
   onEdit,
+  nextStatementNo = null,
   searchTerm = "",
   onSearchChange,
   dateFrom = "",
@@ -163,7 +165,20 @@ export default function StatementTable({
               ) : (
                 data.map((item) => (
                   <TableRow key={item.id}>
-                    <TableCell>HS{item.statementNo.toString()}</TableCell>
+                    <TableCell>
+                      <div className="flex flex-col gap-1">
+                        <span className="font-medium text-zinc-900 dark:text-zinc-100">
+                          {item.statementNo === null
+                            ? "ยังไม่กำหนดเลข"
+                            : `HS${item.statementNo.toString()}`}
+                        </span>
+                        {item.statementNo === null ? (
+                          <span className="text-xs text-blue-600 dark:text-blue-400">
+                            รอกดกำหนดเลข
+                          </span>
+                        ) : null}
+                      </div>
+                    </TableCell>
                     <TableCell>{item.customerName}</TableCell>
                     <TableCell>{item.invoiceCount}</TableCell>
                     <TableCell>
@@ -189,8 +204,10 @@ export default function StatementTable({
                     </TableCell>
                     <TableCell>
                       <StatementReceiptDialog
+                        statementId={item.id}
                         customerId={item.customerId}
                         statementNo={item.statementNo}
+                        nextStatementNo={nextStatementNo}
                       />
                     </TableCell>
                   </TableRow>
