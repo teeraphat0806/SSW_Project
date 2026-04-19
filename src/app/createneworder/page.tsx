@@ -10,7 +10,6 @@ import CustomerForm from "@/components/newJobOrder/CustomerForm";
 import CustomerInfoBox from "@/components/newJobOrder/CustomerInfoBox";
 import { HeaderSection } from "@/components/newJobOrder/HeaderSection";
 import { ItemsSection } from "@/components/newJobOrder/ItemsSection";
-import "../globals.css";
 import {
   ArrowLeft,
   Calendar,

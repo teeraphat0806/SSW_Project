@@ -17,7 +17,6 @@ import type { HeadOrder, SteelItem, SteelType } from "@/types/quotation.types";
 import type { ApiQuotation } from "@/app/api/up-date-quotation/[id]/route";
 import { ShapeSteel } from "@/types";
 
-import "../../globals.css";
 import HeaderOrder from "@/components/create-new-quotation/HeaderOrder";
 
 // ────────────────────────────────────────

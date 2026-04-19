@@ -92,10 +92,11 @@ export async function POST(request: NextRequest) {
       body: upstreamForm,
     });
 
+    //Partial คือการทำให้ไม่จำเป้นต้องกรอกทุกฟิลด์
     const upstreamJson: Partial<OcrUpstreamResponse> = await upstreamRes
       .json()
       .catch(() => ({}));
-
+    
     if (!upstreamRes.ok || !upstreamJson.result) {
       return NextResponse.json(
         {

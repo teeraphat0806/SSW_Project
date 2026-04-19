@@ -28,7 +28,6 @@ import { Loader2, AlertCircle, CheckCircle, Eye, EyeOff } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { ToastContainer, toast } from "react-toastify";
-import "../globals.css";
 
 // Thai banks list
 const THAI_BANKS = [
