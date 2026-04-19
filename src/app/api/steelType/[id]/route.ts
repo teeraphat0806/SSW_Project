@@ -20,7 +20,7 @@ export async function GET(
         id: Number(id),
       },
       include: {
-        SteelStock: { where: { quantity: { gt: 0 } } }, //gt: 0 คือ quantity != 0
+        SteelStock: { where: { quantity: { gt: 0 } } }, //gt: 0 คือ quantity > 0 เท่านั้น
       },
     });
     console.log("result", result);

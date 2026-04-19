@@ -12,7 +12,6 @@ import CustomerForm from "@/components/create-new-quotation/CustomerForm";
 import CustomerInfoBox from "@/components/newJobOrder/CustomerInfoBox";
 import AddItem from "@/components/create-new-quotation/AddItem";
 import HeaderOrder from "@/components/create-new-quotation/HeaderOrder";
-import "../globals.css";
 import {
   ArrowLeft,
   Calendar,
