@@ -101,9 +101,12 @@ export default function EditAcquittanceDialog({
   const fetchAvailableInvoices = async () => {
     setAvailableLoading(true);
     try {
-      const res = await fetch(`/api/invoice/customer/${customerId}`, {
-        cache: "no-store",
-      });
+      const res = await fetch(
+        `/api/invoice/customer/${customerId}?excludeAcquittanceUsed=true`,
+        {
+          cache: "no-store",
+        },
+      );
 
       if (!res.ok) throw new Error("Failed to fetch customer invoices");
 

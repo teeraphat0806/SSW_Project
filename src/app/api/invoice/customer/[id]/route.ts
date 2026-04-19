@@ -16,6 +16,10 @@ export async function GET(
   const { searchParams } = new URL(req.url);
   const limitParam = searchParams.get("limit");
   const pageParam = searchParams.get("page");
+  const excludeStatementUsed =
+    searchParams.get("excludeStatementUsed") === "true";
+  const excludeAcquittanceUsed =
+    searchParams.get("excludeAcquittanceUsed") === "true";
 
   const limit = limitParam ? Number(limitParam) : 10;
   const page = pageParam ? Number(pageParam) : 1;
@@ -39,6 +43,8 @@ export async function GET(
       OrderPO: {
         customerId,
       },
+      ...(excludeStatementUsed ? { statementItem: null } : {}),
+      ...(excludeAcquittanceUsed ? { acquittanceItem: null } : {}),
     };
 
     const [total, invoices] = await prisma.$transaction([

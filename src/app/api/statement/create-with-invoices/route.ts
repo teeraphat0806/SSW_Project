@@ -15,9 +15,12 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const customerId = Number(body.customerId);
-    const invoiceIds: number[] = Array.isArray(body.invoiceIds)
+    const rawInvoiceIds: number[] = Array.isArray(body.invoiceIds)
       ? body.invoiceIds.map(Number)
       : [];
+    const invoiceIds = Array.from(
+      new Set(rawInvoiceIds.filter((id) => Number.isFinite(id) && id > 0)),
+    );
 
     if (!customerId)
       return NextResponse.json(
@@ -35,7 +38,10 @@ export async function POST(req: NextRequest) {
 
       const invoices = await tx.invoice.findMany({
         where: { id: { in: invoiceIds } },
-        include: { OrderPO: { include: { bill: true } } },
+        include: {
+          OrderPO: { include: { bill: true } },
+          statementItem: { select: { statementId: true } },
+        },
       });
 
       if (invoices.length !== invoiceIds.length) {
@@ -56,6 +62,12 @@ export async function POST(req: NextRequest) {
           (err as any).code = "BILL_MISSING";
           (err as any).invoiceId = inv.id;
           (err as any).orderPOId = inv.OrderPO.id;
+          throw err;
+        }
+        if (inv.statementItem) {
+          const err = new Error("Invoice already used in another statement");
+          (err as any).code = "INVOICE_USED_OTHER_STATEMENT";
+          (err as any).invoiceId = inv.id;
           throw err;
         }
       }
@@ -95,6 +107,15 @@ export async function POST(req: NextRequest) {
           error: "Some invoices have no Bill yet",
           invoiceId: error.invoiceId,
           orderPOId: error.orderPOId,
+        },
+        { status: 400 },
+      );
+
+    if (error.code === "INVOICE_USED_OTHER_STATEMENT")
+      return NextResponse.json(
+        {
+          error: "One or more invoices already used in another statement",
+          invoiceId: error.invoiceId,
         },
         { status: 400 },
       );
