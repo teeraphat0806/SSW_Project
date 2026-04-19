@@ -26,6 +26,8 @@ export async function GET(req: NextRequest) {
     const limit = parseInt(searchParams.get("limit") || "10");
     const customerId = searchParams.get("customerId");
     const customerName = searchParams.get("customerName");
+    const dateFrom = searchParams.get("dateFrom");
+    const dateTo = searchParams.get("dateTo");
     const sortBy = searchParams.get("sortBy") || "date";
     const sortOrder = searchParams.get("sortOrder") || "desc";
 
@@ -144,11 +146,84 @@ export async function GET(req: NextRequest) {
     const startOfMonth = new Date(yearNumber, monthNumber - 1, 1);
     const endOfMonth = new Date(yearNumber, monthNumber, 1);
 
+    const startDate = new Date(startOfMonth);
+    const endDate = new Date(endOfMonth);
+
+    if (dateFrom) {
+      const parsedFrom = new Date(`${dateFrom}T00:00:00.000Z`);
+      if (Number.isNaN(parsedFrom.getTime())) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: {
+              code: "INVALID_DATE_FROM",
+              message: "รูปแบบ dateFrom ไม่ถูกต้อง",
+              details: { field: "dateFrom", provided: dateFrom },
+            },
+          },
+          { status: 400 },
+        );
+      }
+      if (parsedFrom > startDate) {
+        startDate.setTime(parsedFrom.getTime());
+      }
+    }
+
+    if (dateTo) {
+      const parsedTo = new Date(`${dateTo}T00:00:00.000Z`);
+      if (Number.isNaN(parsedTo.getTime())) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: {
+              code: "INVALID_DATE_TO",
+              message: "รูปแบบ dateTo ไม่ถูกต้อง",
+              details: { field: "dateTo", provided: dateTo },
+            },
+          },
+          { status: 400 },
+        );
+      }
+
+      const parsedToExclusive = new Date(parsedTo);
+      parsedToExclusive.setUTCDate(parsedToExclusive.getUTCDate() + 1);
+
+      if (parsedToExclusive < endDate) {
+        endDate.setTime(parsedToExclusive.getTime());
+      }
+    }
+
+    if (startDate >= endDate) {
+      return NextResponse.json(
+        {
+          success: true,
+          data: [],
+          pagination: {
+            page,
+            limit,
+            total: 0,
+            totalPages: 1,
+            hasNextPage: false,
+            hasPrevPage: false,
+          },
+          meta: {
+            year: yearNumber,
+            month: monthNumber,
+            monthName: monthNames[monthNumber - 1],
+            totalAmount: 0,
+            totalQuantity: 0,
+            currency: "THB",
+          },
+        },
+        { status: 200 },
+      );
+    }
+
     // Build where clause
     const whereClause: any = {
       createdAt: {
-        gte: startOfMonth,
-        lt: endOfMonth,
+        gte: startDate,
+        lt: endDate,
       },
       OrderPO: {
         is: {

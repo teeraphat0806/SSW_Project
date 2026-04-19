@@ -104,7 +104,9 @@ export default function CreateAcquittanceDialog({
             setInvoiceList([]);
             return;
           }
-          const res = await fetch(`/api/invoice/customer/${customer.id}`);
+          const res = await fetch(
+            `/api/invoice/customer/${customer.id}?excludeAcquittanceUsed=true`,
+          );
           if (!res.ok) {
             throw new Error(`Failed to fetch invoices: ${res.status}`);
           }

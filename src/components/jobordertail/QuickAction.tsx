@@ -48,6 +48,18 @@ type PreSelectInvoiceData = {
   invoiceId: number;
 };
 
+type TemporarySteelItem = {
+  steelType: string;
+  thickness: number;
+  width?: number | null;
+  length: number;
+  amount: number;
+  weight?: number | null;
+  cuttingMethod?: string | null;
+  isOD?: boolean;
+  isServices?: boolean;
+};
+
 type StatementData = {
   id: number;
   statementNo: number | null;
@@ -93,7 +105,9 @@ export function QuickAction({
   const [loadingKey, setLoadingKey] = React.useState<ActionKey | null>(null);
   const [tempReceiptDialog, setTempReceiptDialog] = React.useState(false);
   const [orderData, setOrderData] = React.useState<any>(null);
-  const [selectedItems, setSelectedItems] = React.useState<any[]>([]);
+  const [selectedItems, setSelectedItems] = React.useState<
+    TemporarySteelItem[]
+  >([]);
   const [deliveryAddress, setDeliveryAddress] = React.useState("");
   const [preSelectData, setPreSelectData] =
     React.useState<PreSelectInvoiceData | null>(null);
@@ -309,6 +323,36 @@ export function QuickAction({
     setSelectedItems((prev) => prev.filter((_, i) => i !== index));
   };
 
+  const formatSteelTypeLabel = (item: TemporarySteelItem) => {
+    let label =
+      item.isServices === true ? item.steelType : `เหล็ก ${item.steelType}`;
+
+    if (item.cuttingMethod === "FB") label += " F/P";
+    else if (item.cuttingMethod === "RM") label += " R/M";
+
+    if (item.isServices === true) {
+      label = `services ${label}`;
+    }
+
+    return label;
+  };
+
+  const formatSteelSizeLabel = (item: TemporarySteelItem) => {
+    if (item.isOD) {
+      const idSegment =
+        item.length === 0 || !item.length ? "" : ` ID ${item.length}`;
+      return `${item.thickness} t OD ${item.width ?? 0}${idSegment} mm`;
+    }
+
+    const cncSuffix = item.cuttingMethod === "CNC" ? " (แบบ)" : "";
+
+    if (item.width === 0 || item.width == null) {
+      return `Ø ${item.thickness} x ${item.length} mm${cncSuffix}`;
+    }
+
+    return `${item.thickness} x ${item.width} x ${item.length} mm${cncSuffix}`;
+  };
+
   // const openAll = () => {
   //   // หมายเหตุ: บางเบราว์เซอร์อาจ block popup ถ้าเปิดหลายแท็บ
   //   poKeys.forEach((k) =>
@@ -500,15 +544,16 @@ export function QuickAction({
                           </td>
                         </tr>
                       ) : (
-                        selectedItems.map((item: any, index: number) => (
+                        selectedItems.map((item, index: number) => (
                           <tr
                             key={index}
                             className="border-t hover:bg-muted/50"
                           >
-                            <td className="p-2">{item.steelType}</td>
                             <td className="p-2">
-                              {item.thickness} x {item.width || 0} x{" "}
-                              {item.length} mm
+                              {formatSteelTypeLabel(item)}
+                            </td>
+                            <td className="p-2">
+                              {formatSteelSizeLabel(item)}
                             </td>
                             <td className="p-2 text-center">{item.amount}</td>
                             <td className="p-2 text-right">
