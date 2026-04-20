@@ -25,10 +25,15 @@ type Expense = {
   expenseDate: string;
   categoryId: number;
   receiptUrl: string | null;
+  staffId?: number | null;
   category?: {
     id: number;
     name: string;
   };
+  staff?: {
+    id: number;
+    name: string;
+  } | null;
 };
 
 type EditExpenseModalProps = {
@@ -472,6 +477,16 @@ const EditExpenseModal = ({
                 </span>
               </div>
 
+              {/* พนักงานผู้บันทึก */}
+              <div>
+                <label className="block text-sm font-medium mb-2 text-gray-500 dark:text-gray-400">
+                  พนักงานผู้บันทึก
+                </label>
+                <p className="text-base text-gray-800 dark:text-gray-200">
+                  {expense.staff?.name || "ไม่ระบุ"}
+                </p>
+              </div>
+
               {/* รูปภาพใบเสร็จ */}
               <div>
                 <label className="block text-sm font-medium mb-2 text-gray-500 dark:text-gray-400">
@@ -555,7 +570,8 @@ const EditExpenseModal = ({
       {/* Image Preview Modal */}
       {showImagePreview && expense?.receiptUrl && (
         <div
-          className="fixed inset-0 bg-black/90 z-[60] flex items-center justify-center p-4"
+          className="fixed inset-0 bg-black/90 flex items-center justify-center p-4"
+          style={{ zIndex: 60 }}
           onClick={() => setShowImagePreview(false)}
         >
           <div className="relative max-w-7xl w-full max-h-[90vh] flex flex-col">

@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "../../../../lib/prisma";
 import { requireAuth } from "@/lib/permissions";
 import { getSalaryForPeriod } from "@/lib/salary-expense-utils";
-
+// API นี้ใช้สรุปภาพรวมรายเดือน เช่น รายรับ รายจ่าย กำไร และข้อมูลลูกค้าอันดับหนึ่ง
+// UI: src/app/saledashboard2/[year]/[month]/page.tsx (แสดงใน MonthSummaryCards)
 export async function GET(req: NextRequest) {
   const authResult = await requireAuth([
     "superadmin",
@@ -239,7 +240,7 @@ export async function GET(req: NextRequest) {
         : 0;
     const profitMargin = netPercentage;
 
-    // Billing summary logic aligned with reportOrder
+    // ตรรกะสรุปบิลให้สอดคล้องกับ reportOrder
     const invoices = await prisma.invoice.findMany({
       where: {
         createdAt: {

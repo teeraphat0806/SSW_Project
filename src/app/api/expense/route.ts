@@ -3,6 +3,22 @@ import prisma from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
 import { ExpenseSchema } from "@/lib/schemas/expense.schema";
 
+function mapExpenseWithStaff(
+  expense: {
+    staff?: { id: number; user?: { name: string | null } | null } | null;
+  } & Record<string, unknown>,
+) {
+  return {
+    ...expense,
+    staff: expense.staff
+      ? {
+          id: expense.staff.id,
+          name: expense.staff.user?.name || "ไม่ระบุชื่อพนักงาน",
+        }
+      : null,
+  };
+}
+
 export async function GET(request: NextRequest) {
   try {
     const authRequest = await requireAuth([
@@ -87,6 +103,16 @@ export async function GET(request: NextRequest) {
               name: true,
             },
           },
+          staff: {
+            select: {
+              id: true,
+              user: {
+                select: {
+                  name: true,
+                },
+              },
+            },
+          },
         },
       }),
       prisma.expense.count({ where }),
@@ -94,7 +120,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(
       {
-        expenses,
+        expenses: expenses.map((expense) => mapExpenseWithStaff(expense)),
         pagination: {
           page,
           limit,
@@ -126,12 +152,21 @@ export async function POST(request: Request) {
   try {
     const { amount, description, expenseDate, categoryId, receiptUrl } =
       await request.json();
+    const staffId = authRequest.session.user.staff?.id;
+
+    if (!staffId) {
+      return NextResponse.json(
+        { error: "ไม่พบข้อมูลพนักงานที่ผูกกับบัญชีผู้ใช้นี้" },
+        { status: 400 },
+      );
+    }
+
     const objectData = {
       amount,
       description,
       expenseDate,
       categoryId,
-      receiptUrl: receiptUrl || "",
+      receiptUrl: receiptUrl ?? undefined,
     };
     if (ExpenseSchema.safeParse(objectData).success === false) {
       return NextResponse.json(
@@ -145,7 +180,8 @@ export async function POST(request: Request) {
         description: description || "",
         expenseDate: expenseDate ? new Date(expenseDate) : new Date(),
         categoryId: categoryId || 1,
-        receiptUrl: receiptUrl || "",
+        receiptUrl: receiptUrl || null,
+        staffId,
       },
     });
     return NextResponse.json({ expense: newExpense }, { status: 201 });

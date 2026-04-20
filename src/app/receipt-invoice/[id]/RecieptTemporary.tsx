@@ -32,6 +32,9 @@ type ApiReceipt = {
     cuttingMethod?: CuttingMethod;
     job?: string | null;
     total: number;
+    isOD?: boolean;
+    isServices?: boolean;
+    isPerAmount?: boolean;
   }[];
 };
 
@@ -70,6 +73,11 @@ export default function ReceiptTemporary({
 }) {
   const [data, setData] = React.useState<ApiReceipt | null>(null);
 
+  const totalAmount = React.useMemo(
+    () => data?.steel.reduce((sum, item) => sum + (item.amount || 0), 0) ?? 0,
+    [data],
+  );
+
   const handlePrint = () => {
     window.print();
   };
@@ -95,6 +103,43 @@ export default function ReceiptTemporary({
         <LoadingScreen message="กำลังโหลดใบส่งสินค้า..." />
       </div>
     );
+
+  const formatSteelDisplay = (item: ApiReceipt["steel"][number]) => {
+    if (item.isOD) {
+      const steelPrefix = item.isServices === true ? "" : "เหล็ก ";
+      const idSegment =
+        item.length === 0 || !item.length ? "" : ` ID ${item.length}`;
+      return `${steelPrefix}${item.steelType} ${item.thickness} t OD ${item.width ?? 0}${idSegment} mm.`;
+    }
+
+    let prefix =
+      item.isServices === true ? item.steelType : `เหล็ก ${item.steelType}`;
+
+    if (item.cuttingMethod === "FB") prefix += " F/P";
+    else if (item.cuttingMethod === "RM") prefix += " R/M";
+
+    let dimensions = "";
+    if (item.width === 0 || item.width == null) {
+      prefix += " Ø";
+      dimensions = `${item.thickness} x ${item.length} mm.`;
+    } else {
+      dimensions = `${item.thickness} x ${item.width} x ${item.length} mm.`;
+    }
+
+    const suffix = item.cuttingMethod === "CNC" ? "(แบบ)" : "";
+    let steelDisplay = `${prefix} ${dimensions}${suffix}`;
+
+    if (item.isServices === true) {
+      steelDisplay = `services ${steelDisplay}`;
+    }
+
+    return steelDisplay;
+  };
+
+  const totalQuantity = data.steel.reduce(
+    (sum, item) => sum + Number(item.amount ?? 0),
+    0,
+  );
 
   return (
     <div className="min-h-screen mt-5 md:mt-0 lg:mt-0 bg-muted/40 px-4 py-6 text-black print:p-0 print:m-0 print:bg-white print:absolute print:top-0 print:left-0 print:w-full print:z-50 dark:bg-zinc-900 dark:text-zinc-100">
@@ -203,8 +248,7 @@ export default function ReceiptTemporary({
                   {index + 1}
                 </td>
                 <td className="p-1" style={cellStyle}>
-                  เหล็ก {item.steelType} &nbsp;&nbsp;&nbsp; {item.thickness} x{" "}
-                  {item.width || 0} x {item.length} mm.
+                  {formatSteelDisplay(item)}
                 </td>
                 <td className="p-1 text-center" style={cellStyle}>
                   {item.amount}
@@ -232,6 +276,15 @@ export default function ReceiptTemporary({
             </tr>
           </tbody>
         </table>
+
+        <div className="flex justify-end  px-3 py-2 text-[11px]">
+          <div className="flex items-center gap-2">
+            <span className="font-semibold">จำนวนทั้งหมด</span>
+            <span className="min-w-16 text-right font-semibold">
+              {totalAmount.toLocaleString("th-TH")}
+            </span>
+          </div>
+        </div>
 
         {/* Signature Section */}
         <div className="mt-6 grid grid-cols-2 gap-8 text-[11px]">

@@ -5,7 +5,7 @@ import type { Acquittance } from "@/components/acquittance/AcquittanceTable";
 import CreateAcquittanceDialog from "@/components/acquittance/CreateAcquittanceDialog";
 type acquittanceListItem = {
   id: number;
-  acquittanceNo: number;
+  acquittanceNo: number | null;
   customerId: number;
   createdAt: string;
   updatedAt: string;
@@ -14,7 +14,7 @@ type acquittanceListItem = {
 type acquittanceDetailApiResponse = {
   acquittance: {
     id: number;
-    acquittanceNo: number;
+    acquittanceNo: number | null;
     customerId: number;
     createdAt: string;
     updatedAt: string;
@@ -54,6 +54,9 @@ export default function acquittancePage() {
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [nextAcquittanceNo, setNextAcquittanceNo] = useState<number | null>(
+    null,
+  );
   const [searchTerm, setSearchTerm] = useState("");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
@@ -87,6 +90,7 @@ export default function acquittancePage() {
         const listJson: {
           acquittanceItems?: acquittanceListItem[];
           total?: number;
+          nextAcquittanceNo?: number;
         } = await listRes.json();
 
         const acquittanceItems = Array.isArray(listJson.acquittanceItems)
@@ -165,11 +169,17 @@ export default function acquittancePage() {
 
         const total = typeof listJson.total === "number" ? listJson.total : 0;
         setTotalPages(Math.max(1, Math.ceil(total / PAGE_SIZE)));
+        setNextAcquittanceNo(
+          typeof listJson.nextAcquittanceNo === "number"
+            ? listJson.nextAcquittanceNo
+            : null,
+        );
       } catch (error) {
         console.error("Failed to fetch acquittances", error);
         setAcquittances([]);
         setCustomers([]);
         setTotalPages(1);
+        setNextAcquittanceNo(null);
       } finally {
         setLoading(false);
       }
@@ -262,6 +272,7 @@ export default function acquittancePage() {
         totalPages={totalPages}
         onPageChange={setPage}
         onEdit={handleEditAcquittance}
+        nextAcquittanceNo={nextAcquittanceNo}
         searchTerm={searchTerm}
         onSearchChange={(value) => {
           console.log("Search changed to:", value);

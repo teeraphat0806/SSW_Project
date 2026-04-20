@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "../../../../lib/prisma";
 import { requireAuth } from "@/lib/permissions";
-
+// API นี้ใช้ดึงรายการขายแบบละเอียด พร้อมกรอง ค้นหา เรียงลำดับ และแบ่งหน้า
+// UI: src/components/saledashboard2/CustomerSalesTable.tsx
 export async function GET(req: NextRequest) {
   const authResult = await requireAuth([
     "superadmin",
@@ -18,7 +19,7 @@ export async function GET(req: NextRequest) {
   console.log(session);
 
   try {
-    // Get query parameters
+    // ดึงพารามิเตอร์จาก query string
     const searchParams = req.nextUrl.searchParams;
     const year = searchParams.get("year");
     const month = searchParams.get("month");
@@ -26,10 +27,12 @@ export async function GET(req: NextRequest) {
     const limit = parseInt(searchParams.get("limit") || "10");
     const customerId = searchParams.get("customerId");
     const customerName = searchParams.get("customerName");
+    const dateFrom = searchParams.get("dateFrom");
+    const dateTo = searchParams.get("dateTo");
     const sortBy = searchParams.get("sortBy") || "date";
     const sortOrder = searchParams.get("sortOrder") || "desc";
 
-    // Validate required parameters
+    // ตรวจสอบพารามิเตอร์ที่จำเป็น
     if (!year || !month) {
       return NextResponse.json(
         {
@@ -49,7 +52,7 @@ export async function GET(req: NextRequest) {
     const yearNumber = Number(year);
     const monthNumber = Number(month);
 
-    // Validate year
+    // ตรวจสอบปี
     if (isNaN(yearNumber) || yearNumber < 2000 || yearNumber > 2100) {
       return NextResponse.json(
         {
@@ -68,7 +71,7 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    // Validate month
+    // ตรวจสอบเดือน
     if (isNaN(monthNumber) || monthNumber < 1 || monthNumber > 12) {
       return NextResponse.json(
         {
@@ -87,7 +90,7 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    // Validate sortBy
+    // เรียงได้เฉพาะวันที่ ยอดขาย จำนวน และชื่อลูกค้า
     const validSortBy = ["date", "amount", "quantity", "customer"];
     if (!validSortBy.includes(sortBy)) {
       return NextResponse.json(
@@ -107,7 +110,7 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    // Validate sortOrder
+    // ตรวจสอบว่า sortOrder ต้องเป็น asc หรือ desc เท่านั้น
     if (sortOrder !== "asc" && sortOrder !== "desc") {
       return NextResponse.json(
         {
@@ -144,11 +147,84 @@ export async function GET(req: NextRequest) {
     const startOfMonth = new Date(yearNumber, monthNumber - 1, 1);
     const endOfMonth = new Date(yearNumber, monthNumber, 1);
 
-    // Build where clause
+    const startDate = new Date(startOfMonth);
+    const endDate = new Date(endOfMonth);
+    // ถ้ามี dateFrom และ dateTo ให้ปรับช่วงวันที่ตามนั้นได้ แต่ต้องอยู่ในเดือนที่เลือก
+    if (dateFrom) {
+      const parsedFrom = new Date(`${dateFrom}T00:00:00.000Z`);
+      if (Number.isNaN(parsedFrom.getTime())) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: {
+              code: "INVALID_DATE_FROM",
+              message: "รูปแบบ dateFrom ไม่ถูกต้อง",
+              details: { field: "dateFrom", provided: dateFrom },
+            },
+          },
+          { status: 400 },
+        );
+      }
+      if (parsedFrom > startDate) {
+        startDate.setTime(parsedFrom.getTime());
+      }
+    }
+    // dateTo เป็นแบบ exclusive คือถ้าใส่ 2024-06-30 จะเอาบิลที่สร้างถึงวันที่ 2024-06-29 23:59:59 เท่านั้น ไม่รวมบิลที่สร้างวันที่ 2024-06-30
+    if (dateTo) {
+      const parsedTo = new Date(`${dateTo}T00:00:00.000Z`);
+      if (Number.isNaN(parsedTo.getTime())) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: {
+              code: "INVALID_DATE_TO",
+              message: "รูปแบบ dateTo ไม่ถูกต้อง",
+              details: { field: "dateTo", provided: dateTo },
+            },
+          },
+          { status: 400 },
+        );
+      }
+      // ปรับ dateTo ให้เป็นแบบ exclusive
+      const parsedToExclusive = new Date(parsedTo);
+      parsedToExclusive.setUTCDate(parsedToExclusive.getUTCDate() + 1);
+
+      if (parsedToExclusive < endDate) {
+        endDate.setTime(parsedToExclusive.getTime());
+      }
+    }
+    // ถ้า startDate มากกว่าหรือเท่ากับ endDate แสดงว่าไม่มีช่วงวันที่ให้ดึงข้อมูล ให้ส่งผลลัพธ์เป็น array ว่าง
+    if (startDate >= endDate) {
+      return NextResponse.json(
+        {
+          success: true,
+          data: [],
+          pagination: {
+            page,
+            limit,
+            total: 0,
+            totalPages: 1,
+            hasNextPage: false,
+            hasPrevPage: false,
+          },
+          meta: {
+            year: yearNumber,
+            month: monthNumber,
+            monthName: monthNames[monthNumber - 1],
+            totalAmount: 0,
+            totalQuantity: 0,
+            currency: "THB",
+          },
+        },
+        { status: 200 },
+      );
+    }
+
+    // ดึงบิลที่สร้างในเดือนนั้น และมีคำสั่งซื้อที่ไม่ถูกยกเลิกกับมีใบแจ้งหนี้แล้ว
     const whereClause: any = {
       createdAt: {
-        gte: startOfMonth,
-        lt: endOfMonth,
+        gte: startDate,
+        lt: endDate,
       },
       OrderPO: {
         is: {
@@ -158,7 +234,7 @@ export async function GET(req: NextRequest) {
       },
     };
 
-    // Add customer filters
+    // ถ้ามี customerId หรือ customerName ให้เพิ่มเงื่อนไขการกรองตามนั้น
     if (customerId) {
       whereClause.customerId = parseInt(customerId);
     }
@@ -172,7 +248,7 @@ export async function GET(req: NextRequest) {
       };
     }
 
-    // Build orderBy clause
+    // ถ้าใช้ customerName ต้องเชื่อมกับตาราง Customer ด้วย
     let orderByClause: any = {};
     if (sortBy === "date") {
       orderByClause = { createdAt: sortOrder };
@@ -181,16 +257,16 @@ export async function GET(req: NextRequest) {
     } else if (sortBy === "customer") {
       orderByClause = { Customer: { name: sortOrder } };
     } else if (sortBy === "quantity") {
-      // For quantity, we'll need to handle this differently as it's count of products
-      orderByClause = { createdAt: sortOrder }; // fallback to date for now
+      // สำหรับ quantity ต้องจัดการต่างออกไป เพราะเป็นจำนวนสินค้ารวม
+      orderByClause = { createdAt: sortOrder }; // ใช้วันที่แทนไปก่อน
     }
 
-    // Get total count
+    // นับจำนวนบิลทั้งหมดที่ตรงกับเงื่อนไข เพื่อใช้ในการแบ่งหน้า
     const total = await prisma.bill.count({
       where: whereClause,
     });
 
-    // Get bill count per customer
+    // นับจำนวนบิลที่ตรงกับเงื่อนไขแยกตามลูกค้า เพื่อแสดงจำนวนคำสั่งซื้อของแต่ละลูกค้าในผลลัพธ์
     const billsByCustomer = await prisma.bill.groupBy({
       by: ["customerId"],
       where: whereClause,
@@ -199,13 +275,13 @@ export async function GET(req: NextRequest) {
       },
     });
 
-    // Create a map of customer ID to bill count
+    // สร้างแผนที่จาก customerId ไปยังจำนวนบิลของลูกค้าแต่ละราย เพื่อใช้แสดงจำนวนคำสั่งซื้อ
     const customerBillCount = new Map<number, number>();
     billsByCustomer.forEach((item) => {
       customerBillCount.set(item.customerId, item._count.id);
     });
 
-    // Get paginated data
+    // ดึงข้อมูลบิลที่ตรงกับเงื่อนไข พร้อมข้อมูลลูกค้าและคำสั่งซื้อที่เกี่ยวข้อง โดยเรียงลำดับและแบ่งหน้าตาม page กับ limit
     const skip = (page - 1) * limit;
     const bills = await prisma.bill.findMany({
       where: whereClause,
@@ -232,7 +308,7 @@ export async function GET(req: NextRequest) {
       take: limit,
     });
 
-    // Calculate totals for meta
+    // รวมจำนวนสินค้าของแต่ละบิลจากค่า amount ใน Product เพื่อใช้แสดงจำนวนสินค้าในผลลัพธ์
     const allBills = await prisma.bill.aggregate({
       where: whereClause,
       _sum: {
@@ -243,7 +319,7 @@ export async function GET(req: NextRequest) {
       },
     });
 
-    // Format data
+    // แปลงข้อมูลบิลให้อยู่ในรูปแบบที่ต้องการ โดยรวมข้อมูลลูกค้า ยอดขาย จำนวนสินค้า และข้อมูลประกอบอื่น ๆ
     const formattedData = bills.map((bill) => {
       const date = bill.createdAt;
       const quantity =

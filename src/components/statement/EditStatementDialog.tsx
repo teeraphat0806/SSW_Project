@@ -101,9 +101,12 @@ export default function EditStatementDialog({
   const fetchAvailableInvoices = async () => {
     setAvailableLoading(true);
     try {
-      const res = await fetch(`/api/invoice/customer/${customerId}`, {
-        cache: "no-store",
-      });
+      const res = await fetch(
+        `/api/invoice/customer/${customerId}?excludeStatementUsed=true`,
+        {
+          cache: "no-store",
+        },
+      );
 
       if (!res.ok) throw new Error("Failed to fetch customer invoices");
 

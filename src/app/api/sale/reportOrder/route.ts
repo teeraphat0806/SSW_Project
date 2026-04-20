@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "../../../../lib/prisma";
 import { requireAuth } from "@/lib/permissions";
+// API นี้ใช้ดึงรายงานบิล/ใบแจ้งหนี้ตามช่วงเวลาและลูกค้า สำหรับหน้ารายงานและพิมพ์เอกสาร
+// UI: src/app/saledashboard2/[year]/[month]/report/page.tsx, src/app/saledashboard2/[year]/[month]/receipt/page.tsx, src/app/saledashboard2/[year]/[month]/billing/page.tsx
 function isNumericString(value: string): boolean {
   return /^[0-9]+$/.test(value);
 }
@@ -17,7 +19,7 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    // Get query parameters
+    // ดึงพารามิเตอร์จาก query string
     const searchParams = req.nextUrl.searchParams;
     console.log("searchParams:", Object.fromEntries(searchParams.entries()));
     const year = searchParams.get("year");
@@ -26,7 +28,7 @@ export async function GET(req: NextRequest) {
     const startDate = searchParams.get("startDate");
     const endDate = searchParams.get("endDate");
 
-    // Validate required parameter
+    // ตรวจสอบพารามิเตอร์ที่จำเป็น
     if (isNumericString(customerId) === false && customerId !== "") {
       return NextResponse.json(
         {
@@ -63,7 +65,7 @@ export async function GET(req: NextRequest) {
     const yearNumber = Number(year);
     const monthNumber = Number(month);
 
-    // Validate year
+    // ตรวจสอบปี
     if (isNaN(yearNumber) || yearNumber < 2000 || yearNumber > 2100) {
       return NextResponse.json(
         {
@@ -82,7 +84,7 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    // Validate month
+    // ตรวจสอบเดือน
     if (isNaN(monthNumber) || monthNumber < 1 || monthNumber > 12) {
       return NextResponse.json(
         {
@@ -116,20 +118,20 @@ export async function GET(req: NextRequest) {
       "ธันวาคม",
     ];
 
-    // Determine date range
+    // กำหนดช่วงวันที่
     let startOfPeriod: Date;
     let endOfPeriod: Date;
 
-    // Get today for validation
+    // ใช้วันที่ปัจจุบันสำหรับตรวจสอบ
     const today = new Date();
-    today.setHours(23, 59, 59, 999); // End of today
+    today.setHours(23, 59, 59, 999); // ตั้งเป็นปลายวัน
 
     if (startDate && endDate) {
-      // Custom date range mode
+      // โหมดช่วงวันที่กำหนดเอง
       const parsedStartDate = new Date(startDate);
       const parsedEndDate = new Date(endDate);
 
-      // Validate dates
+      // ตรวจสอบวันที่
       if (isNaN(parsedStartDate.getTime()) || isNaN(parsedEndDate.getTime())) {
         return NextResponse.json(
           {
@@ -147,7 +149,7 @@ export async function GET(req: NextRequest) {
         );
       }
 
-      // Check if dates are not in the future
+      // ตรวจสอบว่าวันที่ไม่อยู่ในอนาคต
       if (parsedStartDate > today || parsedEndDate > today) {
         return NextResponse.json(
           {
@@ -165,7 +167,7 @@ export async function GET(req: NextRequest) {
         );
       }
 
-      // Check if start date is before or equal to end date
+      // ตรวจสอบว่าวันที่เริ่มต้นต้องไม่มากกว่าวันที่สิ้นสุด
       if (parsedStartDate > parsedEndDate) {
         return NextResponse.json(
           {
@@ -189,12 +191,12 @@ export async function GET(req: NextRequest) {
       endOfPeriod = parsedEndDate;
       endOfPeriod.setHours(23, 59, 59, 999);
     } else {
-      // Default to month range
+      // ใช้ช่วงของทั้งเดือนเป็นค่าเริ่มต้น
       startOfPeriod = new Date(yearNumber, monthNumber - 1, 1);
       endOfPeriod = new Date(yearNumber, monthNumber, 0, 23, 59, 59, 999);
     }
 
-    // Get all bills for the specified period
+    // ดึงบิลทั้งหมดในช่วงเวลาที่กำหนด
     const bills = await prisma.bill.findMany({
       where: {
         createdAt: {
@@ -203,7 +205,7 @@ export async function GET(req: NextRequest) {
         },
         grandTotal: {
           not: null,
-          gt: 0, // Greater than 0
+          gt: 0, // มากกว่า 0
         },
         customerId: Number(customerId) || undefined,
         OrderPO: {
@@ -249,27 +251,25 @@ export async function GET(req: NextRequest) {
       },
     });
 
-
     const orderPO = await prisma.orderPO.findMany({
-      where: {codetoinvoice: {in: invoice.map((i) => i.codetoinvoice)}},
+      where: { codetoinvoice: { in: invoice.map((i) => i.codetoinvoice) } },
       include: {
         bill: {
           select: {
             grandTotal: true,
-          }
+          },
         },
-         Customer: {
+        Customer: {
           select: {
             id: true,
             name: true,
             address: true,
-          }
-         }
-      }
-    })
+          },
+        },
+      },
+    });
 
-   
-    // Get unique codetoinvoice values and fetch all invoices
+    // ดึงค่า codetoinvoice ที่ไม่ซ้ำ แล้วไปดึงใบแจ้งหนี้ทั้งหมด
     const codetoinvoices = bills
       .map((b) => b.OrderPO?.codetoinvoice)
       .filter((c) => c !== null && c !== undefined)
@@ -298,10 +298,9 @@ export async function GET(req: NextRequest) {
 
     const poMap = new Map(orderPO.map((po) => [po.codetoinvoice, po]));
 
-
-    // Format the data
+    // จัดรูปแบบข้อมูล
     const formattedBills = invoice.map((invoice) => {
-      const po  =  poMap.get(invoice.codetoinvoice);
+      const po = poMap.get(invoice.codetoinvoice);
       return {
         id: invoice.id,
         createdAt: invoice.createdAt?.toISOString() || null,
@@ -324,7 +323,7 @@ export async function GET(req: NextRequest) {
 
     console.log("Formatted Bills:", formattedBills);
 
-    // Sort by invoiceNo ASC; null/undefined invoiceNo goes last
+    // เรียง invoiceNo แบบ ASC; ถ้า invoiceNo เป็น null/undefined ให้ไปท้ายสุด
     formattedBills.sort((a, b) => {
       if (a.invoiceNo == null && b.invoiceNo == null) return 0;
       if (a.invoiceNo == null) return 1;
@@ -333,7 +332,7 @@ export async function GET(req: NextRequest) {
       return String(a.id).localeCompare(String(b.id));
     });
 
-    // Calculate summary
+    // คำนวณสรุปผล
     const totalBills = formattedBills.length;
     const totalAmount = formattedBills.reduce(
       (sum, bill) => sum + bill.grandTotal,

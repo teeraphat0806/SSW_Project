@@ -182,7 +182,7 @@ export function ExpensesTable({ year, month }: ExpensesTableProps) {
       {/* Filters */}
       <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-sm border border-zinc-200 dark:border-zinc-800 p-6">
         <div className="flex gap-4 flex-wrap">
-          <div className="flex-1 min-w-[200px]">
+          <div className="flex-1 min-w-50">
             <label className="text-sm font-medium mb-2 block">
               ประเภทรายจ่าย
             </label>
@@ -207,7 +207,7 @@ export function ExpensesTable({ year, month }: ExpensesTableProps) {
             </Select>
           </div>
 
-          <div className="flex-1 min-w-[200px]">
+          <div className="flex-1 min-w-50">
             <label className="text-sm font-medium mb-2 block">เรียงตาม</label>
             <Select
               value={sortBy}
@@ -227,7 +227,7 @@ export function ExpensesTable({ year, month }: ExpensesTableProps) {
             </Select>
           </div>
 
-          <div className="flex-1 min-w-[150px]">
+          <div className="flex-1 min-w-37.5">
             <label className="text-sm font-medium mb-2 block">ลำดับ</label>
             <Select
               value={sortOrder}
@@ -275,6 +275,9 @@ export function ExpensesTable({ year, month }: ExpensesTableProps) {
                 <th className="py-4 px-6 text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
                   รายละเอียด
                 </th>
+                <th className="py-4 px-6 text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+                  พนักงาน
+                </th>
                 <th
                   className="py-4 px-6 text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider text-right cursor-pointer hover:text-zinc-700 dark:hover:text-zinc-300"
                   onClick={() => handleSortChange("amount")}
@@ -290,7 +293,7 @@ export function ExpensesTable({ year, month }: ExpensesTableProps) {
             <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
               {loading ? (
                 <tr>
-                  <td colSpan={4} className="py-12 text-center">
+                  <td colSpan={5} className="py-12 text-center">
                     <div className="flex flex-col items-center justify-center text-zinc-400 dark:text-zinc-500">
                       <Loader2 className="mr-2 h-12 w-12 animate-spin" />
                       <p className="text-lg mt-4 ">กำลังโหลดข้อมูล...</p>
@@ -299,7 +302,7 @@ export function ExpensesTable({ year, month }: ExpensesTableProps) {
                 </tr>
               ) : data.length === 0 ? (
                 <tr>
-                  <td colSpan={4} className="py-12 text-center">
+                  <td colSpan={5} className="py-12 text-center">
                     <div className="flex flex-col items-center justify-center text-zinc-400 dark:text-zinc-500">
                       <p className="text-sm">ไม่พบข้อมูล</p>
                     </div>
@@ -325,6 +328,11 @@ export function ExpensesTable({ year, month }: ExpensesTableProps) {
                       <div className="max-w-md truncate text-sm text-zinc-700 dark:text-zinc-300">
                         {expense.description || "-"}
                       </div>
+                    </td>
+                    <td className="py-4 px-6">
+                      <span className="text-sm font-medium text-zinc-900 dark:text-white">
+                        {expense.staff?.name || "ไม่ระบุ"}
+                      </span>
                     </td>
                     <td className="py-4 px-6 text-right">
                       <span className="font-mono text-sm font-semibold text-red-600 dark:text-red-400">

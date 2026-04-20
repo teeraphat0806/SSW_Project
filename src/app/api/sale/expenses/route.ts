@@ -5,7 +5,8 @@ import {
   getLatestSalaryAtOrBefore,
   getSalaryForPeriod,
 } from "@/lib/salary-expense-utils";
-
+// API นี้ใช้ดึงรายการรายจ่ายพร้อมตัวกรอง หมวดหมู่ การเรียง และแบ่งหน้า รวมข้อมูลเงินเดือน
+// UI: src/components/saledashboard2/ExpensesTable.tsx และ src/app/saledashboard2/[year]/[month]/expense-report/page.tsx
 function getMonthNames() {
   return [
     "มกราคม",
@@ -307,6 +308,12 @@ export async function GET(req: NextRequest) {
         where: whereClause,
         include: {
           category: true,
+          staff: {
+            select: {
+              id: true,
+              user: { select: { name: true } },
+            },
+          },
         },
       }),
       prisma.expense.groupBy({
@@ -320,7 +327,15 @@ export async function GET(req: NextRequest) {
     const total = expenseCount + salaryExpenses.length;
 
     const allCombinedExpenses = [
-      ...expensesData.map((e) => ({ ...e, staffName: undefined })),
+      ...expensesData.map((expense: any) => ({
+        ...expense,
+        staff: expense.staff
+          ? {
+              id: expense.staff.id,
+              name: expense.staff.user?.name || "ไม่ระบุชื่อพนักงาน",
+            }
+          : null,
+      })),
       ...salaryExpenses,
     ] as any[];
 
@@ -414,7 +429,7 @@ export async function GET(req: NextRequest) {
         receiptUrl: expense.receiptUrl,
         staff: isSalary
           ? { id: 0, name: expense.staffName || "ไม่ระบุชื่อพนักงาน" }
-          : null,
+          : expense.staff || null,
         formatted: {
           date: expense.expenseDate.toLocaleDateString("th-TH", {
             day: "2-digit",

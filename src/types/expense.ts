@@ -6,7 +6,12 @@ export interface Expense {
   amount: number;
   expenseDate: string;
   categoryId: number;
+  staffId?: number | null;
   receiptUrl?: string | null;
+  staff?: {
+    id: number;
+    name: string;
+  } | null;
 
   createdAt: string;
   updatedAt: string;

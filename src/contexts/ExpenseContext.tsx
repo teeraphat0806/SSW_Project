@@ -20,6 +20,7 @@ export type ExpenseItem = {
   amount: number;
   expenseDate: string;
   categoryId: number;
+  staffId?: number | null;
   receiptUrl?: string | null;
   category: ExpenseCategory;
   staff?: {

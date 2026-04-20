@@ -126,7 +126,9 @@ export default function CreateStatementDialog({
             setInvoiceList([]);
             return;
           }
-          const res = await fetch(`/api/invoice/customer/${customer.id}`);
+          const res = await fetch(
+            `/api/invoice/customer/${customer.id}?excludeStatementUsed=true`,
+          );
           if (!res.ok) {
             throw new Error(`Failed to fetch invoices: ${res.status}`);
           }

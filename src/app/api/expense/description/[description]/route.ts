@@ -3,7 +3,7 @@ import { requireAuth } from "@/lib/permissions";
 import prisma from "@/lib/prisma";
 export async function GET(
   request: NextRequest,
-  context: { params: Promise<{ description: string }> }
+  context: { params: Promise<{ description: string }> },
 ) {
   try {
     const authResult = await requireAuth([
@@ -21,7 +21,7 @@ export async function GET(
     if (!description || description.trim() === "") {
       return NextResponse.json(
         { error: "Description parameter is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -36,13 +36,39 @@ export async function GET(
           mode: "insensitive",
         },
       },
+      include: {
+        category: true,
+        staff: {
+          select: {
+            id: true,
+            user: {
+              select: {
+                name: true,
+              },
+            },
+          },
+        },
+      },
     });
 
-    return NextResponse.json({ expenses }, { status: 200 });
+    return NextResponse.json(
+      {
+        expenses: expenses.map((expense) => ({
+          ...expense,
+          staff: expense.staff
+            ? {
+                id: expense.staff.id,
+                name: expense.staff.user?.name || "ไม่ระบุชื่อพนักงาน",
+              }
+            : null,
+        })),
+      },
+      { status: 200 },
+    );
   } catch (error) {
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

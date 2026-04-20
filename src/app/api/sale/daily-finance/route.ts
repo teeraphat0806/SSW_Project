@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "../../../../lib/prisma";
 import { requireAuth } from "@/lib/permissions";
-
+// API นี้ใช้สรุปรายรับ รายจ่าย และกำไร/ขาดทุนรายวันในเดือนที่เลือก
+// UI: ยังไม่พบการเรียกใช้งานในฝั่งหน้าเว็บ (สำรองไว้สำหรับรายงานรายวัน)
 export async function GET(req: NextRequest) {
   const authResult = await requireAuth([
     "superadmin",
@@ -18,12 +19,12 @@ export async function GET(req: NextRequest) {
   console.log(session);
 
   try {
-    // Get query parameters
+    // ดึงพารามิเตอร์จาก query string
     const searchParams = req.nextUrl.searchParams;
     const year = searchParams.get("year");
     const month = searchParams.get("month");
 
-    // Validate parameters
+    // ตรวจสอบพารามิเตอร์
     if (!year || !month) {
       return NextResponse.json(
         {
@@ -43,7 +44,7 @@ export async function GET(req: NextRequest) {
     const yearNumber = Number(year);
     const monthNumber = Number(month);
 
-    // Validate year
+    // ตรวจสอบปี
     if (isNaN(yearNumber) || yearNumber < 2000 || yearNumber > 2100) {
       return NextResponse.json(
         {
@@ -62,7 +63,7 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    // Validate month
+    // ตรวจสอบเดือน
     if (isNaN(monthNumber) || monthNumber < 1 || monthNumber > 12) {
       return NextResponse.json(
         {
@@ -101,12 +102,12 @@ export async function GET(req: NextRequest) {
     let totalIncome = 0;
     let totalExpense = 0;
 
-    // Loop through each day of the month
+    // วนทีละวันในเดือนที่เลือก
     for (let day = 1; day <= daysInMonth; day++) {
       const startOfDay = new Date(yearNumber, monthNumber - 1, day);
       const endOfDay = new Date(yearNumber, monthNumber - 1, day + 1);
 
-      // Get income data (from Bill)
+      // ดึงข้อมูลรายรับ (จาก Bill)
       const incomeStats = await prisma.bill.aggregate({
         where: {
           createdAt: {
@@ -125,7 +126,7 @@ export async function GET(req: NextRequest) {
         },
       });
 
-      // Get expense data
+      // ดึงข้อมูลรายจ่าย
       const expenseStats = await prisma.expense.aggregate({
         where: {
           expenseDate: {
@@ -142,7 +143,7 @@ export async function GET(req: NextRequest) {
       const expense = expenseStats._sum.amount || 0;
       const net = income - expense;
 
-      // Only add days that have data
+      // เพิ่มเฉพาะวันที่มีข้อมูลเท่านั้น
       if (income > 0 || expense > 0) {
         dailyData.push({
           day,
@@ -163,7 +164,7 @@ export async function GET(req: NextRequest) {
     }
 
     const totalNet = totalIncome - totalExpense;
-
+    // ผลลัพสรุปการเงินรายวัน พร้อมข้อมูลเมตา เช่น ปี เดือน และวันที่อัปเดตล่าสุด
     const result = {
       success: true,
       data: dailyData,

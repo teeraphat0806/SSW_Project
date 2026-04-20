@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "../../../../../lib/prisma";
 import { requireAuth } from "@/lib/permissions";
-
+// API นี้ใช้สรุปลูกค้ายอดขายสูงสุดรายเดือนจากบิลที่ไม่ถูกยกเลิกและมีใบแจ้งหนี้
+// UI: src/components/saledashboard2/CustomerSalesTable.tsx และ src/app/saledashboard2/page.tsx
 export async function GET(req: NextRequest) {
   const authResult = await requireAuth([
     "superadmin",
@@ -18,12 +19,12 @@ export async function GET(req: NextRequest) {
   console.log(session);
 
   try {
-    // Get query parameters
+    // ดึงพารามิเตอร์จาก query string
     const searchParams = req.nextUrl.searchParams;
     const year = searchParams.get("year");
     const month = searchParams.get("month");
 
-    // Validate required parameters
+    // ตรวจสอบพารามิเตอร์ที่จำเป็น
     if (!year || !month) {
       return NextResponse.json(
         {
@@ -43,7 +44,7 @@ export async function GET(req: NextRequest) {
     const yearNumber = Number(year);
     const monthNumber = Number(month);
 
-    // Validate year
+    // ตรวจสอบปี
     if (isNaN(yearNumber) || yearNumber < 2000 || yearNumber > 2100) {
       return NextResponse.json(
         {
@@ -62,7 +63,7 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    // Validate month
+    // ตรวจสอบเดือน
     if (isNaN(monthNumber) || monthNumber < 1 || monthNumber > 12) {
       return NextResponse.json(
         {
@@ -84,7 +85,7 @@ export async function GET(req: NextRequest) {
     const startOfMonth = new Date(yearNumber, monthNumber - 1, 1);
     const endOfMonth = new Date(yearNumber, monthNumber, 1);
 
-    // Get all bills with completed orders in the month
+    // ดึงบิลที่สร้างในเดือนนั้น และมีคำสั่งซื้อที่ไม่ถูกยกเลิกกับมีใบแจ้งหนี้แล้ว
     const bills = await prisma.bill.findMany({
       where: {
         createdAt: {
@@ -103,7 +104,7 @@ export async function GET(req: NextRequest) {
       },
     });
 
-    // Group bills by customer
+    // จัดกลุ่มลูกค้าตาม ID และรวมยอดขายจากบิลที่เกี่ยวข้อง
     const customerMap = new Map<
       number,
       {
@@ -114,7 +115,7 @@ export async function GET(req: NextRequest) {
         orderCount: number;
       }
     >();
-
+    // วนผ่านบิลที่ได้มาแล้วจัดกลุ่มลูกค้าและรวมยอดขาย
     bills.forEach((bill) => {
       if (bill.Customer) {
         const customerId = bill.Customer.id;
@@ -135,7 +136,7 @@ export async function GET(req: NextRequest) {
       }
     });
 
-    // Convert map to array and sort by totalSales descending
+    // แปลง Map เป็น Array แล้วเรียงยอดขายรวมจากมากไปน้อย
     const customersData = Array.from(customerMap.values()).sort(
       (a, b) => b.totalSales - a.totalSales,
     );

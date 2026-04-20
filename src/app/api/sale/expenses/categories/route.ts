@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "../../../../../lib/prisma";
 import { requireAuth } from "@/lib/permissions";
-
+// API นี้ใช้ดึงหมวดหมู่รายจ่ายพร้อมสถิติประกอบของแต่ละหมวดหมู่
+// UI: src/components/saledashboard2/ExpensesTable.tsx
 export async function GET(req: NextRequest) {
   const authResult = await requireAuth([
     "superadmin",
@@ -18,7 +19,7 @@ export async function GET(req: NextRequest) {
   console.log(session);
 
   try {
-    // Get all expense categories
+    // ดึงหมวดหมู่รายจ่ายทั้งหมด
     const categories = await prisma.expenseCategory.findMany({
       include: {
         expenses: {
@@ -29,7 +30,7 @@ export async function GET(req: NextRequest) {
       },
     });
 
-    // Calculate statistics for each category
+    // คำนวณสถิติของแต่ละหมวดหมู่
     const categoriesWithStats = categories.map((category) => {
       const expenseCount = category.expenses.length;
       const totalAmount = category.expenses.reduce(
@@ -46,7 +47,7 @@ export async function GET(req: NextRequest) {
       };
     });
 
-    // Calculate overall statistics
+    // คำนวณสถิติภาพรวม
     const totalCategories = categories.length;
     const totalExpenses = categoriesWithStats.reduce(
       (sum, cat) => sum + cat.expenseCount,
