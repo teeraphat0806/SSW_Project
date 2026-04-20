@@ -5,7 +5,8 @@ import {
   getLatestSalaryAtOrBefore,
   getSalaryForPeriod,
 } from "@/lib/salary-expense-utils";
-
+// API นี้ใช้ดึงรายการรายจ่ายพร้อมตัวกรอง หมวดหมู่ การเรียง และแบ่งหน้า รวมข้อมูลเงินเดือน
+// UI: src/components/saledashboard2/ExpensesTable.tsx และ src/app/saledashboard2/[year]/[month]/expense-report/page.tsx
 function getMonthNames() {
   return [
     "มกราคม",

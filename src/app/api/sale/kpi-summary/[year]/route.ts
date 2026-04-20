@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "../../../../../lib/prisma";
 import { requireAuth } from "@/lib/permissions";
 import { getSalaryForPeriod } from "@/lib/salary-expense-utils";
-
+// API นี้ใช้สรุป KPI รายปี เช่น ยอดขาย รายจ่าย กำไร และข้อมูลลูกค้าหลัก
+// UI: src/app/saledashboard2/page.tsx
 export async function GET(
   req: NextRequest,
   context: { params: Promise<{ year: string }> },

@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "../../../../../lib/prisma";
 import { requireAuth } from "@/lib/permissions";
 import { getSalaryForPeriod } from "@/lib/salary-expense-utils";
+// API นี้ใช้สรุปข้อมูลรายเดือนทั้งปี (12 เดือน) สำหรับแสดงแนวโน้มรายได้/รายจ่าย
+// UI: src/app/saledashboard2/page.tsx
 
 export async function GET(
   req: NextRequest,

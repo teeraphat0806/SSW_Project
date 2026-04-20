@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "../../../../lib/prisma";
 import { requireAuth } from "@/lib/permissions";
-
+// API นี้ใช้สรุปยอดขายรายวัน (มูลค่าและจำนวนบิล) ในเดือนที่เลือก
+// UI: src/components/saledashboard2/DailySalesChart.tsx บนหน้า src/app/saledashboard2/[year]/[month]/page.tsx
 export async function GET(req: NextRequest) {
   const authResult = await requireAuth([
     "superadmin",
@@ -18,12 +19,12 @@ export async function GET(req: NextRequest) {
   console.log(session);
 
   try {
-    // Get query parameters
+    // ดึงพารามิเตอร์จาก query string
     const searchParams = req.nextUrl.searchParams;
     const year = searchParams.get("year");
     const month = searchParams.get("month");
 
-    // Validate parameters
+    // ตรวจสอบพารามิเตอร์
     if (!year || !month) {
       return NextResponse.json(
         {
@@ -43,7 +44,7 @@ export async function GET(req: NextRequest) {
     const yearNumber = Number(year);
     const monthNumber = Number(month);
 
-    // Validate year and month
+    // ตรวจสอบปีและเดือน
     if (
       isNaN(yearNumber) ||
       yearNumber < 2000 ||
@@ -93,12 +94,12 @@ export async function GET(req: NextRequest) {
     let totalSalesQty = 0;
     let totalBills = 0;
 
-    // Loop through each day of the month
+    // วนทีละวันในเดือนที่เลือก
     for (let day = 1; day <= daysInMonth; day++) {
       const startOfDay = new Date(yearNumber, monthNumber - 1, day);
       const endOfDay = new Date(yearNumber, monthNumber - 1, day + 1);
 
-      // Get sales data for this day (from Bill)
+      // ดึงข้อมูลยอดขายของวันนั้น (จาก Bill)
       const salesStats = await prisma.bill.aggregate({
         where: {
           createdAt: {
@@ -123,7 +124,7 @@ export async function GET(req: NextRequest) {
       const salesAmt = salesStats._sum.grandTotal || 0;
       const salesQty = salesStats._count.id || 0;
 
-      // Only add days that have data
+      // เพิ่มเฉพาะวันที่มีข้อมูลเท่านั้น
       if (salesAmt > 0 || salesQty > 0) {
         dailyData.push({
           day,
