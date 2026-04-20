@@ -541,6 +541,7 @@ const NewJobOrder = () => {
     }
   };
 
+  // ฟังก์ชันใส่ข้อมูลจาก OCR ลงในฟอร์ม
   const applyOcrToForm = (data: OcrParseResponse) => {
     // 1) headOrder
     setheadOrder((prev) => ({
@@ -577,9 +578,9 @@ const NewJobOrder = () => {
 
       const matchedType =
         steelTypeId != null
-          ? steelTypes.find((s) => Number(s.id) === steelTypeId)
+          ? steelTypes.find((s) => Number(s.id) === steelTypeId) // ถ้า OCR มี ID มาให้ ก็แมตช์ด้วย ID เป็นหลัก
           : steelTypes.find(
-              (s) => s.steelType === steelTypeName && s.shape === shape,
+              (s) => s.steelType === steelTypeName && s.shape === shape, // ถ้าไม่มี ID ก็แมตช์ด้วยชื่อและรูปทรง
             );
 
       return {
@@ -605,7 +606,7 @@ const NewJobOrder = () => {
       };
     });
     if (mapped.length) {
-      setSteelItem(mapped.map((it, index) => ({ ...it, sequence: index + 1 })));
+      setSteelItem(mapped.map((it, index) => ({ ...it, sequence: index + 1 }))); // กำหนด sequence ใหม่ตามลำดับใน OCR
     }
     const customerLine = data.customerMatch?.matched
       ? `${data.customerDraft?.name}: #${data.customerMatch.customerId}`
@@ -625,7 +626,7 @@ const NewJobOrder = () => {
 
     setOcrStage("done");
   };
-
+  // ฟังก์ชันดึงข้อมูลประเภทเหล็กสำหรับการแมตช์กับผล OCR
   const handleRunOcr = async () => {
     const firstFile = UploadFile[0];
     if (!firstFile) {
