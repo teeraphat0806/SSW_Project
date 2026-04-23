@@ -24,7 +24,12 @@ const SteelTypeSchema = z.object({
   density: z.number().min(0, "กรุณาระบุความหนาแน่น"),
 });
 
-export type SteelTypeForm = z.infer<typeof SteelTypeSchema>;
+const SteelTypeSchemaWithRequirements = SteelTypeSchema.extend({
+  requiresDimensions: z.boolean(),
+  requiresAmount: z.boolean(),
+});
+
+export type SteelTypeForm = z.infer<typeof SteelTypeSchemaWithRequirements>;
 
 type Props = {
   open: boolean;
@@ -47,6 +52,8 @@ export default function CreateSteelTypeModal({
       shape: "square",
       price: 0,
       density: 0.0000079,
+      requiresDimensions: true,
+      requiresAmount: true,
       ...defaultValues,
     }),
     [defaultValues],
@@ -78,7 +85,7 @@ export default function CreateSteelTypeModal({
   };
 
   const handleCreate = async () => {
-    const parsed = SteelTypeSchema.safeParse(form);
+    const parsed = SteelTypeSchemaWithRequirements.safeParse(form);
     if (!parsed.success) {
       const zErr: Partial<Record<keyof SteelTypeForm, string>> = {};
       for (const issue of parsed.error.issues) {
@@ -269,6 +276,39 @@ export default function CreateSteelTypeModal({
                 {formErrors.price}
               </p>
             )}
+          </div>
+
+          {/* Requirements */}
+          <div className="space-y-2">
+            <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+              ขนาดและจำนวนที่ต้องระบุ (ถ้ามี)
+            </label>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <label className="flex items-center gap-3 rounded-xl border border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-zinc-900/50 px-3 py-2.5 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={form.requiresDimensions}
+                  onChange={(e) =>
+                    setField("requiresDimensions", e.target.checked)
+                  }
+                  className="h-4 w-4 accent-blue-600"
+                />
+                <span className="text-sm text-gray-700 dark:text-gray-200 font-medium">
+                  จำเป็นต้องระบุขนาด
+                </span>
+              </label>
+              <label className="flex items-center gap-3 rounded-xl border border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-zinc-900/50 px-3 py-2.5 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={form.requiresAmount}
+                  onChange={(e) => setField("requiresAmount", e.target.checked)}
+                  className="h-4 w-4 accent-blue-600"
+                />
+                <span className="text-sm text-gray-700 dark:text-gray-200 font-medium">
+                  จำเป็นต้องระบุจำนวน
+                </span>
+              </label>
+            </div>
           </div>
 
           {/* Detail */}

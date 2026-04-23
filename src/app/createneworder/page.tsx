@@ -33,6 +33,7 @@ import {
   OcrResultModal,
   type OcrSummary,
 } from "@/components/newJobOrder/OcrResultModel";
+import { tr } from "date-fns/locale";
 
 type CustomerApiItem = {
   id: number;
@@ -159,6 +160,8 @@ const NewJobOrder = () => {
       isOD: false,
       isServices: false,
       isPerAmount: false,
+      requiresDimensions: true,
+      requiresAmount: true,
     },
   ]);
 
@@ -197,12 +200,16 @@ const NewJobOrder = () => {
                 shape: string;
                 price: number;
                 density: number;
+                requiresDimensions: boolean;
+                requiresAmount: boolean;
               }) => ({
                 id: t.id.toString(),
                 steelType: t.codeSteel, // ใช้เป็น value/label ใน Select
                 shape: t.shape,
                 price: Number(t.price ?? 0),
                 density: Number(t.density ?? 0.0000079),
+                requiresDimensions: Boolean(t.requiresDimensions),
+                requiresAmount: Boolean(t.requiresAmount),
               }),
             ),
           );
@@ -286,6 +293,8 @@ const NewJobOrder = () => {
           wide: shape === "line" ? null : (first.wide ?? 1),
           price: Number(firstSteelType.price ?? 0),
           density: Number(firstSteelType.density ?? 0.0000079),
+          requiresDimensions: Boolean(firstSteelType.requiresDimensions),
+          requiresAmount: Boolean(firstSteelType.requiresAmount),
         },
       ];
     });
@@ -390,10 +399,10 @@ const NewJobOrder = () => {
             sequence: index + 1,
             steelType: item.steelType,
             shape: item.shape,
-            wide: item.wide ?? null,
-            length: item.length,
-            thickness: item.thickness,
-            amount: item.amount,
+            wide: item.wide || null,
+            length: item.length || null,
+            thickness: item.thickness || null,
+            amount: item.amount || 0,
 
             detail: item.detail || undefined, // optional ส่ง undefined ได้
             job: item.job ?? null,
@@ -531,6 +540,8 @@ const NewJobOrder = () => {
       isOD: false,
       isServices: false,
       isPerAmount: false,
+      requiresDimensions: Boolean(firstSteelType?.requiresDimensions),
+      requiresAmount: Boolean(firstSteelType?.requiresAmount),
     };
     setSteelItem((prev) => [...prev, newItem]);
   };
@@ -603,6 +614,8 @@ const NewJobOrder = () => {
         isServices: false,
         isPerAmount: false,
         job: x.raw?.job ? String(x.raw.job) : null,
+        requiresDimensions: true,
+        requiresAmount: true,
       };
     });
     if (mapped.length) {
@@ -715,21 +728,27 @@ const NewJobOrder = () => {
     }
     if (SteelItem.length === 0)
       return "กรุณาเพิ่มรายการเหล็กอย่างน้อย 1 รายการ";
+
     for (const item of SteelItem) {
       if (!item.steelType) return "กรุณาเลือกประเภทเหล็ก";
       if (!item.SteelId || item.SteelId <= 0) return "กรุณาเลือกประเภทเหล็ก";
-      if (item.amount <= 0) return "จำนวนชิ้นต้องมากกว่า 0";
+      if (item.amount <= 0 && item.requiresAmount)
+        return "จำนวนชิ้นต้องมากกว่า 0";
     }
-    if (SteelItem.length > 15) return "ไม่สามารถเพิ่มรายการเหล็กเกิน 15 รายการ";
+
     if (
       SteelItem.some(
         (item) =>
-          (item.isOD === false && (!item.length || item.length <= 0)) ||
-          item.thickness <= 0 ||
-          (item.shape === "square" && (item.wide === null || item.wide <= 0)),
+          item.requiresDimensions &&
+          (item.thickness == null || item.thickness <= 0 ||
+            (item.isOD === false && (!item.length || item.length <= 0)) ||
+            (item.shape === "square" &&
+              (item.wide === null || item.wide <= 0))),
       )
     )
       return "ขนาดของเหล็กต้องมากกว่า 0";
+
+    if (SteelItem.length > 15) return "ไม่สามารถเพิ่มรายการเหล็กเกิน 15 รายการ";
     return null;
   };
 

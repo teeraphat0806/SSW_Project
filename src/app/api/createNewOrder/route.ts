@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
   try {
     // รับข้อมูลจาก request
     const body = await req.json();
-    console.log("Received data:", body);
+    console.log("Received data:", body.orderPO?.products);
 
     // ตรวจสอบข้อมูลด้วย Zod
     const parsed = CreateNewOrderSchema.safeParse(body);
@@ -246,8 +246,8 @@ export async function POST(req: NextRequest) {
                     : item.product.sequence ?? item.index + 1,
 
                   wide: item.product.wide ?? null,
-                  length: item.product.length,
-                  thickness: item.product.thickness,
+                  length: item.product.length ?? null,
+                  thickness: item.product.thickness ?? null,
                   amount: item.product.amount,
 
                   unitPrice: item.unitPrice,

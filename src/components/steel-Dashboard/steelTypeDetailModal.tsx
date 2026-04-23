@@ -35,6 +35,8 @@ type SteelTypeDetail = {
   price: number;
   status: "active" | "inactive" | string;
   density: number;
+  requiresDimensions: boolean;
+  requiresAmount: boolean;
   createdAt: string;
   updatedAt: string;
   SteelStock: SteelStock[];
@@ -480,6 +482,33 @@ export default function SteelTypeDetailModal({
                         <div className="text-sm text-gray-500 dark:text-zinc-400 mb-2">
                           รายละเอียดเพิ่มเติม
                         </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-3">
+                          <div className="flex items-center justify-between rounded-xl border border-gray-100 dark:border-zinc-800 bg-white dark:bg-zinc-950 px-3 py-2">
+                            <div className="text-sm font-semibold">ขนาด</div>
+                            <span
+                              className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold border ${
+                                data.requiresDimensions
+                                  ? "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/20 dark:text-blue-300 dark:border-blue-800"
+                                  : "bg-gray-100 text-gray-600 border-gray-200 dark:bg-zinc-800 dark:text-zinc-300 dark:border-zinc-700"
+                              }`}
+                            >
+                              {data.requiresDimensions ? "จำเป็น" : "ไม่จำเป็น"}
+                            </span>
+                          </div>
+                          <div className="flex items-center justify-between rounded-xl border border-gray-100 dark:border-zinc-800 bg-white dark:bg-zinc-950 px-3 py-2">
+                            <div className="text-sm font-semibold">จำนวน</div>
+                            <span
+                              className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold border ${
+                                data.requiresAmount
+                                  ? "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/20 dark:text-blue-300 dark:border-blue-800"
+                                  : "bg-gray-100 text-gray-600 border-gray-200 dark:bg-zinc-800 dark:text-zinc-300 dark:border-zinc-700"
+                              }`}
+                            >
+                              {data.requiresAmount ? "จำเป็น" : "ไม่จำเป็น"}
+                            </span>
+                          </div>
+                        </div>
+
                         <div className="p-3 bg-white dark:bg-zinc-950 rounded-xl border border-gray-100 dark:border-zinc-800 text-sm text-gray-600 dark:text-zinc-300 min-h-[80px]">
                           {form.detail || "- ไม่ระบุ -"}
                         </div>

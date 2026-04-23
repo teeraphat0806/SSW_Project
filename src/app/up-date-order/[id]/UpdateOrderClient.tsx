@@ -88,6 +88,8 @@ type SteelTypeApiItem = {
   shape: ShapeSteel;
   price: number;
   density?: number | null;
+  requiresDimensions?: boolean | null;
+  requiresAmount?: boolean | null;
 };
 
 const DEFAULT_DENSITY = 0.0000079;
@@ -251,7 +253,7 @@ const UpdateOrderPage = ({ id }: { id: string }) => {
         new Set([...(job.urlPo ?? []), ...newKeys].map((k) => String(k))),
       );
 
-	      const patchRes = await fetch(`/api/up-date-order/${job.id}`, {
+      const patchRes = await fetch(`/api/up-date-order/${job.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         cache: "no-store",
@@ -262,7 +264,7 @@ const UpdateOrderPage = ({ id }: { id: string }) => {
         throw new Error(patched?.error || "เกิดข้อผิดพลาดในการอัปเดต PO");
       }
 
-	      setJob(patched);
+      setJob(patched);
       setPoFiles([]);
       toast.success("อัปโหลดไฟล์ PO สำเร็จ", { position: "bottom-right" });
     } catch (e) {
@@ -304,7 +306,7 @@ const UpdateOrderPage = ({ id }: { id: string }) => {
       }
 
       const nextKeys = (job.urlPo ?? []).filter((k) => k !== key);
-	      const patchRes = await fetch(`/api/up-date-order/${job.id}`, {
+      const patchRes = await fetch(`/api/up-date-order/${job.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         cache: "no-store",
@@ -315,7 +317,7 @@ const UpdateOrderPage = ({ id }: { id: string }) => {
         throw new Error(patched?.error || "เกิดข้อผิดพลาดในการอัปเดต PO");
       }
 
-	      setJob(patched);
+      setJob(patched);
       toast.success("ลบไฟล์ PO สำเร็จ", { position: "bottom-right" });
     } catch (e) {
       toast.error(
@@ -353,6 +355,8 @@ const UpdateOrderPage = ({ id }: { id: string }) => {
         shape: t.shape,
         price: Number(t.price ?? 0),
         density: Number(t.density ?? DEFAULT_DENSITY),
+        requiresDimensions: t.requiresDimensions ?? true,
+        requiresAmount: t.requiresAmount ?? true,
       }));
 
       setSteelOptions(mapped);
@@ -408,20 +412,24 @@ const UpdateOrderPage = ({ id }: { id: string }) => {
     if (hasMissingJob) return "กรุณากรอกหมายเลขงาน (Job No.) ให้ครบทุกบรรทัด";
 
     if (isAtLeast(job.status, "weighing")) {
-      // const hasZeroWeight = job.steel.some(
-      //   (s) => s.isPerAmount === false && (!s.weight || s.weight <= 0),
-      // );
-      // if (hasZeroWeight)
-      //   return "กรุณากรอกน้ำหนักเหล็กกในรายการที่คิดราคาตามน้ำหนัก";
       const hasZeroPrice = job.steel.some((s) => !s.price || s.price <= 0);
       if (hasZeroPrice) return "กรุณากรอกราคาเหล็กก่อนบันทึกคำสั่งซื้อ";
     }
+
+    for (const item of job.steel) {
+      if (item.requiresAmount && (!item.amount || item.amount <= 0)) {
+        return "จำนวนของเหล็กต้องมากกว่า 0";
+      }
+    }
+
     if (
       job.steel.some(
         (s) =>
-          (s.isOD == false && !s.length) || // s.length <= 0 ||
-          s.thickness <= 0 ||
-          (s.shape == "square" && (s.wide == null || s.wide <= 0)),
+          s.requiresDimensions &&
+          ((s.isOD == false && !s.length) || // s.length <= 0 ||
+            s.thickness == null ||
+            s.thickness <= 0 ||
+            (s.shape == "square" && (s.wide == null || s.wide <= 0))),
       )
     )
       return "ขนาดของเหล็กต้องมากกว่า 0";
@@ -539,7 +547,6 @@ const UpdateOrderPage = ({ id }: { id: string }) => {
 
   const status: OrderStatus = toThaiStatus(job.status);
 
-
   const currentStep = ORDER_STATUSES.indexOf(status);
   const progressPct = (currentStep / (ORDER_STATUSES.length - 1)) * 100;
 
@@ -552,8 +559,6 @@ const UpdateOrderPage = ({ id }: { id: string }) => {
     (sum, i) => sum + (Number(i.amount) || 0),
     0,
   );
-
- 
 
   const fmtInt = (n: number) => Intl.NumberFormat().format(n);
   const fmtWeight = (n: number) =>
@@ -633,6 +638,8 @@ const UpdateOrderPage = ({ id }: { id: string }) => {
         isServices: false,
         isPerAmount: false,
         job: null,
+        requiresDimensions: true,
+        requiresAmount: true,
       };
 
       return {
@@ -894,11 +901,7 @@ const UpdateOrderPage = ({ id }: { id: string }) => {
         </div>
 
         {/* ---------- สรุป (อ่านจาก job.steel) ---------- */}
-        <Summary
-          job={job}
-          fmtInt={fmtInt}
-          fmtWeight={fmtWeight}
-        />
+        <Summary job={job} fmtInt={fmtInt} fmtWeight={fmtWeight} />
       </main>
     </div>
   );

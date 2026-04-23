@@ -130,6 +130,16 @@ export function SteelItemRow({
                     updateSteelItem(item.id, "shape", selected.shape);
                     updateSteelItem(
                       item.id,
+                      "requiresDimensions",
+                      Boolean(selected.requiresDimensions),
+                    );
+                    updateSteelItem(
+                      item.id,
+                      "requiresAmount",
+                      Boolean(selected.requiresAmount),
+                    );
+                    updateSteelItem(
+                      item.id,
                       "price",
                       Number(selected.price ?? 0),
                     );

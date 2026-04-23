@@ -8,5 +8,7 @@ export const SteelTypeSchema = z.object({
   shape: z.enum(ShapeSteel),
   price: z.number().min(0, "กรุณาระบุราคาต่อหน่วย"),
   density: z.number().min(0, "กรุณาระบุความหนาแน่น"),
+  requiresDimensions: z.boolean().optional(),
+  requiresAmount: z.boolean().optional(),
   status: z.enum(SteelStatus).optional(),
 });

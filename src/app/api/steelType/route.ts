@@ -78,6 +78,8 @@ export async function GET(req: NextRequest) {
         updatedAt: true,
         shape: true,
         density: true,
+        requiresDimensions: true,
+        requiresAmount: true,
         _count: { select: { Product: true } },
       },
     });
