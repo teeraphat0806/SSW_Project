@@ -248,8 +248,8 @@ model Product {
   orderPOId     Int
   steelId       Int
   wide          Float?
-  length        Float
-  thickness     Float
+  length        Float?
+  thickness     Float?
   amount        Int
   detail        String?
   surfaceT      String?
@@ -315,15 +315,17 @@ model TypeStaffIncome {
 }
 
 model SteelType {
-  id         Int          @id @default(autoincrement())
-  codeSteel  String
-  detail     String?
-  amount     Int          @default(0)
-  shape      ShapeSteel   @default(square)
-  price      Float
-  createdAt  DateTime     @default(now())
-  updatedAt  DateTime     @updatedAt
-  density    Float
+  id                  Int          @id @default(autoincrement())
+  codeSteel           String
+  detail              String?
+  amount              Int          @default(0)
+  shape               ShapeSteel   @default(square)
+  price               Float
+  createdAt           DateTime     @default(now())
+  updatedAt           DateTime     @updatedAt
+  density             Float
+  requiresDimensions Boolean @default(true) 
+  requiresAmount     Boolean @default(true) 
   status     SteelStatus  @default(active)
   Product    Product[]
   SteelStock SteelStock[]
@@ -334,8 +336,8 @@ model SteelType {
 model SteelStock {
   id          Int         @id @default(autoincrement())
   width       Int?
-  length      Int
-  thickness   Int
+  length      Int?
+  thickness   Int?
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
   steeltypeId Int
