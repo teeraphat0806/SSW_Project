@@ -51,6 +51,7 @@ export async function DELETE(req: NextRequest) {
 
   try {
     const response = await prisma.$transaction(async (tx) => {
+      // ดึงใบแจ้งหนี้ล่าสุดตามจำนวนที่ต้องการลบ
       const lastInvoices = await tx.invoice.findMany({
         orderBy: { invoiceNo: "desc" },
         take: count,
@@ -68,7 +69,7 @@ export async function DELETE(req: NextRequest) {
           { status: 400 },
         );
       }
-
+      // ตรวจสอบว่าใบแจ้งหนี้เหล่านี้ถูกใช้งานในใบวางบิลหรือใบเสร็จรับเงินหรือไม่
       const blocked = lastInvoices.filter(
         (invoice) => invoice.statementItem || invoice.acquittanceItem,
       );

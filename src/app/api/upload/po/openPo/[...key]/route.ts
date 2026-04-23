@@ -36,11 +36,11 @@ export async function GET(
         { status: 500 }
       );
     }
-
+    // aws-sdk v3 ใช้ ReadableStream ใน Node.js ซึ่งต้องแปลงเป็น ArrayBuffer ก่อนถึงจะเป็น Buffer ได้
     const arrayBuffer = await new Response(
       res.Body as ReadableStream<Uint8Array>
     ).arrayBuffer();
-
+    // จากนั้นแปลง ArrayBuffer เป็น Buffer เพื่อส่งกลับไปยัง client
     const buffer = Buffer.from(arrayBuffer);
 
     return new NextResponse(buffer, {
