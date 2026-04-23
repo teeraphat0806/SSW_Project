@@ -59,14 +59,6 @@ export function calculateWeightDetails(steel: SteelItem): WeightDetails {
     };
   }
 
-  if (amount <= 0 || thickness <= 0)
-    return {
-      weight: 0,
-      total: 0,
-      discount,
-      isManual: false,
-    };
-
   if (weight > 0) {
     return {
       weight: round2(weight),
@@ -97,7 +89,6 @@ export function calculateWeightDetails(steel: SteelItem): WeightDetails {
   }
 
   return {
-    //คือนหนักรวมเป็นกิโลกรัมโดย/1000 คือ
     weight: round2(weightPerPieceKg * amount),
     total: round2(weightPerPieceKg * amount * price),
     discount,

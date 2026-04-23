@@ -47,12 +47,12 @@ function toApiJobOrder(order: OrderWithRelations): ApiJobOrder {
 
       shape: p.SteelType.shape as ShapeSteel,
       sequence: p.sequence,
-      wide: p.wide ?? null,
-      length: p.length ?? 0,
-      thickness: p.thickness ?? 0,
-      amount: p.amount,
-      detail: p.detail ?? null,
-      cuttingMethod: (p.cuttingMethod ?? "normal") as CuttingMethod,
+      wide: p.wide || null,
+      length: p.length || null,
+      thickness: p.thickness || null,
+      amount: p.amount || 0,
+      detail: p.detail || null,
+      cuttingMethod: (p.cuttingMethod || "normal") as CuttingMethod,
 
       weight: p.actualWeight ?? null,
       price: p.unitPrice ?? 0,
@@ -63,6 +63,8 @@ function toApiJobOrder(order: OrderWithRelations): ApiJobOrder {
       isOD: p.isOD,
       isServices: p.isServices,
       isPerAmount: p.isPerAmount,
+      requiresDimensions: p.SteelType.requiresDimensions,
+      requiresAmount: p.SteelType.requiresAmount,
     })),
     status: order.status as status,
   };

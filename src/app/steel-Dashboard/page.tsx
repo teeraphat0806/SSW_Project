@@ -41,6 +41,8 @@ type SteelItemApi = {
   price: number;
   density: number;
   status: SteelStatus;
+  requiresDimensions: boolean;
+  requiresAmount: boolean;
   _count?: { Product?: number };
 };
 
@@ -266,6 +268,10 @@ const SteelListPage = () => {
                   </div>
                 </th>
 
+                <th className="p-4 font-semibold text-sm uppercase tracking-wider text-center">
+                  ความจำเป็นต้องระบุ
+                </th>
+
                 <th
                   className="p-4 font-semibold text-sm uppercase tracking-wider cursor-pointer group hover:bg-gray-200 dark:hover:bg-gray-700 transition"
                   onClick={() => handleSort("price")}
@@ -309,7 +315,7 @@ const SteelListPage = () => {
             <tbody className="divide-y divide-gray-200 dark:divide-zinc-700/50 bg-white dark:bg-zinc-900 relative ">
               {isLoading && steels.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="p-12 text-center text-zinc-400">
+                  <td colSpan={8} className="p-12 text-center text-zinc-400">
                     <div className="flex flex-col items-center gap-2">
                       <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
                       <span>กำลังโหลดข้อมูล...</span>
@@ -320,7 +326,7 @@ const SteelListPage = () => {
 
               {error && !isLoading && (
                 <tr>
-                  <td colSpan={7} className="p-12 text-center text-red-500">
+                  <td colSpan={8} className="p-12 text-center text-red-500">
                     <div className="flex flex-col items-center gap-2">
                       <AlertCircle className="w-8 h-8" />
                       <span>เกิดข้อผิดพลาด: {error}</span>
@@ -368,6 +374,29 @@ const SteelListPage = () => {
                       >
                         {item.amount}
                       </span>
+                    </td>
+
+                    <td className="p-4 text-center">
+                      <div className="flex items-center justify-center gap-1.5">
+                        <span
+                          className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold border ${
+                            item.requiresDimensions
+                              ? "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/20 dark:text-blue-300 dark:border-blue-800"
+                              : "bg-gray-100 text-gray-600 border-gray-200 dark:bg-zinc-800 dark:text-zinc-300 dark:border-zinc-700"
+                          }`}
+                        >
+                          ขนาด
+                        </span>
+                        <span
+                          className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold border ${
+                            item.requiresAmount
+                              ? "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/20 dark:text-blue-300 dark:border-blue-800"
+                              : "bg-gray-100 text-gray-600 border-gray-200 dark:bg-zinc-800 dark:text-zinc-300 dark:border-zinc-700"
+                          }`}
+                        >
+                          จำนวน
+                        </span>
+                      </div>
                     </td>
 
                     <td className="p-4 font-mono text-gray-600 dark:text-gray-300">

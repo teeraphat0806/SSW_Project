@@ -123,6 +123,8 @@ export default function DetailItem({
         isServices: false,
         isPerAmount: false,
         job: null,
+        requiresAmount: true,
+        requiresDimensions: true,
       };
 
       return {
