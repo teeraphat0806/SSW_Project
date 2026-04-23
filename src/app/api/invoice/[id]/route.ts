@@ -40,7 +40,7 @@ export async function POST(
 
   try {
     const maxRetry = 3;
-    //
+    //for เพื่อจัดการกับปัญหา concurrency ในการสร้าง invoiceNo และ codetoinvoice ที่ต้อง unique โด
     for (let attempt = 1; attempt <= maxRetry; attempt++) {
       try {
         const newInvoice = await prisma.$transaction(
