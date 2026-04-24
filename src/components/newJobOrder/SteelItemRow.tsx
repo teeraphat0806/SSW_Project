@@ -217,6 +217,7 @@ export function SteelItemRow({
                       inputMode="decimal"
                       className={`h-10 border-zinc-200 bg-white pr-7 text-center hover:border-blue-400 focus-visible:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-900 ${noNumberSpinnerClass}`}
                       value={item.thickness ?? 0}
+                      disabled={item.requiresDimensions === false}
                       onWheel={preventWheelNumberChange}
                       onChange={(e) =>
                         updateSteelItem(
@@ -246,6 +247,7 @@ export function SteelItemRow({
                         inputMode="decimal"
                         className={`h-10 border-zinc-200 bg-white pr-7 text-center hover:border-blue-400 focus-visible:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-900 ${noNumberSpinnerClass}`}
                         value={item.wide ?? 0}
+                        disabled={item.requiresDimensions === false}
                         onWheel={preventWheelNumberChange}
                         onChange={(e) =>
                           updateSteelItem(
@@ -275,6 +277,7 @@ export function SteelItemRow({
                       inputMode="decimal"
                       className={`h-10 border-zinc-200 bg-white pr-7 text-center hover:border-blue-400 focus-visible:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-900 ${noNumberSpinnerClass}`}
                       value={item.length ?? 0}
+                      disabled={item.requiresDimensions === false}
                       onWheel={preventWheelNumberChange}
                       onChange={(e) =>
                         updateSteelItem(
@@ -302,6 +305,7 @@ export function SteelItemRow({
                 min={0}
                 className={`h-10 w-full border-blue-200 bg-blue-50 text-center font-bold text-blue-700 shadow-sm focus-visible:ring-blue-500 dark:border-blue-900 dark:bg-blue-900/20 dark:text-blue-400 ${noNumberSpinnerClass}`}
                 value={item.amount ?? 1}
+                disabled={item.requiresAmount === false}
                 onWheel={preventWheelNumberChange}
                 onChange={(e) =>
                   updateSteelItem(
@@ -346,34 +350,36 @@ export function SteelItemRow({
           {/* --- ROW 2: รายละเอียดเพิ่มเติม --- */}
           <div className="flex flex-col gap-4 lg:flex-row lg:flex-wrap lg:items-end">
             {/* Cutting Method */}
-            <div className="flex-none">
-              <label className="mb-1.5 block text-xs font-medium text-zinc-500 dark:text-zinc-400">
-                วิธีตัด
-              </label>
-              <Select
-                value={item.cuttingMethod ?? "normal"}
-                onValueChange={(value) =>
-                  updateSteelItem(
-                    item.id,
-                    "cuttingMethod",
-                    value as CuttingMethod,
-                  )
-                }
-              >
-                <SelectTrigger className="h-10 w-full min-w-40 border-zinc-200 bg-white text-sm focus:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100">
-                  <SelectValue placeholder="เลือกวิธีตัด" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="normal">ตัดปกติ</SelectItem>
-                  <SelectItem value="FB">F/P</SelectItem>
-                  <SelectItem value="RM">R/M</SelectItem>
-                  <SelectItem value="CNC">CNC</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            {item.requiresDimensions && (
+              <div className="flex-none">
+                <label className="mb-1.5 block text-xs font-medium text-zinc-500 dark:text-zinc-400">
+                  วิธีตัด
+                </label>
+                <Select
+                  value={item.cuttingMethod ?? "normal"}
+                  onValueChange={(value) =>
+                    updateSteelItem(
+                      item.id,
+                      "cuttingMethod",
+                      value as CuttingMethod,
+                    )
+                  }
+                >
+                  <SelectTrigger className="h-10 w-full min-w-40 border-zinc-200 bg-white text-sm focus:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100">
+                    <SelectValue placeholder="เลือกวิธีตัด" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="normal">ตัดปกติ</SelectItem>
+                    <SelectItem value="FB">F/P</SelectItem>
+                    <SelectItem value="RM">R/M</SelectItem>
+                    <SelectItem value="CNC">CNC</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
 
             {/* OD Button */}
-            {!isLine && (
+            {!isLine && item.requiresDimensions && (
               <div className="flex-none">
                 <label className="mb-1.5 block text-xs font-medium text-zinc-500 dark:text-zinc-400">
                   OD
@@ -414,76 +420,80 @@ export function SteelItemRow({
             )}
 
             {/* Services Button */}
-            <div className="flex-none">
-              <label className="mb-1.5 block text-xs font-medium text-zinc-500 dark:text-zinc-400">
-                Services
-              </label>
-              <button
-                type="button"
-                onClick={() => {
-                  const nextIsServices = !item.isServices;
-                  updateSteelItem(item.id, "isServices", nextIsServices);
-                  updateSteelItem(
-                    item.id,
-                    "isPerAmount",
-                    nextIsServices ? true : item.isPerAmount,
-                  );
-                }}
-                className={`flex h-10 items-center gap-2 rounded-lg border px-3 text-sm transition-all
+            {item.requiresDimensions && (
+              <div className="flex-none">
+                <label className="mb-1.5 block text-xs font-medium text-zinc-500 dark:text-zinc-400">
+                  Services
+                </label>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const nextIsServices = !item.isServices;
+                    updateSteelItem(item.id, "isServices", nextIsServices);
+                    updateSteelItem(
+                      item.id,
+                      "isPerAmount",
+                      nextIsServices ? true : item.isPerAmount,
+                    );
+                  }}
+                  className={`flex h-10 items-center gap-2 rounded-lg border px-3 text-sm transition-all
                   ${
                     item.isServices === true
                       ? "border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
                       : "border-zinc-200 bg-white text-zinc-600 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800"
                   }`}
-              >
-                <div
-                  className={`h-4 w-4 rounded border flex items-center justify-center
+                >
+                  <div
+                    className={`h-4 w-4 rounded border flex items-center justify-center
                     ${
                       item.isServices === true
                         ? "border-blue-500 bg-blue-500"
                         : "border-zinc-300 bg-white"
                     }`}
-                >
-                  {item.isServices === true && (
-                    <CheckIcon className="w-3 h-3 text-white" />
-                  )}
-                </div>
-                M/S
-              </button>
-            </div>
+                  >
+                    {item.isServices === true && (
+                      <CheckIcon className="w-3 h-3 text-white" />
+                    )}
+                  </div>
+                  M/S
+                </button>
+              </div>
+            )}
 
             {/* Price Calculation Button */}
-            <div className="flex-none">
-              <label className="mb-1.5 block text-xs font-medium text-zinc-500 dark:text-zinc-400">
-                การคิดราคา
-              </label>
-              <button
-                type="button"
-                onClick={() =>
-                  updateSteelItem(item.id, "isPerAmount", !item.isPerAmount)
-                }
-                className={`flex h-10 items-center gap-2 rounded-lg border px-3 text-sm transition-all
+            {item.requiresAmount && (
+              <div className="flex-none">
+                <label className="mb-1.5 block text-xs font-medium text-zinc-500 dark:text-zinc-400">
+                  การคิดราคา
+                </label>
+                <button
+                  type="button"
+                  onClick={() =>
+                    updateSteelItem(item.id, "isPerAmount", !item.isPerAmount)
+                  }
+                  className={`flex h-10 items-center gap-2 rounded-lg border px-3 text-sm transition-all
                   ${
                     item.isPerAmount === true
                       ? "border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
                       : "border-zinc-200 bg-white text-zinc-600 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800"
                   }`}
-              >
-                <div
-                  className={`h-4 w-4 rounded border flex items-center justify-center
+                >
+                  <div
+                    className={`h-4 w-4 rounded border flex items-center justify-center
                     ${
                       item.isPerAmount === true
                         ? "border-blue-500 bg-blue-500"
                         : "border-zinc-300 bg-white"
                     }`}
-                >
-                  {item.isPerAmount === true && (
-                    <CheckIcon className="w-3 h-3 text-white" />
-                  )}
-                </div>
-                ต่อชิ้น
-              </button>
-            </div>
+                  >
+                    {item.isPerAmount === true && (
+                      <CheckIcon className="w-3 h-3 text-white" />
+                    )}
+                  </div>
+                  ต่อชิ้น
+                </button>
+              </div>
+            )}
 
             {/* Price */}
             <div className="w-full sm:w-40 lg:w-32 flex-none">

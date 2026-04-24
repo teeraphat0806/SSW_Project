@@ -28,13 +28,14 @@ export type ApiQuotation = {
   createdAt: Date;
   updateAt: Date;
   steelItem: {
+    id: number;
     SteelId: number;
     steelType: string;
     shape: ShapeSteel;
     sequence: number;
     wide: number | null;
-    length: number;
-    thickness: number;
+    length: number | null;
+    thickness: number | null;
     amount: number;
     detail?: string | null;
     cuttingMethod: CuttingMethod;
@@ -51,6 +52,8 @@ export type ApiQuotation = {
     isOD: boolean;
     isServices: boolean;
     isPerAmount: boolean;
+    requiresDimensions: boolean;
+    requiresAmount: boolean;
   }[];
 };
 
@@ -92,8 +95,8 @@ function toApi(order: OrderWithRelation): ApiQuotation {
       shape: product.SteelType.shape,
       sequence: product.sequence,
       wide: product.wide ?? null,
-      length: product.length ?? 0,
-      thickness: product.thickness ?? 0,
+      length: product.length ?? null,
+      thickness: product.thickness ?? null,
       amount: product.amount,
       detail: product.detail ?? null,
       cuttingMethod: product.cuttingMethod,
@@ -110,6 +113,8 @@ function toApi(order: OrderWithRelation): ApiQuotation {
       isOD: product.isOD,
       isServices: product.isServices,
       isPerAmount: product.isPerAmount,
+      requiresDimensions: product.SteelType.requiresDimensions,
+      requiresAmount: product.SteelType.requiresAmount,
     })),
   };
 }
@@ -286,9 +291,11 @@ export async function PATCH(
               );
             }
 
+            const amount = Number(item.amount ?? 0);
+
             const { total } = calculateWeightDetails({
               shape: steelInfo.shape,
-              amount: item.amount,
+              amount,
               length: item.length,
               width: item.wide ?? undefined,
               thickness: item.thickness,
@@ -308,7 +315,7 @@ export async function PATCH(
               wide: item.wide ?? undefined,
               length: item.length,
               thickness: item.thickness,
-              amount: item.amount,
+              amount,
               detail: item.detail ?? undefined,
               cuttingMethod: item.cuttingMethod,
               actualWeight: item.weight ?? undefined,

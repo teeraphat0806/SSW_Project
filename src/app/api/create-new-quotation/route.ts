@@ -46,13 +46,13 @@ export async function POST(req: NextRequest) {
           );
         }
         let telSearch = null;
-    if (data.tel) {
-      telSearch = digitsOnly(data.tel);
-    }
-    let faxNumberSearch = null;
-    if (data.fax) {
-      faxNumberSearch = digitsOnly(data.fax);
-    }
+        if (data.tel) {
+          telSearch = digitsOnly(data.tel);
+        }
+        let faxNumberSearch = null;
+        if (data.fax) {
+          faxNumberSearch = digitsOnly(data.fax);
+        }
         const newCustomer = await tx.customer.create({
           data: {
             name: data.companyName,
@@ -119,14 +119,14 @@ export async function POST(req: NextRequest) {
           0,
         ),
       );
-      
+
       const vat = round2(((subtotal - discount) * 7) / 100);
       const grandTotal = round2(subtotal - discount + vat);
 
       return tx.quotation.create({
         data: {
           quotationNo: data.quotationNo,
-          customer:  { connect: { id: CustomerId } } ,
+          customer: { connect: { id: CustomerId } },
           customerName: data.customerName,
           credit: data.credit ?? undefined,
           salesName: data.salesName,
@@ -151,9 +151,9 @@ export async function POST(req: NextRequest) {
                 create: calculatedProducts.map((item) => ({
                   SteelType: { connect: { id: Number(item.products.SteelId) } },
                   sequence: item.index + 1,
-                  wide: item.products.wide ?? undefined,
-                  length: item.products.length,
-                  thickness: item.products.thickness,
+                  wide: item.products.wide || null,
+                  length: item.products.length || null,
+                  thickness: item.products.thickness || null,
                   amount: item.products.amount,
                   surfaceT: item.products.surfaceT ?? null,
                   toleranceT: item.products.toleranceT ?? null,

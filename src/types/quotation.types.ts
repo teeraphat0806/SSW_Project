@@ -6,6 +6,8 @@ export type SteelType = {
   shape: ShapeSteel;
   price: number;
   density: number;
+  requiresDimensions: boolean;
+  requiresAmount: boolean;
 };
 
 export type HeadOrder = {
@@ -26,8 +28,8 @@ export type SteelItem = {
   shape: ShapeSteel;
   sequence: number;
   wide: number | null;
-  length: number;
-  thickness: number;
+  length: number | null;
+  thickness: number | null;
   amount: number;
   detail?: string | null;
   cuttingMethod: CuttingMethod;
@@ -44,4 +46,6 @@ export type SteelItem = {
   isOD: boolean;
   isServices: boolean;
   isPerAmount: boolean;
+  requiresDimensions: boolean;
+  requiresAmount: boolean;
 };

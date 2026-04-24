@@ -100,7 +100,7 @@ export default function SteelTable({ steel = [], vatRate }: SteelTableProps) {
             </span>
 
             <span className="col-span-1 text-center font-bold text-zinc-700 dark:text-zinc-300">
-              จำนวน <span>(ชิ้น)</span>
+              จำนวน
             </span>
             <span className="col-span-1 text-center font-bold text-zinc-700 dark:text-zinc-300">
               JOB
@@ -184,9 +184,11 @@ export default function SteelTable({ steel = [], vatRate }: SteelTableProps) {
 
                       {/* Col 2 */}
                       <div className="col-span-2 flex items-center font-mono text-sm text-zinc-500 dark:text-zinc-400">
-                        <span className="font-bold text-zinc-700 dark:text-zinc-300">
-                          {item.thickness}
-                        </span>
+                        {safeNum(item.thickness) > 0 && (
+                          <span className="font-bold text-zinc-700 dark:text-zinc-300">
+                            {item.thickness}
+                          </span>
+                        )}
 
                         {safeNum(item.width) > 0 && (
                           <>

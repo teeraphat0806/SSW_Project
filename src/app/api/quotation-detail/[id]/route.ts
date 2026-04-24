@@ -74,13 +74,14 @@ export async function GET(
       createdAt: Quotation.createdAt,
       updateAt: Quotation.updatedAt,
       steelItem: Product.map((steel) => ({
+        id: steel.id,
         SteelId: steel.steelId,
         steelType: steel.SteelType.codeSteel,
         shape: steel.SteelType.shape,
         sequence: steel.sequence,
         wide: steel.wide ?? null,
-        length: steel.length ?? 0,
-        thickness: steel.thickness ?? 0,
+        length: steel.length ?? null,
+        thickness: steel.thickness ?? null,
         amount: steel.amount,
         detail: steel.detail,
         cuttingMethod: steel.cuttingMethod,
@@ -97,6 +98,8 @@ export async function GET(
         isOD: steel.isOD,
         isServices: steel.isServices,
         isPerAmount: steel.isPerAmount,
+        requiresDimensions: steel.SteelType.requiresDimensions,
+        requiresAmount: steel.SteelType.requiresAmount,
       })),
     };
     return NextResponse.json(apiQuotation, { status: 200 });
@@ -162,7 +165,7 @@ export async function PATCH(
     if (
       !orderPO.Quotation ||
       !orderPO.Quotation.staff ||
-      !orderPO.Quotation.staff.user 
+      !orderPO.Quotation.staff.user
     ) {
       return NextResponse.json(
         { error: "ไม่พบข้อมูลพนักงานขาย" },

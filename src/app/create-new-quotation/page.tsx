@@ -26,6 +26,7 @@ import {
 import SelectCustomer from "@/components/SelectCustomer";
 import type { CustomerFormData } from "@/components/create-new-quotation/CustomerForm";
 import { cn } from "@/lib/utils";
+import { coerceBoolean } from "@/lib/coerceBoolean";
 
 import { is } from "date-fns/locale";
 import { CuttingMethod, ShapeSteel } from "@/types";
@@ -47,16 +48,6 @@ type CustomerApiItem = {
 type CustomerApiResponse = {
   data: CustomerApiItem[];
 };
-
-// type CustomerDetail = {
-//   id: number;
-//   name: string;
-//   address: string;
-//   tel: string | null;
-//   faxNumber: string | null;
-//   taxNumber: string | null;
-//   email: string | null;
-// };
 
 export default function CreateNewQuotationPage() {
   const router = useRouter();
@@ -91,15 +82,15 @@ export default function CreateNewQuotationPage() {
   const [selectedCustomerId, setSelectedCustomerId] = useState<number | null>(
     null,
   );
-  const [customers, setCustomers] = useState<{ id: number; name: string; credit: number }[]>(
-    [],
-  );
+  const [customers, setCustomers] = useState<
+    { id: number; name: string; credit: number }[]
+  >([]);
   const [searchCustomer, setSearchCustomer] = useState("");
   const [loading, setLoading] = useState(false);
   const [steelTypes, setSteelTypes] = useState<SteelType[]>([]);
   const [SteelItem, setSteelItem] = useState<SteelItem[]>([
     {
-      id: "",
+      id: uuidv4(),
       SteelId: 0,
       steelType: "",
       shape: "square",
@@ -122,6 +113,8 @@ export default function CreateNewQuotationPage() {
       isOD: false,
       isServices: false,
       isPerAmount: false,
+      requiresDimensions: true,
+      requiresAmount: true,
     },
   ]);
 
@@ -174,6 +167,8 @@ export default function CreateNewQuotationPage() {
       isOD: false,
       isServices: false,
       isPerAmount: false,
+      requiresDimensions: coerceBoolean(firstSteelType?.requiresDimensions, true),
+      requiresAmount: coerceBoolean(firstSteelType?.requiresAmount, true),
     };
     setSteelItem((prev) => [...prev, newItem]);
   };
@@ -213,6 +208,8 @@ export default function CreateNewQuotationPage() {
             shape: t.shape,
             price: Number(t.price ?? 0),
             density: Number(t.density ?? 0.0000079),
+            requiresDimensions: coerceBoolean(t.requiresDimensions, true),
+            requiresAmount: coerceBoolean(t.requiresAmount, true),
           }));
 
           setSteelTypes(formattedData);
@@ -302,17 +299,22 @@ export default function CreateNewQuotationPage() {
     if (
       SteelItem.some(
         (item) =>
-          (item.isOD === false && (!item.length || item.length <= 0)) ||
-          !item.thickness ||
-          item.thickness <= 0 ||
-          (item.shape === "square" && (!item.wide || item.wide <= 0)),
+          item.requiresDimensions &&
+          (item.thickness == null ||
+            item.thickness <= 0 ||
+            (item.isOD === false && (!item.length || item.length <= 0)) ||
+            (item.shape === "square" && (item.wide == null || item.wide <= 0))),
       )
     )
       return "ขนาดของเหล็กต้องมากกว่า 0";
     if (SteelItem.some((item) => !item.SteelId || item.SteelId <= 0))
       return "กรุณาเลือกประเภทเหล็ก";
 
-    if (SteelItem.some((item) => !item.amount || item.amount <= 0))
+    if (
+      SteelItem.some(
+        (item) => !item.amount || (item.amount <= 0 && item.requiresAmount),
+      )
+    )
       return "จำนวนต้องมากกว่า 0";
 
     if (hasInvalidFBItem) {
@@ -345,7 +347,7 @@ export default function CreateNewQuotationPage() {
       };
 
       const payload = {
-        customerId: showForm ? undefined : selectedCustomerId ?? undefined,
+        customerId: showForm ? undefined : (selectedCustomerId ?? undefined),
         customerName: formData.customerName,
         companyName: formData.companyName ?? "Test Company",
         address: formData.address ?? "Test Address",
@@ -360,15 +362,15 @@ export default function CreateNewQuotationPage() {
         deliveryDate: headOrder.deliveryDate,
         createdAt: headOrder.createdAt ?? new Date(),
         orderPO: {
-          customerId: showForm ? undefined : selectedCustomerId ?? undefined,
+          customerId: showForm ? undefined : (selectedCustomerId ?? undefined),
           products: SteelItem.map((item, index) => ({
             SteelId: item.SteelId,
             steelType: item.steelType,
             shape: item.shape,
             sequence: index + 1,
-            wide: item.wide ?? null,
-            length: item.length,
-            thickness: item.thickness,
+            wide: item.wide ||  null,
+            length: item.length ||  null,
+            thickness: item.thickness ||  null,
             amount: item.amount,
             detail: optionalString(item.detail ?? undefined),
             cuttingMethod: item.cuttingMethod ?? "normal",
