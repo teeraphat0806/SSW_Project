@@ -87,6 +87,18 @@ model Customer {
   OrderPO         OrderPO[]
   Statements      Statement[]
   quotation       Quotation[]
+  contacts        CustomerContact[]
+}
+
+
+model CustomerContact {
+  id          Int @id @default(autoincrement())
+  customerId  Int
+  type        ContactType
+  value       String
+  isPrimary   Boolean   @default(false)
+
+  customer Customer @relation(fields: [customerId], references: [id])
 }
 
 model Quotation {
@@ -138,11 +150,14 @@ model Bill {
   Staff_Bill_deliveredByToStaff Staff?    @relation("Bill_deliveredByToStaff", fields: [deliveredById], references: [id])
   Staff_Bill_salesNameToStaff   Staff     @relation("Bill_salesNameToStaff", fields: [salesNameId], references: [id])
   OrderPO                       OrderPO?
+  
+
 
   @@index([customerId])
   @@index([salesNameId])
   @@index([deliveredById])
 }
+
 
 model OrderPO {
   id            Int            @id @default(autoincrement())
@@ -417,4 +432,11 @@ enum SteelStatus {
 enum OrderStaffRole {
   supervisor
   cutter
+}
+
+enum ContactType{
+  PHONE
+  EMAIL
+  FAX
+  ADDRESS
 }
