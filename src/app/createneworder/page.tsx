@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { v4 as uuidv4 } from "uuid";
+import { coerceBoolean } from "@/lib/coerceBoolean";
 import { Separator } from "@/components/ui/separator";
 import { ToastContainer, toast } from "react-toastify";
 import CustomerForm from "@/components/newJobOrder/CustomerForm";
@@ -208,8 +209,8 @@ const NewJobOrder = () => {
                 shape: t.shape,
                 price: Number(t.price ?? 0),
                 density: Number(t.density ?? 0.0000079),
-                requiresDimensions: Boolean(t.requiresDimensions),
-                requiresAmount: Boolean(t.requiresAmount),
+                requiresDimensions: coerceBoolean(t.requiresDimensions, true),
+                requiresAmount: coerceBoolean(t.requiresAmount, true),
               }),
             ),
           );
@@ -283,21 +284,21 @@ const NewJobOrder = () => {
       const shape: ShapeSteel =
         firstSteelType.shape === "line" ? "line" : "square";
 
-      return [
-        {
+          return [
+            {
           ...first,
           id: first.id || uuidv4(),
           SteelId: Number(firstSteelType.id ?? 0),
           steelType: firstSteelType.steelType ?? "",
           shape,
           wide: shape === "line" ? null : (first.wide ?? 1),
-          price: Number(firstSteelType.price ?? 0),
-          density: Number(firstSteelType.density ?? 0.0000079),
-          requiresDimensions: Boolean(firstSteelType.requiresDimensions),
-          requiresAmount: Boolean(firstSteelType.requiresAmount),
-        },
-      ];
-    });
+              price: Number(firstSteelType.price ?? 0),
+              density: Number(firstSteelType.density ?? 0.0000079),
+              requiresDimensions: coerceBoolean(firstSteelType.requiresDimensions, true),
+              requiresAmount: coerceBoolean(firstSteelType.requiresAmount, true),
+            },
+          ];
+        });
   }, [steelTypes]);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -540,8 +541,8 @@ const NewJobOrder = () => {
       isOD: false,
       isServices: false,
       isPerAmount: false,
-      requiresDimensions: Boolean(firstSteelType?.requiresDimensions),
-      requiresAmount: Boolean(firstSteelType?.requiresAmount),
+      requiresDimensions: coerceBoolean(firstSteelType?.requiresDimensions, true),
+      requiresAmount: coerceBoolean(firstSteelType?.requiresAmount, true),
     };
     setSteelItem((prev) => [...prev, newItem]);
   };

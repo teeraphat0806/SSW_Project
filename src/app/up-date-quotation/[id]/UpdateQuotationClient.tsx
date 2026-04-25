@@ -8,6 +8,7 @@ import { toast, ToastContainer } from "react-toastify";
 import { ArrowLeft, FileText, Save } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { coerceBoolean } from "@/lib/coerceBoolean";
 
 import AddItem from "@/components/create-new-quotation/AddItem";
 import DetailCustomer from "@/components/up-date-order/detailCustomer";
@@ -91,32 +92,40 @@ export default function UpdateQuotationClient({ id }: { id: string }) {
         });
 
         setSteelItems(
-          data.steelItem.map((item, idx) => ({
-            id: uuidv4(),
-            SteelId: item.SteelId,
-            steelType: item.steelType,
-            shape: item.shape as ShapeSteel,
-            sequence: item.sequence ?? idx + 1,
-            wide: item.wide ?? null,
-            length: item.length,
-            thickness: item.thickness,
-            amount: item.amount,
-            detail: item.detail ?? null,
-            cuttingMethod: item.cuttingMethod,
-            weight: item.weight ?? null,
-            price: item.price,
-            discount: item.discount ?? null,
-            density: item.density,
-            surfaceT: item.surfaceT ?? null,
-            toleranceT: item.toleranceT ?? null,
-            surfaceW: item.surfaceW ?? null,
-            toleranceW: item.toleranceW ?? null,
-            surfaceL: item.surfaceL ?? null,
-            toleranceL: item.toleranceL ?? null,
-            isOD: item.isOD,
-            isServices: item.isServices,
-            isPerAmount: item.isPerAmount,
-          })),
+          data.steelItem.map((item, idx) => {
+            const requiresDimensions = coerceBoolean(
+              item.requiresDimensions,
+              true,
+            );
+            return {
+              id: uuidv4(),
+              SteelId: item.SteelId,
+              steelType: item.steelType,
+              shape: item.shape as ShapeSteel,
+              sequence: item.sequence ?? idx + 1,
+              wide: requiresDimensions ? (item.wide ?? null) : null,
+              length: requiresDimensions ? item.length : null,
+              thickness: requiresDimensions ? item.thickness : null,
+              amount: item.amount,
+              detail: item.detail ?? null,
+              cuttingMethod: item.cuttingMethod,
+              weight: item.weight ?? null,
+              price: item.price,
+              discount: item.discount ?? null,
+              density: item.density,
+              surfaceT: requiresDimensions ? (item.surfaceT ?? null) : null,
+              toleranceT: requiresDimensions ? (item.toleranceT ?? null) : null,
+              surfaceW: requiresDimensions ? (item.surfaceW ?? null) : null,
+              toleranceW: requiresDimensions ? (item.toleranceW ?? null) : null,
+              surfaceL: requiresDimensions ? (item.surfaceL ?? null) : null,
+              toleranceL: requiresDimensions ? (item.toleranceL ?? null) : null,
+              isOD: requiresDimensions ? item.isOD : false,
+              isServices: requiresDimensions ? item.isServices : false,
+              isPerAmount: item.isPerAmount,
+              requiresDimensions,
+              requiresAmount: coerceBoolean(item.requiresAmount, true),
+            };
+          }),
         );
       } catch (err) {
         if ((err as { name?: string }).name === "AbortError") return;
@@ -154,6 +163,8 @@ export default function UpdateQuotationClient({ id }: { id: string }) {
               shape: t.shape,
               price: Number(t.price ?? 0),
               density: Number(t.density ?? 0.0000079),
+              requiresDimensions: coerceBoolean(t.requiresDimensions, true),
+              requiresAmount: coerceBoolean(t.requiresAmount, true),
             })),
           );
       } catch {
@@ -178,12 +189,19 @@ export default function UpdateQuotationClient({ id }: { id: string }) {
     value: SteelItem[K],
   ) =>
     setSteelItems((prev) =>
-      prev.map((item) => (item.id === id ? { ...item, [field]: value } : item)),
+      prev.map((item) => {
+        if (item.id !== id) return item;
+
+        const next = { ...item, [field]: value } as SteelItem;
+
+        return next;
+      }),
     );
 
   const addSteelItem = () => {
     const first = steelTypes[0];
     const shape: ShapeSteel = first?.shape ?? "square";
+    const requiresDimensions = coerceBoolean(first?.requiresDimensions, true);
     const nextSeq =
       steelItems.length > 0
         ? Math.max(...steelItems.map((i) => i.sequence ?? 0)) + 1
@@ -196,9 +214,9 @@ export default function UpdateQuotationClient({ id }: { id: string }) {
         steelType: first?.steelType ?? "",
         shape,
         sequence: nextSeq,
-        wide: shape === "line" ? null : 0,
-        length: 0,
-        thickness: 0,
+        wide: requiresDimensions ? (shape === "line" ? null : 0) : null,
+        length: requiresDimensions ? 0 : null,
+        thickness: requiresDimensions ? 0 : null,
         amount: 0,
         detail: null,
         cuttingMethod: "normal",
@@ -215,6 +233,8 @@ export default function UpdateQuotationClient({ id }: { id: string }) {
         isOD: false,
         isServices: false,
         isPerAmount: false,
+        requiresDimensions: coerceBoolean(first?.requiresDimensions, true),
+        requiresAmount: coerceBoolean(first?.requiresAmount, true),
       },
     ]);
   };
@@ -243,10 +263,11 @@ export default function UpdateQuotationClient({ id }: { id: string }) {
     if (
       steelItems.some(
         (item) =>
-          (item.isOD === false && (!item.length || item.length <= 0)) ||
-          !item.thickness ||
-          item.thickness <= 0 ||
-          (item.shape === "square" && (!item.wide || item.wide <= 0)),
+          item.requiresDimensions &&
+          (item.thickness == null ||
+            item.thickness <= 0 ||
+            (item.isOD === false && (!item.length || item.length <= 0)) ||
+            (item.shape === "square" && (item.wide == null || item.wide <= 0))),
       )
     )
       return "ขนาดของเหล็กต้องมากกว่า 0";
@@ -290,23 +311,37 @@ export default function UpdateQuotationClient({ id }: { id: string }) {
         steelItem: steelItems.map((item, idx) => ({
           SteelId: item.SteelId,
           sequence: idx + 1,
-          wide: item.wide ?? null,
-          length: item.length,
-          thickness: item.thickness,
+          wide: item.requiresDimensions ? (item.wide ?? null) : null,
+          length: item.requiresDimensions ? item.length : null,
+          thickness: item.requiresDimensions ? item.thickness : null,
           amount: item.amount,
           detail: optNull(item.detail ?? undefined),
           cuttingMethod: item.cuttingMethod ?? "normal",
           weight: item.weight ?? null,
           price: item.price ?? 0,
           discount: item.discount ?? null,
-          surfaceT: optNull(item.surfaceT ?? undefined),
-          toleranceT: optNull(item.toleranceT ?? undefined),
-          surfaceW: optNull(item.surfaceW ?? undefined),
-          toleranceW: optNull(item.toleranceW ?? undefined),
-          surfaceL: optNull(item.surfaceL ?? undefined),
-          toleranceL: optNull(item.toleranceL ?? undefined),
-          isOD: item.isOD ?? false,
-          isServices: item.isServices ?? false,
+          surfaceT: item.requiresDimensions
+            ? optNull(item.surfaceT ?? undefined)
+            : null,
+          toleranceT: item.requiresDimensions
+            ? optNull(item.toleranceT ?? undefined)
+            : null,
+          surfaceW: item.requiresDimensions
+            ? optNull(item.surfaceW ?? undefined)
+            : null,
+          toleranceW: item.requiresDimensions
+            ? optNull(item.toleranceW ?? undefined)
+            : null,
+          surfaceL: item.requiresDimensions
+            ? optNull(item.surfaceL ?? undefined)
+            : null,
+          toleranceL: item.requiresDimensions
+            ? optNull(item.toleranceL ?? undefined)
+            : null,
+          isOD: item.requiresDimensions ? (item.isOD ?? false) : false,
+          isServices: item.requiresDimensions
+            ? (item.isServices ?? false)
+            : false,
           isPerAmount: item.isPerAmount ?? false,
         })),
       };

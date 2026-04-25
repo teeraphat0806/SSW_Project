@@ -429,7 +429,7 @@ export default function QuotationDetailPage() {
 
                         {/* 💡 2. เปลี่ยนเป็น self-center เช่นกัน */}
                         <div className="w-[12px] self-center text-center font-medium text-[10px] text-gray-500">
-                          X
+                          {entry.item.length ? "X" : ""}
                         </div>
 
                         {/* --- บล็อกที่ 3: ยาว (L) --- */}
