@@ -58,6 +58,8 @@ type TemporarySteelItem = {
   cuttingMethod?: string | null;
   isOD?: boolean;
   isServices?: boolean;
+  requiresDimensions: boolean;
+  requiredAmount: boolean;
 };
 
 type StatementData = {
@@ -338,19 +340,22 @@ export function QuickAction({
   };
 
   const formatSteelSizeLabel = (item: TemporarySteelItem) => {
-    if (item.isOD) {
-      const idSegment =
-        item.length === 0 || !item.length ? "" : ` ID ${item.length}`;
-      return `${item.thickness} t OD ${item.width ?? 0}${idSegment} mm`;
+    if (item.requiresDimensions) {
+      if (item.isOD) {
+        const idSegment =
+          item.length === 0 || !item.length ? "" : ` ID ${item.length}`;
+        return `${item.thickness} t OD ${item.width ?? 0}${idSegment} mm`;
+      }
+
+      const cncSuffix = item.cuttingMethod === "CNC" ? " (แบบ)" : "";
+
+      if (item.width === 0 || item.width == null) {
+        return `Ø ${item.thickness} x ${item.length} mm${cncSuffix}`;
+      }
+
+      return `${item.thickness} x ${item.width} x ${item.length} mm${cncSuffix}`;
     }
-
-    const cncSuffix = item.cuttingMethod === "CNC" ? " (แบบ)" : "";
-
-    if (item.width === 0 || item.width == null) {
-      return `Ø ${item.thickness} x ${item.length} mm${cncSuffix}`;
-    }
-
-    return `${item.thickness} x ${item.width} x ${item.length} mm${cncSuffix}`;
+    return "";
   };
 
   // const openAll = () => {
