@@ -124,6 +124,8 @@ type ApiReceipt = {
     isOD: boolean;
     isServices: boolean;
     isPerAmount: boolean;
+    requiredAmount: boolean;
+    requiresDimensions: boolean;
   }[];
 };
 
@@ -213,6 +215,8 @@ export async function GET(
       isOD: p.isOD,
       isServices: p.isServices,
       isPerAmount: p.isPerAmount,
+      requiredAmount: p.SteelType.requiresAmount,
+      requiresDimensions: p.SteelType.requiresDimensions,
     }));
 
     const apiReceipt: ApiReceipt = {
@@ -241,7 +245,7 @@ export async function GET(
       },
       steel,
     };
-   
+
     return NextResponse.json(apiReceipt);
   } catch (error) {
     return NextResponse.json(

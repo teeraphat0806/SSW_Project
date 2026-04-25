@@ -56,6 +56,8 @@ type ApiReceipt = {
     isOD?: boolean;
     isServices?: boolean;
     isPerAmount?: boolean;
+    requiresDimensions: boolean;
+    requiredAmount: boolean;
   }[];
 };
 
@@ -280,6 +282,8 @@ export default function ReceiptClient({ id }: { id: string }) {
           isOD: s.isOD,
           isServices: s.isServices,
           isPerAmount: s.isPerAmount,
+          requiredAmount: s.requiredAmount,
+          requiredDimensions: s.requiresDimensions,
         }))}
         subtotal={data.subtotal}
         vat={data.vat}

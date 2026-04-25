@@ -35,6 +35,8 @@ type ApiReceipt = {
     isOD?: boolean;
     isServices?: boolean;
     isPerAmount?: boolean;
+    requiresDimensions: boolean;
+    requiredAmount: boolean;
   }[];
 };
 
@@ -105,35 +107,39 @@ export default function ReceiptTemporary({
     );
 
   const formatSteelDisplay = (item: ApiReceipt["steel"][number]) => {
-    if (item.isOD) {
-      const steelPrefix = item.isServices === true ? "" : "เหล็ก ";
-      const idSegment =
-        item.length === 0 || !item.length ? "" : ` ID ${item.length}`;
-      return `${steelPrefix}${item.steelType} ${item.thickness} t OD ${item.width ?? 0}${idSegment} mm.`;
-    }
+    if (item.requiresDimensions) {
+      if (item.isOD) {
+        const steelPrefix = item.isServices === true ? "" : "เหล็ก ";
+        const idSegment =
+          item.length === 0 || !item.length ? "" : ` ID ${item.length}`;
+        return `${steelPrefix}${item.steelType} ${item.thickness} t OD ${item.width ?? 0}${idSegment} mm.`;
+      }
 
-    let prefix =
-      item.isServices === true ? item.steelType : `เหล็ก ${item.steelType}`;
+      let prefix =
+        item.isServices === true ? item.steelType : `เหล็ก ${item.steelType}`;
 
-    if (item.cuttingMethod === "FB") prefix += " F/P";
-    else if (item.cuttingMethod === "RM") prefix += " R/M";
+      if (item.cuttingMethod === "FB") prefix += " F/P";
+      else if (item.cuttingMethod === "RM") prefix += " R/M";
 
-    let dimensions = "";
-    if (item.width === 0 || item.width == null) {
-      prefix += " Ø";
-      dimensions = `${item.thickness} x ${item.length} mm.`;
+      let dimensions = "";
+      if (item.width === 0 || item.width == null) {
+        prefix += " Ø";
+        dimensions = `${item.thickness} x ${item.length} mm.`;
+      } else {
+        dimensions = `${item.thickness} x ${item.width} x ${item.length} mm.`;
+      }
+
+      const suffix = item.cuttingMethod === "CNC" ? "(แบบ)" : "";
+      let steelDisplay = `${prefix} ${dimensions}${suffix}`;
+
+      if (item.isServices === true) {
+        steelDisplay = `services ${steelDisplay}`;
+      }
+
+      return steelDisplay;
     } else {
-      dimensions = `${item.thickness} x ${item.width} x ${item.length} mm.`;
+      return item.steelType;
     }
-
-    const suffix = item.cuttingMethod === "CNC" ? "(แบบ)" : "";
-    let steelDisplay = `${prefix} ${dimensions}${suffix}`;
-
-    if (item.isServices === true) {
-      steelDisplay = `services ${steelDisplay}`;
-    }
-
-    return steelDisplay;
   };
 
   const totalQuantity = data.steel.reduce(

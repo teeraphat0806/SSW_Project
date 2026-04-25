@@ -18,6 +18,8 @@ type InvoiceItem = {
   isOD?: boolean; // true สำหรับ OD/ID format
   isServices?: boolean; // true สำหรับบริการ (ย้ายน้ำหนักไป Job)
   isPerAmount?: boolean; // true สำหรับคิดราคาต่อชิ้น
+  requiredAmount: boolean; // true ถ้าต้องการแสดงจำนวนในใบแจ้งหนี้ (กรณีบริการที่ไม่ต้องการแสดงจำนวน เช่น ตัดตามน้ำหนัก)
+  requiredDimensions: boolean; // true ถ้าต้องการแสดงขนาดในใบแจ้งหนี้ (กรณีบริการที่ไม่ต้องการแสดงขนาด เช่น ตัดตามน้ำหนัก)
 };
 
 type Inv71LikeInvoiceProps = {
@@ -219,36 +221,37 @@ export const InvoiceExcelSample: React.FC<Inv71LikeInvoiceProps> = ({
 
           <tbody>
             {items.map((item, idx) => {
-              let steelDisplay = "";
-
-              if (item.isOD) {
-                const steelPrefix = item.isServices === true ? "" : "เหล็ก ";
-                steelDisplay = `${steelPrefix}${item.steelType} ${item.thickness} t OD ${item.width} ${item.length === 0 || !item.length ? "" : "ID " + item.length} ${
-                  item.unit || "mm."
-                }`;
-              } else {
-                let prefix =
-                  item.isServices === true
-                    ? item.steelType
-                    : `เหล็ก ${item.steelType}`;
-
-                if (item.cuttingMethod === "FB") prefix += " F/P";
-                else if (item.cuttingMethod === "RM") prefix += " R/M";
-
-                let dimensions = "";
-                if (item.width === 0 || item.width === null) {
-                  prefix += " Ø";
-                  dimensions = `${item.thickness} x ${item.length} ${item.unit || "mm."}`;
+              let steelDisplay = item.steelType;
+              if (item.requiredDimensions) {
+                if (item.isOD) {
+                  const steelPrefix = item.isServices === true ? "" : "เหล็ก ";
+                  steelDisplay = `${steelPrefix}${item.steelType} ${item.thickness} t OD ${item.width} ${item.length === 0 || !item.length ? "" : "ID " + item.length} ${
+                    item.unit || "mm."
+                  }`;
                 } else {
-                  dimensions = `${item.thickness} x ${item.width} x ${item.length} ${item.unit || "mm."}`;
+                  let prefix =
+                    item.isServices === true
+                      ? item.steelType
+                      : `เหล็ก ${item.steelType}`;
+
+                  if (item.cuttingMethod === "FB") prefix += " F/P";
+                  else if (item.cuttingMethod === "RM") prefix += " R/M";
+
+                  let dimensions = "";
+                  if (item.width === 0 || item.width === null) {
+                    prefix += " Ø";
+                    dimensions = `${item.thickness} x ${item.length} ${item.unit || "mm."}`;
+                  } else {
+                    dimensions = `${item.thickness} x ${item.width} x ${item.length} ${item.unit || "mm."}`;
+                  }
+
+                  const suffix = item.cuttingMethod === "CNC" ? "(แบบ)" : "";
+                  steelDisplay = `${prefix} ${dimensions}${suffix}`;
                 }
 
-                const suffix = item.cuttingMethod === "CNC" ? "(แบบ)" : "";
-                steelDisplay = `${prefix} ${dimensions}${suffix}`;
-              }
-
-              if (item.isServices === true) {
-                steelDisplay = `services ${steelDisplay}`;
+                if (item.isServices === true) {
+                  steelDisplay = `services ${steelDisplay}`;
+                }
               }
 
               let jobDisplay = "";
