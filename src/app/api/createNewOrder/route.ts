@@ -2,7 +2,7 @@ import { z } from "zod";
 import { NextRequest, NextResponse } from "next/server";
 
 import prisma from "@/lib/prisma";
-import { Prisma } from "@prisma/client";
+import { ContactType,Prisma } from "@prisma/client";
 import { requireAuth } from "@/lib/permissions";
 import { calculateWeightDetails, digitsOnly } from "@/lib/calculateGrandTotal";
 import { generateCode } from "@/lib/generateCode";
@@ -84,7 +84,19 @@ export async function POST(req: NextRequest) {
         if (data.fax) {
           faxNumberSearch = digitsOnly(data.fax);
         }
-
+        const contacts = [];
+        if (data.tel)
+          contacts.push({ type: ContactType.PHONE, value: data.tel, isPrimary: true });
+        if (data.fax)
+          contacts.push({ type: ContactType.FAX, value: data.fax, isPrimary: true });
+        if (data.email)
+          contacts.push({ type: ContactType.EMAIL, value: data.email, isPrimary: true });
+        if (data.address)
+          contacts.push({
+            type: ContactType.ADDRESS,
+            value: data.address,
+            isPrimary: true,
+          });
         try {
           const newCustomer = await tx.customer.create({
             data: {
@@ -96,6 +108,7 @@ export async function POST(req: NextRequest) {
               faxNumberSearch: faxNumberSearch,
               taxNumber: taxNumber || null,
               email: data.email ?? null,
+              contacts: contacts.length > 0 ? { create: contacts } : undefined,
             },
           });
           CustomerId = newCustomer.id;
@@ -243,7 +256,7 @@ export async function POST(req: NextRequest) {
                   },
                   sequence: shouldNormalizeSequence
                     ? item.index + 1
-                    : item.product.sequence ?? item.index + 1,
+                    : (item.product.sequence ?? item.index + 1),
 
                   wide: item.product.wide ?? null,
                   length: item.product.length ?? null,
