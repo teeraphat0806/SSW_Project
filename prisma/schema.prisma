@@ -98,7 +98,7 @@ model CustomerContact {
   value       String
   isPrimary   Boolean   @default(false)
 
-  customer Customer @relation(fields: [customerId], references: [id])
+  customer Customer @relation(fields: [customerId], references: [id] , onDelete: Cascade)
 }
 
 model Quotation {

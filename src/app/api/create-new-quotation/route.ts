@@ -4,6 +4,7 @@ import prisma from "@/lib/prisma";
 import { requireAuth } from "@/lib/permissions";
 import { calculateWeightDetails, digitsOnly } from "@/lib/calculateGrandTotal";
 import { CreateNewQuotationSchema } from "@/lib/schemas/createNewQuotation.shema";
+import { ContactType, Prisma } from "@prisma/client";
 
 type createNewQuotationInput = z.infer<typeof CreateNewQuotationSchema>;
 type OrderPO = createNewQuotationInput["orderPO"];
@@ -53,6 +54,32 @@ export async function POST(req: NextRequest) {
         if (data.fax) {
           faxNumberSearch = digitsOnly(data.fax);
         }
+
+        const contacts = [];
+        if (data.tel)
+          contacts.push({
+            type: ContactType.PHONE,
+            value: data.tel,
+            isPrimary: true,
+          });
+        if (data.fax)
+          contacts.push({
+            type: ContactType.FAX,
+            value: data.fax,
+            isPrimary: true,
+          });
+        if (data.email)
+          contacts.push({
+            type: ContactType.EMAIL,
+            value: data.email,
+            isPrimary: true,
+          });
+        if (data.address)
+          contacts.push({
+            type: ContactType.ADDRESS,
+            value: data.address,
+            isPrimary: true,
+          });
         const newCustomer = await tx.customer.create({
           data: {
             name: data.companyName,
@@ -63,6 +90,7 @@ export async function POST(req: NextRequest) {
             faxNumberSearch: faxNumberSearch,
             taxNumber: data.tax ?? null,
             email: data.email ?? null,
+            contacts: contacts.length > 0 ? { create: contacts } : undefined,
           },
         });
 

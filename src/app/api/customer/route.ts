@@ -3,7 +3,7 @@ import { requireAuth } from "@/lib/permissions";
 import { NextResponse, NextRequest } from "next/server";
 import prisma from "../../../lib/prisma";
 import { CustomerSchema } from "../../../lib/schemas/customer.schema";
-import { Prisma } from "@prisma/client";
+import { ContactType, Prisma } from "@prisma/client";
 import { digitsOnly } from "@/lib/calculateGrandTotal";
 
 //กำหนดชนิดของพารามิเตอร์ที่รับเข้ามา
@@ -225,6 +225,28 @@ export async function POST(req: NextRequest) {
     if (parsed.data.faxNumber) {
       faxNumberSearch = digitsOnly(parsed.data.faxNumber);
     }
+    const contacts = [];
+    if (parsed.data.tel)
+      contacts.push({ type: ContactType.PHONE, value: parsed.data.tel, isPrimary: true });
+    if (parsed.data.faxNumber)
+      contacts.push({
+        type: ContactType.FAX,
+        value: parsed.data.faxNumber,
+        isPrimary: true,
+      });
+    if (parsed.data.email)
+      contacts.push({
+        type: ContactType.EMAIL,
+        value: parsed.data.email,
+        isPrimary: true,
+      });
+    if (parsed.data.address)
+      contacts.push({
+        type: ContactType.ADDRESS,
+        value: parsed.data.address,
+        isPrimary: true,
+      });
+
     const data: Prisma.CustomerCreateInput = {
       name: parsed.data.name,
       address: parsed.data.address,
@@ -235,6 +257,7 @@ export async function POST(req: NextRequest) {
       faxNumber: parsed.data.faxNumber,
       faxNumberSearch: faxNumberSearch,
       email: parsed.data.email,
+      contacts: contacts.length > 0 ? { create: contacts } : undefined,
     };
 
     // ตรวจสอบว่ามีข้อมูลซ้ำหรือไม่
