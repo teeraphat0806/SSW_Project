@@ -97,6 +97,7 @@ model CustomerContact {
   type        ContactType
   value       String
   isPrimary   Boolean   @default(false)
+  label       String?
 
   customer Customer @relation(fields: [customerId], references: [id] , onDelete: Cascade)
 }
