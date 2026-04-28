@@ -20,6 +20,9 @@ export async function GET(
   try {
     const result = await prisma.customer.findUnique({
       where: { id: Number(id) },
+      include: {
+        contacts: true,
+      },
     });
 
     return NextResponse.json(result, { status: 200 });
@@ -42,8 +45,7 @@ export async function PATCH(
   if ("response" in authResult) {
     return authResult.response;
   }
-  const { session } = authResult;
-  console.log(session);
+
   const body = await req.json();
   const parsed = CustomerSchema.partial().safeParse(body);
   if (!parsed.success) {
@@ -59,18 +61,113 @@ export async function PATCH(
         { status: 404 },
       );
     }
-    let telSearch = null;
-    if (parsed.data.tel) {
-      telSearch = digitsOnly(parsed.data.tel);
+
+    // Never allow client to update immutable/identity fields like `id`
+    const { id: _ignoredId, contacts, deletedContactIds, ...customerData } =
+      parsed.data;
+
+    //ให้ค่าเริ่มต้นเป็นค่าเดิมก่อน เพื่อให้ถ้าไม่ได้ส่งมา จะได้ไม่ถูกลบออกไป
+    let telSearch = customer.telSearch;
+    let faxNumberSearch = customer.faxNumberSearch;
+
+    // ถ้าส่งค่าใหม่มา ให้ปรับค่า telSearch และ faxNumberSearch ตามค่าใหม่
+    if (customerData.tel !== undefined) {
+      telSearch = customerData.tel ? digitsOnly(customerData.tel) : null;
     }
-    let faxNumberSearch = null;
-    if (parsed.data.faxNumber) {
-      faxNumberSearch = digitsOnly(parsed.data.faxNumber);
+    if (customerData.faxNumber !== undefined) {
+      faxNumberSearch = customerData.faxNumber
+        ? digitsOnly(customerData.faxNumber)
+        : null;
     }
 
-    const result = await prisma.customer.update({
-      where: { id: Number(id) },
-      data: { ...parsed.data, telSearch, faxNumberSearch },
+    // ตรวจสอบ contacts ที่เป็น primary เพื่อ override ค่า telSearch, faxNumberSearch, emailSearch ตามประเภทของ contact
+    const primaryOverrides: {
+      tel?: string | null;
+      faxNumber?: string | null;
+      email?: string | null;
+      address?: string;
+    } = {};
+
+    if (contacts?.length) {
+      for (const contact of contacts) {
+        if (!contact.isPrimary) continue;
+        if (contact.type === "PHONE") {
+          primaryOverrides.tel = contact.value;
+          telSearch = digitsOnly(contact.value);
+        } else if (contact.type === "FAX") {
+          primaryOverrides.faxNumber = contact.value;
+          faxNumberSearch = digitsOnly(contact.value);
+        } else if (contact.type === "EMAIL") {
+          primaryOverrides.email = contact.value;
+        } else if (contact.type === "ADDRESS") {
+          primaryOverrides.address = contact.value;
+        }
+      }
+    }
+
+    const result = await prisma.$transaction(async (tx) => {
+      // ลบ contacts ที่ mark ไว้
+      if (deletedContactIds?.length) {
+        const toDelete = await tx.customerContact.findMany({
+          where: { id: { in: deletedContactIds }, customerId: Number(id) },
+        });
+
+        // ถ้า primary ถูกลบ → null ค่าใน customer ด้วย
+        for (const c of toDelete) {
+          if (!c.isPrimary) continue;
+          if (c.type === "PHONE") {
+            primaryOverrides.tel = null;
+            telSearch = null;
+          } else if (c.type === "FAX") {
+            primaryOverrides.faxNumber = null;
+            faxNumberSearch = null;
+          } else if (c.type === "EMAIL") {
+            primaryOverrides.email = null;
+          }
+          // ADDRESS ไม่แตะ เพราะลบไม่ได้
+        }
+
+        await tx.customerContact.deleteMany({
+          where: { id: { in: deletedContactIds }, customerId: Number(id) },
+        });
+      }
+
+      if (contacts?.length) {
+        for (const contact of contacts) {
+          if (contact.id) {
+            await tx.customerContact.update({
+              where: { id: contact.id },
+              data: {
+                type: contact.type,
+                value: contact.value,
+                label: contact.label ?? null,
+                isPrimary: contact.isPrimary ?? false,
+              },
+            });
+          } else {
+            await tx.customerContact.create({
+              data: {
+                customerId: Number(id),
+                type: contact.type,
+                value: contact.value,
+                label: contact.label ?? null,
+                isPrimary: contact.isPrimary ?? false,
+              },
+            });
+          }
+        }
+      }
+
+      return await tx.customer.update({
+        where: { id: Number(id) },
+        data: {
+          ...customerData,
+          ...primaryOverrides,
+          telSearch,
+          faxNumberSearch,
+        },
+        include: { contacts: true },
+      });
     });
 
     return NextResponse.json(result, { status: 200 });
