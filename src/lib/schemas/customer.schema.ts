@@ -1,5 +1,15 @@
 import { z } from "zod";
 import { digitsOnly } from "@/lib/calculateGrandTotal";
+import { ContactType } from "@prisma/client";
+
+// --- Contact Schema ---
+const ContactSchema = z.object({
+  id: z.number().optional().nullable(), // null = create ใหม่, มีค่า = update
+  type: z.nativeEnum(ContactType),
+  value: z.string().trim().min(1, "กรุณากรอกข้อมูล"),
+  label: z.string().trim().nullable().optional(),
+  isPrimary: z.boolean().default(false),
+});
 
 export const CustomerSchema = z.object({
   id: z.number().optional(),
@@ -64,4 +74,7 @@ export const CustomerSchema = z.object({
     },
     z.union([z.string().email("รูปแบบอีเมลไม่ถูกต้อง"), z.null()]).optional(),
   ),
+
+  contacts: z.array(ContactSchema).optional(),
+  deletedContactIds: z.array(z.number()).optional(),
 });
