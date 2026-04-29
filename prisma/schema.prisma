@@ -1,0 +1,443 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  name      String?
+  email     String   @unique
+  password  String
+  image     String?
+  role      Role     @default(guest)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  staff     Staff?   @relation("UserStaff")
+}
+
+model Staff {
+  id                           Int               @id @default(autoincrement())
+  userId                       Int?              @unique
+  bankAccount                  String?           @unique
+  bankName                     String?
+  startDate                    DateTime
+  code                         String            @unique
+  social_security              String?           @unique
+  currentSalary                Float
+  updatedAt                    DateTime          @updatedAt
+  taxid                        String?
+  positionId                   Int?
+  hireStatus                   Boolean           @default(true)
+  TerminationDate              DateTime?
+  Bill_Bill_deliveredByToStaff Bill[]            @relation("Bill_deliveredByToStaff")
+  Bill_Bill_salesNameToStaff   Bill[]            @relation("Bill_salesNameToStaff")
+  orderLinks                   OrderPOStaff[]
+  expenses                     Expense[]
+  jobPosition                  JobPosition?      @relation(fields: [positionId], references: [id])
+  user                         User?             @relation("UserStaff", fields: [userId], references: [id])
+  employments                  StaffEmployment[]
+  StaffIncome                  StaffIncome[]
+  StaffSalary                  StaffSalary[]
+  quotation                    Quotation[]
+
+  @@index([positionId])
+}
+
+model StaffEmployment {
+  id        Int       @id @default(autoincrement())
+  staffId   Int
+  startDate DateTime
+  endDate   DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  Staff     Staff     @relation(fields: [staffId], references: [id], onDelete: Cascade)
+
+  @@unique([staffId, endDate])
+  @@index([staffId, startDate(sort: Desc)])
+  @@index([staffId, endDate])
+}
+
+model JobPosition {
+  id         Int      @id @default(autoincrement())
+  name       String   @unique
+  baseSalary Float
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  staff      Staff[]
+}
+
+model Customer {
+  id              Int           @id @default(autoincrement())
+  name            String        @unique
+  credit          Int           @default(30)
+  address         String
+  tel             String?
+  taxNumber       String?
+  faxNumber       String?
+  email           String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  faxNumberSearch String?
+  telSearch       String?
+  Acquittances    Acquittance[]
+  Bill            Bill[]
+  OrderPO         OrderPO[]
+  Statements      Statement[]
+  quotation       Quotation[]
+  contacts        CustomerContact[]
+}
+
+
+model CustomerContact {
+  id          Int @id @default(autoincrement())
+  customerId  Int
+  type        ContactType
+  value       String
+  isPrimary   Boolean   @default(false)
+  label       String?
+
+  customer Customer @relation(fields: [customerId], references: [id] , onDelete: Cascade)
+}
+
+model Quotation {
+  id           Int      @id @default(autoincrement())
+  quotationNo  String   @unique
+  customerId   Int
+  customerName String?
+  credit       Int      @default(30)
+  salesName    String
+  salesNameId  Int
+  description  String?
+  vatRate      Float    @default(7.0)
+  vat          Float?
+  subtotal     Float?
+  grandTotal   Float?
+  discount     Float?
+  period       String?
+  deliveryDate String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  OrderPO  OrderPO? @relation("Quotation_OrderPO")
+  staff    Staff    @relation(fields: [salesNameId], references: [id])
+  customer Customer @relation(fields: [customerId], references: [id])
+
+  @@index([customerId])
+}
+
+model Bill {
+  id                            Int       @id @default(autoincrement())
+  customerId                    Int
+  codeCustomer                  String    @unique
+  deliveryDate                  DateTime
+  salesName                     String
+  deliveredBy                   String?
+  description                   String?
+  vatRate                       Float     @default(7.0)
+  subtotal                      Float?
+  grandTotal                    Float?
+  discount                      Float?
+  vat                           Float
+  dateReceive                   DateTime?
+  salesNameId                   Int
+  deliveredById                 Int?
+  updatedAt                     DateTime  @updatedAt
+  createdAt                     DateTime  @default(now())
+  credit                        Int       @default(30)
+  Customer                      Customer  @relation(fields: [customerId], references: [id])
+  Staff_Bill_deliveredByToStaff Staff?    @relation("Bill_deliveredByToStaff", fields: [deliveredById], references: [id])
+  Staff_Bill_salesNameToStaff   Staff     @relation("Bill_salesNameToStaff", fields: [salesNameId], references: [id])
+  OrderPO                       OrderPO?
+  
+
+
+  @@index([customerId])
+  @@index([salesNameId])
+  @@index([deliveredById])
+}
+
+
+model OrderPO {
+  id            Int            @id @default(autoincrement())
+  poNumber      String?
+  customerId    Int?
+  billId        Int?           @unique
+  quotationId   Int?           @unique
+  status        JobStatus      @default(pending)
+  total         Float
+  completedAt   DateTime?
+  urlPo         String[]
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  codetoinvoice Int            @unique @default(autoincrement())
+  Quotation     Quotation?     @relation("Quotation_OrderPO", fields: [quotationId], references: [id])
+  Invoice       Invoice?       @relation("OrderPO_Invoice")
+  bill          Bill?          @relation(fields: [billId], references: [id])
+  Customer      Customer?      @relation(fields: [customerId], references: [id])
+  staffLinks    OrderPOStaff[]
+  Product       Product[]
+
+  @@index([status])
+  @@index([createdAt])
+  @@index([customerId, status])
+  @@index([billId])
+  @@index([customerId])
+}
+
+model Invoice {
+  id              Int                 @id @default(autoincrement())
+  codetoinvoice   Int                 @unique
+  invoiceNo       Int                 @unique
+  createdAt       DateTime            @default(now())
+  acquittanceItem AcquittanceInvoice?
+  OrderPO         OrderPO             @relation("OrderPO_Invoice", fields: [codetoinvoice], references: [codetoinvoice], onDelete: Cascade)
+  statementItem   StatementInvoice?
+
+  @@index([codetoinvoice])
+  @@index([invoiceNo])
+}
+
+model OrderPOStaff {
+  orderPOId  Int
+  staffId    Int
+  role       OrderStaffRole
+  assignedAt DateTime       @default(now())
+  orderPO    OrderPO        @relation(fields: [orderPOId], references: [id], onDelete: Cascade)
+  staff      Staff          @relation(fields: [staffId], references: [id])
+
+  @@id([orderPOId, staffId, role])
+  @@index([staffId])
+  @@index([orderPOId, role])
+}
+
+model Statement {
+  id          Int                @id @default(autoincrement())
+  statementNo Int?               @unique
+  customerId  Int
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+  Customer    Customer           @relation(fields: [customerId], references: [id])
+  items       StatementInvoice[]
+
+  @@index([customerId, createdAt])
+}
+
+model StatementInvoice {
+  statementId Int
+  invoiceId   Int       @unique
+  invoice     Invoice   @relation(fields: [invoiceId], references: [id])
+  statement   Statement @relation(fields: [statementId], references: [id], onDelete: Cascade)
+
+  @@id([statementId, invoiceId])
+  @@index([statementId])
+  @@index([invoiceId])
+}
+
+model Acquittance {
+  id            Int                  @id @default(autoincrement())
+  acquittanceNo Int?                 @unique
+  customerId    Int
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
+  Customer      Customer             @relation(fields: [customerId], references: [id])
+  items         AcquittanceInvoice[]
+
+  @@index([customerId, createdAt])
+}
+
+model AcquittanceInvoice {
+  acquittanceId Int
+  invoiceId     Int         @unique
+  acquittance   Acquittance @relation(fields: [acquittanceId], references: [id], onDelete: Cascade)
+  invoice       Invoice     @relation(fields: [invoiceId], references: [id])
+
+  @@id([acquittanceId, invoiceId])
+  @@index([acquittanceId])
+  @@index([invoiceId])
+}
+
+model Product {
+  id            Int           @id @default(autoincrement())
+  orderPOId     Int
+  steelId       Int
+  wide          Float?
+  length        Float?
+  thickness     Float?
+  amount        Int
+  detail        String?
+  surfaceT      String?
+  toleranceT    String?
+  surfaceW      String?
+  toleranceW    String?
+  surfaceL      String?
+  toleranceL    String?
+  actualWeight  Float?
+  total         Float?
+  cuttingMethod CuttingMethod @default(normal)
+  job           String?
+  discount      Float?
+  unitPrice     Float         @default(0)
+  isOD          Boolean       @default(false)
+  isPerAmount   Boolean       @default(false)
+  isServices    Boolean       @default(false)
+  sequence      Int
+  OrderPO       OrderPO       @relation(fields: [orderPOId], references: [id], onDelete: Cascade)
+  SteelType     SteelType     @relation(fields: [steelId], references: [id])
+
+  @@unique([orderPOId, sequence])
+  @@index([orderPOId])
+  @@index([steelId])
+}
+
+model StaffSalary {
+  id            Int      @id @default(autoincrement())
+  staffId       Int
+  amount        Float
+  effectiveDate DateTime
+  detail        String?
+  createdBy     Int?
+  createdAt     DateTime @default(now())
+  Staff         Staff    @relation(fields: [staffId], references: [id])
+
+  @@unique([staffId, effectiveDate])
+  @@index([staffId, effectiveDate(sort: Desc)])
+}
+
+model StaffIncome {
+  id         Int              @id @default(autoincrement())
+  amount     Float
+  nameIncome String
+  detail     String           @default("-")
+  staffId    Int
+  date       DateTime         @default(now())
+  typeId     Int?
+  Staff      Staff            @relation(fields: [staffId], references: [id])
+  type       TypeStaffIncome? @relation(fields: [typeId], references: [id])
+
+  @@index([staffId])
+  @@index([typeId])
+}
+
+model TypeStaffIncome {
+  id       Int           @id @default(autoincrement())
+  amount   Float
+  name     String
+  types    String
+  onDelete Boolean?      @default(false)
+  incomes  StaffIncome[]
+}
+
+model SteelType {
+  id                  Int          @id @default(autoincrement())
+  codeSteel           String
+  detail              String?
+  amount              Int          @default(0)
+  shape               ShapeSteel   @default(square)
+  price               Float
+  createdAt           DateTime     @default(now())
+  updatedAt           DateTime     @updatedAt
+  density             Float
+  requiresDimensions Boolean @default(true) 
+  requiresAmount     Boolean @default(true) 
+  status     SteelStatus  @default(active)
+  Product    Product[]
+  SteelStock SteelStock[]
+
+  @@unique([codeSteel, shape])
+}
+
+model SteelStock {
+  id          Int         @id @default(autoincrement())
+  width       Int?
+  length      Int?
+  thickness   Int?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  steeltypeId Int
+  status      StockStatus @default(available)
+  quantity    Int         @default(0)
+  SteelType   SteelType   @relation(fields: [steeltypeId], references: [id])
+
+  @@unique([steeltypeId, width, length, thickness])
+}
+
+model Expense {
+  id          Int             @id @default(autoincrement())
+  description String
+  amount      Float
+  expenseDate DateTime
+  categoryId  Int
+  receiptUrl  String?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  staffId     Int?
+  staff       Staff?          @relation(fields: [staffId], references: [id], onDelete: SetNull)
+  category    ExpenseCategory @relation(fields: [categoryId], references: [id])
+
+  @@index([staffId])
+}
+
+model ExpenseCategory {
+  id          Int       @id @default(autoincrement())
+  name        String    @unique
+  description String
+  expenses    Expense[]
+}
+
+enum Role {
+  superadmin
+  guest
+  clerk
+  supervisor
+  accountant
+  cutter
+  delivery
+}
+
+enum JobStatus {
+  pending
+  cutting
+  weighing
+  ready
+  shipped
+  completed
+  canceled
+}
+
+enum ShapeSteel {
+  square
+  line
+}
+
+enum CuttingMethod {
+  normal
+  FB
+  CNC
+  RM
+}
+
+enum StockStatus {
+  available
+  withdrawn
+}
+
+enum SteelStatus {
+  active
+  inactive
+  hold
+}
+
+enum OrderStaffRole {
+  supervisor
+  cutter
+}
+
+enum ContactType{
+  PHONE
+  EMAIL
+  FAX
+  ADDRESS
+}

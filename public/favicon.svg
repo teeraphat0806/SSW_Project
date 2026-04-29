@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <!-- Transparent Background -->
+  <rect width="200" height="200" fill="transparent"/>
+  
+  <!-- Triangle Shape -->
+  <polygon points="100,5 190,180 10,180" fill="none" stroke="#FFFFFF" stroke-width="4"/>
+  
+  <!-- Text: S at top -->
+  <text x="100" y="90" font-family="Arial, sans-serif" font-size="52" font-weight="bold" fill="#FFFFFF" text-anchor="middle">S</text>
+  
+  <!-- Text: S and W at bottom -->
+  <text x="72" y="142" font-family="Arial, sans-serif" font-size="48" font-weight="bold" fill="#FFFFFF" text-anchor="middle">S</text>
+  <text x="122" y="142" font-family="Arial, sans-serif" font-size="48" font-weight="bold" fill="#FFFFFF" text-anchor="middle">W</text>
+</svg>

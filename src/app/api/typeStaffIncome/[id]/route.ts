@@ -1,0 +1,145 @@
+import { NextRequest, NextResponse } from "next/server";
+
+import { TypeStaffIncomeSchema } from "../../../../lib/schemas/typeStaffIncome.schema";
+import prisma from "../../../../lib/prisma";
+import { requireAuth } from "@/lib/permissions";
+// GET /api/payroll/[id]
+export async function GET(
+  req: NextRequest,
+  context: { params: Promise<{ id: string }> }
+) {
+  const { id } = await context.params;
+  const authResult = await requireAuth([
+    "superadmin",
+    "supervisor",
+    "clerk",
+    "delivery",
+  ]);
+
+  if ("response" in authResult) {
+    return authResult.response;
+  }
+  const { session } = authResult;
+  console.log(session);
+  try {
+    const result = await prisma.typeStaffIncome.findUnique({
+      where: { id: Number(id) },
+    });
+
+    return NextResponse.json(result, { status: 200 });
+  } catch (error) {
+    return NextResponse.json(
+      { error: "Failed to fetch typeStaffIncome: " + error },
+      { status: 500 }
+    );
+  }
+}
+
+// PUT /api/payroll/[id]
+export async function PATCH(
+  req: NextRequest,
+  ctx: { params: Promise<{ id: string }> } // ⬅️ ต้องเป็น Promise และ await
+) {
+  const authResult = await requireAuth([
+    "superadmin",
+    "supervisor",
+    "clerk",
+    "delivery",
+  ]);
+
+  if ("response" in authResult) {
+    return authResult.response;
+  }
+  const { session } = authResult;
+  console.log(session);
+
+  const { id } = await ctx.params; // ⬅️ await params
+  const idNum = Number(id);
+  if (Number.isNaN(idNum)) {
+    return NextResponse.json({ error: "Invalid id" }, { status: 400 });
+  }
+
+  const body = await req.json().catch(() => ({}));
+  const parsed = TypeStaffIncomeSchema.partial().safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: "Invalid data format", details: parsed.error.format() },
+      { status: 400 }
+    );
+  }
+
+  // กรอง undefined ออก เพื่อไม่ overwrite ค่าเดิมด้วย undefined
+  const data = Object.fromEntries(
+    Object.entries(parsed.data).filter(([, v]) => v !== undefined)
+  );
+  console.log("Updating typeStaffIncome with data:", data);
+  if (Object.keys(data).length === 0) {
+    return NextResponse.json({ error: "Nothing to update" }, { status: 400 });
+  }
+
+  try {
+    const result = await prisma.typeStaffIncome.update({
+      where: { id: idNum },
+      data,
+    });
+    return NextResponse.json(result, { status: 200 });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    return NextResponse.json(
+      { error: message || "Failed to update typeStaffIncome" },
+      { status: 500 }
+    );
+  }
+}
+
+// DELETE /api/typeStaffIncome/[id]
+export async function DELETE(
+  req: NextRequest,
+  ctx: { params: Promise<{ id: string }> } // ⬅️ ต้องเป็น Promise และ await
+) {
+  const authResult = await requireAuth([
+    "superadmin",
+    "supervisor",
+    "clerk",
+    "delivery",
+  ]);
+
+  if ("response" in authResult) {
+    return authResult.response;
+  }
+  const { session } = authResult;
+  console.log(session);
+
+  const { id } = await ctx.params; // ⬅️ await params
+  const idNum = Number(id);
+  if (Number.isNaN(idNum)) {
+    return NextResponse.json({ error: "Invalid id" }, { status: 400 });
+  }
+
+  try {
+    // Check if there are existing StaffIncome records using this type
+    const relatedIncomes = await prisma.staffIncome.findMany({
+      where: { typeId: idNum },
+    });
+
+    if (relatedIncomes.length > 0) {
+      return NextResponse.json(
+        {
+          error: `ไม่สามารถลบประเภทรายการนี้ได้ เนื่องจากมีรายการรายได้ ${relatedIncomes.length} รายการที่ใช้ประเภทนี้อยู่`,
+          relatedCount: relatedIncomes.length,
+        },
+        { status: 400 }
+      );
+    }
+
+    // If no related records, proceed with deletion
+    await prisma.typeStaffIncome.delete({ where: { id: idNum } });
+    return new NextResponse(null, { status: 204 }); // No Content
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    return NextResponse.json(
+      { error: message || "Failed to delete typeStaffIncome" },
+      { status: 500 }
+    );
+  }
+}

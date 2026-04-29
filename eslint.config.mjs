@@ -10,6 +10,20 @@ const compat = new FlatCompat({
 });
 
 const eslintConfig = [
+  // 👇 บล็อกนี้คือส่วนสำคัญ: บอก ESLint ว่าโฟลเดอร์ไหนไม่ต้องสนใจเลย
+  {
+    ignores: [
+      "node_modules/**",
+      ".next/**",
+      "dist/**",
+      "build/**",
+      "src/generated/**",
+      "src/generated/prisma/**",
+      "src/generated/prisma/runtime/**",
+    ],
+  },
+
+  // config เดิมของ Next + TypeScript
   ...compat.extends("next/core-web-vitals", "next/typescript"),
 ];
 

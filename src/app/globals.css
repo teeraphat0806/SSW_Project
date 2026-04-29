@@ -1,27 +1,187 @@
 @import "tailwindcss";
 @import "@radix-ui/themes/styles.css";
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* 
+   Design System: สี, gradients, shadows, radius ทั้งหมดใช้ HSL
+   ใช้ media query สำหรับ dark mode (ไม่ใช้ .dark class)
+*/
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Core colors */
+  --background: 0 0% 100%;
+  --foreground: 0 0% 0%;
+  --small-detail: 36 0% 50%;
+  --aa: 0 0% 95%;
+  --divborder: 36 100% 100%;
+  --hover: 240 5.9% 90%;
+
+  --box: 0 0% 100%;
+  --card: 0 0% 100%;
+  --card-foreground: 215 25% 27%;
+
+  --muted: 240 4.8% 95.9% --muted-foreground: 240 3.8% 46.1% --popover: 0 0%
+    100%;
+  --popover-foreground: 215 25% 27%;
+
+  --primary: 210 100% 56%;
+  --primary-foreground: 0 0% 100%;
+  --primary-hover: 210 100% 48%;
+
+  --secondary: 215 25% 96%;
+  --secondary-foreground: 215 25% 27%;
+  /* สีเน้น (Accent) เวลา Hover */
+  --accent: 0 0% 95%;
+  --accent-foreground: 240 5.9% 10%;
+
+  /* สี Destructive (ปุ่มลบ/ยกเลิก) */
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 0 0% 98%;
+
+  /* เส้นขอบ  */
+  --border: 240 5.9% 90%;
+  --input: 240 5.9% 90%;
+  --ring: 240 10% 3.9%;
+
+  --radius: 0.75rem;
+  /* Gradients */
+  --gradient-steel: linear-gradient(
+    135deg,
+    hsl(var(--steel)),
+    hsl(var(--steel-dark))
+  );
+  --gradient-primary: linear-gradient(
+    135deg,
+    hsl(var(--primary)),
+    hsl(var(--primary-hover))
+  );
+
+  /* Shadows */
+  --shadow-steel: 0 4px 12px -2px hsl(var(--steel-darker) / 0.1);
+  --shadow-elevation: 0 8px 25px -5px hsl(var(--steel-darker) / 0.15);
+
+  /* Borders, radius */
+  --border: 214.3 31.8% 91.4%;
+  --input: 214.3 31.8% 91.4%;
+  --ring: 222.2 84% 4.9%;
+  --radius: 0.5rem;
+
+  /* Sidebar (e.g. layout components) */
+  --sidebar-background: 0 0% 98%;
+  --sidebar-foreground: 240 5.3% 26.1%;
+  --sidebar-primary: 240 5.9% 10%;
+  --sidebar-primary-foreground: 0 0% 98%;
+  --sidebar-accent: 240 4.8% 95.9%;
+  --sidebar-accent-foreground: 240 5.9% 10%;
+  --sidebar-border: 220 13% 91%;
+  --sidebar-ring: 217.2 91.2% 59.8%;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+/* Dark mode — media query style */
+.dark {
+  --background: 240, 6%, 10%;
+  --foreground: 210 40% 98%;
+
+  --small-detail: 36 0% 70%;
+  --aa: 36 0% 12%;
+  --divborder: 240 5% 26%;
+  --hover: 240, 5%, 26%;
+
+  --card: #ffff;
+  --card-foreground: 210 40% 98%;
+
+  --popover: 222.2 84% 4.9%;
+  --popover-foreground: 210 40% 98%;
+
+  --primary: 210 100% 56%;
+  --primary-foreground: #ffff;
+  --primary-hover: 210 100% 48%;
+
+  --secondary: 217.2 32.6% 17.5%;
+  --secondary-foreground: 210 40% 98%;
+
+  --muted: 240 3.7% 15.9%;
+  --muted-foreground: 240 5% 64.9%;
+
+  --accent: 217.2 32.6% 17.5%;
+  --accent-foreground: 210 40% 98%;
+
+  --destructive: 0 62.8% 30.6%;
+  --destructive-foreground: 210 40% 98%;
+
+  --border: 217.2 32.6% 17.5%;
+  --input: 217.2 32.6% 17.5%;
+  --ring: 212.7 26.8% 83.9%;
+
+  --sidebar-background: 240 5.9% 10%;
+  --sidebar-foreground: 240 4.8% 95.9%;
+  --sidebar-primary: 224.3 76.3% 48%;
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 240 3.7% 15.9%;
+  --sidebar-accent-foreground: 240 4.8% 95.9%;
+  --sidebar-border: 240 3.7% 15.9%;
+  --sidebar-ring: 217.2 91.2% 59.8%;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+/* Apply design tokens via pure CSS */
+body {
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
+  font-family: Arial, Helvetica, sans-serif;
+  border-radius: var(--radius);
+}
+
+/* Optional: all borders in the app use your custom border color */
+* {
+  border-color: hsl(var(--border));
+}
+
+@media print {
+  @page {
+    size: A4;
+    margin: 0;
+  }
+
+  html,
+  body {
+    margin: 0;
+    padding: 0;
+    background: #fff !important;
+  }
+
+  .print-a4 {
+    width: 210mm !important;
+    min-height: 297mm !important;
+  }
+
+  .print-force-color,
+  .print-force-color * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .print-black-borders,
+  .print-black-borders * {
+    border-color: #000 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  .print-black-borders .no-horizontal-borders {
+    border-top: 0 !important;
+    border-bottom: 0 !important;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* Radix theme integration */
+@theme inline {
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+  --color-primary: hsl(var(--primary));
+  --color-primary-hover: hsl(var(--primary-hover));
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --color-small-detail: hsl(var(--small-detail));
+  --color-aa: hsl(var(--aa));
+  --color-hover: hsl(var(--hover));
 }
