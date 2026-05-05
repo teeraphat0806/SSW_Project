@@ -35,6 +35,7 @@ type ApiReceipt = {
   selesName: string;
   credit: string;
   poNumber?: string | null;
+  discount?: number | null;
   customer: {
     name: string;
     address: string;
@@ -289,6 +290,7 @@ export default function ReceiptClient({ id }: { id: string }) {
         vat={data.vat}
         total={data.grandTotal}
         totalTextThai={data.totalTextThai}
+        discount={data.discount}
       />
     </div>
   );

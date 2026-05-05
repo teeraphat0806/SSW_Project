@@ -309,18 +309,6 @@ export const InvoiceExcelSample: React.FC<Inv71LikeInvoiceProps> = ({
               </span>
             </div>
 
-            <div className="flex justify-between">
-              <span className="flex-1" />
-              <span className="w-40 text-right">&nbsp;</span>
-            </div>
-
-            <div className="flex justify-between">
-              <span className="flex-1" />
-              <span className="w-40 text-right">
-                {!shouldShowTotals ? "" : formatNumber(subtotal)}
-              </span>
-            </div>
-
             {discount != null && discount > 0 && (
               <div className="flex justify-between">
                 <span className="flex-1" />
@@ -329,6 +317,24 @@ export const InvoiceExcelSample: React.FC<Inv71LikeInvoiceProps> = ({
                 </span>
               </div>
             )}
+            {discount == null ||
+              (discount === 0 && (
+                <div className="flex justify-between">
+                  <span className="flex-1" />
+                  <span className="w-40 text-right">&nbsp;</span>
+                </div>
+              ))}
+
+            <div className="flex justify-between">
+              <span className="flex-1" />
+              <span className="w-40 text-right">
+                {!shouldShowTotals ? "" : formatNumber(subtotal - discount)}
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span className="flex-1" />
+              <span className="w-40 text-right">&nbsp;</span>
+            </div>
 
             <div className="flex justify-between">
               <span className="flex-1" />
