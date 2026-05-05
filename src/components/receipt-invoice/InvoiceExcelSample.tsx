@@ -328,7 +328,9 @@ export const InvoiceExcelSample: React.FC<Inv71LikeInvoiceProps> = ({
             <div className="flex justify-between">
               <span className="flex-1" />
               <span className="w-40 text-right">
-                {!shouldShowTotals ? "" : formatNumber(subtotal - discount)}
+                {!shouldShowTotals
+                  ? ""
+                  : formatNumber(subtotal - (discount ?? 0))}
               </span>
             </div>
             <div className="flex justify-between">

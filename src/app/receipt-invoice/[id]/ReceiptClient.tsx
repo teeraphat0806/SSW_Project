@@ -35,7 +35,7 @@ type ApiReceipt = {
   selesName: string;
   credit: string;
   poNumber?: string | null;
-  discount?: number | null;
+  discount?: number;
   customer: {
     name: string;
     address: string;
