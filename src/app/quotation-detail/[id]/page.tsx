@@ -436,7 +436,11 @@ export default function QuotationDetailPage() {
                         <div className="flex-1 flex flex-col items-center leading-tight">
                           <div className="flex items-baseline justify-center">
                             <span className="font-semibold text-[12px]">
-                              {entry.item.isOD ? "ID " : ""}
+                              {entry.item.isOD
+                                ? entry.item.length
+                                  ? "ID "
+                                  : ""
+                                : ""}
                               {entry.item.length}
                             </span>
                             {getSurfaceFinish(entry.item.surfaceL) && (
