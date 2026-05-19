@@ -311,8 +311,8 @@ export default function StatementPrintPage() {
             style={{ pageBreakAfter: isLastPage ? "auto" : "always" }}
           >
             <div className="page-content">
-              <div className="mb-6 mt-21">
-                <div className="flex justify-between items-start mb-2">
+              <div className="mb-6 mt-11">
+                <div className="flex justify-between items-start mb-10">
                   <div className="text-left" />
                   <div className="text-right text-base text-black dark:text-white print:text-black">
                     <p>
@@ -385,7 +385,7 @@ export default function StatementPrintPage() {
                         className="px-2 py-1 text-xl text-right text-black dark:text-white print:text-black"
                         style={{ width: "17%" }}
                       >
-                        ฿{invoice.grandTotal.toLocaleString("en-US")}
+                        {invoice.grandTotal.toLocaleString("en-US")}
                       </td>
                     </tr>
                   ))}
