@@ -337,14 +337,13 @@ export default function AcquittancePrintPage() {
                   S.S.W. STEEL CENTER CO., LTD.
                 </div>
                 <div className="mt-1 text-[12px] opacity-80">
-                  888/1-2 หมู่ 9 ตำบลบางปลา อำเภอบางพลี จังหวัดสมุทรปราการ 10540
+                  888/1 หมู่ 9 ตำบลบางปลา อำเภอบางพลี จังหวัดสมุทรปราการ 10540
                 </div>
                 <div className="mt-1 text-[12px] opacity-80">
-                  888/1-2 Moo 9 Bangpla, Bangplee, Samutprakarn 10540
+                  888/1 Moo 9 Bangpla, Bangplee, Samutprakarn 10540
                 </div>
                 <div className="text-[12px] opacity-80">
-                  TEL. (02)181-6700-3, (02)181-6705-8 &nbsp; FAX. (02)181-6704,
-                  (02)181-6709
+                  TEL. (02)181-6700-4
                 </div>
                 <div className="mt-3 text-[18px] font-semibold">ใบวางบิล</div>
               </header>
@@ -459,37 +458,27 @@ export default function AcquittancePrintPage() {
                         ....................................................................
                       </div>
                     </div>
-                    <div className="signature">
-                      <div className="label">ผู้วางบิล</div>
+                    {/* <div className="signature">
+                      <div className="label">วันที่วางบิล</div>
                       <div className="dots">
                         ....................................................................
                       </div>
-                    </div>
-                  </div>
-
-                  <div className="mt-4 grid grid-cols-2 gap-10 text-[14px]">
-                    <div className="signature">
-                      <div className="label">วันที่รับวางบิล</div>
-                      <div className="dots">
-                        .....................................................................
-                      </div>
-                    </div>
-                    <div className="signature">
-                      <div className="label">วันที่วางบิล</div>
-                      <div className="dots">
-                        .....................................................................
-                      </div>
-                    </div>
+                    </div> */}
                   </div>
 
                   <div className="mt-4 grid grid-cols-2 gap-10 text-[14px]">
                     <div className="signature">
                       <div className="label">วันที่นัดชำระเงิน</div>
                       <div className="dots">
-                        ....................................................................
+                        .....................................................................
                       </div>
                     </div>
-                    <div />
+                    <div className="signature">
+                      <div className="label">ผู้รับวางบิล</div>
+                      <div className="dots">
+                        .....................................................................
+                      </div>
+                    </div>
                   </div>
                 </footer>
               )}
