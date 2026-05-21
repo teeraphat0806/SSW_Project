@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft, Loader2, Printer } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -116,7 +116,76 @@ type PrintInvoice = {
   createdAt: string;
 };
 
-const ITEMS_PER_PAGE = 15;
+function renderThaiWordAtomicText(
+  text: string,
+  preserveLineBreaks = false,
+): ReactNode[] {
+  const segmenter =
+    typeof Intl !== "undefined" && "Segmenter" in Intl
+      ? new Intl.Segmenter("th", { granularity: "word" })
+      : null;
+
+  const lines = preserveLineBreaks ? text.split(/\r?\n/) : [text];
+
+  return lines.flatMap((line, lineIndex) => {
+    const nodes: ReactNode[] = [];
+    const tokens = line.match(/\([^()]*\)|\s+|[^\s()]+|[()]/g) ?? [line];
+
+    let tokenIndex = 0;
+    for (const token of tokens) {
+      if (token === "") continue;
+
+      if (/^\s+$/.test(token)) {
+        nodes.push(token);
+        continue;
+      }
+
+      if (/^\([^()]*\)$/.test(token)) {
+        nodes.push(
+          <span
+            key={`${lineIndex}-${tokenIndex++}`}
+            className="inline-block whitespace-nowrap"
+          >
+            {token}
+          </span>,
+        );
+        continue;
+      }
+
+      if (segmenter) {
+        for (const part of segmenter.segment(token)) {
+          if (part.segment === "") continue;
+
+          nodes.push(
+            <span
+              key={`${lineIndex}-${tokenIndex++}`}
+              className="inline-block whitespace-nowrap"
+            >
+              {part.segment}
+            </span>,
+          );
+        }
+      } else {
+        nodes.push(
+          <span
+            key={`${lineIndex}-${tokenIndex++}`}
+            className="inline-block whitespace-nowrap"
+          >
+            {token}
+          </span>,
+        );
+      }
+    }
+
+    if (preserveLineBreaks && lineIndex < lines.length - 1) {
+      nodes.push(<br key={`br-${lineIndex}`} />);
+    }
+
+    return nodes;
+  });
+}
+
+const ITEMS_PER_PAGE = 12;
 
 export default function StatementPrintPage() {
   const router = useRouter();
@@ -312,7 +381,7 @@ export default function StatementPrintPage() {
           >
             <div className="page-content">
               <div className="mb-6 mt-11">
-                <div className="flex justify-between items-start mb-10">
+                <div className="flex justify-between items-start mb-8">
                   <div className="text-left" />
                   <div className="text-right text-base text-black dark:text-white print:text-black">
                     <p>
@@ -321,46 +390,43 @@ export default function StatementPrintPage() {
                   </div>
                 </div>
 
-                <div className="mb-4">
-                  <div className="grid grid-cols-2">
-                    <div className="ml-20">
-                      <p className="text-xl text-black dark:text-white print:text-black">
-                        {customerName}
+                <div className="mb-4 w-full">
+                  <div className="grid grid-cols-12 gap-4 ml-3">
+                    
+                   
+                    <div className="col-span-8 ml-10"> 
+                      <p className="text-xl font-medium text-black dark:text-white print:text-black whitespace-normal">
+                        {renderThaiWordAtomicText(customerName)}
                       </p>
-                      <p className="mt-1 text-xl text-black dark:text-white print:text-black whitespace-pre-line">
-                        {customerAddress}
+                      <p className="mt-1 text-xl text-black dark:text-white print:text-black whitespace-pre-wrap leading-relaxed">
+                        {renderThaiWordAtomicText(customerAddress, true)}
                       </p>
                     </div>
-                    <div className="flex justify-end items-start mt-4">
-                      <div className="text-right text-lg flex flex-col gap-5 text-black dark:text-white print:text-black">
-                        <p className="font-semibold">{documentNo}</p>
+
+                   
+                    <div className="col-span-4 flex justify-end items-start mt-4">
+                      <div className="text-right text-lg flex flex-col gap-10 text-black dark:text-white print:text-black">
+                        <p className="font-bold">{documentNo}</p>
                         <p>{thaiShortDate}</p>
                       </div>
                     </div>
+
                   </div>
                 </div>
               </div>
 
-              {pageIndex > 0 && (
-                <div className="text-right mb-2">
-                  <p className="text-xl italic text-black dark:text-white print:text-black">
-                    continue...
-                  </p>
-                </div>
-              )}
-
-              <table className="w-full bill-table mt-20">
+              <table className="w-full bill-table mt-11">
                 <tbody>
                   {pageData.map((invoice, index) => (
                     <tr key={invoice.id}>
                       <td
-                        className="px-0 py-1 text-xl text-left text-black dark:text-white print:text-black"
+                        className="px-0 py-1 text-lg text-left text-black dark:text-white print:text-black"
                         style={{ width: "5%" }}
                       >
                         {startIndex + index + 1}
                       </td>
                       <td
-                        className="px-2 py-1 text-xl text-left text-black dark:text-white print:text-black"
+                        className="px-2 py-1 text-lg text-left text-black dark:text-white print:text-black"
                         style={{ width: "18%" }}
                       >
                         HS
@@ -369,7 +435,7 @@ export default function StatementPrintPage() {
                           : "-"}
                       </td>
                       <td
-                        className="px-2 py-1 text-xl text-center text-black dark:text-white print:text-black"
+                        className="px-2 py-1 text-lg text-center text-black dark:text-white print:text-black"
                         style={{ width: "30%" }}
                       >
                         {new Date(invoice.createdAt).toLocaleDateString(
@@ -382,7 +448,7 @@ export default function StatementPrintPage() {
                         )}
                       </td>
                       <td
-                        className="px-2 py-1 text-xl text-right text-black dark:text-white print:text-black"
+                        className="px-0 py-1 text-lg text-right text-black dark:text-white print:text-black"
                         style={{ width: "17%" }}
                       >
                         {invoice.grandTotal.toLocaleString("en-US")}
@@ -392,18 +458,24 @@ export default function StatementPrintPage() {
                 </tbody>
               </table>
 
-              {isLastPage && (
-                <div className="fixed-footer mb-[260px]">
+              <div className="fixed-footer mb-[260px]">
+                {isLastPage ? (
                   <div className="flex justify-between items-center">
-                    <div className="text-xl font-bold text-black dark:text-white print:text-black">
+                    <div className="text-xl font-bold text-black dark:text-white print:text-black print:-ml-[0.8cm]">
                       {numberToThaiText(totalAmount)}
                     </div>
                     <div className="text-xl font-bold text-black dark:text-white print:text-black">
                       ฿{totalAmount.toLocaleString("en-US")}
                     </div>
                   </div>
-                </div>
-              )}
+                ) : (
+                  <div className="flex justify-end items-center">
+                    <p className="text-xl italic text-black dark:text-white print:text-black">
+                      continue...
+                    </p>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         );
@@ -442,13 +514,16 @@ export default function StatementPrintPage() {
             position: relative;
             display: flex;
             flex-direction: column;
+            padding-bottom: 30mm;
             min-height: 277mm;
           }
 
           .fixed-footer {
-            position: static;
-            margin-top: auto;
-            padding: 20mm 0 0 0;
+            position: absolute;
+            bottom: 3mm;
+            left: 0;
+            right: 0;
+            padding: 0 10mm;
           }
 
           .bill-table {
@@ -501,7 +576,7 @@ export default function StatementPrintPage() {
 
           .fixed-footer {
             position: absolute;
-            bottom: 15mm;
+            bottom: 3mm;
             left: 0;
             right: 0;
             padding: 0 10mm;
