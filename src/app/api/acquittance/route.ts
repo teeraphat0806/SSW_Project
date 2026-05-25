@@ -142,13 +142,6 @@ export async function PATCH(req: NextRequest) {
       );
     }
 
-    if (invoiceIds.length === 0) {
-      return NextResponse.json(
-        { error: "invoiceIds must be a non-empty array" },
-        { status: 400 },
-      );
-    }
-
     let parsedacquittanceDate: Date | null = null;
     if (rawacquittanceDate) {
       if (!/^\d{4}-\d{2}-\d{2}$/.test(rawacquittanceDate)) {
@@ -178,6 +171,22 @@ export async function PATCH(req: NextRequest) {
         const err = new Error("acquittance not found");
         (err as any).code = "acquittance_NOT_FOUND";
         throw err;
+      }
+
+      if (invoiceIds.length === 0) {
+        if (acquittance.acquittanceNo !== null) {
+          const err = new Error(
+            "Cannot delete all invoices from a numbered acquittance",
+          );
+          (err as any).code = "ACQUITTANCE_ALREADY_NUMBERED";
+          throw err;
+        }
+
+        await tx.acquittance.deleteMany({
+          where: { id: acquittance.id },
+        });
+
+        return;
       }
 
       const invoices = await tx.invoice.findMany({
@@ -290,6 +299,16 @@ export async function PATCH(req: NextRequest) {
         {
           error: "One or more invoices already used in another acquittance",
           invoiceId: error.invoiceId,
+        },
+        { status: 400 },
+      );
+    }
+
+    if (error.code === "ACQUITTANCE_ALREADY_NUMBERED") {
+      return NextResponse.json(
+        {
+          error:
+            "Cannot delete all invoices from an acquittance that already has a number",
         },
         { status: 400 },
       );
