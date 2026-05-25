@@ -14,6 +14,9 @@ type StatementDetailApiResponse = {
     Customer?: {
       name?: string | null;
       address?: string | null;
+      tel?: string | null;
+      faxNumber?: string | null;
+      taxNumber?: string | null;
     } | null;
     items?: Array<{
       invoice?: {
@@ -197,6 +200,9 @@ export default function StatementPrintPage() {
   const [error, setError] = useState<string | null>(null);
   const [customerName, setCustomerName] = useState("");
   const [customerAddress, setCustomerAddress] = useState("");
+  const [customerTel, setCustomerTel] = useState("");
+  const [customerFax, setCustomerFax] = useState("");
+  const [customerTaxNumber, setCustomerTaxNumber] = useState("");
   const [createdAt, setCreatedAt] = useState("");
   const [currentStatementNo, setCurrentStatementNo] = useState<number | null>(
     null,
@@ -242,6 +248,9 @@ export default function StatementPrintPage() {
       setCurrentStatementNo(st.statementNo ?? null);
       setCustomerName(st.Customer?.name ?? "-");
       setCustomerAddress(st.Customer?.address ?? "-");
+      setCustomerTel(st.Customer?.tel ?? "");
+      setCustomerFax(st.Customer?.faxNumber ?? "");
+      setCustomerTaxNumber(st.Customer?.taxNumber ?? "");
       setCreatedAt(st.createdAt);
       setInvoices(
         items
@@ -310,6 +319,17 @@ export default function StatementPrintPage() {
     currentStatementNo !== null
       ? `${currentStatementNo.toString()}`
       : "ยังไม่กำหนดเลข";
+
+  const customerContactLine = [
+    customerTel ? `โทร. ${customerTel}` : "",
+    customerFax ? `แฟกซ์ ${customerFax}` : "",
+  ]
+    .filter(Boolean)
+    .join("   ");
+
+  const customerTaxLine = customerTaxNumber
+    ? `เลขประจำตัวผู้เสียภาษี ${customerTaxNumber}`
+    : "";
 
   const pages = useMemo(() => {
     if (invoices.length === 0) return [[]] as PrintInvoice[][];
@@ -395,12 +415,20 @@ export default function StatementPrintPage() {
                     
                    
                     <div className="col-span-8 ml-10"> 
-                      <p className="text-xl font-medium text-black dark:text-white print:text-black whitespace-normal">
+                      <p className="text-sm font-medium text-black dark:text-white print:text-black whitespace-normal">
                         {renderThaiWordAtomicText(customerName)}
                       </p>
-                      <p className="mt-1 text-xl text-black dark:text-white print:text-black whitespace-pre-wrap leading-relaxed">
+                      <p className="mt-1 text-sm text-black dark:text-white print:text-black whitespace-pre-wrap leading-relaxed">
                         {renderThaiWordAtomicText(customerAddress, true)}
                       </p>
+                      {(customerContactLine || customerTaxLine) && (
+                        <div className="mt-1 text-sm text-black dark:text-white print:text-black whitespace-pre-wrap leading-relaxed">
+                          {customerContactLine ? (
+                            <p>{customerContactLine}</p>
+                          ) : null}
+                          {customerTaxLine ? <p>{customerTaxLine}</p> : null}
+                        </div>
+                      )}
                     </div>
 
                    
