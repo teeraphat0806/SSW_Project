@@ -137,8 +137,12 @@ export const InvoiceExcelSample: React.FC<Inv71LikeInvoiceProps> = ({
                   ))
                 : companyName}
             </div>
-            <div className="mt-1">{addressLine1}</div>
-            <div>{addressLine2}</div>
+            <div className="mt-1  whitespace-normal break-normal">
+              {addressLine1}
+            </div>
+            <div className=" whitespace-normal break-normal">
+              {addressLine2}
+            </div>
             <div className="mt-1">
               {tel ? `โทร.${tel}` : ""} &nbsp;&nbsp;&nbsp;{" "}
               {fax ? `แฟกซ์ ${fax}` : ""}

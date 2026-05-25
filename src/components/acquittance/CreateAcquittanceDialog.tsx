@@ -33,11 +33,12 @@ import {
 } from "../ui/table";
 import { formatThaiDateLong } from "@/lib/dateformat";
 import { useRouter } from "next/navigation";
+import MonthSelectionModal from "./MonthSelectionModal";
 interface CustomerOption {
   id: number;
   name: string;
 }
-interface InvoiceItem {
+export interface InvoiceItem {
   id: number;
   invoiceNo: number;
   total: number;
@@ -69,13 +70,21 @@ export default function CreateAcquittanceDialog({
   onCreate,
   loading,
 }: CreateAcquittanceDialogProps) {
+  const getLastDayOfMonth = () => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = now.getMonth();
+    const lastDay = new Date(year, month + 1, 0);
+    return lastDay.toISOString().split("T")[0];
+  };
+
   const [open, setOpen] = useState(false);
   const [customerOpen, setCustomerOpen] = useState(false);
   const [customerSearch, setCustomerSearch] = useState("");
   const [selectedCustomer, setSelectedCustomer] = useState<
     string | number | null
   >(null);
-  const [date, setDate] = useState("");
+  const [date, setDate] = useState(getLastDayOfMonth());
   const [selectedInvoiceSearch, setSelectedInvoiceSearch] = useState("");
   const [availableInvoiceSearch, setAvailableInvoiceSearch] = useState("");
   const [selectedInvoices, setSelectedInvoices] = useState<InvoiceItem[]>([]);
@@ -85,6 +94,7 @@ export default function CreateAcquittanceDialog({
   const [showSelectedTable, setShowSelectedTable] = useState(true);
   const [showSelectedTable2, setShowSelectedTable2] = useState(true);
   const [selectedPage, setSelectedPage] = useState(1);
+  const [monthSelectionOpen, setMonthSelectionOpen] = useState(false);
   const router = useRouter();
   useEffect(() => {
     if (selectedCustomer) {
@@ -160,7 +170,11 @@ export default function CreateAcquittanceDialog({
   };
 
   const handleSelectAll = () => {
-    const newInvoices = filteredInvoiceList.filter(
+    setMonthSelectionOpen(true);
+  };
+
+  const handleConfirmMonthSelection = (invoices: InvoiceItem[]) => {
+    const newInvoices = invoices.filter(
       (inv) => !selectedInvoices.some((sel) => sel.id === inv.id),
     );
     setSelectedInvoices([...selectedInvoices, ...newInvoices]);
@@ -614,6 +628,13 @@ export default function CreateAcquittanceDialog({
           </Button>
         </DialogFooter>
       </DialogContent>
+      <MonthSelectionModal
+        open={monthSelectionOpen}
+        onOpenChange={setMonthSelectionOpen}
+        invoiceList={invoiceList}
+        selectedInvoices={selectedInvoices}
+        onConfirm={handleConfirmMonthSelection}
+      />
     </Dialog>
   );
 }

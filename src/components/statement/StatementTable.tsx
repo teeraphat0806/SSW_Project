@@ -170,7 +170,7 @@ export default function StatementTable({
                         <span className="font-medium text-zinc-900 dark:text-zinc-100">
                           {item.statementNo === null
                             ? "ยังไม่กำหนดเลข"
-                            : `HS${item.statementNo.toString()}`}
+                            : item.statementNo.toString()}
                         </span>
                         {item.statementNo === null ? (
                           <span className="text-xs text-blue-600 dark:text-blue-400">
@@ -193,6 +193,7 @@ export default function StatementTable({
                     <TableCell>
                       <EditStatementDialog
                         statementId={item.id}
+                        statementNo={item.statementNo}
                         customerId={item.customerId}
                         statementCreatedAt={item.createdAt}
                         selectedInvoices={item.invoices || []}

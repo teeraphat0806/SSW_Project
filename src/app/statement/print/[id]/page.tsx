@@ -365,7 +365,7 @@ export default function StatementPrintPage() {
         </Button>
         {currentStatementNo === null ? (
           <span className="hidden sm:inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-sm font-medium text-blue-700 dark:border-blue-900/60 dark:bg-blue-900/20 dark:text-blue-300">
-            เลขถัดไปที่ระบบจะกำหนด: HS{nextStatementNo ?? "-"}
+            เลขถัดไปที่ระบบจะกำหนด: {nextStatementNo ?? "-"}
           </span>
         ) : null}
         {currentStatementNo === null ? (
