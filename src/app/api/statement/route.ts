@@ -2,6 +2,10 @@ import { requireAuth } from "@/lib/permissions";
 import { NextResponse, NextRequest } from "next/server";
 import prisma from "@/lib/prisma";
 import { calcStatementTotals } from "@/lib/billingCalc";
+import {
+  getCurrentBuddhistYear,
+  withBuddhistYearPrefix,
+} from "@/lib/statementNumber";
 
 export async function GET(req: NextRequest) {
   const authResult = await requireAuth([
@@ -77,10 +81,28 @@ export async function GET(req: NextRequest) {
 
     let statementItems;
     let total;
-    const maxStatementNo = await prisma.statement.aggregate({
-      _max: { statementNo: true },
-    });
-    const nextStatementNo = (maxStatementNo._max.statementNo ?? 0) + 1;
+    const currentBuddhistYear = getCurrentBuddhistYear();
+    const currentYearStatementNo = await prisma.$queryRaw<
+      { maxNo: number | null }[]
+    >`
+      SELECT MAX("statementNo")::int AS "maxNo"
+      FROM "Statement"
+      WHERE "statementNo" IS NOT NULL
+        AND "statementNo"::text LIKE ${`${currentBuddhistYear}%`}
+    `;
+    const legacyStatementNo = await prisma.$queryRaw<
+      { maxNo: number | null }[]
+    >`
+      SELECT MAX("statementNo")::int AS "maxNo"
+      FROM "Statement"
+      WHERE "statementNo" IS NOT NULL
+        AND "statementNo"::text NOT LIKE '25__%'
+    `;
+    const nextStatementNo =
+      currentYearStatementNo[0]?.maxNo !== null &&
+      currentYearStatementNo[0]?.maxNo !== undefined
+        ? currentYearStatementNo[0].maxNo + 1
+        : withBuddhistYearPrefix((legacyStatementNo[0]?.maxNo ?? 0) + 1);
     if (usePagination) {
       total = await prisma.statement.count({ where });
       statementItems = await prisma.statement.findMany({

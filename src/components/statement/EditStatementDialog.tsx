@@ -48,6 +48,7 @@ interface CustomerInvoiceApiItem {
 
 interface EditStatementDialogProps {
   statementId: number;
+  statementNo: number | null;
   customerId: number;
   statementCreatedAt: string;
   selectedInvoices: InvoiceItem[];
@@ -60,6 +61,7 @@ interface EditStatementDialogProps {
 
 export default function EditStatementDialog({
   statementId,
+  statementNo,
   customerId,
   statementCreatedAt,
   selectedInvoices,
@@ -288,7 +290,10 @@ export default function EditStatementDialog({
             <div className="flex gap-4">
               <span>แก้ไข Invoice ในใบเสร็จรับเงิน</span>{" "}
               <span className="text-blue-600 dark:text-blue-400">
-                #HS{statementId.toString()}
+                #
+                {statementNo === null
+                  ? "ยังไม่ได้กำหนดเลข"
+                  : statementNo.toString()}
               </span>
             </div>
           </DialogTitle>
