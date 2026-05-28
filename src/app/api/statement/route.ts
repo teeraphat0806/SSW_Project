@@ -164,12 +164,7 @@ export async function PATCH(req: NextRequest) {
       );
     }
 
-    if (invoiceIds.length === 0) {
-      return NextResponse.json(
-        { error: "invoiceIds must be a non-empty array" },
-        { status: 400 },
-      );
-    }
+
 
     let parsedStatementDate: Date | null = null;
     if (rawStatementDate) {

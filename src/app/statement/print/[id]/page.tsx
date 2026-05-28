@@ -1,6 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from "react";
 import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft, Loader2, Printer } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -392,9 +398,7 @@ export default function StatementPrintPage() {
 
                 <div className="mb-4 w-full">
                   <div className="grid grid-cols-12 gap-4 ml-3">
-                    
-                   
-                    <div className="col-span-8 ml-10"> 
+                    <div className="col-span-8 ml-10">
                       <p className="text-xl font-medium text-black dark:text-white print:text-black whitespace-normal">
                         {renderThaiWordAtomicText(customerName)}
                       </p>
@@ -403,14 +407,12 @@ export default function StatementPrintPage() {
                       </p>
                     </div>
 
-                   
                     <div className="col-span-4 flex justify-end items-start mt-4">
                       <div className="text-right text-lg flex flex-col gap-10 text-black dark:text-white print:text-black">
                         <p className="font-bold">{documentNo}</p>
                         <p>{thaiShortDate}</p>
                       </div>
                     </div>
-
                   </div>
                 </div>
               </div>
@@ -451,7 +453,10 @@ export default function StatementPrintPage() {
                         className="px-0 py-1 text-lg text-right text-black dark:text-white print:text-black"
                         style={{ width: "17%" }}
                       >
-                        {invoice.grandTotal.toLocaleString("en-US")}
+                        {invoice.grandTotal.toLocaleString("en-US", {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        })}
                       </td>
                     </tr>
                   ))}
@@ -465,7 +470,11 @@ export default function StatementPrintPage() {
                       {numberToThaiText(totalAmount)}
                     </div>
                     <div className="text-xl font-bold text-black dark:text-white print:text-black">
-                      ฿{totalAmount.toLocaleString("en-US")}
+                      ฿
+                      {totalAmount.toLocaleString("en-US", {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })}
                     </div>
                   </div>
                 ) : (
