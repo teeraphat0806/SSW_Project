@@ -164,8 +164,6 @@ export async function PATCH(req: NextRequest) {
       );
     }
 
-
-
     let parsedStatementDate: Date | null = null;
     if (rawStatementDate) {
       if (!/^\d{4}-\d{2}-\d{2}$/.test(rawStatementDate)) {
@@ -195,6 +193,22 @@ export async function PATCH(req: NextRequest) {
         const err = new Error("Statement not found");
         (err as any).code = "STATEMENT_NOT_FOUND";
         throw err;
+      }
+
+      if (invoiceIds.length === 0) {
+        if (statement.statementNo !== null) {
+          const err = new Error(
+            "Cannot delete all invoices from a numbered statement",
+          );
+          (err as any).code = "STATEMENT_ALREADY_NUMBERED";
+          throw err;
+        }
+
+        await tx.statement.delete({
+          where: { id: statement.id },
+        });
+
+        return;
       }
 
       const invoices = await tx.invoice.findMany({
@@ -278,6 +292,15 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json(
         { error: "Some invoices not found" },
         { status: 404 },
+      );
+    }
+
+    if (error.code === "STATEMENT_ALREADY_NUMBERED") {
+      return NextResponse.json(
+        {
+          error: "Cannot delete all invoices from a numbered statement",
+        },
+        { status: 400 },
       );
     }
 
