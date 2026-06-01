@@ -14,9 +14,8 @@ import {
 import { Button } from "../components/ui/button";
 import { Check } from "lucide-react";
 import { cn } from "../lib/utils";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useDebounce } from "@uidotdev/usehooks";
-import { set } from "zod";
 
 type CustomerOption = {
   id: string | number;
@@ -49,8 +48,23 @@ export default function SelectCustomer({
   const debounceSearch = useDebounce(inputValue, 400);
 
   useEffect(() => {
+    setInputValue(search);
+  }, [search]);
+
+  useEffect(() => {
     setSearch(debounceSearch);
   }, [debounceSearch, setSearch]);
+
+  const filteredCustomers = useMemo(() => {
+    const searchLower = debounceSearch.trim().toLowerCase();
+
+    return customers.filter((customer) => {
+      if (customer.id === selectedCustomerId) return false;
+      if (!searchLower) return true;
+
+      return customer.name.toLowerCase().includes(searchLower);
+    });
+  }, [customers, debounceSearch, selectedCustomerId]);
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -85,32 +99,29 @@ export default function SelectCustomer({
             )}
             <CommandEmpty>ไม่พบลูกค้า</CommandEmpty>
             <CommandGroup>
-              {/* แสดงเฉพาะลูกค้าที่ไม่ใช่ลูกค้าที่ถูกเลือกอยู่แล้ว */}
-              {customers
-                .filter((customer) => customer.id !== selectedCustomerId)
-                .map((customer) => (
-                  <CommandItem
-                    key={customer.id}
-                    value={customer.name}
-                    className="bg-background text-foreground hover:bg-accent hover:text-accent-foreground"
-                    onSelect={() => {
-                      setSelectedCustomer(customer.id);
-                      setInputValue("");
-                      setSearch("");
-                      setOpen(false);
-                    }}
-                  >
-                    {customer.name}
-                    <Check
-                      className={cn(
-                        "ml-auto h-4 w-4",
-                        selectedCustomerId === customer.id
-                          ? "opacity-100"
-                          : "opacity-0",
-                      )}
-                    />
-                  </CommandItem>
-                ))}
+              {filteredCustomers.map((customer) => (
+                <CommandItem
+                  key={customer.id}
+                  value={customer.name}
+                  className="bg-background text-foreground hover:bg-accent hover:text-accent-foreground"
+                  onSelect={() => {
+                    setSelectedCustomer(customer.id);
+                    setInputValue("");
+                    setSearch("");
+                    setOpen(false);
+                  }}
+                >
+                  {customer.name}
+                  <Check
+                    className={cn(
+                      "ml-auto h-4 w-4",
+                      selectedCustomerId === customer.id
+                        ? "opacity-100"
+                        : "opacity-0",
+                    )}
+                  />
+                </CommandItem>
+              ))}
             </CommandGroup>
           </CommandList>
         </Command>
