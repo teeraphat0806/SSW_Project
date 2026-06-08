@@ -412,6 +412,7 @@ export default function Dashboard() {
                 <option value="">ทั้งหมด</option>
                 <option value="pending">ยังไม่ออกใบแจ้งหนี้</option>
                 <option value="invoiced">ออกใบแจ้งหนี้แล้ว</option>
+                <option value="invoiced-sord">เรียงจากใบแจ้งหนี้</option>ห
               </select>
             </div>
           </div>
