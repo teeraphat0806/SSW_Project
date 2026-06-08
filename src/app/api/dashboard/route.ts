@@ -89,6 +89,8 @@ function buildWhere({
     where.Invoice = { isNot: null };
   } else if (invoice === "pending") {
     where.Invoice = { is: null };
+  } else if (invoice === "invoiced-sord") {
+    where.Invoice = { isNot: null };
   }
 
   // 3) date range (createdAt) gte >= และ lte <=
@@ -126,7 +128,7 @@ export async function GET(req: Request) {
   const search = (searchParams.get("search") ?? "").trim();
 
   const rawInvoice = (searchParams.get("invoice") ?? "").trim();
-  const Invoice = ["pending", "invoiced"].includes(rawInvoice)
+  const Invoice = ["pending", "invoiced", "invoiced-sord"].includes(rawInvoice)
     ? rawInvoice
     : "";
 
@@ -146,6 +148,22 @@ export async function GET(req: Request) {
 
   // --- Build filters ---
   const where = buildWhere({ search, status, invoice: Invoice, from, to });
+  let orderBy: Prisma.OrderPOOrderByWithRelationInput[] = [
+    { createdAt: "desc" },
+  ];
+
+  if (Invoice === "invoiced-sord") {
+    orderBy = [
+      {
+        Invoice: {
+          invoiceNo: "desc",
+        },
+      },
+      {
+        createdAt: "desc",
+      },
+    ];
+  }
 
   // --- Summary date ranges (Bangkok) ---
   const {
@@ -173,7 +191,7 @@ export async function GET(req: Request) {
 
       prisma.orderPO.findMany({
         where,
-        orderBy: { createdAt: "desc" },
+        orderBy: orderBy,
         skip,
         take: pageSize,
         select: {
