@@ -249,7 +249,7 @@ export default function CreateAcquittanceDialog({
           </Button>
         </DialogTrigger>
       </div>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto bg-white dark:bg-zinc-900 text-gray-900 dark:text-white rounded-2xl p-6 shadow-xl border border-gray-200 dark:border-zinc-700">
+      <DialogContent className="w-[96vw] max-w-[96vw] h-[92vh] max-h-[92vh] overflow-y-auto bg-white dark:bg-zinc-900 text-gray-900 dark:text-white rounded-2xl p-6 shadow-xl border border-gray-200 dark:border-zinc-700">
         <DialogHeader>
           <DialogTitle className="text-xl font-bold mb-2">
             สร้างใบวางบิลใหม่

@@ -33,6 +33,7 @@ import {
 } from "../ui/table";
 import { formatThaiDateLong } from "@/lib/dateformat";
 import { useRouter } from "next/navigation";
+import MonthSelectionModal from "./MonthSelectionModal";
 interface CustomerOption {
   id: number;
   name: string;
@@ -93,6 +94,7 @@ export default function CreateStatementDialog({
   const [showSelectedTable, setShowSelectedTable] = useState(true);
   const [showSelectedTable2, setShowSelectedTable2] = useState(true);
   const [selectedPage, setSelectedPage] = useState(1);
+  const [monthSelectionOpen, setMonthSelectionOpen] = useState(false);
   const router = useRouter();
 
   // Update open state in parent if provided
@@ -197,11 +199,13 @@ export default function CreateStatementDialog({
     setSelectedInvoices([]);
   };
 
-  const handleSelectAll = () => {
-    const newInvoices = filteredInvoiceList.filter(
-      (inv) => !selectedInvoices.some((sel) => sel.id === inv.id),
-    );
-    setSelectedInvoices([...selectedInvoices, ...newInvoices]);
+  const handleConfirmMonthSelection = (invoices: InvoiceItem[]) => {
+    setSelectedInvoices((current) => {
+      const newInvoices = invoices.filter(
+        (invoice) => !current.some((selected) => selected.id === invoice.id),
+      );
+      return [...current, ...newInvoices];
+    });
   };
 
   // Filter selected invoices table with its own search
@@ -273,7 +277,7 @@ export default function CreateStatementDialog({
           </Button>
         </DialogTrigger>
       </div>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto bg-white dark:bg-zinc-900 text-gray-900 dark:text-white rounded-2xl p-6 shadow-xl border border-gray-200 dark:border-zinc-700">
+      <DialogContent className="w-[96vw] max-w-[96vw] h-[92vh] max-h-[92vh] overflow-y-auto bg-white dark:bg-zinc-900 text-gray-900 dark:text-white rounded-2xl p-6 shadow-xl border border-gray-200 dark:border-zinc-700">
         <DialogHeader>
           <DialogTitle className="text-xl font-bold mb-2">
             สร้างใบเสร็จรับเงินใหม่
@@ -485,7 +489,7 @@ export default function CreateStatementDialog({
               size="icon"
               variant="ghost"
               className="group h-8 w-8 rounded-full border border-green-300 dark:border-green-600/80 bg-green-100 dark:bg-green-700/60 text-green-700 dark:text-green-100 shadow-sm transition-all duration-200 hover:scale-105 hover:border-green-400 dark:hover:border-green-400 hover:bg-green-200 dark:hover:bg-green-600 hover:shadow-md active:scale-95"
-              onClick={handleSelectAll}
+              onClick={() => setMonthSelectionOpen(true)}
               disabled={filteredInvoiceList.length === 0}
               aria-label="Select all available invoices"
               title="เลือกทั้งหมด"
@@ -621,6 +625,13 @@ export default function CreateStatementDialog({
             เลือก ลูกค้า → เลือก invoice → กด "สร้างใบเสร็จรับเงิน" – (Fake)
             จะสร้างเลข InvoiceNo ให้เอง
           </div>
+          <MonthSelectionModal
+            open={monthSelectionOpen}
+            onOpenChange={setMonthSelectionOpen}
+            invoiceList={invoiceList}
+            selectedInvoices={selectedInvoices}
+            onConfirm={handleConfirmMonthSelection}
+          />
         </div>
         <DialogFooter className="flex justify-end gap-2 mt-4">
           <Button

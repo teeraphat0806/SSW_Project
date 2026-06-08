@@ -30,6 +30,7 @@ import {
   TableCell,
 } from "../ui/table";
 import { formatThaiDateLong } from "@/lib/dateformat";
+import MonthSelectionModal from "./MonthSelectionModal";
 interface InvoiceItem {
   id: number;
   invoiceNo: number;
@@ -82,6 +83,7 @@ export default function EditStatementDialog({
   const [selectedPage, setSelectedPage] = useState(1);
   const [saving, setSaving] = useState(false);
   const [customerName, setCustomerName] = useState("");
+  const [monthSelectionOpen, setMonthSelectionOpen] = useState(false);
   const [statementDate, setStatementDate] = useState(
     new Date(statementCreatedAt).toISOString().split("T")[0],
   );
@@ -149,11 +151,13 @@ export default function EditStatementDialog({
     setCurrentInvoices([]);
   };
 
-  const handleSelectAll = () => {
-    const newInvoices = filteredInvoiceList.filter(
-      (inv) => !currentInvoices.some((sel) => sel.id === inv.id),
-    );
-    setCurrentInvoices([...currentInvoices, ...newInvoices]);
+  const handleConfirmMonthSelection = (invoices: InvoiceItem[]) => {
+    setCurrentInvoices((current) => {
+      const newInvoices = invoices.filter(
+        (invoice) => !current.some((selected) => selected.id === invoice.id),
+      );
+      return [...current, ...newInvoices];
+    });
   };
 
   const handleSave = async () => {
@@ -284,7 +288,7 @@ export default function EditStatementDialog({
           </span>
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto bg-white dark:bg-zinc-900 text-gray-900 dark:text-white rounded-2xl p-6 shadow-xl border border-gray-200 dark:border-zinc-700">
+      <DialogContent className="w-[96vw] max-w-[96vw] h-[92vh] max-h-[92vh] overflow-y-auto bg-white dark:bg-zinc-900 text-gray-900 dark:text-white rounded-2xl p-6 shadow-xl border border-gray-200 dark:border-zinc-700">
         <DialogHeader>
           <DialogTitle className="text-xl font-bold mb-2">
             <div className="flex gap-4">
@@ -495,7 +499,7 @@ export default function EditStatementDialog({
               size="icon"
               variant="ghost"
               className="group h-8 w-8 rounded-full border border-green-300 dark:border-green-600/80 bg-green-100 dark:bg-green-700/60 text-green-700 dark:text-green-100 shadow-sm transition-all duration-200 hover:scale-105 hover:border-green-400 dark:hover:border-green-400 hover:bg-green-200 dark:hover:bg-green-600 hover:shadow-md active:scale-95"
-              onClick={handleSelectAll}
+              onClick={() => setMonthSelectionOpen(true)}
               disabled={filteredInvoiceList.length === 0}
               aria-label="Select all available invoices"
               title="เลือกทั้งหมด"
@@ -630,6 +634,13 @@ export default function EditStatementDialog({
               </>
             )}
           </div>
+          <MonthSelectionModal
+            open={monthSelectionOpen}
+            onOpenChange={setMonthSelectionOpen}
+            invoiceList={availableInvoices}
+            selectedInvoices={currentInvoices}
+            onConfirm={handleConfirmMonthSelection}
+          />
         </div>
         <DialogFooter className="flex justify-end gap-2 mt-4 pt-4 border-t border-gray-200 dark:border-zinc-700">
           <Button

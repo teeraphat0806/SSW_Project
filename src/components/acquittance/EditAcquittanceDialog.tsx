@@ -30,6 +30,7 @@ import {
   TableCell,
 } from "../ui/table";
 import { formatThaiDateLong } from "@/lib/dateformat";
+import MonthSelectionModal from "./MonthSelectionModal";
 interface InvoiceItem {
   id: number;
   invoiceNo: number;
@@ -80,6 +81,7 @@ export default function EditAcquittanceDialog({
   const [selectedPage, setSelectedPage] = useState(1);
   const [saving, setSaving] = useState(false);
   const [customerName, setCustomerName] = useState("");
+  const [monthSelectionOpen, setMonthSelectionOpen] = useState(false);
   const [acquittanceDate, setAcquittanceDate] = useState(
     new Date(acquittanceCreatedAt).toISOString().split("T")[0],
   );
@@ -148,7 +150,11 @@ export default function EditAcquittanceDialog({
   };
 
   const handleSelectAll = () => {
-    const newInvoices = filteredInvoiceList.filter(
+    setMonthSelectionOpen(true);
+  };
+
+  const handleConfirmMonthSelection = (invoices: InvoiceItem[]) => {
+    const newInvoices = invoices.filter(
       (inv) => !currentInvoices.some((sel) => sel.id === inv.id),
     );
     setCurrentInvoices([...currentInvoices, ...newInvoices]);
@@ -284,7 +290,7 @@ export default function EditAcquittanceDialog({
           </span>
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto bg-white dark:bg-zinc-900 text-gray-900 dark:text-white rounded-2xl p-6 shadow-xl border border-gray-200 dark:border-zinc-700">
+      <DialogContent className="w-[96vw] max-w-[96vw] h-[92vh] max-h-[92vh] overflow-y-auto bg-white dark:bg-zinc-900 text-gray-900 dark:text-white rounded-2xl p-6 shadow-xl border border-gray-200 dark:border-zinc-700">
         <DialogHeader>
           <DialogTitle className="text-xl font-bold mb-2">
             <div className="flex gap-4">
@@ -628,6 +634,13 @@ export default function EditAcquittanceDialog({
             )}
           </div>
         </div>
+      <MonthSelectionModal
+        open={monthSelectionOpen}
+        onOpenChange={setMonthSelectionOpen}
+        invoiceList={availableInvoices}
+        selectedInvoices={currentInvoices}
+        onConfirm={handleConfirmMonthSelection}
+      />
         <DialogFooter className="flex justify-end gap-2 mt-4 pt-4 border-t border-gray-200 dark:border-zinc-700">
           <Button
             variant="outline"

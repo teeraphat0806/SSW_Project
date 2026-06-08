@@ -228,10 +228,14 @@ export const InvoiceExcelSample: React.FC<Inv71LikeInvoiceProps> = ({
               let steelDisplay = item.steelType;
               if (item.requiredDimensions) {
                 if (item.isOD) {
+                  let prefix = ""
+                  let suffix = "";
+                  if (item.cuttingMethod === "CNC") suffix = "(แบบ)";
+                  if (item.cuttingMethod === "FB") prefix += " F/P";
                   const steelPrefix = item.isServices === true ? "" : "เหล็ก ";
-                  steelDisplay = `${steelPrefix}${item.steelType} ${item.thickness} t OD ${item.width} ${item.length === 0 || !item.length ? "" : "ID " + item.length} ${
-                    item.unit || "mm."
-                  }`;
+                  steelDisplay = `${steelPrefix}${item.steelType} ${prefix} ${item.thickness} t OD ${item.width} ${item.length === 0 || !item.length ? "" : "ID " + item.length} ${
+                    item.unit || "mm." 
+                  } ${suffix}`;
                 } else {
                   let prefix =
                     item.isServices === true
