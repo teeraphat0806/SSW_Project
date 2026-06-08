@@ -2,6 +2,10 @@ import { requireAuth } from "@/lib/permissions";
 import { NextResponse, NextRequest } from "next/server";
 import prisma from "@/lib/prisma";
 import { calcStatementTotals } from "@/lib/billingCalc";
+import {
+  getCurrentBuddhistYear,
+  withBuddhistYearPrefix,
+} from "@/lib/statementNumber";
 
 export async function GET(req: NextRequest) {
   const authResult = await requireAuth([
@@ -77,10 +81,28 @@ export async function GET(req: NextRequest) {
 
     let statementItems;
     let total;
-    const maxStatementNo = await prisma.statement.aggregate({
-      _max: { statementNo: true },
-    });
-    const nextStatementNo = (maxStatementNo._max.statementNo ?? 0) + 1;
+    const currentBuddhistYear = getCurrentBuddhistYear();
+    const currentYearStatementNo = await prisma.$queryRaw<
+      { maxNo: number | null }[]
+    >`
+      SELECT MAX("statementNo")::int AS "maxNo"
+      FROM "Statement"
+      WHERE "statementNo" IS NOT NULL
+        AND "statementNo"::text LIKE ${`${currentBuddhistYear}%`}
+    `;
+    const legacyStatementNo = await prisma.$queryRaw<
+      { maxNo: number | null }[]
+    >`
+      SELECT MAX("statementNo")::int AS "maxNo"
+      FROM "Statement"
+      WHERE "statementNo" IS NOT NULL
+        AND "statementNo"::text NOT LIKE '25__%'
+    `;
+    const nextStatementNo =
+      currentYearStatementNo[0]?.maxNo !== null &&
+      currentYearStatementNo[0]?.maxNo !== undefined
+        ? currentYearStatementNo[0].maxNo + 1
+        : withBuddhistYearPrefix((legacyStatementNo[0]?.maxNo ?? 0) + 1);
     if (usePagination) {
       total = await prisma.statement.count({ where });
       statementItems = await prisma.statement.findMany({
@@ -142,13 +164,6 @@ export async function PATCH(req: NextRequest) {
       );
     }
 
-    if (invoiceIds.length === 0) {
-      return NextResponse.json(
-        { error: "invoiceIds must be a non-empty array" },
-        { status: 400 },
-      );
-    }
-
     let parsedStatementDate: Date | null = null;
     if (rawStatementDate) {
       if (!/^\d{4}-\d{2}-\d{2}$/.test(rawStatementDate)) {
@@ -178,6 +193,22 @@ export async function PATCH(req: NextRequest) {
         const err = new Error("Statement not found");
         (err as any).code = "STATEMENT_NOT_FOUND";
         throw err;
+      }
+
+      if (invoiceIds.length === 0) {
+        if (statement.statementNo !== null) {
+          const err = new Error(
+            "Cannot delete all invoices from a numbered statement",
+          );
+          (err as any).code = "STATEMENT_ALREADY_NUMBERED";
+          throw err;
+        }
+
+        await tx.statement.delete({
+          where: { id: statement.id },
+        });
+
+        return;
       }
 
       const invoices = await tx.invoice.findMany({
@@ -261,6 +292,15 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json(
         { error: "Some invoices not found" },
         { status: 404 },
+      );
+    }
+
+    if (error.code === "STATEMENT_ALREADY_NUMBERED") {
+      return NextResponse.json(
+        {
+          error: "Cannot delete all invoices from a numbered statement",
+        },
+        { status: 400 },
       );
     }
 

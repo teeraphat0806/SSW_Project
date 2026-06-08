@@ -137,8 +137,12 @@ export const InvoiceExcelSample: React.FC<Inv71LikeInvoiceProps> = ({
                   ))
                 : companyName}
             </div>
-            <div className="mt-1">{addressLine1}</div>
-            <div>{addressLine2}</div>
+            <div className="mt-1  whitespace-normal break-normal">
+              {addressLine1}
+            </div>
+            <div className=" whitespace-normal break-normal">
+              {addressLine2}
+            </div>
             <div className="mt-1">
               {tel ? `โทร.${tel}` : ""} &nbsp;&nbsp;&nbsp;{" "}
               {fax ? `แฟกซ์ ${fax}` : ""}
@@ -224,10 +228,14 @@ export const InvoiceExcelSample: React.FC<Inv71LikeInvoiceProps> = ({
               let steelDisplay = item.steelType;
               if (item.requiredDimensions) {
                 if (item.isOD) {
+                  let prefix = ""
+                  let suffix = "";
+                  if (item.cuttingMethod === "CNC") suffix = "(แบบ)";
+                  if (item.cuttingMethod === "FB") prefix += " F/P";
                   const steelPrefix = item.isServices === true ? "" : "เหล็ก ";
-                  steelDisplay = `${steelPrefix}${item.steelType} ${item.thickness} t OD ${item.width} ${item.length === 0 || !item.length ? "" : "ID " + item.length} ${
-                    item.unit || "mm."
-                  }`;
+                  steelDisplay = `${steelPrefix}${item.steelType} ${prefix} ${item.thickness} t OD ${item.width} ${item.length === 0 || !item.length ? "" : "ID " + item.length} ${
+                    item.unit || "mm." 
+                  } ${suffix}`;
                 } else {
                   let prefix =
                     item.isServices === true
@@ -309,18 +317,6 @@ export const InvoiceExcelSample: React.FC<Inv71LikeInvoiceProps> = ({
               </span>
             </div>
 
-            <div className="flex justify-between">
-              <span className="flex-1" />
-              <span className="w-40 text-right">&nbsp;</span>
-            </div>
-
-            <div className="flex justify-between">
-              <span className="flex-1" />
-              <span className="w-40 text-right">
-                {!shouldShowTotals ? "" : formatNumber(subtotal)}
-              </span>
-            </div>
-
             {discount != null && discount > 0 && (
               <div className="flex justify-between">
                 <span className="flex-1" />
@@ -329,6 +325,26 @@ export const InvoiceExcelSample: React.FC<Inv71LikeInvoiceProps> = ({
                 </span>
               </div>
             )}
+            {discount == null ||
+              (discount === 0 && (
+                <div className="flex justify-between">
+                  <span className="flex-1" />
+                  <span className="w-40 text-right">&nbsp;</span>
+                </div>
+              ))}
+
+            <div className="flex justify-between">
+              <span className="flex-1" />
+              <span className="w-40 text-right">
+                {!shouldShowTotals
+                  ? ""
+                  : formatNumber(subtotal - (discount ?? 0))}
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span className="flex-1" />
+              <span className="w-40 text-right">&nbsp;</span>
+            </div>
 
             <div className="flex justify-between">
               <span className="flex-1" />

@@ -269,7 +269,19 @@ export default function AcquittancePrintPage() {
       })
     : "-";
 
-  const pages = useMemo(() => chunk(invoices, ROWS_PER_PAGE), [invoices]);
+  const sortedInvoices = useMemo(
+    () =>
+      [...invoices].sort(
+        (a, b) =>
+          new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+      ),
+    [invoices],
+  );
+
+  const pages = useMemo(
+    () => chunk(sortedInvoices, ROWS_PER_PAGE),
+    [sortedInvoices],
+  );
 
   if (loading) {
     return (
@@ -336,16 +348,13 @@ export default function AcquittancePrintPage() {
                 <div className="text-[15px] font-semibold">
                   S.S.W. STEEL CENTER CO., LTD.
                 </div>
-                <div className="mt-1 text-[12px] opacity-80">
-                  888/1-2 หมู่ 9 ตำบลบางปลา อำเภอบางพลี จังหวัดสมุทรปราการ 10540
+                <div className="mt-1 text-[12px] ">
+                  888/1 หมู่ 9 ตำบลบางปลา อำเภอบางพลี จังหวัดสมุทรปราการ 10540
                 </div>
-                <div className="mt-1 text-[12px] opacity-80">
-                  888/1-2 Moo 9 Bangpla, Bangplee, Samutprakarn 10540
+                <div className="mt-1 text-[12px] ">
+                  888/1 Moo 9 Bangpla, Bangplee, Samutprakarn 10540
                 </div>
-                <div className="text-[12px] opacity-80">
-                  TEL. (02)181-6700-3, (02)181-6705-8 &nbsp; FAX. (02)181-6704,
-                  (02)181-6709
-                </div>
+                <div className="text-[12px] ">TEL. (02)181-6700-4</div>
                 <div className="mt-3 text-[18px] font-semibold">ใบวางบิล</div>
               </header>
 
@@ -363,17 +372,19 @@ export default function AcquittancePrintPage() {
                 </div>
               </div>
 
-              <div className="mt-4 text-[14px]">
+              <div className="mt-4 ">
                 <div className="space-y-1">
-                  <div>
-                    <span className="font-semibold">นามผู้ซื้อ:</span>{" "}
+                  <div className="text-[20px]">
+                    <span className="font-semibold text-[14px]">
+                      นามผู้ซื้อ:
+                    </span>{" "}
                     {customerName}
                   </div>
                   <div>
-                    <span className="font-semibold">ที่อยู่:</span>{" "}
+                    <span className="font-semibold text-[14px]">ที่อยู่:</span>{" "}
                     {customerAddress}
                   </div>
-                  <div className="opacity-80">
+                  <div className="text-[14px]">
                     ทางบจก. เอส.เอส.ดับบลิว.สตีล เซ็นเตอร์ ได้มาวางบิลไว้แก่ท่าน
                     เพื่อให้ท่านได้ตรวจสอบและนัดชำระเงิน ตามรายการดังต่อไปนี้
                   </div>
@@ -394,10 +405,7 @@ export default function AcquittancePrintPage() {
                   <tbody>
                     {pageRows.length === 0 ? (
                       <tr>
-                        <td
-                          colSpan={4}
-                          className="td text-left opacity-70 py-6"
-                        >
+                        <td colSpan={4} className="td text-left  py-6">
                           ไม่พบข้อมูล
                         </td>
                       </tr>
@@ -417,7 +425,7 @@ export default function AcquittancePrintPage() {
                           <tr key={bill.id} className="avoid-break">
                             <td className="td">{runningIndex}</td>
                             <td className="td">{dateStr}</td>
-                            <td className="td">HS{bill.invoiceNo || "-"}</td>
+                            <td className="td">HS00{bill.invoiceNo || "-"}</td>
                             <td className="td td-right">
                               {bill.grandTotal.toLocaleString("en-US", {
                                 minimumFractionDigits: 2,
@@ -433,11 +441,12 @@ export default function AcquittancePrintPage() {
 
               {isLastPage && (
                 <footer className="mt-4">
-                  <div className="flex items-start justify-between gap-3">
-                    <div />
-                    <div />
+                  <div className="flex w-full items-end justify-between gap-3">
+                    <div className="mt-2.5 text-left text-[14px]">
+                      ({numberToThaiBahtText(totalAmount)})
+                    </div>
                     <div className="text-right">
-                      <div className="flex">
+                      <div className="flex items-end justify-end gap-3">
                         <div className="mt-2">รวมทั้งสิ้น</div>
                         <div className="total-box">
                           {totalAmount.toLocaleString("en-US", {
@@ -445,11 +454,7 @@ export default function AcquittancePrintPage() {
                           })}
                         </div>
                       </div>
-                      <div className="mt-1 text-[14px] text-left">
-                        ({numberToThaiBahtText(totalAmount)})
-                      </div>
                     </div>
-                    <div />
                   </div>
 
                   <div className="mt-8 grid grid-cols-2 gap-10 text-[14px]">
@@ -459,37 +464,28 @@ export default function AcquittancePrintPage() {
                         ....................................................................
                       </div>
                     </div>
-                    <div className="signature">
-                      <div className="label">ผู้วางบิล</div>
-                      <div className="dots">
-                        ....................................................................
-                      </div>
-                    </div>
                   </div>
-
                   <div className="mt-4 grid grid-cols-2 gap-10 text-[14px]">
                     <div className="signature">
                       <div className="label">วันที่รับวางบิล</div>
                       <div className="dots">
-                        .....................................................................
-                      </div>
-                    </div>
-                    <div className="signature">
-                      <div className="label">วันที่วางบิล</div>
-                      <div className="dots">
-                        .....................................................................
+                        ....................................................................
                       </div>
                     </div>
                   </div>
-
                   <div className="mt-4 grid grid-cols-2 gap-10 text-[14px]">
                     <div className="signature">
                       <div className="label">วันที่นัดชำระเงิน</div>
                       <div className="dots">
-                        ....................................................................
+                        .....................................................................
                       </div>
                     </div>
-                    <div />
+                    <div className="signature">
+                      <div className="label">ผู้วางบิล</div>
+                      <div className="dots">
+                        .....................................................................
+                      </div>
+                    </div>
                   </div>
                 </footer>
               )}

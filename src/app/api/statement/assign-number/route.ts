@@ -2,6 +2,10 @@ import { requireAuth } from "@/lib/permissions";
 import { NextResponse, NextRequest } from "next/server";
 import prisma from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
+import {
+  getCurrentBuddhistYear,
+  withBuddhistYearPrefix,
+} from "@/lib/statementNumber";
 
 export async function POST(req: NextRequest) {
   const authResult = await requireAuth([
@@ -43,13 +47,32 @@ export async function POST(req: NextRequest) {
         return statement;
       }
 
-      const nextNoRows = await tx.$queryRaw<{ nextNo: number }[]>(Prisma.sql`
-        SELECT COALESCE(MAX("statementNo"), 0)::int + 1 AS "nextNo"
+      const currentBuddhistYear = getCurrentBuddhistYear();
+      const currentYearRows = await tx.$queryRaw<{ maxNo: number | null }[]>(
+        Prisma.sql`
+        SELECT MAX("statementNo")::int AS "maxNo"
         FROM "Statement"
         WHERE "statementNo" IS NOT NULL
-      `);
+          AND "statementNo"::text LIKE ${`${currentBuddhistYear}%`}
+      `,
+      );
+      const legacyStatementRows = await tx.$queryRaw<
+        { maxNo: number | null }[]
+      >(
+        Prisma.sql`
+        SELECT MAX("statementNo")::int AS "maxNo"
+        FROM "Statement"
+        WHERE "statementNo" IS NOT NULL
+          AND "statementNo"::text NOT LIKE '25__%'
+      `,
+      );
 
-      const nextNo = nextNoRows[0]?.nextNo;
+      const currentYearMaxNo = currentYearRows[0]?.maxNo;
+      const legacyNextNo = (legacyStatementRows[0]?.maxNo ?? 0) + 1;
+      const nextNo =
+        currentYearMaxNo !== null && currentYearMaxNo !== undefined
+          ? currentYearMaxNo + 1
+          : withBuddhistYearPrefix(legacyNextNo);
       if (!nextNo) {
         const err = new Error("Failed to allocate statement number");
         (err as any).code = "STATEMENT_NUMBER_ALLOC_FAILED";

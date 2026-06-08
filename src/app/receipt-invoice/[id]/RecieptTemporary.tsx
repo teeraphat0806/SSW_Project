@@ -147,6 +147,11 @@ export default function ReceiptTemporary({
     0,
   );
 
+  const totalWeight = data.steel.reduce(
+    (sum, item) => sum + Number(item.weight ?? 0),
+    0,
+  );
+
   return (
     <div className="min-h-screen mt-5 md:mt-0 lg:mt-0 bg-muted/40 px-4 py-6 text-black print:p-0 print:m-0 print:bg-white print:absolute print:top-0 print:left-0 print:w-full print:z-50 dark:bg-zinc-900 dark:text-zinc-100">
       {/* Print Button */}
@@ -242,8 +247,8 @@ export default function ReceiptTemporary({
                 <div className="text-[9px] font-normal">QUANTITY</div>
               </th>
               <th className="p-1 text-center w-20" style={headerCellStyle}>
-                น้ำหนัก
-                <div className="text-[9px] font-normal">WEIGHT</div>
+                น้ำหนัก (กก.)
+                <div className="text-[9px] font-normal">WEIGHT (kg)</div>
               </th>
             </tr>
           </thead>
@@ -283,15 +288,40 @@ export default function ReceiptTemporary({
           </tbody>
         </table>
 
-        <div className="flex justify-end  px-3 py-2 text-[11px]">
-          <div className="flex items-center gap-2">
-            <span className="font-semibold">จำนวนทั้งหมด</span>
-            <span className="min-w-16 text-right font-semibold">
-              {totalAmount.toLocaleString("th-TH")}
-            </span>
+        <div className="flex justify-end px-3 py-1 mt-[1.1px] text-[11px] border-x border-black ">
+          <div className="-translate-x-3">
+            <div className="bg-white print:bg-white">
+              <div className="flex flex-col items-end ">
+                <div className="flex items-baseline gap-2">
+                  <span className="text-sm font-semibold">จำนวนทั้งหมด</span>
+                  <div className="flex items-baseline">
+                    <span className="text-lg font-semibold">
+                      {totalAmount.toLocaleString("th-TH")}
+                    </span>
+                    <span className="ml-2 font-semibold">ชิ้น</span>
+                  </div>
+                </div>
+
+                
+              </div>
+             
+            </div>
           </div>
         </div>
 
+        <div className="flex justify-end px-3 py-1 text-[11px] border border-black">
+          <div className="-translate-x-3">
+            <div className="bg-white print:bg-white">
+              
+              <div className="mt-1 text-sm">
+                  <span className="font-semibold">น้ำหนักรวม</span>
+                  <span className="ml-2 font-semibold">
+                    {totalWeight.toFixed(2)} กก.
+                  </span>
+                </div>
+            </div>
+          </div>
+        </div>
         {/* Signature Section */}
         <div className="mt-6 grid grid-cols-2 gap-8 text-[11px]">
           <div className="text-center">
