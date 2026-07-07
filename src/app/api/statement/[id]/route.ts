@@ -1,7 +1,7 @@
 import { requireAuth } from "@/lib/permissions";
 import { NextResponse, NextRequest } from "next/server";
 import prisma from "@/lib/prisma";
-import { calcStatementTotals } from "@/lib/billingCalc";
+import { calcStatementTotalsFromItems } from "@/lib/billingCalc";
 
 export async function GET(
   req: NextRequest,
@@ -35,6 +35,6 @@ export async function GET(
   if (!statement)
     return NextResponse.json({ error: "Statement not found" }, { status: 404 });
 
-  const totals = await calcStatementTotals(numId);
+  const totals = calcStatementTotalsFromItems(statement.items);
   return NextResponse.json({ statement, totals });
 }

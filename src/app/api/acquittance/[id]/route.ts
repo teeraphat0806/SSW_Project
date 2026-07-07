@@ -1,7 +1,7 @@
 import { requireAuth } from "@/lib/permissions";
 import { NextResponse, NextRequest } from "next/server";
 import prisma from "@/lib/prisma";
-import { calcAcquittanceTotals } from "@/lib/billingCalc";
+import { calcAcquittanceTotalsFromItems } from "@/lib/billingCalc";
 
 export async function GET(
   req: NextRequest,
@@ -38,6 +38,6 @@ export async function GET(
       { status: 404 },
     );
 
-  const totals = await calcAcquittanceTotals(numId);
+  const totals = calcAcquittanceTotalsFromItems(acquittance.items);
   return NextResponse.json({ acquittance, totals });
 }
