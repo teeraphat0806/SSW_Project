@@ -219,7 +219,7 @@ export default function StatementPrintPage() {
 
   const fetchNextStatementNo = useCallback(async () => {
     try {
-      const res = await fetch("/api/statement?limit=1&page=1", {
+      const res = await fetch("/api/statement?nextNumberOnly=true", {
         cache: "no-store",
       });
       if (!res.ok) return;

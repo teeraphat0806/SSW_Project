@@ -12,27 +12,15 @@ export async function GET(req: NextRequest) {
   if ("response" in authResult) return authResult.response;
 
   try {
-    const customers = await prisma.customer.findMany({
-      where: {
-        OrderPO: {
-          some: {
-            customerId: { not: null },
-            Invoice: {
-              is: {
-                statementItem: null,
-              },
-            },
-          },
-        },
-      },
-      select: {
-        id: true,
-        name: true,
-      },
-      orderBy: {
-        name: "asc",
-      },
-    });
+    const customers = await prisma.$queryRaw<Array<{ id: number; name: string }>>`
+      SELECT DISTINCT c.id, c.name
+      FROM "Customer" c
+      JOIN "OrderPO" o ON o."customerId" = c.id
+      JOIN "Invoice" i ON i.codetoinvoice = o.codetoinvoice
+      LEFT JOIN "StatementInvoice" si ON si."invoiceId" = i.id
+      WHERE si."invoiceId" IS NULL
+      ORDER BY c.name ASC
+    `;
 
     return NextResponse.json(customers);
   } catch (error) {

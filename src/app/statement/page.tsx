@@ -71,6 +71,7 @@ export default function StatementPage() {
         const params = new URLSearchParams({
           limit: PAGE_SIZE.toString(),
           page: currentPage.toString(),
+          includeNextNo: "true",
         });
 
         if (search) params.append("search", search);
