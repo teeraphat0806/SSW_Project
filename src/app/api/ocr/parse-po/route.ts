@@ -81,207 +81,235 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const upstreamForm = new FormData();
-    upstreamForm.append("file", first); // ถ้า upstream ต้องการ "files" ให้เปลี่ยนเป็น files
+    // อ่าน Buffer ของไฟล์เพื่อนำไปใช้ในกระบวนการทำงานเบื้องหลัง (Background Worker)
+    const buffer = Buffer.from(await first.arrayBuffer());
+    const fileName = first.name;
+    const fileSize = first.size;
+    const fileType = first.type;
 
-    const upstreamRes = await fetch(ocrUrl, {
-      method: "POST",
-      headers: {
-        "X-API-Token": token,
+    // สร้าง OcrJob ในฐานข้อมูลด้วยสถานะ PROCESSING
+    const job = await prisma.ocrJob.create({
+      data: {
+        status: "PROCESSING",
       },
-      body: upstreamForm,
     });
 
-    //Partial คือการทำให้ไม่จำเป้นต้องกรอกทุกฟิลด์
-    const upstreamJson: Partial<OcrUpstreamResponse> = await upstreamRes
-      .json()
-      .catch(() => ({}));
-    
-    if (!upstreamRes.ok || !upstreamJson.result) {
-      return NextResponse.json(
-        {
-          error: "ไม่สามารถประมวลผลไฟล์ได้ กรุณาลองใหม่ภายหลัง",
-          details: upstreamJson,
-        },
-        { status: 502 },
-      );
-    }
+    // เริ่มการเรียกหา OCR Upstream API และจัดกลุ่มวิเคราะห์แยกตารางเบื้องหลังแบบ Asynchronous
+    (async () => {
+      try {
+        const fileBlob = new Blob([buffer], { type: fileType });
+        const upstreamForm = new FormData();
+        upstreamForm.append("file", fileBlob, fileName);
 
-    const result = upstreamJson.result;
+        const upstreamRes = await fetch(ocrUrl, {
+          method: "POST",
+          headers: {
+            "X-API-Token": token,
+          },
+          body: upstreamForm,
+        });
 
-    //----2. ส่ง response กลับ----
+        const upstreamJson: Partial<OcrUpstreamResponse> = await upstreamRes
+          .json()
+          .catch(() => ({}));
+        
+        if (!upstreamRes.ok || !upstreamJson.result) {
+          throw new Error(
+            upstreamJson.result
+              ? "Failed upstream parse"
+              : "ไม่สามารถประมวลผลไฟล์ได้ กรุณาลองใหม่ภายหลัง"
+          );
+        }
 
-    const customerDraft = {
-      code: result.header.customer.code ?? null,
-      name: safe(result.header.customer.name),
-      address: safe(result.header.customer.address),
-      tel: onlyDigits(result.header.customer.tel) ?? "",
-      taxNumber: onlyDigits(result.header.customer.taxNumber) ?? null,
-      faxNumber: onlyDigits(result.header.customer.faxNumber) ?? null,
-      email: safe(result.header.customer.email) ?? null,
-    };
+        const result = upstreamJson.result;
 
-    const orderDraft = {
-      ponumber: asNullIfEmpty(safe(result.header.poNumber)),
-      poDate: asNullIfEmpty(safe(result.header.poDate)),
-      deliveryDate: asNullIfEmpty(safe(result.header.deliveryDate)),
-      yourRef: asNullIfEmpty(safe(result.header.yourRef)),
-    };
-    //----3. ตรวจสอบลูกค้าว่าตรงกับในระบบหรือไม่ ----
-    const customerOR: any[] = [];
-    if (customerDraft.email) customerOR.push({ email: customerDraft.email });
-    if (customerDraft.tel) customerOR.push({ telSearch: customerDraft.tel });
-    if (customerDraft.taxNumber)
-      customerOR.push({ taxNumber: customerDraft.taxNumber });
-    if (customerDraft.faxNumber)
-      customerOR.push({ faxNumberSearch: customerDraft.faxNumber });
-
-    // ผลลัพธ์การแมตช์ลูกค้า
-    let customerMatch: {
-      matched: boolean;
-      customerId: number | null;
-      matchedBy: "taxNumber" | "tel" | "faxNumber" | "email" | null;
-    } = { matched: false, customerId: null, matchedBy: null };
-
-    if (customerOR.length > 0) {
-      const foundCustomer = await prisma.customer.findFirst({
-        where: { OR: customerOR },
-        select: {
-          id: true,
-          taxNumber: true,
-          tel: true,
-          telSearch: true,
-
-          faxNumber: true,
-          faxNumberSearch: true,
-          email: true,
-        },
-      });
-
-      if (foundCustomer) {
-        const matchedBy =
-          (customerDraft.taxNumber &&
-            foundCustomer.taxNumber === customerDraft.taxNumber &&
-            "taxNumber") ||
-          (customerDraft.tel &&
-            foundCustomer.telSearch === customerDraft.tel &&
-            "tel") ||
-          (customerDraft.faxNumber &&
-            foundCustomer.faxNumberSearch === customerDraft.faxNumber &&
-            "faxNumber") ||
-          (customerDraft.email &&
-            foundCustomer.email === customerDraft.email &&
-            "email") ||
-          null;
-        customerMatch = {
-          matched: true,
-          customerId: foundCustomer.id,
-          matchedBy,
+        const customerDraft = {
+          code: result.header.customer.code ?? null,
+          name: safe(result.header.customer.name),
+          address: safe(result.header.customer.address),
+          tel: onlyDigits(result.header.customer.tel) ?? "",
+          taxNumber: onlyDigits(result.header.customer.taxNumber) ?? null,
+          faxNumber: onlyDigits(result.header.customer.faxNumber) ?? null,
+          email: safe(result.header.customer.email) ?? null,
         };
-      }
-    }
 
-    const rawCodeShapes = Array.from(
-      new Set(
-        result.items
-          .map((it) => {
-            const codeSteel = safe(it.codeSteel);
-            const shape = normalizeShape(it.shape);
-            return codeSteel && shape ? steelKey(codeSteel, shape) : null;
-          })
-          .filter((x): x is string => !!x),
-      ),
-    ).map((k) => {
-      const [codeSteel, shape] = k.split("::");
-      return {
-        codeSteel: codeSteel ?? "",
-        shape: (shape ?? "square") as ShapeSteel,
-      };
-    });
+        const orderDraft = {
+          ponumber: asNullIfEmpty(safe(result.header.poNumber)),
+          poDate: asNullIfEmpty(safe(result.header.poDate)),
+          deliveryDate: asNullIfEmpty(safe(result.header.deliveryDate)),
+          yourRef: asNullIfEmpty(safe(result.header.yourRef)),
+        };
 
-    // query steelTypes ที่ match
-    const steelTypeRows =
-      rawCodeShapes.length > 0
-        ? await prisma.steelType.findMany({
-            where: {
-              OR: rawCodeShapes.map(({ codeSteel, shape }) => ({
-                codeSteel,
-                shape,
-              })),
+        const customerOR: any[] = [];
+        if (customerDraft.email) customerOR.push({ email: customerDraft.email });
+        if (customerDraft.tel) customerOR.push({ telSearch: customerDraft.tel });
+        if (customerDraft.taxNumber)
+          customerOR.push({ taxNumber: customerDraft.taxNumber });
+        if (customerDraft.faxNumber)
+          customerOR.push({ faxNumberSearch: customerDraft.faxNumber });
+
+        let customerMatch: {
+          matched: boolean;
+          customerId: number | null;
+          matchedBy: "taxNumber" | "tel" | "faxNumber" | "email" | null;
+        } = { matched: false, customerId: null, matchedBy: null };
+
+        if (customerOR.length > 0) {
+          const foundCustomer = await prisma.customer.findFirst({
+            where: { OR: customerOR },
+            select: {
+              id: true,
+              taxNumber: true,
+              tel: true,
+              telSearch: true,
+              faxNumber: true,
+              faxNumberSearch: true,
+              email: true,
             },
-            select: { id: true, codeSteel: true, shape: true, status: true },
-          })
-        : [];
+          });
 
-    const steelMap = new Map<
-      string,
-      { id: number; codeSteel: string; shape: ShapeSteel }
-    >();
-    for (const steel of steelTypeRows) {
-      const key = steelKey(steel.codeSteel, steel.shape);
-      const item = {
-        id: steel.id,
-        codeSteel: steel.codeSteel,
-        shape: steel.shape,
-      };
+          if (foundCustomer) {
+            const matchedBy =
+              (customerDraft.taxNumber &&
+                foundCustomer.taxNumber === customerDraft.taxNumber &&
+                "taxNumber") ||
+              (customerDraft.tel &&
+                foundCustomer.telSearch === customerDraft.tel &&
+                "tel") ||
+              (customerDraft.faxNumber &&
+                foundCustomer.faxNumberSearch === customerDraft.faxNumber &&
+                "faxNumber") ||
+              (customerDraft.email &&
+                foundCustomer.email === customerDraft.email &&
+                "email") ||
+              null;
+            customerMatch = {
+              matched: true,
+              customerId: foundCustomer.id,
+              matchedBy,
+            };
+          }
+        }
 
-      steelMap.set(key, item);
-    }
+        const rawCodeShapes = Array.from(
+          new Set(
+            result.items
+              .map((it) => {
+                const codeSteel = safe(it.codeSteel);
+                const shape = normalizeShape(it.shape);
+                return codeSteel && shape ? steelKey(codeSteel, shape) : null;
+              })
+              .filter((x): x is string => !!x),
+          ),
+        ).map((k) => {
+          const [codeSteel, shape] = k.split("::");
+          return {
+            codeSteel: codeSteel ?? "",
+            shape: (shape ?? "square") as ShapeSteel,
+          };
+        });
 
-    const items = result.items.map((it) => {
-      const codeSteel = safe(it.codeSteel);
-      const itemShape = normalizeShape(it.shape);
+        const steelTypeRows =
+          rawCodeShapes.length > 0
+            ? await prisma.steelType.findMany({
+                where: {
+                  OR: rawCodeShapes.map(({ codeSteel, shape }) => ({
+                    codeSteel,
+                    shape,
+                  })),
+                },
+                select: { id: true, codeSteel: true, shape: true, status: true },
+              })
+            : [];
 
-      // Strict match by code+shape only.
-      const matchedSteel =
-        codeSteel && itemShape ? steelMap.get(steelKey(codeSteel, itemShape)) : null;
+        const steelMap = new Map<
+          string,
+          { id: number; codeSteel: string; shape: ShapeSteel }
+        >();
+        for (const steel of steelTypeRows) {
+          const key = steelKey(steel.codeSteel, steel.shape);
+          const item = {
+            id: steel.id,
+            codeSteel: steel.codeSteel,
+            shape: steel.shape,
+          };
+          steelMap.set(key, item);
+        }
 
-      // normalize shape and cuttingMethod
-      const shape = itemShape ?? "square";
-      const cuttingMethod = (it.cuttingMethod as CuttingMethod) || "normal";
+        const items = result.items.map((it) => {
+          const codeSteel = safe(it.codeSteel);
+          const itemShape = normalizeShape(it.shape);
 
-      return {
-        raw: {
-          codeSteel: codeSteel || null,
-          description: it.description ?? null,
-          shape: shape,
-          width: it.width ?? null,
-          length: it.length ?? null,
-          thickness: it.thickness ?? null,
-          quantity: it.quantity ?? null,
-          cuttingMethod,
-          job: it.job != null ? String(it.job) : null,
-          notes: it.notes ?? null,
-          confidence: it.confidence ?? null,
-        },
-        match: {
-          matched: !!matchedSteel,
-          steelTypeId: matchedSteel?.id ?? null,
-          matchedBy: matchedSteel ? "codeSteel" : null,
-        },
-      };
-    });
-    console.log("OCR Parse Result:", {
-      customerMatch,
-      customerDraft,
-      orderDraft,
-      items,
-      result,
-    });
+          const matchedSteel =
+            codeSteel && itemShape ? steelMap.get(steelKey(codeSteel, itemShape)) : null;
+
+          const shape = itemShape ?? "square";
+          const cuttingMethod = (it.cuttingMethod as CuttingMethod) || "normal";
+
+          return {
+            raw: {
+              codeSteel: codeSteel || null,
+              description: it.description ?? null,
+              shape: shape,
+              width: it.width ?? null,
+              length: it.length ?? null,
+              thickness: it.thickness ?? null,
+              quantity: it.quantity ?? null,
+              cuttingMethod,
+              job: it.job != null ? String(it.job) : null,
+              notes: it.notes ?? null,
+              confidence: it.confidence ?? null,
+            },
+            match: {
+              matched: !!matchedSteel,
+              steelTypeId: matchedSteel?.id ?? null,
+              matchedBy: matchedSteel ? "codeSteel" : null,
+            },
+          };
+        });
+
+        const resultPayload = {
+          source: {
+            fileName,
+            fileSize,
+            fileType,
+          },
+          customerMatch,
+          customerDraft,
+          orderDraft,
+          items,
+          meta: {
+            warnings: result.meta?.warnings || [],
+            confidence: result.meta?.confidence || null,
+          },
+        };
+
+        // เมื่อทำเสร็จสมบูรณ์ ให้อัปเดตตารางคิวเป็น COMPLETED พร้อมเก็บก้อน JSON ผลลัพธ์
+        await prisma.ocrJob.update({
+          where: { id: job.id },
+          data: {
+            status: "COMPLETED",
+            result: resultPayload as any,
+          },
+        });
+      } catch (err) {
+        console.error("OCR background process failed:", err);
+        // หากล้มเหลว ให้อัปเดตสถานะเป็น FAILED พร้อมเก็บสาเหตุผิดพลาด
+        await prisma.ocrJob.update({
+          where: { id: job.id },
+          data: {
+            status: "FAILED",
+            error: err instanceof Error ? err.message : String(err),
+          },
+        });
+      }
+    })();
+
+    // ส่งไอดีตารางกลับไปให้ Frontend ทันทีโดยไม่ต้องรอกระบวนการข้างบนเสร็จ
     return NextResponse.json({
-      source: {
-        fileName: first.name,
-        fileSize: first.size,
-        fileType: first.type,
-      },
-      customerMatch,
-      customerDraft,
-      orderDraft,
-      items,
-      meta: {
-        warnings: result.meta?.warnings || [],
-        confidence: result.meta?.confidence || null,
-      },
+      success: true,
+      jobId: job.id,
+      status: "PROCESSING",
     });
   } catch (error) {
     console.log(error);
