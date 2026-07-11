@@ -59,12 +59,7 @@ function getBangkokMonthRange(date = new Date()) {
   return { start, end, monthStr: `${y}-${m}` }; // YYYY-MM
 }
 
-function toTokens(q: string) {
-  return q
-    .split(/\s+/)
-    .map((t) => t.trim())
-    .filter(Boolean);
-}
+
 
 function buildWhere({
   status,
@@ -72,12 +67,14 @@ function buildWhere({
   from,
   to,
   search,
+  searchFields,
 }: {
   status: string;
   invoice: string;
   from: string;
   to: string;
   search: string;
+  searchFields: string[];
 }): Prisma.OrderPOWhereInput {
   const where: Prisma.OrderPOWhereInput = {};
 
@@ -102,20 +99,34 @@ function buildWhere({
 
   // 4) ค้นหาหลายๆ field
   if (search) {
-    const tokens = toTokens(search);
-    //เก็บค่าที่ return มาใส่ใน where.AND เป็น array ของเงื่อนไขที่ต้องเป็นจริงทั้งหมด
-    where.AND = tokens.map((token) => {
-      const orConditions: any[] = [
-        { poNumber: { contains: token, mode: "insensitive" } },
-        { Customer: { name: { contains: token, mode: "insensitive" } } },
-      ];
-      const numToken = Number(token);
-      if (!Number.isNaN(numToken)) {
-        orConditions.push({ codetoinvoice: numToken });
-        orConditions.push({ Invoice: { is: { invoiceNo: numToken } } });
+    const orConditions: any[] = [];
+
+    if (searchFields.includes("poNumber")) {
+      orConditions.push({ poNumber: { contains: search, mode: "insensitive" } });
+    }
+
+    if (searchFields.includes("customerName")) {
+      orConditions.push({ Customer: { name: { contains: search, mode: "insensitive" } } });
+    }
+
+    if (searchFields.includes("invoiceNo")) {
+      const numSearch = Number(search);
+      if (!Number.isNaN(numSearch)) {
+        orConditions.push({ Invoice: { is: { invoiceNo: numSearch } } });
       }
-      return { OR: orConditions };
-    });
+    }
+    if (searchFields.includes("codetoinvoice")) {
+      const numSearch = Number(search);
+      if (!Number.isNaN(numSearch)) {
+        orConditions.push({ codetoinvoice: numSearch });
+      }
+    }
+
+    if (orConditions.length > 0) {
+      where.OR = orConditions;
+    } else {
+      where.id = -1; // Force no match if only searched non-matching conditions
+    }
   }
   where.billId = { gt: 0 };
   return where;
@@ -126,6 +137,8 @@ export async function GET(req: Request) {
 
   // --- Read params ---
   const search = (searchParams.get("search") ?? "").trim();
+  const rawSearchFields = searchParams.get("searchFields");
+  const searchFields = rawSearchFields ? rawSearchFields.split(",") : ["poNumber"];
 
   const rawInvoice = (searchParams.get("invoice") ?? "").trim();
   const Invoice = ["pending", "invoiced", "invoiced-sord"].includes(rawInvoice)
@@ -147,7 +160,7 @@ export async function GET(req: Request) {
   const skip = (page - 1) * pageSize;
 
   // --- Build filters ---
-  const where = buildWhere({ search, status, invoice: Invoice, from, to });
+  const where = buildWhere({ search, searchFields, status, invoice: Invoice, from, to });
   let orderBy: Prisma.OrderPOOrderByWithRelationInput[] = [
     { createdAt: "desc" },
   ];
