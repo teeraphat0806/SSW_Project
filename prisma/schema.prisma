@@ -441,3 +441,11 @@ enum ContactType{
   FAX
   ADDRESS
 }
+model OcrJob {
+  id         Int      @id @default(autoincrement())
+  status     String   // "PENDING" (รอดำเนินการ), "PROCESSING" (กำลังทำ), "COMPLETED" (เสร็จแล้ว), "FAILED" (ล้มเหลว)
+  result     Json?    // เก็บผลลัพธ์ดิบที่ได้จาก OCR เมื่อทำเสร็จ
+  error      String?  // เก็บรายละเอียดข้อผิดพลาดถ้ามี
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
