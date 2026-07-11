@@ -2,6 +2,7 @@
 // ใหม่: นำเข้า helpers จาก lib เพื่อให้ไฟล์นี้มีเฉพาะ route handler ที่ Next.js คาดหวัง
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/permissions";
+import prisma from "@/lib/prisma";
 import {
   narrateArrayWithOpenRouter,
   GETSQL,
@@ -22,6 +23,7 @@ export async function POST(req: NextRequest) {
   }
   const { session } = authResult;
   console.log(session);
+
   try {
     const body = await req.json();
     const userQuery: string = (body?.query || "").toString().trim();
@@ -30,95 +32,104 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "query is required" }, { status: 400 });
     }
 
-    // 1) ขอ SQL จาก OpenRouter (helper ใน lib)
-    console.log("[Chatbot] User query:", userQuery);
-    const rawSql = await callOpenRouter(userQuery);
-    console.log("[Chatbot] Generated SQL:", rawSql);
+    // สร้าง ChatJob บันทึกคิวงานสถานะ PROCESSING
+    const job = await prisma.chatJob.create({
+      data: {
+        query: userQuery,
+        status: "PROCESSING",
+      },
+    });
 
-    // 2) ตรวจความปลอดภัย
-    // const safe = looksSafeSelect(rawSql);
-    // if (!safe.ok) {
-    //   return NextResponse.json(
-    //     {
-    //       error: "Rejected unsafe SQL",
-    //       reason: safe.reason,
-    //       generatedSql: rawSql,
-    //     },
-    //     { status: 400 }
-    //   );
-    // }
+    // ประมวลผลดีพซีคเบื้องหลัง (Background Worker) แบบ Asynchronous
+    (async () => {
+      try {
+        console.log("[Chatbot] User query:", userQuery);
+        const rawSql = await callOpenRouter(userQuery);
+        console.log("[Chatbot] Generated SQL:", rawSql);
 
-    // 3) (ออปชัน) รันจริง — เปิดใช้เมื่อพร้อม
-    // const rows = await prisma.$queryRawUnsafe(rawSql);
+        // อัปเดต SQL ที่ได้รับในระบบคิวงาน
+        await prisma.chatJob.update({
+          where: { id: job.id },
+          data: { sql: rawSql },
+        });
 
-    // 4) ส่งกลับ
-    // return NextResponse.json({
-    //   ok: true,
-    //   sql: rawSql,
-    //   // result: rows, // เปิดคอมเมนต์เมื่อรันจริง
-    // });
-    const response = await GETSQL(rawSql);
+        const response = await GETSQL(rawSql);
 
-    // ตรวจสอบว่ามีข้อมูลหรือไม่
-    if (!response || (Array.isArray(response) && response.length === 0)) {
-      return NextResponse.json({
-        sql: rawSql,
-        result:
-          "ไม่พบข้อมูลที่ตรงกับคำถามของคุณ อาจเป็นเพราะไม่มีข้อมูลในช่วงเวลาที่ระบุ หรือเงื่อนไขการค้นหาไม่ตรงกับข้อมูลในระบบ",
-      });
-    }
-
-    if (Array.isArray(response)) {
-      const rowWithUrlPo = response.find(
-        (row) =>
-          row &&
-          Array.isArray(row.urlPo) &&
-          row.urlPo.length > 0 &&
-          typeof row.urlPo[0] === "string",
-      );
-
-      if (rowWithUrlPo) {
-        const filePath = rowWithUrlPo.urlPo[0].replace(/^\/+/, "");
-        const openPoUrl = `/api/upload/po/openPo/${filePath}`;
-
-        const openPoResp = await fetch(openPoUrl, { method: "GET" });
-
-        if (!openPoResp.ok) {
-          const errText = await openPoResp.text().catch(() => "");
-          throw new Error(`openPo error ${openPoResp.status}: ${errText}`);
+        // กรณีตรวจสอบแล้วไม่มีข้อมูลผลลัพธ์
+        if (!response || (Array.isArray(response) && response.length === 0)) {
+          await prisma.chatJob.update({
+            where: { id: job.id },
+            data: {
+              status: "COMPLETED",
+              resultType: "text",
+              resultText:
+                "ไม่พบข้อมูลที่ตรงกับคำถามของคุณ อาจเป็นเพราะไม่มีข้อมูลในช่วงเวลาที่ระบุ หรือเงื่อนไขการค้นหาไม่ตรงกับข้อมูลในระบบ",
+            },
+          });
+          return;
         }
 
-        // อ่านเป็น binary (PDF)
-        const pdfBuffer = await openPoResp.arrayBuffer();
+        // กรณีมี urlPo (ดึงไฟล์เอกสาร PDF)
+        if (Array.isArray(response)) {
+          const rowWithUrlPo = response.find(
+            (row) =>
+              row &&
+              Array.isArray(row.urlPo) &&
+              row.urlPo.length > 0 &&
+              typeof row.urlPo[0] === "string",
+          );
 
-        return new NextResponse(pdfBuffer, {
-          status: 200,
-          headers: {
-            "Content-Type":
-              openPoResp.headers.get("content-type") || "application/pdf",
-            // ถ้าปลายทางมี Content-Disposition อยู่แล้วจะดึงมาใช้ต่อ
-            "Content-Disposition":
-              openPoResp.headers.get("content-disposition") || "inline",
+          if (rowWithUrlPo) {
+            const filePath = rowWithUrlPo.urlPo[0].replace(/^\/+/, "");
+            // บันทึกที่อยู่ไฟล์ PO เพื่อให้ Frontend โหลดในภายหลัง (ไม่มี Loopback Fetch บนเซิร์ฟเวอร์หลัก)
+            await prisma.chatJob.update({
+              where: { id: job.id },
+              data: {
+                status: "COMPLETED",
+                resultType: "pdf",
+                pdfKey: filePath,
+              },
+            });
+            return;
+          }
+        }
+
+        // กรณีไม่มี urlPo → ทำการวิเคราะห์แปลความหมายข้อมูลขากลับเป็น Text
+        const narration = await narrateArrayWithOpenRouter(
+          Array.isArray(response) ? response : [response],
+        );
+
+        await prisma.chatJob.update({
+          where: { id: job.id },
+          data: {
+            status: "COMPLETED",
+            resultType: "text",
+            resultText: narration,
+          },
+        });
+      } catch (err) {
+        console.error("[Chatbot] Background Error:", err);
+        await prisma.chatJob.update({
+          where: { id: job.id },
+          data: {
+            status: "FAILED",
+            error: err instanceof Error ? err.message : String(err),
           },
         });
       }
-    }
+    })();
 
-    // กรณีไม่มี urlPo → ค่อย narrate ตามปกติ (helper ใน lib)
-    const narration = await narrateArrayWithOpenRouter(
-      Array.isArray(response) ? response : [response],
-    );
-
+    // ส่ง jobId กลับไปหาหน้าบ้านทันทีภายในไม่กี่มิลลิวินาที
     return NextResponse.json({
-      sql: rawSql,
-      result: narration,
+      success: true,
+      jobId: job.id,
+      status: "PROCESSING",
     });
-  } catch (e) {
-    console.error("[Chatbot] Error:", e);
-    if (e instanceof Error) {
-      return NextResponse.json({ error: e.message }, { status: 500 });
-    }
-    // fallback กรณีไม่ใช่ Error เช่น string, object แปลก ๆ
-    return NextResponse.json({ error: "Internal error" }, { status: 500 });
+  } catch (error) {
+    console.error("[Chatbot] Error:", error);
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : String(error) },
+      { status: 500 },
+    );
   }
 }

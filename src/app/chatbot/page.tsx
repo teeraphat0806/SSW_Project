@@ -228,15 +228,50 @@ export default function Home() {
           body: JSON.stringify({ query: currentText }),
         });
 
-        const contentType = response.headers.get("content-type") || "";
+        const initData = await response.json().catch(() => ({}) as any);
+        if (!response.ok) throw new Error(initData?.error || "แชทบอทเกิดข้อผิดพลาด");
 
-        // ถ้าเป็น PDF
-        if (contentType.includes("application/pdf")) {
-          const blob = await response.blob();
+        const jobId = initData.jobId;
+        if (!jobId) throw new Error("ไม่สามารถสร้างคิวการทำงานได้");
+
+        // ลูป Polling ตรวจสอบสถานะทุก ๆ 2 วินาที
+        let completed = false;
+        let jobResult: {
+          resultType: "text" | "pdf";
+          resultText?: string;
+          pdfKey?: string;
+        } | null = null;
+
+        while (!completed) {
+          await new Promise((resolve) => setTimeout(resolve, 2000));
+
+          const statusRes = await fetch(`/api/chatbot/status?jobId=${jobId}`);
+          const jobStatus = await statusRes.json().catch(() => ({}) as any);
+
+          if (!statusRes.ok) throw new Error(jobStatus?.error || "เกิดข้อผิดพลาดในการตรวจสอบสถานะแชทบอท");
+
+          if (jobStatus.status === "COMPLETED") {
+            completed = true;
+            jobResult = {
+              resultType: jobStatus.resultType,
+              resultText: jobStatus.resultText,
+              pdfKey: jobStatus.pdfKey,
+            };
+          } else if (jobStatus.status === "FAILED") {
+            throw new Error(jobStatus.error || "ระบบประมวลผลแชทบอทล้มเหลว");
+          }
+        }
+
+        if (!jobResult) throw new Error("ไม่พบผลลัพธ์จากการตอบกลับ");
+
+        // ถ้าผลลัพธ์เป็นไฟล์ PDF
+        if (jobResult.resultType === "pdf" && jobResult.pdfKey) {
+          const pdfRes = await fetch(`/api/upload/po/openPo/${jobResult.pdfKey}`);
+          if (!pdfRes.ok) throw new Error("ไม่สามารถดาวน์โหลดไฟล์เอกสาร PDF ได้");
+
+          const blob = await pdfRes.blob();
           const url = URL.createObjectURL(blob);
-          const fileName = extractFileNameFromContentDisposition(
-            response.headers.get("content-disposition"),
-          );
+          const fileName = jobResult.pdfKey.split("/").pop() || "document.pdf";
 
           setMessages((prev) => [
             ...prev,
@@ -244,17 +279,15 @@ export default function Home() {
               isUser: false,
               type: "pdf",
               fileUrl: url,
-              fileName: fileName || "document.pdf",
+              fileName: fileName,
             },
           ]);
         } else {
-          // ปกติ: json
-          const data = await response.json();
-
+          // ปกติ: text
           setMessages((prev) => [
             ...prev,
             {
-              text: data.result ?? "ไม่พบข้อมูลจาก API",
+              text: jobResult?.resultText ?? "ไม่พบข้อมูลจากการตอบกลับ",
               isUser: false,
               type: "text",
             },
@@ -265,7 +298,7 @@ export default function Home() {
         setMessages((prev) => [
           ...prev,
           {
-            text: "เกิดข้อผิดพลาดในการเชื่อมต่อ API",
+            text: err instanceof Error ? err.message : "เกิดข้อผิดพลาดในการเชื่อมต่อ API",
             isUser: false,
             type: "text",
           },
