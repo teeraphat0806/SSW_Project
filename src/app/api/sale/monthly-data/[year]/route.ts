@@ -111,6 +111,91 @@ export async function GET(
       staffSalaryMap.set(salary.staffId, current);
     }
 
+    // ดึงข้อมูล Invoice และ Expense ทั้งหมดของปีนี้ในการสืบค้นครั้งเดียว
+    const [allInvoices, allExpenses] = await Promise.all([
+      prisma.invoice.findMany({
+        where: {
+          createdAt: {
+            gte: startOfYear,
+            lte: endOfYear,
+          },
+        },
+        select: {
+          id: true,
+          createdAt: true,
+          codetoinvoice: true,
+          invoiceNo: true,
+        },
+        orderBy: {
+          invoiceNo: "asc",
+        },
+      }),
+      prisma.expense.findMany({
+        where: {
+          expenseDate: {
+            gte: startOfYear,
+            lt: endOfYearExclusive,
+          },
+        },
+        select: {
+          expenseDate: true,
+          amount: true,
+        },
+      }),
+    ]);
+
+    // ดึงข้อมูล OrderPO ทั้งหมดที่เกี่ยวข้องกับ Invoice ในปีนี้
+    const invoiceCodeToInvoices = allInvoices.map((i) => i.codetoinvoice);
+
+    const orderPOs = invoiceCodeToInvoices.length > 0 ? await prisma.orderPO.findMany({
+      where: {
+        codetoinvoice: {
+          in: invoiceCodeToInvoices,
+        },
+      },
+      include: {
+        bill: {
+          select: {
+            grandTotal: true,
+          },
+        },
+        Customer: {
+          select: {
+            id: true,
+            name: true,
+            address: true,
+          },
+        },
+      },
+    }) : [];
+
+    const poMap = new Map(orderPOs.map((po) => [po.codetoinvoice, po]));
+
+    // จัดกลุ่มข้อมูลแยกตามเดือนในหน่วยความจำ (Memory Maps)
+    const getMonthNum = (date: Date) => {
+      return Number(
+        new Intl.DateTimeFormat("en-US", {
+          timeZone: "Asia/Bangkok",
+          month: "numeric",
+        }).format(date)
+      );
+    };
+
+    const invoicesByMonth = new Map<number, typeof allInvoices>();
+    for (const inv of allInvoices) {
+      const m = getMonthNum(inv.createdAt);
+      const current = invoicesByMonth.get(m) || [];
+      current.push(inv);
+      invoicesByMonth.set(m, current);
+    }
+
+    const expensesSumByMonth = new Map<number, number>();
+    for (const exp of allExpenses) {
+      const m = getMonthNum(exp.expenseDate);
+      const currentSum = expensesSumByMonth.get(m) || 0;
+      expensesSumByMonth.set(m, currentSum + (exp.amount || 0));
+    }
+
     const monthlyData = [];
 
     for (let month = 1; month <= 12; month++) {
@@ -118,61 +203,7 @@ export async function GET(
       const endOfMonthExclusive = new Date(yearNumber, month, 1);
       const endOfMonth = new Date(endOfMonthExclusive.getTime() - 1);
 
-      const [invoices, expenseStats] = await Promise.all([
-        prisma.invoice.findMany({
-          where: {
-            createdAt: {
-              gte: startOfMonth,
-              lte: endOfMonth,
-            },
-          },
-          select: {
-            id: true,
-            createdAt: true,
-            codetoinvoice: true,
-            invoiceNo: true,
-          },
-          orderBy: {
-            invoiceNo: "asc",
-          },
-        }),
-        prisma.expense.aggregate({
-          where: {
-            expenseDate: {
-              gte: startOfMonth,
-              lt: endOfMonthExclusive,
-            },
-          },
-          _sum: {
-            amount: true,
-          },
-        }),
-      ]);
-
-      const orderPOs = await prisma.orderPO.findMany({
-        where: {
-          codetoinvoice: {
-            in: invoices.map((i) => i.codetoinvoice),
-          },
-        },
-        include: {
-          bill: {
-            select: {
-              grandTotal: true,
-            },
-          },
-          Customer: {
-            select: {
-              id: true,
-              name: true,
-              address: true,
-            },
-          },
-        },
-      });
-
-      const poMap = new Map(orderPOs.map((po) => [po.codetoinvoice, po]));
-
+      const invoices = invoicesByMonth.get(month) || [];
       const formattedBills = invoices.map((invoice) => {
         const po = poMap.get(invoice.codetoinvoice);
         return {
@@ -215,7 +246,7 @@ export async function GET(
       const vat = taxAmount;
       const salesQty = totalBills;
       const income = totalAmount;
-      const expenseAmount = expenseStats._sum.amount || 0;
+      const expenseAmount = expensesSumByMonth.get(month) || 0;
       const expense = expenseAmount + totalSalaries;
       const net = income - expense;
 

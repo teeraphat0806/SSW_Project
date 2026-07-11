@@ -2,7 +2,7 @@ import { getToken } from "next-auth/jwt";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-export async function proxy(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const user = await getToken({
     req: request,
     secret: process.env.NEXTAUTH_SECRET,
@@ -78,3 +78,23 @@ export async function proxy(request: NextRequest) {
 
   return NextResponse.next();
 }
+
+export const config = {
+  matcher: [
+    "/superadminDashboard/:path*",
+    "/chatbot/:path*",
+    "/steel-Dashboard/:path*",
+    "/customer-Dashboard/:path*",
+    "/saledashboard2/:path*",
+    "/expenseDashboard/:path*",
+    "/payroll/:path*",
+    "/receipt-invoice/:path*",
+    "/dashboard/:path*",
+    "/createneworder/:path*",
+    "/job-order-detail/:path*",
+    "/up-date-order/:path*",
+    "/map/:path*",
+    "/statement/:path*",
+    "/acquittance/:path*",
+  ],
+};

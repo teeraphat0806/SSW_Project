@@ -89,43 +89,55 @@ export async function GET(req: NextRequest) {
     const endOfMonth = new Date(yearNumber, monthNumber, 1);
     const daysInMonth = new Date(yearNumber, monthNumber, 0).getDate();
 
+    // ดึงบิลทั้งหมดของเดือนนี้ในการสืบค้นครั้งเดียว
+    const bills = await prisma.bill.findMany({
+      where: {
+        createdAt: {
+          gte: startOfMonth,
+          lt: endOfMonth,
+        },
+        OrderPO: {
+          is: {
+            status: { not: "canceled" },
+            Invoice: { isNot: null },
+          },
+        },
+      },
+      select: {
+        createdAt: true,
+        grandTotal: true,
+      },
+    });
+
+    // จัดกลุ่มข้อมูลยอดขายรายวันในหน่วยความจำ (Memory Map)
+    const salesByDay = new Map<number, { salesAmt: number; salesQty: number }>();
+
+    for (const bill of bills) {
+      const dayOfMonth = Number(
+        new Intl.DateTimeFormat("en-US", {
+          timeZone: "Asia/Bangkok",
+          day: "numeric",
+        }).format(bill.createdAt)
+      );
+
+      const current = salesByDay.get(dayOfMonth) || { salesAmt: 0, salesQty: 0 };
+      current.salesAmt += bill.grandTotal || 0;
+      current.salesQty += 1;
+      salesByDay.set(dayOfMonth, current);
+    }
+
     const dailyData = [];
     let totalSalesAmt = 0;
     let totalSalesQty = 0;
-    let totalBills = 0;
 
-    // วนทีละวันในเดือนที่เลือก
     for (let day = 1; day <= daysInMonth; day++) {
-      const startOfDay = new Date(yearNumber, monthNumber - 1, day);
-      const endOfDay = new Date(yearNumber, monthNumber - 1, day + 1);
+      const stats = salesByDay.get(day);
 
-      // ดึงข้อมูลยอดขายของวันนั้น (จาก Bill)
-      const salesStats = await prisma.bill.aggregate({
-        where: {
-          createdAt: {
-            gte: startOfDay,
-            lt: endOfDay,
-          },
-          OrderPO: {
-            is: {
-              status: { not: "canceled" },
-              Invoice: { isNot: null },
-            },
-          },
-        },
-        _sum: {
-          grandTotal: true,
-        },
-        _count: {
-          id: true,
-        },
-      });
+      if (stats && (stats.salesAmt > 0 || stats.salesQty > 0)) {
+        const startOfDay = new Date(yearNumber, monthNumber - 1, day);
+        const salesAmt = stats.salesAmt;
+        const salesQty = stats.salesQty;
 
-      const salesAmt = salesStats._sum.grandTotal || 0;
-      const salesQty = salesStats._count.id || 0;
-
-      // เพิ่มเฉพาะวันที่มีข้อมูลเท่านั้น
-      if (salesAmt > 0 || salesQty > 0) {
         dailyData.push({
           day,
           date: startOfDay.toISOString().split("T")[0],

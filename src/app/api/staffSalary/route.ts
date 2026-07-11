@@ -109,8 +109,7 @@ export async function POST(req: NextRequest) {
   const { session } = authResult;
   console.log(session);
 
-  // เรียก API /user/filter/?name={session.user.name}
-  const origin = req.nextUrl.origin;
+  // ดึงข้อมูลผู้ใช้งาน (Creator) จากฐานข้อมูลโดยตรงเพื่อแทนการทำ Loopback Fetch
   const userName = session?.user?.name ?? "";
 
   if (!userName) {
@@ -120,23 +119,14 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const res = await fetch(
-    `${origin}/api/user/filter?name=${encodeURIComponent(userName)}`,
-    {
-      method: "GET",
-      headers: { "Content-Type": "application/json" },
+  const creatorUser = await prisma.user.findFirst({
+    where: {
+      name: { contains: userName, mode: "insensitive" },
     },
-  );
+    orderBy: { id: "asc" },
+  });
 
-  if (!res.ok) {
-    return NextResponse.json(
-      { error: "Failed to fetch user data" },
-      { status: 500 },
-    );
-  }
-
-  const users = await res.json();
-  const creatorId = users[0]?.id;
+  const creatorId = creatorUser?.id;
 
   if (!creatorId) {
     return NextResponse.json(

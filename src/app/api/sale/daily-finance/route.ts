@@ -98,21 +98,16 @@ export async function GET(req: NextRequest) {
     ];
 
     const daysInMonth = new Date(yearNumber, monthNumber, 0).getDate();
-    const dailyData = [];
-    let totalIncome = 0;
-    let totalExpense = 0;
+    const startOfMonth = new Date(yearNumber, monthNumber - 1, 1);
+    const endOfMonth = new Date(yearNumber, monthNumber, 1);
 
-    // วนทีละวันในเดือนที่เลือก
-    for (let day = 1; day <= daysInMonth; day++) {
-      const startOfDay = new Date(yearNumber, monthNumber - 1, day);
-      const endOfDay = new Date(yearNumber, monthNumber - 1, day + 1);
-
-      // ดึงข้อมูลรายรับ (จาก Bill)
-      const incomeStats = await prisma.bill.aggregate({
+    // ดึงรายรับ (Bill) และรายจ่าย (Expense) ทั้งหมดของเดือนนี้ใน 2 คิวรีขนานกัน
+    const [bills, expenses] = await Promise.all([
+      prisma.bill.findMany({
         where: {
           createdAt: {
-            gte: startOfDay,
-            lt: endOfDay,
+            gte: startOfMonth,
+            lt: endOfMonth,
           },
           OrderPO: {
             is: {
@@ -121,30 +116,67 @@ export async function GET(req: NextRequest) {
             },
           },
         },
-        _sum: {
+        select: {
+          createdAt: true,
           grandTotal: true,
         },
-      });
-
-      // ดึงข้อมูลรายจ่าย
-      const expenseStats = await prisma.expense.aggregate({
+      }),
+      prisma.expense.findMany({
         where: {
           expenseDate: {
-            gte: startOfDay,
-            lt: endOfDay,
+            gte: startOfMonth,
+            lt: endOfMonth,
           },
         },
-        _sum: {
+        select: {
+          expenseDate: true,
           amount: true,
         },
-      });
+      }),
+    ]);
 
-      const income = incomeStats._sum.grandTotal || 0;
-      const expense = expenseStats._sum.amount || 0;
-      const net = income - expense;
+    // จัดกลุ่มรายรับและรายจ่ายรายวันในหน่วยความจำ (Memory Map)
+    const financialByDay = new Map<number, { income: number; expense: number }>();
 
-      // เพิ่มเฉพาะวันที่มีข้อมูลเท่านั้น
-      if (income > 0 || expense > 0) {
+    for (const bill of bills) {
+      const dayOfMonth = Number(
+        new Intl.DateTimeFormat("en-US", {
+          timeZone: "Asia/Bangkok",
+          day: "numeric",
+        }).format(bill.createdAt)
+      );
+
+      const current = financialByDay.get(dayOfMonth) || { income: 0, expense: 0 };
+      current.income += bill.grandTotal || 0;
+      financialByDay.set(dayOfMonth, current);
+    }
+
+    for (const exp of expenses) {
+      const dayOfMonth = Number(
+        new Intl.DateTimeFormat("en-US", {
+          timeZone: "Asia/Bangkok",
+          day: "numeric",
+        }).format(exp.expenseDate)
+      );
+
+      const current = financialByDay.get(dayOfMonth) || { income: 0, expense: 0 };
+      current.expense += exp.amount || 0;
+      financialByDay.set(dayOfMonth, current);
+    }
+
+    const dailyData = [];
+    let totalIncome = 0;
+    let totalExpense = 0;
+
+    for (let day = 1; day <= daysInMonth; day++) {
+      const stats = financialByDay.get(day);
+
+      if (stats && (stats.income > 0 || stats.expense > 0)) {
+        const startOfDay = new Date(yearNumber, monthNumber - 1, day);
+        const income = stats.income;
+        const expense = stats.expense;
+        const net = income - expense;
+
         dailyData.push({
           day,
           date: startOfDay.toISOString().split("T")[0],

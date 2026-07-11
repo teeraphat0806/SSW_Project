@@ -23,6 +23,35 @@ export async function GET(req: NextRequest) {
     const searchParam = searchParams.get("search");
     const dateFromParam = searchParams.get("dateFrom");
     const dateToParam = searchParams.get("dateTo");
+    const nextNumberOnly = searchParams.get("nextNumberOnly") === "true";
+    const includeNextNo = searchParams.get("includeNextNo") === "true" || nextNumberOnly;
+
+    if (nextNumberOnly) {
+      const currentBuddhistYear = getCurrentBuddhistYear();
+      const currentYearStatementNo = await prisma.$queryRaw<
+        { maxNo: number | null }[]
+      >`
+        SELECT MAX("statementNo")::int AS "maxNo"
+        FROM "Statement"
+        WHERE "statementNo" IS NOT NULL
+          AND "statementNo"::text LIKE ${`${currentBuddhistYear}%`}
+      `;
+      const legacyStatementNo = await prisma.$queryRaw<
+        { maxNo: number | null }[]
+      >`
+        SELECT MAX("statementNo")::int AS "maxNo"
+        FROM "Statement"
+        WHERE "statementNo" IS NOT NULL
+          AND "statementNo"::text NOT LIKE '25__%'
+      `;
+      const nextStatementNo =
+        currentYearStatementNo[0]?.maxNo !== null &&
+        currentYearStatementNo[0]?.maxNo !== undefined
+          ? currentYearStatementNo[0].maxNo + 1
+          : withBuddhistYearPrefix((legacyStatementNo[0]?.maxNo ?? 0) + 1);
+
+      return NextResponse.json({ nextStatementNo });
+    }
 
     const limit = limitParam ? parseInt(limitParam, 10) : 10;
     const page = pageParam ? parseInt(pageParam, 10) : 1;
@@ -42,28 +71,12 @@ export async function GET(req: NextRequest) {
         const statementNo = parseInt(searchTerm, 10);
         where.statementNo = statementNo;
       } else {
-        // Search by customer name - find matching customer IDs first
-        const customers = await prisma.customer.findMany({
-          where: {
-            name: {
-              contains: searchTerm,
-            },
+        // Search by customer name - relational filter
+        where.Customer = {
+          name: {
+            contains: searchTerm,
+            mode: "insensitive",
           },
-          select: { id: true },
-        });
-
-        if (customers.length === 0) {
-          // No matching customers, return empty result
-          return NextResponse.json({
-            statementItems: [],
-            total: 0,
-            page: usePagination ? page : undefined,
-            limit: usePagination ? limit : undefined,
-          });
-        }
-
-        where.customerId = {
-          in: customers.map((c) => c.id),
         };
       }
     }
@@ -81,28 +94,32 @@ export async function GET(req: NextRequest) {
 
     let statementItems;
     let total;
-    const currentBuddhistYear = getCurrentBuddhistYear();
-    const currentYearStatementNo = await prisma.$queryRaw<
-      { maxNo: number | null }[]
-    >`
-      SELECT MAX("statementNo")::int AS "maxNo"
-      FROM "Statement"
-      WHERE "statementNo" IS NOT NULL
-        AND "statementNo"::text LIKE ${`${currentBuddhistYear}%`}
-    `;
-    const legacyStatementNo = await prisma.$queryRaw<
-      { maxNo: number | null }[]
-    >`
-      SELECT MAX("statementNo")::int AS "maxNo"
-      FROM "Statement"
-      WHERE "statementNo" IS NOT NULL
-        AND "statementNo"::text NOT LIKE '25__%'
-    `;
-    const nextStatementNo =
-      currentYearStatementNo[0]?.maxNo !== null &&
-      currentYearStatementNo[0]?.maxNo !== undefined
-        ? currentYearStatementNo[0].maxNo + 1
-        : withBuddhistYearPrefix((legacyStatementNo[0]?.maxNo ?? 0) + 1);
+    let nextStatementNo: number | undefined;
+
+    if (includeNextNo) {
+      const currentBuddhistYear = getCurrentBuddhistYear();
+      const currentYearStatementNo = await prisma.$queryRaw<
+        { maxNo: number | null }[]
+      >`
+        SELECT MAX("statementNo")::int AS "maxNo"
+        FROM "Statement"
+        WHERE "statementNo" IS NOT NULL
+          AND "statementNo"::text LIKE ${`${currentBuddhistYear}%`}
+      `;
+      const legacyStatementNo = await prisma.$queryRaw<
+        { maxNo: number | null }[]
+      >`
+        SELECT MAX("statementNo")::int AS "maxNo"
+        FROM "Statement"
+        WHERE "statementNo" IS NOT NULL
+          AND "statementNo"::text NOT LIKE '25__%'
+      `;
+      nextStatementNo =
+        currentYearStatementNo[0]?.maxNo !== null &&
+        currentYearStatementNo[0]?.maxNo !== undefined
+          ? currentYearStatementNo[0].maxNo + 1
+          : withBuddhistYearPrefix((legacyStatementNo[0]?.maxNo ?? 0) + 1);
+    }
     if (usePagination) {
       total = await prisma.statement.count({ where });
       statementItems = await prisma.statement.findMany({

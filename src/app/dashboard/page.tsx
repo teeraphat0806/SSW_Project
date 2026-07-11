@@ -256,7 +256,7 @@ export default function Dashboard() {
               aria-label="ดูเสร็จรับเงิน/ใบวางบิล"
             >
               <Printer size={18} />
-            </button>
+            </button>f
           </Link> */}
 
           <div className="flex items-center rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-1 shadow-sm">
@@ -412,7 +412,7 @@ export default function Dashboard() {
                 <option value="">ทั้งหมด</option>
                 <option value="pending">ยังไม่ออกใบแจ้งหนี้</option>
                 <option value="invoiced">ออกใบแจ้งหนี้แล้ว</option>
-                <option value="invoiced-sord">เรียงจากใบแจ้งหนี้</option>ห
+                <option value="invoiced-sord">เรียงจากใบแจ้งหนี้</option>
               </select>
             </div>
           </div>
