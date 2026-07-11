@@ -18,6 +18,8 @@ import {
   Package,
   X,
   Loader2,
+  ChevronDown,
+  Check,
 } from "lucide-react";
 import { date } from "zod";
 import { status } from "@/types";
@@ -100,6 +102,23 @@ export default function Dashboard() {
   // filters
   const [searchTerm, setSearchTerm] = useState("");
   const [searchResetKey, setSearchResetKey] = useState(0);
+  const [searchFields, setSearchFields] = useState<string[]>(["codetoinvoice"]);
+  const [isSearchFieldOpen, setIsSearchFieldOpen] = useState(false);
+  const filterRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        filterRef.current &&
+        !filterRef.current.contains(event.target as Node)
+      ) {
+        setIsSearchFieldOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
   const [statusFilter, setStatusFilter] = useState("");
   const [invoiceFilter, setInvoiceFilter] = useState("");
   const [dateFrom, setDateFrom] = useState("");
@@ -118,7 +137,12 @@ export default function Dashboard() {
       const params = new URLSearchParams();
 
       const search = searchTerm.trim();
-      if (search) params.set("search", search);
+      if (search) {
+        params.set("search", search);
+        if (searchFields.length > 0) {
+          params.set("searchFields", searchFields.join(","));
+        }
+      }
 
       if (statusFilter) params.set("status", statusFilter);
       if (invoiceFilter) params.set("invoice", invoiceFilter);
@@ -177,7 +201,7 @@ export default function Dashboard() {
       fetchOrders(1);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchTerm, statusFilter, invoiceFilter, dateFrom, dateTo]);
+  }, [searchTerm, searchFields, statusFilter, invoiceFilter, dateFrom, dateTo]);
 
   // โหลดข้อมูลเมื่อ page เปลี่ยน (รวมถึงรอบแรก)
   useEffect(() => {
@@ -347,23 +371,87 @@ export default function Dashboard() {
             <label className="block text-xs font-semibold text-zinc-500 dark:text-zinc-400 mb-1.5 uppercase tracking-wider">
               ค้นหา
             </label>
-            <div className="relative group">
-              <SearchDebounce
-                placeholder="ชื่อลูกค้า, เลข PO ,  รหัสออเดอร์"
-                onSearchChange={(value) => setSearchTerm(value)}
-                resetKey={searchResetKey}
-              />
-              {/* <Search
-                className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 group-focus-within:text-blue-500 transition-colors"
-                size={18}
-              />
-              <input
-                type="text"
-                placeholder="ชื่อลูกค้า, เลข PO ,  รหัสออเดอร์"
-                className="w-full pl-10 pr-4 py-2.5 bg-zinc-50 dark:bg-zinc-950/50 border border-zinc-200 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              /> */}
+            <div className="flex gap-2">
+              <div className="relative group flex-1">
+                <SearchDebounce
+                  placeholder="ชื่อลูกค้า, เลข PO ,  รหัสออเดอร์"
+                  onSearchChange={(value) => setSearchTerm(value)}
+                  resetKey={searchResetKey}
+                />
+              </div>
+              <div className="relative" ref={filterRef}>
+                <button
+                  type="button"
+                  onClick={() => setIsSearchFieldOpen(!isSearchFieldOpen)}
+                  className="flex items-center gap-1.5 px-3 py-2.5 h-full bg-zinc-50 dark:bg-zinc-950/50 border border-zinc-200 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-white hover:bg-zinc-100 dark:hover:bg-zinc-900 transition-all text-sm font-medium"
+                >
+                  <Filter size={16} />
+                  <ChevronDown size={14} className="text-zinc-500" />
+                </button>
+
+                {isSearchFieldOpen && (
+                  <div className="absolute right-0 top-full mt-2 w-48 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-xl shadow-lg z-50 py-1 overflow-hidden">
+                    <div className="px-3 py-2 text-xs font-semibold text-zinc-500 uppercase tracking-wider border-b border-zinc-100 dark:border-zinc-800">
+                      ค้นหาจาก
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (searchFields.length === 4) setSearchFields([]);
+                        else
+                          setSearchFields([
+                            "poNumber",
+                            "invoiceNo",
+                            "customerName",
+                            "codetoinvoice",
+                          ]);
+                      }}
+                      className="flex items-center justify-between w-full px-4 py-2 text-sm text-left hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors"
+                    >
+                      <span className="font-medium text-blue-600 dark:text-blue-400">
+                        เลือกทั้งหมด
+                      </span>
+                      {searchFields.length === 4 && (
+                        <Check
+                          size={16}
+                          className="text-blue-600 dark:text-blue-400"
+                        />
+                      )}
+                    </button>
+
+                    <div className="h-px bg-zinc-100 dark:bg-zinc-800 my-1"></div>
+
+                    {[
+                      { value: "poNumber", label: "PO Number" },
+                      { value: "invoiceNo", label: "Invoice No." },
+                      { value: "customerName", label: "ชื่อลูกค้า" },
+                      { value: "codetoinvoice", label: "รหัสออเดอร์" },
+                    ].map((opt) => {
+                      const isSelected = searchFields.includes(opt.value);
+                      return (
+                        <button
+                          key={opt.value}
+                          type="button"
+                          onClick={() => {
+                            setSearchFields((prev) =>
+                              prev.includes(opt.value)
+                                ? prev.filter((v) => v !== opt.value)
+                                : [...prev, opt.value],
+                            );
+                          }}
+                          className="flex items-center justify-between w-full px-4 py-2 text-sm text-left hover:bg-zinc-50 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 transition-colors"
+                        >
+                          <span>{opt.label}</span>
+                          {isSelected && (
+                            <Check size={16} className="text-blue-500" />
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
@@ -458,6 +546,7 @@ export default function Dashboard() {
             <button
               onClick={() => {
                 setSearchTerm("");
+                setSearchFields(["poNumber"]);
                 setSearchResetKey((k) => k + 1);
                 setStatusFilter("");
                 setInvoiceFilter("");
