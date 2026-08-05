@@ -441,3 +441,23 @@ enum ContactType{
   FAX
   ADDRESS
 }
+model OcrJob {
+  id         Int      @id @default(autoincrement())
+  status     String   
+  result     Json?    
+  error      String? 
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+model ChatJob {
+  id          String   @id @default(uuid())
+  query       String 
+  status      String   
+  sql         String? 
+  resultType  String? 
+  resultText  String?  
+  pdfKey      String?  
+  error       String?  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}

@@ -84,7 +84,12 @@ export async function GET(
     const formattedInvoices = invoices.map((invoice) => ({
       id: invoice.id,
       invoiceNo: invoice.invoiceNo,
-      createdAt: invoice.createdAt.toISOString().split("T")[0],
+      createdAt: new Intl.DateTimeFormat("en-CA", {
+        timeZone: "Asia/Bangkok",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      }).format(invoice.createdAt),
       codetoinvoice: invoice.codetoinvoice,
       orderPOId: invoice.OrderPO?.id ?? null,
       poNumber: invoice.OrderPO?.poNumber ?? null,

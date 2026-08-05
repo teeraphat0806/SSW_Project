@@ -669,11 +669,42 @@ const NewJobOrder = () => {
         signal: controller.signal,
       });
 
-      const data: OcrParseResponse = await res.json().catch(() => ({}) as any);
-      if (!res.ok) throw new Error((data as any)?.error || "OCR parse failed");
+      const initData = await res.json().catch(() => ({}) as any);
+      if (!res.ok) throw new Error(initData?.error || "OCR parse failed");
 
-      setOcrData(data);
-      applyOcrToForm(data);
+      const jobId = initData.jobId;
+      if (!jobId) throw new Error("ไม่สามารถสร้างคิวงานสำหรับตรวจสอบเอกสารได้");
+
+      // วนลูป Polling ตรวจสอบสถานะงานทุก ๆ 2 วินาที
+      let completed = false;
+      let finalData: OcrParseResponse | null = null;
+
+      while (!completed) {
+        if (controller.signal.aborted) {
+          throw new DOMException("Aborted", "AbortError");
+        }
+
+        await new Promise((resolve) => setTimeout(resolve, 2000));
+
+        const statusRes = await fetch(`/api/ocr/status?jobId=${jobId}`, {
+          signal: controller.signal,
+        });
+
+        const jobStatus = await statusRes.json().catch(() => ({}) as any);
+        if (!statusRes.ok) throw new Error(jobStatus?.error || "เกิดข้อผิดพลาดในการดึงสถานะงาน");
+
+        if (jobStatus.status === "COMPLETED") {
+          completed = true;
+          finalData = jobStatus.result as OcrParseResponse;
+        } else if (jobStatus.status === "FAILED") {
+          throw new Error(jobStatus.error || "กระบวนการ OCR ล้มเหลวที่เซิร์ฟเวอร์");
+        }
+      }
+
+      if (!finalData) throw new Error("ไม่พบข้อมูลจากการอ่านเอกสาร PO");
+
+      setOcrData(finalData);
+      applyOcrToForm(finalData);
 
       toast.success("อ่านข้อมูลจากเอกสารแล้ว กรุณาตรวจสอบข้อมูลทีก่อนบันทึก", {
         position: "bottom-right",
