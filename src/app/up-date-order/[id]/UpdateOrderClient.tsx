@@ -210,9 +210,6 @@ const UpdateOrderPage = ({ id }: { id: string }) => {
     if (hasAnyJob) setUseJob(true);
   }, [hasAnyJob]);
 
-  const hasMissingJob =
-    useJob && (job?.steel ?? []).some((s) => !s.job?.trim());
-
   const handlePoFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (!event.target.files) return;
     const fileList = Array.from(event.target.files);
@@ -409,8 +406,6 @@ const UpdateOrderPage = ({ id }: { id: string }) => {
     if (itemCount === 0) return "กรุณาเพิ่มรายการเหล็กอย่างน้อย 1 รายการ";
     if (itemCount > 15)
       return "ไม่สามารถบันทึกคำสั่งซื้อที่มีรายการเหล็กเกิน 15 รายการได้";
-    if (hasMissingJob) return "กรุณากรอกหมายเลขงาน (Job No.) ให้ครบทุกบรรทัด";
-
     if (isAtLeast(job.status, "weighing")) {
       const hasZeroPrice = job.steel.some((s) => !s.price || s.price <= 0);
       if (hasZeroPrice) return "กรุณากรอกราคาเหล็กก่อนบันทึกคำสั่งซื้อ";

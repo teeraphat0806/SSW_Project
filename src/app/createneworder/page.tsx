@@ -284,21 +284,24 @@ const NewJobOrder = () => {
       const shape: ShapeSteel =
         firstSteelType.shape === "line" ? "line" : "square";
 
-          return [
-            {
+      return [
+        {
           ...first,
           id: first.id || uuidv4(),
           SteelId: Number(firstSteelType.id ?? 0),
           steelType: firstSteelType.steelType ?? "",
           shape,
           wide: shape === "line" ? null : (first.wide ?? 1),
-              price: Number(firstSteelType.price ?? 0),
-              density: Number(firstSteelType.density ?? 0.0000079),
-              requiresDimensions: coerceBoolean(firstSteelType.requiresDimensions, true),
-              requiresAmount: coerceBoolean(firstSteelType.requiresAmount, true),
-            },
-          ];
-        });
+          price: Number(firstSteelType.price ?? 0),
+          density: Number(firstSteelType.density ?? 0.0000079),
+          requiresDimensions: coerceBoolean(
+            firstSteelType.requiresDimensions,
+            true,
+          ),
+          requiresAmount: coerceBoolean(firstSteelType.requiresAmount, true),
+        },
+      ];
+    });
   }, [steelTypes]);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -541,7 +544,10 @@ const NewJobOrder = () => {
       isOD: false,
       isServices: false,
       isPerAmount: false,
-      requiresDimensions: coerceBoolean(firstSteelType?.requiresDimensions, true),
+      requiresDimensions: coerceBoolean(
+        firstSteelType?.requiresDimensions,
+        true,
+      ),
       requiresAmount: coerceBoolean(firstSteelType?.requiresAmount, true),
     };
     setSteelItem((prev) => [...prev, newItem]);
@@ -691,13 +697,16 @@ const NewJobOrder = () => {
         });
 
         const jobStatus = await statusRes.json().catch(() => ({}) as any);
-        if (!statusRes.ok) throw new Error(jobStatus?.error || "เกิดข้อผิดพลาดในการดึงสถานะงาน");
+        if (!statusRes.ok)
+          throw new Error(jobStatus?.error || "เกิดข้อผิดพลาดในการดึงสถานะงาน");
 
         if (jobStatus.status === "COMPLETED") {
           completed = true;
           finalData = jobStatus.result as OcrParseResponse;
         } else if (jobStatus.status === "FAILED") {
-          throw new Error(jobStatus.error || "กระบวนการ OCR ล้มเหลวที่เซิร์ฟเวอร์");
+          throw new Error(
+            jobStatus.error || "กระบวนการ OCR ล้มเหลวที่เซิร์ฟเวอร์",
+          );
         }
       }
 
@@ -755,9 +764,6 @@ const NewJobOrder = () => {
 
     if (!headOrder.deliveryDate) return "กรุณากรอกวันที่ต้องการสินค้า";
 
-    if (useJob == true && SteelItem.some((item) => !item.job?.trim())) {
-      return "กรุณากรอกหมายเลข Job ในรายการเหล็กที่เลือก";
-    }
     if (SteelItem.length === 0)
       return "กรุณาเพิ่มรายการเหล็กอย่างน้อย 1 รายการ";
 
@@ -772,7 +778,8 @@ const NewJobOrder = () => {
       SteelItem.some(
         (item) =>
           item.requiresDimensions &&
-          (item.thickness == null || item.thickness <= 0 ||
+          (item.thickness == null ||
+            item.thickness <= 0 ||
             (item.isOD === false && (!item.length || item.length <= 0)) ||
             (item.shape === "square" &&
               (item.wide === null || item.wide <= 0))),
